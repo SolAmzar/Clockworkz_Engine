@@ -60,10 +60,23 @@ artifacts/
 *.svclog
 *.scc
 
-# Database temporary files
+# Visual Studio user files and browsing database
+*.suo
+*.db
 *.db-shm
 *.db-wal
 *.db-journal
+Browse.VC.db
+Browse.VC.db-shm
+Browse.VC.db-wal
+Browse.VC.opendb
+
+# Visual Studio backup files
+*.backup.json
+DocumentLayout.backup.json
+
+# Visual Studio FileContentIndex (the long random .vsidx files)
+.vs/*/FileContentIndex/
 
 # ====================
 # UNITY
