@@ -1,0 +1,21 @@
+# ninja log v6
+3	46	7800661446449299	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	9b12494fe00086c8
+3	46	7800661446449299	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	9b12494fe00086c8
+47	2888	7800661474866787	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	fd506fa2502e7b9
+47	2888	7800661474866787	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	fd506fa2502e7b9
+2889	3011	7800661474911872	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	19e9452914abf1c
+2889	3011	7800661474911872	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	19e9452914abf1c
+3012	3052	7800661476512360	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	f10c47ca547820f4
+3012	3052	7800661476512360	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	f10c47ca547820f4
+3053	3092	7800661476903338	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	f17d56c17f83d956
+3053	3092	7800661476903338	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	f17d56c17f83d956
+3092	3132	7800661477305141	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	ee0c91349a33ef54
+3092	3132	7800661477305141	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	ee0c91349a33ef54
+3132	3175	7800661477736784	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	464f341d8ea40e7c
+3132	3175	7800661477736784	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	464f341d8ea40e7c
+3175	3216	7800661478146447	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	46787931a47a2c6a
+3175	3216	7800661478146447	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	46787931a47a2c6a
+3216	3271	7800661478688391	CMakeFiles/glfw-populate-complete	ce78296370b93e28
+3216	3271	7800661478688391	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	ce78296370b93e28
+3216	3271	7800661478688391	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/CMakeFiles/glfw-populate-complete	ce78296370b93e28
+3216	3271	7800661478688391	C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	ce78296370b93e28

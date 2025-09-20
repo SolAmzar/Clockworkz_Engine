@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/User/source/repos/CMakeProject1/CMakeProject1
+# Install script for directory: C:/Users/User/csd2401f25_team_clockworkz/CMakeProject1
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/User/source/repos/CMakeProject1/out/install/x64-debug")
+  set(CMAKE_INSTALL_PREFIX "C:/Users/User/csd2401f25_team_clockworkz/out/install/x64-debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -32,9 +32,15 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for each subdirectory.
+  include("C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/_deps/glfw-build/cmake_install.cmake")
+
+endif()
+
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/User/source/repos/CMakeProject1/out/build/x64-debug/CMakeProject1/install_local_manifest.txt"
+  file(WRITE "C:/Users/User/csd2401f25_team_clockworkz/out/build/x64-debug/CMakeProject1/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

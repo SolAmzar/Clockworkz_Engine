@@ -13,8 +13,9 @@
   },
   "ExpandedNodes": [
     "",
+    "\\build",
     "\\CMakeProject1"
   ],
-  "SelectedNode": "\\CMakeProject1",
+  "SelectedNode": "\\CMakeProject1\\CMakeProject1.cpp",
   "PreviewInSolutionExplorer": false
 }
