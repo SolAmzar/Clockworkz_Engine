@@ -1,4 +1,4 @@
-#include <Engine/Graphics/Window.hpp>
+#include <Window.hpp>
 #include <memory>
 
 class Game {
