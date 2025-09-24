@@ -1,4 +1,4 @@
-#include "Core/Engine.hpp"
+﻿#include "Core/Engine.hpp"
 #include "Core/Config.hpp"
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
@@ -8,6 +8,8 @@
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include <GLFW/glfw3.h>
+#include "Runtime/GameStateManager.hpp"
+#include "Runtime/MenuState.hpp"
 
 using namespace Core;
 
@@ -30,11 +32,13 @@ namespace Core {
         m_logger->info("Engine init...");
 
         if (!m_window->create(*m_config)) return false;
-        m_input->attachCallbacks((void*)m_window->handle());
+        m_input->init(*m_window);
         if (!m_gfx->init(*m_window)) return false;
         if (!m_renderer->init()) return false;
 
         m_camera->setOrtho((float)m_window->width(), (float)m_window->height(), 1.0f);
+        m_gsm = std::make_unique<Runtime::GameStateManager>();
+      
         m_running = true;
         return true;
     }
@@ -46,14 +50,25 @@ namespace Core {
     }
 
     void Engine::update(double dt) {
-        (void)dt;
-        // Example: ESC quits
-        // (Handled in Input callback as well)
+        if (!m_booted) {
+            // Initial State when Run Game, start off from Menu State
+            // Push MenuState once
+            m_gsm->push(std::make_shared<Runtime::MenuState>(
+                *m_gsm,
+                *m_input,
+                [this]() { m_running = false; }
+            ));
+            m_booted = true;
+        }
+        m_input->update();
+        m_gsm->update(dt);
+        
     }
 
     void Engine::render() {
         // clear & present
         // (Clear happens inside RenderingManager::beginFrame)
+        m_gsm->render();
     }
 
     int Engine::Run() {
@@ -61,6 +76,8 @@ namespace Core {
         while (m_running && !m_window->shouldClose()) {
             m_time->beginFrame();
             m_window->poll();
+
+            // game loop
             update(m_time->delta());
 
             m_renderer->beginFrame(*m_camera);
