@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Debug\GameEngine.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Debug\Basic.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Debug\Debug.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
