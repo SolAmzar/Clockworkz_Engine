@@ -71,7 +71,7 @@ echo Running the application...
 echo.
 cd Debug
 
-SEP3.exe
+MyApp.exe
 if %errorlevel% neq 0 (
     echo.
     echo Application exited with error code: %errorlevel%
