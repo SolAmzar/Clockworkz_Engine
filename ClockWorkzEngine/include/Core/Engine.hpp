@@ -1,5 +1,9 @@
 #pragma once
 #include <memory>
+namespace Runtime { class GameStateManager; class MenuState; }
+
+
+
 namespace Core {
 	class Config; class Logger; class Time;
 }
@@ -36,6 +40,11 @@ namespace Core {
 		std::unique_ptr<Graphics::RenderingManager>  m_renderer;
 		std::unique_ptr<Graphics::Camera2D>          m_camera;
 
+		// Run Time
+		std::unique_ptr<Runtime::GameStateManager> m_gsm;
+		bool m_booted{ false }; // flag for Game state change
+
+		// Engine
 		bool m_running{ false };
 	};
 }

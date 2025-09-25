@@ -1,0 +1,47 @@
+﻿FXC : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation object save succeeded; see C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Debug\Basic.cso
+FXC : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation object save succeeded; see C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Debug\Debug.cso
+  Precompiled.cpp
+  Compiling Precompiled Header File...
+  Body.cpp
+  Camera.cpp
+  Collision.cpp
+  Composition.cpp
+  Core.cpp
+  DebugDraw.cpp
+  Factory.cpp
+  FilePath.cpp
+  GameLogic.cpp
+  Graphics.cpp
+  Physics.cpp
+  Resolution.cpp
+  Sprite.cpp
+  TextSerialization.cpp
+  Transform.cpp
+  WindowsSystem.cpp
+  WinMain.cpp
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Graphics.h(86,8): warning C4324: 'Framework::Graphics': structure was padded due to alignment specifier
+  (compiling source file '/Sprite.cpp')
+  
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Graphics.h(86,8): warning C4324: 'Framework::Graphics': structure was padded due to alignment specifier
+  (compiling source file '/GameLogic.cpp')
+  
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Graphics.h(86,8): warning C4324: 'Framework::Graphics': structure was padded due to alignment specifier
+  (compiling source file '/Camera.cpp')
+  
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Graphics.h(86,8): warning C4324: 'Framework::Graphics': structure was padded due to alignment specifier
+  (compiling source file '/Graphics.cpp')
+  
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Graphics.cpp(286,4): warning C4127: conditional expression is constant
+  (compiling source file '/Graphics.cpp')
+  
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Graphics.h(86,8): warning C4324: 'Framework::Graphics': structure was padded due to alignment specifier
+  (compiling source file '/WinMain.cpp')
+  
+C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\WinMain.cpp(54,35): warning C4316: 'Framework::Graphics': object allocated on the heap may not be aligned 16
+  (compiling source file '/WinMain.cpp')
+  
+  GameEngine.vcxproj -> C:\Users\Huangph\Documents\GitHub\csd2401f25_team_clockworkz\Sample_GameEngine [REFERENCE]\Sample_GameEngine\GameEngine\GameEngine\Source\Debug\GameEngine.exe
