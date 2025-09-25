@@ -88,6 +88,15 @@ if %errorlevel% neq 0 (
     echo Application completed successfully!
 )
 
+SEP3.exe
+if %errorlevel% neq 0 (
+    echo.
+    echo Application exited with error code: %errorlevel%
+) else (
+    echo.
+    echo Application completed successfully!
+)
+
 echo.
 echo Press any key to exit...
 pause >nul

@@ -26,4 +26,16 @@ file(GLOB ENGINE_INCLUDE_DIRS
 )
 
 # Add them as include directories
-target_include_directories(${ENGINE_NAME} PRIVATE ${ENGINE_INCLUDE_DIRS})
+target_include_directories(${ENGINE_NAME}
+    PUBLIC  ${ENGINE_INCLUDE_DIRS}   # Engine headers visible to games
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}  # optional internal includes
+)
+
+# Link external dependencies
+target_link_libraries(${ENGINE_NAME}
+    PUBLIC
+        glfw       # from FetchContent_MakeAvailable(glfw)
+        libglew_static  # glew target name (from glew-cmake)
+        imgui      # manually added in your import_imgui macro
+        glm        # glm header-only, but still provides an interface target
+)
