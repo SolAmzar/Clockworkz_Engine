@@ -8,15 +8,12 @@ macro(import_glfw)
             GIT_REPOSITORY https://github.com/glfw/glfw.git
             GIT_TAG 3.3.8
         )
-        if(NOT glfw_POPULATED)
-            set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-            set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-            set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-            FetchContent_Populate(glfw)
-        endif()
 
-        add_subdirectory(${glfw_SOURCE_DIR})
-        include_directories(${GLFW_SOURCE_DIR}/include)
+        set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+        set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+        FetchContent_MakeAvailable(glfw)
     endif()
 endmacro()
 
@@ -30,14 +27,12 @@ macro(import_glm)
         )
         FetchContent_MakeAvailable(glm)
 
-        include_directories(${glm_SOURCE_DIR})
     endif()
 endmacro()
 
 # Macro to import glew
 macro(import_glew)
     if(NOT TARGET glew_s)  # Guard to prevent multiple inclusion
-        include(FetchContent)
 
         FetchContent_Declare(
             glew
@@ -49,8 +44,7 @@ macro(import_glew)
         set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libs" FORCE)
         FetchContent_MakeAvailable(glew)
 
-        # Optional: include directories if needed manually (though target_link_libraries handles it)
-        include_directories(${glew_SOURCE_DIR}/include)
+
     endif()
 endmacro()
 
@@ -62,9 +56,7 @@ macro(import_imgui)
             GIT_REPOSITORY https://github.com/ocornut/imgui.git
             GIT_TAG v1.90.4
         )
-        if(NOT imgui_POPULATED)
-            FetchContent_Populate(imgui)
-        endif()
+        FetchContent_MakeAvailable(imgui)
 
         # Create ImGui library manually since it doesn't have CMakeLists.txt
         set(IMGUI_SOURCES
