@@ -56,6 +56,7 @@ namespace Core {
             m_gsm->push(std::make_shared<Runtime::MenuState>(
                 *m_gsm,
                 *m_input,
+                *m_window,
                 [this]() { m_running = false; }
             ));
             m_booted = true;
@@ -82,6 +83,8 @@ namespace Core {
 
             m_renderer->beginFrame(*m_camera);
             // TODO: submit sprites/meshes here in M2
+
+            render();
             m_renderer->endFrame();
 
             m_window->swap();

@@ -42,6 +42,7 @@ namespace Platform {
         bool wasMouseReleased(int button) const;   // edge: down -> up
         bool wasMouseClicked(int button) const;    // press->release within thresholds
 
+        // TODO swap to own math vec2
         glm::vec2 mousePosition() const { return { static_cast<float>(m_mouseX), static_cast<float>(m_mouseY) }; }
         void getMousePosition(double& x, double& y) const { x = m_mouseX; y = m_mouseY; }
 

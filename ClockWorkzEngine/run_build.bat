@@ -17,15 +17,5 @@ cmake .. -G "Visual Studio 17 2022" -A x64
 :: Build in Debug mode
 cmake --build . --config Debug
 
-:: Run the exe if build succeeded
-if exist Debug\ClockWorkzEngine.exe (
-    echo =============================
-    echo Running ClockWorkzEngine.exe
-    echo =============================
-    Debug\ClockWorkzEngine.exe
-) else (
-    echo Build failed, exe not found.
-)
-
 endlocal
 pause

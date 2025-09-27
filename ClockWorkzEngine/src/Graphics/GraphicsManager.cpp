@@ -9,6 +9,8 @@ bool GraphicsManager::init(Platform::WindowManager& window) {
 	int w = window.width(), h = window.height();
 	setViewport(w, h);
 	setClearColor(0.07f, 0.07f, 0.1f, 1.0f);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	return true;
 }
 void GraphicsManager::setViewport(int w, int h) { glViewport(0, 0, w, h); }
