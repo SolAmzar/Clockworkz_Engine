@@ -3,7 +3,7 @@
 Prefab.cpp by Amirul Syafiq (100%)
 */
 
-#include <Gameplay/Prefab.hpp>
+#include "Gameplay/Components/Prefab.hpp"
 
 namespace Gameplay {
 
@@ -102,7 +102,7 @@ namespace Gameplay {
             playerBP.size = glm::vec2(0.8f, 0.8f);
             playerBP.isSolid = true;
             playerBP.layer = 2;
-            playerBP.health = 100;
+            playerBP.health = 1;
             playerBP.speed = 5.0f;
 
             factory.saveBlueprint("Player", playerBP);
@@ -117,7 +117,7 @@ namespace Gameplay {
             enemyBP.size = glm::vec2(0.9f, 0.9f);
             enemyBP.isSolid = true;
             enemyBP.layer = 2;
-            enemyBP.health = 50;
+            enemyBP.health = 1;
             enemyBP.damage = 10;
             enemyBP.speed = 3.0f;
 
@@ -133,9 +133,9 @@ namespace Gameplay {
             fastEnemyBP.size = glm::vec2(0.7f, 0.7f);
             fastEnemyBP.isSolid = true;
             fastEnemyBP.layer = 2;
-            fastEnemyBP.health = 25;          // Less health
-            fastEnemyBP.damage = 5;           // Less damage  
-            fastEnemyBP.speed = 8.0f;         // Much faster!
+            fastEnemyBP.health = 1;
+            fastEnemyBP.damage = 5;
+            fastEnemyBP.speed = 8.0f;
 
             factory.saveBlueprint("FastEnemy", fastEnemyBP);
         }
@@ -149,39 +149,11 @@ namespace Gameplay {
             bigEnemyBP.size = glm::vec2(1.5f, 1.5f);
             bigEnemyBP.isSolid = true;
             bigEnemyBP.layer = 2;
-            bigEnemyBP.health = 150;          // More health
-            bigEnemyBP.damage = 25;           // More damage
-            bigEnemyBP.speed = 2.0f;          // Slower
+            bigEnemyBP.health = 150;
+            bigEnemyBP.damage = 25;
+            bigEnemyBP.speed = 2.0f;
 
             factory.saveBlueprint("BigEnemy", bigEnemyBP);
-        }
-
-        // TRAP
-        {
-            GameObjectBlueprint trapBP;
-            trapBP.type = GameObjectType::Trap;
-            trapBP.name = "Trap";
-            trapBP.textureId = "trap_texture";
-            trapBP.size = glm::vec2(1.0f, 1.0f);
-            trapBP.isHazard = true;
-            trapBP.layer = 0;                 // Ground level
-            trapBP.damage = 20;
-
-            factory.saveBlueprint("Trap", trapBP);
-        }
-
-        // SPIKE TRAP
-        {
-            GameObjectBlueprint spikeTrapBP;
-            spikeTrapBP.type = GameObjectType::Trap;
-            spikeTrapBP.name = "SpikeTrap";
-            spikeTrapBP.textureId = "spike_trap_texture";
-            spikeTrapBP.size = glm::vec2(1.0f, 1.0f);
-            spikeTrapBP.isHazard = true;
-            spikeTrapBP.layer = 0;
-            spikeTrapBP.damage = 40;          // More dangerous!
-
-            factory.saveBlueprint("SpikeTrap", spikeTrapBP);
         }
     }
 
