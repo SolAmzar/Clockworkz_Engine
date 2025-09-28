@@ -1,5 +1,6 @@
 #include "Platform/WindowManager.hpp"
 #include "Core/Config.hpp"
+#include <GL/glew.h> 
 #include <GLFW/glfw3.h>
 #include <iostream>
 
@@ -30,6 +31,10 @@ bool WindowManager::create(const Core::Config& cfg) {
 	m_window = glfwCreateWindow(m_width, m_height, cfg.title.c_str(), nullptr, nullptr);
 	if (!m_window) return false;
 	glfwMakeContextCurrent(m_window);
+	if (glewInit() != GLEW_OK) {
+		std::cerr << "Failed to initialize GLEW\n";
+		return false;
+	}
 	glfwSwapInterval(cfg.vsync ? 1 : 0);
 	return true;
 }

@@ -10,6 +10,7 @@ namespace Gameplay {
     // Keep it small; components can add behavior later.
     enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap };
 
+    // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {
         glm::vec2 position{ 0.f, 0.f };
         float     rotationDeg{ 0.f };
@@ -120,6 +121,7 @@ namespace Gameplay {
     public:
         virtual ~Component() = default;
         virtual void onUpdate(GameObject& owner, double dt) { (void)owner; (void)dt; }
+        // Render need to take the resource like textures/sprite information from resourcemanager.
         virtual void onRender(GameObject& owner) { (void)owner; }
     };
 

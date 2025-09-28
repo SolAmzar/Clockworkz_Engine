@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(ClockWorkzEngine VERSION 0.1.0 LANGUAGES C CXX)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 # --- C++ standard ---
 set(CMAKE_CXX_STANDARD 17)
@@ -37,6 +38,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
+# --- GLEW ---
+set(BUILD_UTILS OFF CACHE BOOL "" FORCE)
+set(glew-cmake_BUILD_SHARED OFF CACHE BOOL "" FORCE)  # build static library
+FetchContent_Declare(
+  glew
+  GIT_REPOSITORY https://github.com/Perlmint/glew-cmake.git
+  GIT_TAG glew-cmake-2.2.0
+)
+FetchContent_MakeAvailable(glew)
+
 # GLM (header-only)
 FetchContent_Declare(
   glm
@@ -44,6 +55,16 @@ FetchContent_Declare(
   GIT_TAG 1.0.1
 )
 FetchContent_MakeAvailable(glm)
+
+
+# FreeType
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz" FORCE)
+FetchContent_Declare(
+  freetype
+  GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+  GIT_TAG VER-2-13-2 # (stable release, change if newer is needed)
+)
+FetchContent_MakeAvailable(freetype)
 
 # --- Sources & Headers ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
@@ -75,12 +96,36 @@ source_group(TREE "${CMAKE_SOURCE_DIR}/src"     PREFIX "Source Files" FILES ${EN
 
 # --- Link against system OpenGL explicitly + platform bits ---
 if(WIN32)
-  target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm opengl32 user32 gdi32 shell32)
+  target_link_libraries(${PROJECT_NAME} PRIVATE 
+    glfw 
+    libglew_static
+    glm::glm 
+    freetype 
+    opengl32 
+    user32 
+    gdi32 
+    shell32
+  )
 elseif(APPLE)
-  target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm "-framework OpenGL")
+  target_link_libraries(${PROJECT_NAME} PRIVATE 
+    glfw 
+    libglew_static
+    glm::glm 
+    freetype 
+    "-framework OpenGL"
+  )
 else()
-  target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm GL)
+  target_link_libraries(${PROJECT_NAME} PRIVATE 
+    glfw 
+    libglew_static
+    glm::glm 
+    freetype 
+    GL
+  )
 endif()
+
+
+
 
 # --- Output folders tidy (nice for multi-config VS) ---
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -96,6 +141,15 @@ if(EXISTS "${ENGINE_ASSETS_DIR}")
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${ENGINE_ASSETS_DIR}"
       "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
+endif()
+
+# --- copy assets into build/assets for Visual Studio ---
+set(ENGINE_ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets")
+if(EXISTS "${ENGINE_ASSETS_DIR}")
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${ENGINE_ASSETS_DIR}"
+      "${CMAKE_BINARY_DIR}/assets")
 endif()
 
 
