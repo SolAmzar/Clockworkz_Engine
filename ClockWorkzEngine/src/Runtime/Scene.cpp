@@ -13,7 +13,9 @@ std::vector<std::unique_ptr<Gameplay::GameObject>>& Scene::objects() { return m_
 
 bool Scene::load() {
 	std::cout << "[Scene] load: " << m_name << "\n";
-	// Quick test room
+	// Quick test room TODO: Level Serializer need to load in the objects.
+	// Instead of static function, deserializer can store the Component by name,and during load + attach component back to the gameobejct based on save file data
+	// GameObject Serializer to custom a GaemObject Prefab similar to Unity
 	objects().push_back(GameObject::MakeFloor({ 0,0 }, { 20,12 }, "tex_floor"));
 	objects().push_back(GameObject::MakeWall({ -10,0 }, { 1,12 }, "tex_wall"));
 	objects().push_back(GameObject::MakeWall({ 10,0 }, { 1,12 }, "tex_wall"));
