@@ -1,3 +1,5 @@
+#ifndef 0
+
 #include "Types.hpp"	
 #include "Collision.hpp"
 
@@ -44,3 +46,5 @@ struct GameObjInst
 	//For Particle System
 	float			lifetime;				// particle's lifetime value if this instance is a particle
 };
+
+#endif

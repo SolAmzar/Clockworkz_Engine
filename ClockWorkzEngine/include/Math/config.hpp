@@ -3,11 +3,11 @@
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
-#include "types.hpp"
+#include "Types.hpp"
 
 namespace Math {
 	constexpr f32 PI = 3.14159265359f;
-	constexpr f32 EPSILON = 1e-6f;
+	constexpr f32 Epsilon = 1e-6f;
 	constexpr f32 Tau = 6.28318530717958647692f;
 
 	constexpr f32 to_rad(f32 degrees) {
@@ -17,7 +17,7 @@ namespace Math {
 		return radians * (180.0f / PI);
 	}
 
-	inline bool float_equal(f32 a, f32 b, f32 epsilon = EPSILON) {
+	inline bool float_equal(f32 a, f32 b, f32 epsilon = Epsilon) {
 		return std::fabs(a - b) <= epsilon * std::max(1.f, std::max(std::fabs(a), std::fabs(b)));
 	}
 };
