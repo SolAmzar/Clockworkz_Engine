@@ -1,4 +1,4 @@
-#include "Core/Time.hpp"
+#include "Gameplay/Core/Time.hpp"
 #include <GLFW/glfw3.h>
 void Core::Time::beginFrame() {
 	double now = glfwGetTime();

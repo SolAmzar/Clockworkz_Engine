@@ -31,15 +31,28 @@ namespace Runtime {
     void MenuState::onEnter() {
         m_selected = 0;
         m_dirty = true;
+
+        if (m_items.empty()) {
+            m_items = { "Start Game",
+                        "Load Game",
+                        "Option",
+                        "Credits",
+                        "Exit Game" };
+        }
+
         printMenu();
 
-        // 
         ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
             "Title", "assets/fonts/ANUNE___.TTF", 48
         );
 
         ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
             "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72
+        );
+
+        /* Syafiq*/
+        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+            "Selection", "assets/fonts/ANUNEDW_.TTF", 50
         );
 
         auto textShader = ResourceManager<Shader>::Load(
@@ -96,7 +109,7 @@ namespace Runtime {
         // Later, retrieve them anywhere:
         auto shader = ResourceManager<Shader>::Get("text");
         shader->use();
-        shader->setVec3("textColor", glm::vec3(1, 1, 1));
+        shader->setVec3("textColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
         // projection setup (window width/height)
         int w = m_window.width();
@@ -111,6 +124,8 @@ namespace Runtime {
 
         auto titleFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Title");
         auto subFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Subtitle");
+        auto selectFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Selection");
+
         if (titleFont) {
             titleFont->RenderText("Lights Out", w/2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
         }
@@ -118,6 +133,31 @@ namespace Runtime {
         if (subFont) {
             subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
         }
+
+        //Start: Syafiq
+        if (selectFont) {
+
+            glm::vec3 normalCol(0.5f, 0.5f, 0.5f);
+            glm::vec3 selectedCol(1.0f, 1.0f, 1.0f);
+
+            for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
+                const std::string& item = m_items[i];
+
+
+                glm::vec3 selCol = (i ==m_selected) ? selectedCol: normalCol;
+
+                shader->setVec3("textColor", selCol);
+
+
+                float yPos = (h - 550.0f) - (i * 80.0f);
+                float textWidth = item.length() * 25.0f;
+                float xPos = (w / 2.0f) - (textWidth / 2.0f);
+
+                selectFont->RenderText(item, xPos, yPos, 0.8f, selCol);
+                
+            }
+        }
+        //End: Syafiq
             
     }
 
