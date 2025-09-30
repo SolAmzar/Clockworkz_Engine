@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           MenuState.cpp
+\project        Lights Out
+\author(s)      [Lebon], 70%, [Amirul Syafiq] 30%
+\brief          Declares MenuState, the state representing the game’s main menu.
+                Responsibilities include:
+                - Displaying menu options such as Start, Options, Credits, Exit
+                - Handling keyboard and mouse input for menu navigation
+                - Triggering state transitions (e.g., moving from menu to PlayState)
+                - Rendering UI text using FontManager and Shader resources
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Runtime/MenuState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Platform/InputManager.hpp"

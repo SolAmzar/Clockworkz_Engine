@@ -1,3 +1,23 @@
+/******************************************************************************/
+/*!
+\file           Camera2D.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100% - To expand further later like target chasing or free camera for editor mode.
+\brief          Declares Camera2D, a simple orthographic camera for 2D rendering.
+                Responsibilities include:
+                - setOrtho() to configure projection based on window width,
+                  height, and scale
+                - Maintaining a combined view-projection matrix for rendering
+                - Supporting transformations suitable for top-down or
+                  side-scrolling gameplay
+
+                Provides a central way to control how the world is viewed
+                in screen space.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Graphics/Camera2D.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 

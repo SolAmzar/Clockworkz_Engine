@@ -1,7 +1,27 @@
-﻿#include "Gameplay/Core/Engine.hpp"
-#include "Gameplay/Core/Config.hpp"
-#include "Gameplay/Core/Logger.hpp"
-#include "Gameplay/Core/Time.hpp"
+﻿/******************************************************************************/
+/*!
+\file           Engine.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares Engine, the central orchestrator of the game loop.
+                Responsibilities include:
+                - Initializing and shutting down all subsystems
+                  (Config, Logger, Time, Window, Input, Graphics, Renderer, Camera)
+                - Managing the GameStateManager and bootstrapping the MenuState
+                - Running the main loop (update, render, timing, input polling)
+                - Providing Run() as the entry point to start the application
+
+                Serves as the core runtime that coordinates gameplay, rendering,
+                and platform-level services.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+#include "Core/Engine.hpp"
+#include "Core/Config.hpp"
+#include "Core/Logger.hpp"
+#include "Core/Time.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -83,7 +103,6 @@ namespace Core {
 
             m_renderer->beginFrame(*m_camera);
             // TODO: submit sprites/meshes here in M2
-
             render();
             m_renderer->endFrame();
 

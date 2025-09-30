@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           PlayState.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares PlayState, the main gameplay loop state.
+				Responsibilities include:
+				- Loading and managing the current Scene and its GameObjects
+				- Updating gameplay logic such as movement, collisions, and AI
+				- Rendering the game world each frame
+				- Transitioning back to other states (e.g., pause or menu)
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/SceneManager.hpp"

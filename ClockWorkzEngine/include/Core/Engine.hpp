@@ -1,3 +1,23 @@
+/******************************************************************************/
+/*!
+\file           Engine.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares Engine, the central orchestrator of the game loop.
+				Responsibilities include:
+				- Initializing and shutting down all subsystems
+				  (Config, Logger, Time, Window, Input, Graphics, Renderer, Camera)
+				- Managing the GameStateManager and bootstrapping the MenuState
+				- Running the main loop (update, render, timing, input polling)
+				- Providing Run() as the entry point to start the application
+
+				Serves as the core runtime that coordinates gameplay, rendering,
+				and platform-level services.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <memory>
 namespace Runtime { class GameStateManager; class MenuState; }
