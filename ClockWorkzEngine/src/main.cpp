@@ -1,6 +1,7 @@
 #include "Core/Engine.hpp"
 int main() { Core::Engine engine; return engine.Run(); }
 
+/*
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -99,3 +100,4 @@ int main() {
     glfwTerminate();
     return 0;
 }
+*/
