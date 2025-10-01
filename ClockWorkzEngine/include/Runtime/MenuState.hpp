@@ -23,19 +23,21 @@ namespace ClockWorkz::Assets { class FontManager; }
 
 namespace Platform { class InputManager; class WindowManager; }
 namespace Runtime { class GameStateManager; }
+namespace Audio { class AudioManager; }
 
 namespace Runtime {
 
     class MenuState final : public GameState {
     public:
         // quitFn is called when "Exit Game" is selected (Engine sets a flag / stops loop)
-        MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, std::function<void()> quitFn);
+        MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn);                
 
         const char* name() const override{ return "MenuState"; }
         void onEnter() override;
         void onExit()  override;
         void update(double dt) override;
         void render() override;
+
 
     private:
         void printMenu();
@@ -46,6 +48,7 @@ namespace Runtime {
         GameStateManager& m_gsm;
         Platform::InputManager& m_input;
         Platform::WindowManager& m_window;
+        Audio::AudioManager& m_audio;
         std::function<void()>   m_quitFn;
 
         std::vector<std::string> m_items{

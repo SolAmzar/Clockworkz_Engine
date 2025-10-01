@@ -19,6 +19,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
+#include "Core/AudioManager.hpp"
 #include <GLFW/glfw3.h>
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -26,6 +27,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include <memory>
 
 using ClockWorkz::Assets::ResourceManager;
@@ -39,9 +42,12 @@ namespace Runtime {
         std::cout << "\x1B[2J\x1B[H"; // ANSI clear + home
     }
 
-    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, std::function<void()> quitFn)
-        : m_gsm(gsm), m_input(input), m_window(window), m_quitFn(std::move(quitFn)) {
 
+
+
+    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input,Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn) 
+        : m_gsm(gsm) , m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn))
+    {
     }
 
     void MenuState::onEnter() {
@@ -109,11 +115,11 @@ namespace Runtime {
 
     void MenuState::update(double /*dt*/) {
         // Keys: arrows or WASD
-        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) moveUp();
-        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) moveDown();
+        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) (moveUp(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
+        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) (moveDown(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
 
         // Enter / KP_Enter to select
-        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) select();
+        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) (select(), m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120)));
 
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
