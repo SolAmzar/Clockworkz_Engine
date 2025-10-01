@@ -12,3 +12,5 @@ Just Copy and Paste it in.
   src/
   include/
   fmod/ (take this file)
+
+You only need to do this the first time. After that, the fmod folder should always be in build for you
