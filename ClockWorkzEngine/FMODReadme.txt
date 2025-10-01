@@ -18,3 +18,6 @@ After that, run the run_build.bat. I wrote stuff into the cmakelist to include F
   fmod/ (COPY this file)
 
 You only need to do this the first time. After that, the fmod folder should always be in build for you
+
+^ Response to this, from Po-Han
+I think it is possible to edit the CMakeLists.txt such that run_build.bat will help with that issue mentioned above.
