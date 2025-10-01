@@ -1,1 +1,1 @@
-Run the build_run.bat in the ClockWorkzEngine folder.
+double click on 'run_build.bat' file
