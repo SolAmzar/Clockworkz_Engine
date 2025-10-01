@@ -1,10 +1,40 @@
+/******************************************************************************/
+/*!
+\file           MenuState.cpp
+\project        Lights Out
+\author(s)      [Lebon], 70%, [Amirul Syafiq] 30%
+\brief          Declares MenuState, the state representing the game’s main menu.
+                Responsibilities include:
+                - Displaying menu options such as Start, Options, Credits, Exit
+                - Handling keyboard and mouse input for menu navigation
+                - Triggering state transitions (e.g., moving from menu to PlayState)
+                - Rendering UI text using FontManager and Shader resources
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Runtime/MenuState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Platform/InputManager.hpp"
+#include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
+#include "Core/AudioManager.hpp"
 #include <GLFW/glfw3.h>
+#include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
+#include "Graphics/Shader.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include <memory>
+
+using ClockWorkz::Assets::ResourceManager;
+using Graphics::Shader;
+
+
 
 namespace Runtime {
 
@@ -12,15 +42,46 @@ namespace Runtime {
         std::cout << "\x1B[2J\x1B[H"; // ANSI clear + home
     }
 
-    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input, std::function<void()> quitFn)
-        : m_gsm(gsm), m_input(input), m_quitFn(std::move(quitFn)) {
 
+
+
+    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input,Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn) 
+        : m_gsm(gsm) , m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn))
+    {
     }
 
     void MenuState::onEnter() {
         m_selected = 0;
         m_dirty = true;
+
+        if (m_items.empty()) {
+            m_items = { "Start Game",
+                        "Load Game",
+                        "Option",
+                        "Credits",
+                        "Exit Game" };
+        }
+
         printMenu();
+
+        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+            "Title", "assets/fonts/ANUNE___.TTF", 48
+        );
+
+        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+            "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72
+        );
+
+        /* Syafiq*/
+        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+            "Selection", "assets/fonts/ANUNEDW_.TTF", 50
+        );
+
+        auto textShader = ResourceManager<Shader>::Load(
+            "text",
+            "assets/shaders/text.vert",
+            "assets/shaders/text.frag"
+        );
     }
 
     void MenuState::printMenu() {
@@ -54,16 +115,76 @@ namespace Runtime {
 
     void MenuState::update(double /*dt*/) {
         // Keys: arrows or WASD
-        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) moveUp();
-        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) moveDown();
+        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) (moveUp(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
+        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) (moveDown(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
 
         // Enter / KP_Enter to select
-        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) select();
+        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) (select(), m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120)));
 
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
 
         if (m_dirty) printMenu();
     }
+
+    void MenuState::render() {
+        // Later, retrieve them anywhere:
+        auto shader = ResourceManager<Shader>::Get("text");
+        shader->use();
+        shader->setVec3("textColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+        // projection setup (window width/height)
+        int w = m_window.width();
+        int h = m_window.height();
+
+        glm::mat4 projection = glm::ortho(
+            0.0f, (float)w,
+            0.0f, (float)h
+        );
+
+        shader->setMat4("projection", projection);
+
+        auto titleFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Title");
+        auto subFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Subtitle");
+        auto selectFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Selection");
+
+        if (titleFont) {
+            titleFont->RenderText("Lights Out", w/2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        }
+            
+        if (subFont) {
+            subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+        }
+
+        //Start: Syafiq
+        if (selectFont) {
+
+            glm::vec3 normalCol(0.5f, 0.5f, 0.5f);
+            glm::vec3 selectedCol(1.0f, 1.0f, 1.0f);
+
+            for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
+                const std::string& item = m_items[i];
+
+
+                glm::vec3 selCol = (i ==m_selected) ? selectedCol: normalCol;
+
+                shader->setVec3("textColor", selCol);
+
+
+                float yPos = (h - 550.0f) - (i * 80.0f);
+                float textWidth = item.length() * 25.0f;
+                float xPos = (w / 2.0f) - (textWidth / 2.0f);
+
+                selectFont->RenderText(item, xPos, yPos, 0.8f, selCol);
+                
+            }
+        }
+        //End: Syafiq
+            
+    }
+
+    void MenuState::onExit() {
+    }
+
 
 } // namespace Runtime

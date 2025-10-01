@@ -1,3 +1,20 @@
+/******************************************************************************/
+/*!
+\file           Time.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares Time, a utility for tracking frame timing and FPS.
+				Responsibilities include:
+				- beginFrame() to measure delta time between frames
+				- endFrame() placeholder for per-frame finalization
+				- Access to delta time and calculated frames-per-second (FPS)
+
+				Uses GLFW’s high-resolution timer for accurate frame timing.
+				Can be use to track ms on fucntions performance later.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #include "Core/Time.hpp"
 #include <GLFW/glfw3.h>
 void Core::Time::beginFrame() {

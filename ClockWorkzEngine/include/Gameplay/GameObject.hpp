@@ -1,3 +1,26 @@
+/******************************************************************************/
+/*!
+\file           GameObject.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100% - Will be shared later once other features combine in.
+\brief          Declares GameObject, the fundamental gameplay entity.
+                Responsibilities include:
+                - Holding transform, size, velocity, texture, and component data
+                - Updating and rendering components each frame
+                - Handling collisions by applying damage or health effects
+                - Providing prefab factory methods (MakeFloor, MakeWall,
+                  MakePlayer, MakeEnemy, MakeTrap) for quickly spawning
+                  configured objects 
+                  (Temporary, to replace once scene loader and prefab factory solidifies)
+                - Computing world-space bounding boxes for collision checks
+                - To hold Sprite (Texture/Animated frames + Mesh later)
+
+                Serves as the core building block for interactive entities in
+                the game world.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #pragma once
 #include <cstdint>
 #include <string>
@@ -10,6 +33,7 @@ namespace Gameplay {
     // Keep it small; components can add behavior later.
     enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap };
 
+    // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {
         glm::vec2 position{ 0.f, 0.f };
         float     rotationDeg{ 0.f };
@@ -120,6 +144,7 @@ namespace Gameplay {
     public:
         virtual ~Component() = default;
         virtual void onUpdate(GameObject& owner, double dt) { (void)owner; (void)dt; }
+        // Render need to take the resource like textures/sprite information from resourcemanager.
         virtual void onRender(GameObject& owner) { (void)owner; }
     };
 

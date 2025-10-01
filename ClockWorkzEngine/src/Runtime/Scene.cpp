@@ -1,3 +1,24 @@
+/******************************************************************************/
+/*!
+\file           Scene.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares Scene, a container for organizing game objects,
+				systems, and level data.
+				Responsibilities include:
+				- Holding and managing collections of GameObjects
+				- Providing update and render hooks for all objects in the scene
+				- Supporting scene-level setup and teardown
+
+References:
+- Scene management patterns: https://gameprogrammingpatterns.com/state.html
+- Unity Scenes (conceptual reference): https://docs.unity3d.com/Manual/CreatingScenes.html
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Physics2D.hpp"
@@ -13,7 +34,10 @@ std::vector<std::unique_ptr<Gameplay::GameObject>>& Scene::objects() { return m_
 
 bool Scene::load() {
 	std::cout << "[Scene] load: " << m_name << "\n";
-	// Quick test room
+	// Quick test room TODO: Level Serializer need to load in the objects.
+	// Instead of static function, deserializer can store the Component by name,and during load + attach component back to the gameobejct based on save file data
+	// GameObject Serializer to custom a GaemObject Prefab similar to Unity
+	// TODO: Replace with Scene File Loader based on Prefab data
 	objects().push_back(GameObject::MakeFloor({ 0,0 }, { 20,12 }, "tex_floor"));
 	objects().push_back(GameObject::MakeWall({ -10,0 }, { 1,12 }, "tex_wall"));
 	objects().push_back(GameObject::MakeWall({ 10,0 }, { 1,12 }, "tex_wall"));
