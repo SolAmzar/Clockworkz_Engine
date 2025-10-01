@@ -21,6 +21,8 @@ Makefile
 *.VC.db
 *.VC.opendb
 *.dir/
+.vs/
+.vscode/
 
 # Ignore Xcode files (macOS)
 *.xcworkspace/
