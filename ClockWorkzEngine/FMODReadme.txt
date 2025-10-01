@@ -1,6 +1,10 @@
 For the audio implementation to work, place the fmod folder you see here into build.
 
-Just Copy and Paste it in.
+Just Copy and Paste it into the folder
+
+After that, run the run_build.bat. I wrote stuff into the cmakelist to include Fmod's libraries into the dependencies and setting for visual studio
+(Specifically for c/c++ general, linker and post-build event)
+
 
 <repo>/
   build/
