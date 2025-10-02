@@ -1,20 +1,33 @@
 # This file contains macros to import GLFW, GLM, FREETYPE, GLEW, IMGUI
+
 include(FetchContent)
 
-# Macro to import GLFW
+# Macro to import GLFW into the project using FetchContent
+# This avoids needing users to install GLFW manually on their system.
 macro(import_glfw)
+    # Prevent multiple inclusion:
+    # If "glfw" is already imported as a CMake target, skip this block.
     if(NOT TARGET glfw)  # Guard to prevent multiple inclusion
+
+        # Disable building extra stuff we don't need for our project:
+        set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)        # Don't build GLFW documentation
+        set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)       # Don't build GLFW's test programs
+        set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # Toggle on to build GLFW example programs, off for don't.
+        set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)           # Don't add "install" rules (we don't need system-wide install)
+        set(GLFW_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Toggle off for static/ on for dynamic
+
+        # Tell CMake where to fetch GLFW from (GitHub repo + version tag)
+        # GIT_TAG 3.4 means we are using the latest stable release (May 2024).
         FetchContent_Declare(
             glfw
             GIT_REPOSITORY https://github.com/glfw/glfw.git
-            GIT_TAG 3.3.8
+            GIT_TAG 3.4 # latest stable verison
         )
-
-        set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-        set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-        set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
+        
+        # Download and make GLFW available as a CMake target.
+        # After this, you can link against it using: target_link_libraries(your_target PRIVATE glfw)
         FetchContent_MakeAvailable(glfw)
+
     endif()
 endmacro()
 
