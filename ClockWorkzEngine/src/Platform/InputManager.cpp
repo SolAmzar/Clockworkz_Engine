@@ -1,3 +1,27 @@
+/******************************************************************************/
+/*!
+\file           InputManager.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares InputManager, a system for handling user input with GLFW.
+                Responsibilities include:
+                - Tracking specific keys and mouse buttons
+                - Polling current and previous states to detect presses, releases,
+                  and clicks
+                - Storing mouse position and simple click detection thresholds
+                - Providing queries such as isKeyDown(), wasKeyPressed(),
+                  wasMouseClicked(), etc.
+
+                Integrates with WindowManager by attaching to a GLFW window.
+
+References:
+- GLFW Input Guide: https://www.glfw.org/docs/latest/input_guide.html
+- GLFW Mouse Input: https://www.glfw.org/docs/latest/input_guide.html#input_mouse
+- GLFW Keyboard Input: https://www.glfw.org/docs/latest/input_guide.html#input_keyboard
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include <GLFW/glfw3.h>

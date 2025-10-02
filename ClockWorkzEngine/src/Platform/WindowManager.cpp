@@ -1,5 +1,28 @@
+/******************************************************************************/
+/*!
+\file           WindowManager.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares WindowManager, a wrapper around GLFW for creating
+				and managing the game window and OpenGL context.
+				Responsibilities include:
+				- Creating a window with version hints for OpenGL 3.3 Core Profile
+				- Initializing GLEW for OpenGL function loading
+				- Providing poll() and swap() for event handling and buffer swap
+				- Querying and requesting window close state
+				- Managing window dimensions and vsync configuration
+
+References:
+- GLFW Window Guide: https://www.glfw.org/docs/latest/window_guide.html
+- GLEW (OpenGL Extension Wrangler): http://glew.sourceforge.net/basic.html
+- OpenGL Context Basics: https://www.khronos.org/opengl/wiki/OpenGL_Context
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Platform/WindowManager.hpp"
-#include "Gameplay/Core/Config.hpp"
+#include "Core/Config.hpp"
 #include <GL/glew.h> 
 #include <GLFW/glfw3.h>
 #include <iostream>

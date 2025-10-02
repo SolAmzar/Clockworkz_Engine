@@ -1,3 +1,23 @@
+/******************************************************************************/
+/*!
+\file           Shader.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares Shader, a wrapper around OpenGL shader programs.
+                Responsibilities include:
+                - Load() to compile and link vertex and fragment shaders from
+                  file paths
+                - use() to activate the shader program for rendering
+                - setMat4() and setVec3() to upload uniforms to the GPU
+                - Unload() to delete the OpenGL program when no longer needed
+
+                Simplifies shader management for the rendering pipeline.
+                ResourceManger will load in the shader and manages this.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Graphics/Shader.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>

@@ -1,8 +1,25 @@
+/******************************************************************************/
+/*!
+\file           MenuState.cpp
+\project        Lights Out
+\author(s)      [Lebon], 70%, [Amirul Syafiq] 30%
+\brief          Declares MenuState, the state representing the game’s main menu.
+                Responsibilities include:
+                - Displaying menu options such as Start, Options, Credits, Exit
+                - Handling keyboard and mouse input for menu navigation
+                - Triggering state transitions (e.g., moving from menu to PlayState)
+                - Rendering UI text using FontManager and Shader resources
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Runtime/MenuState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
+#include "Core/AudioManager.hpp"
 #include <GLFW/glfw3.h>
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -10,6 +27,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include <memory>
 
 using ClockWorkz::Assets::ResourceManager;
@@ -23,9 +42,12 @@ namespace Runtime {
         std::cout << "\x1B[2J\x1B[H"; // ANSI clear + home
     }
 
-    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, std::function<void()> quitFn)
-        : m_gsm(gsm), m_input(input), m_window(window), m_quitFn(std::move(quitFn)) {
 
+
+
+    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input,Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn) 
+        : m_gsm(gsm) , m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn))
+    {
     }
 
     void MenuState::onEnter() {
@@ -93,11 +115,11 @@ namespace Runtime {
 
     void MenuState::update(double /*dt*/) {
         // Keys: arrows or WASD
-        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) moveUp();
-        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) moveDown();
+        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) (moveUp(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
+        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) (moveDown(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
 
         // Enter / KP_Enter to select
-        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) select();
+        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) (select(), m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120)));
 
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();

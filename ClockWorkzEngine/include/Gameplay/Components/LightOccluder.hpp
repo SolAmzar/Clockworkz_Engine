@@ -1,3 +1,17 @@
+/******************************************************************************/
+/*!
+\file           LightOccluder.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares LightOccluder, a component that marks a GameObject
+				as blocking or allowing light. It provides methods to enable
+				or disable occlusion dynamically, allowing integration with
+				lighting and shadow systems.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include "Gameplay/GameObject.hpp"
 

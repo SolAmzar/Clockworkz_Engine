@@ -1,3 +1,27 @@
+﻿/******************************************************************************/
+/*!
+\file           FontManager.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          FontManager handles loading, storing, and rendering fonts using
+                the FreeType library. Each font type will be loaded as a font
+                manager using ResourceManager
+                It provides:
+                - Load() to initialize font data from file at a given size
+                - RenderText() to draw strings onto the screen with OpenGL
+                - Access to glyph metrics and textures via GetCharacters()
+                - Automatic cleanup of allocated resources with Unload()
+
+References:
+- FreeType Tutorial: https://freetype.org/freetype2/docs/tutorial/step1.html
+- LearnOpenGL Text Rendering Guide: https://learnopengl.com/In-Practice/Text-Rendering
+- OpenGL glTexImage2D Reference: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+- OpenGL Vertex Specification (VAO/VBO): https://www.khronos.org/opengl/wiki/Vertex_Specification
+
+
+All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #include "Assets/FontManager.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -23,7 +47,9 @@ namespace ClockWorkz::Assets
     bool FontManager::Load(const std::string &filePath, unsigned int fontSize)
     {
         std::cerr << "[FontManager] Trying to load font: " << filePath << std::endl;
-        /*FILE* f = fopen(filePath.c_str(), "rb");
+        /*
+        For Debugging
+        FILE* f = fopen(filePath.c_str(), "rb");
         if (!f) {
             std::cerr << "File not found at runtime path!" << std::endl;
         }
@@ -117,9 +143,6 @@ namespace ClockWorkz::Assets
 
     void FontManager::RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color)
     {
-        // NOTE: requires a bound shader with uniforms: textColor, sampler2D text
-        // Shader binding should be handled outside
-
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(VAO);
 

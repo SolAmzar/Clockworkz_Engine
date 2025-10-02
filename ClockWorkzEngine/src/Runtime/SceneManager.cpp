@@ -1,3 +1,22 @@
+/******************************************************************************/
+/*!
+\file           SceneManager.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares SceneManager, a system for handling scene switching
+                and lifecycle management.
+                Responsibilities include:
+                - Holding the currently active Scene
+                - Loading, unloading, and transitioning between scenes
+                - Exposing hooks for global scene control
+
+References:
+- Game loop & scene transitions (Simillar to GSM): https://gameprogrammingpatterns.com/state.html
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/Scene.hpp"
 #include <iostream>

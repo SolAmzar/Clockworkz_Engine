@@ -1,3 +1,20 @@
+/******************************************************************************/
+/*!
+\file           Health.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares HealthComponent, a component that tracks hit points
+                for a GameObject. It provides methods to:
+                - Apply damage and deactivate the owner when health reaches 0
+                - Heal the object by a specified amount
+                - Query current HP
+
+                Used to give durability and survival mechanics to entities.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <algorithm>
 #include "Gameplay/GameObject.hpp"

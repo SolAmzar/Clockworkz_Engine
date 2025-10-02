@@ -1,7 +1,5 @@
 # ======================= Project Configuration =========================
-cmake_minimum_required(VERSION 2.8...3.13)
-
-cmake_policy(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 
 project(GlWithCMake)
 
@@ -17,64 +15,47 @@ add_definitions(-DUSE_CSD3151_AUTOMATION=0)
 # Include path for GLM
 include_directories(${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 
-# ======================= Build Engine =========================
-add_subdirectory(Engine)
-
-# External libraries (including the engine library itself)
-set(ALL_LIBS
-    PRIVATE glfw
-    PRIVATE libglew_static
-    PRIVATE imgui
-    PRIVATE MyEngine       # Engine library
+# ======================= Build Engine (All src together) =========================
+file(GLOB_RECURSE ENGINE_SRC
+    ${CMAKE_CURRENT_LIST_DIR}/src/*.[ch]pp
 )
 
-# ======================= AUTO GAME DISCOVERY =========================
-file(GLOB children RELATIVE "${CMAKE_CURRENT_LIST_DIR}/Game" "${CMAKE_CURRENT_LIST_DIR}/Game/*")
+add_library(MyEngine ${ENGINE_SRC})
 
-foreach(child ${children})
-    if(IS_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/Game/${child}")
-        message(STATUS "Configuring game: ${child}")
+target_include_directories(MyEngine
+    PUBLIC include
+)
 
-        # Collect source files
-        file(GLOB_RECURSE ${child}_source_files
-            ${CMAKE_CURRENT_LIST_DIR}/Game/${child}/src/*.cpp
-            ${CMAKE_CURRENT_LIST_DIR}/Game/${child}/include/*.h
-            ${CMAKE_CURRENT_LIST_DIR}/Game/${child}/include/*.hpp
-        )
+set_property(TARGET MyEngine PROPERTY CXX_STANDARD 20)
 
-        add_executable(${child} ${${child}_source_files})
+# Preserve warning flags
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(MyEngine PRIVATE -Wall ${DisableWarnings})
+elseif(MSVC)
+    target_compile_options(MyEngine PRIVATE /W3 /WX-)
+endif()
 
-        # Copy shader files
-        file(GLOB ${child}_shader_files "${CMAKE_CURRENT_LIST_DIR}/Game/${child}/shaders/*")
-        if(${child}_shader_files)
-            add_custom_command(TARGET ${child} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E make_directory
-                $<TARGET_FILE_DIR:${child}>/shaders
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${${child}_shader_files}
-                $<TARGET_FILE_DIR:${child}>/shaders/
-            )
-        endif()
+# Link external dependencies
+target_link_libraries(MyEngine
+    PUBLIC glfw
+    PUBLIC libglew_static
+    PUBLIC imgui
+    PUBLIC glm::glm
+    PUBLIC freetype
+)
 
-        # Link libraries
-        target_link_libraries(${child} ${ALL_LIBS})
+# ======================= Copy Shaders =========================
+file(GLOB SHADER_FILES "${CMAKE_CURRENT_LIST_DIR}/shaders/*")
+if(SHADER_FILES)
+    add_custom_command(TARGET MyEngine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:MyEngine>/shaders
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${SHADER_FILES}
+        $<TARGET_FILE_DIR:MyEngine>/shaders/
+    )
+endif()
 
-        # Set C++ standard
-        set_property(TARGET ${child} PROPERTY CXX_STANDARD 20)
-
-        # Preserve warning flags exactly as before
-        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-            target_compile_options(${child} PRIVATE -Wall ${DisableWarnings})
-        elseif(MSVC)
-            target_compile_options(${child} PRIVATE /W3 /WX-)
-        endif()
-
-        # Include directories
-        target_include_directories(${child} PRIVATE
-            ${CMAKE_CURRENT_LIST_DIR}/Game/${child}/include
-            ${CMAKE_CURRENT_LIST_DIR}/Engine/Graphics/include
-        )
-    endif()
-endforeach()
-
-# ======================= END AUTO CONFIGURATION =========================
+# ======================= Build Executable =========================
+add_executable(MyApp src/main.cpp)
+target_link_libraries(MyApp PRIVATE MyEngine)

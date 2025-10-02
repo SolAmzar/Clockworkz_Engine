@@ -1,0 +1,69 @@
+#pragma once
+#include <string>
+#include <unordered_map>
+#include <memory>
+#include "Math/Vec3.hpp"
+
+// Forward declare FMOD to avoid heavy headers leaking
+namespace FMOD { class System; class Sound; class Channel; class ChannelGroup; }
+
+namespace Audio {
+
+    enum class Group { Master, BGM, SFX };
+
+    struct SoundDesc {
+        std::string path;
+        bool loop = false;
+        bool stream = false; // stream large bgm from disk
+        bool is3D = false;
+    };
+
+    class AudioManager {
+    public:
+        AudioManager() = default;
+        ~AudioManager();
+
+        bool init(int maxChannels = 64);
+        void shutdown();
+        void update();
+
+        // Resources
+        bool load(const std::string& id, const SoundDesc& desc);
+        void unload(const std::string& id);
+        void unloadAll();
+
+        // Playback
+        int  play(const std::string& id, Group group = Group::SFX, float volume = 1.0f, bool paused = false);
+        void playOneShot(const std::string& id, Group group = Group::SFX, float volume = 1.0f);
+
+        // Channel control
+        void stop(int channel);
+        void setPaused(int channel, bool paused);
+        void setVolume(int channel, float volume);
+
+        // Groups
+        void setGroupVolume(Group g, float volume);
+        void setGroupPaused(Group g, bool paused);
+
+        // Listener (for 3D if you want it)
+        void setListener(const vec3& pos, const vec3& vel, const vec3& forward, const vec3& up);
+
+        bool isReady() const noexcept { return m_system != nullptr; }
+
+    private:
+        struct ChannelHandle { FMOD::Channel* ch = nullptr; };
+
+        FMOD::System* m_system = nullptr;
+        FMOD::ChannelGroup* m_master = nullptr;
+        FMOD::ChannelGroup* m_bgm = nullptr;
+        FMOD::ChannelGroup* m_sfx = nullptr;
+
+        std::unordered_map<std::string, FMOD::Sound*> m_sounds;
+        std::unordered_map<int, ChannelHandle> m_channels;
+        int m_nextChannelId = 1;
+
+        FMOD::ChannelGroup* groupHandle(Group g) const;
+        bool createSound(SoundDesc const& desc, FMOD::Sound** out);
+    };
+
+} // namespace Audio

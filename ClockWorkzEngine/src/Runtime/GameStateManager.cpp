@@ -1,3 +1,21 @@
+/******************************************************************************/
+/*!
+\file           GameStateManager.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares GameStateManager, a stack-based controller for
+				managing active GameStates.
+				Responsibilities include:
+				- Pushing and popping states dynamically
+				- Updating and rendering the top-most state
+				- Supporting smooth transitions between different states
+				- Ensuring proper cleanup when states exit
+
+Reference: GIT
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/GameState.hpp"
 

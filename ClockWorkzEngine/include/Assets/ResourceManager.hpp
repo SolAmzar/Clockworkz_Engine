@@ -1,3 +1,26 @@
+﻿/******************************************************************************/
+/*!
+\file           ResourceManager.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          ResourceManager is a generic templated class for managing
+                reusable game assets. 
+                It provides:
+                - Load(): Load and store resources (e.g., fonts, textures, shaders)
+                  under a given name, avoiding duplicate loads
+                - Get(): Retrieve already loaded resources by name
+                - Clear(): Release and unload all managed resources from memory
+                - Centralized storage using std::unordered_map keyed by string
+                - Smart pointer management (std::shared_ptr) to ensure safe reuse
+
+                Designed for integration with asset types that implement
+                Load() and Unload() methods.
+
+                cpp not required as its generic, too many definition to add for each template resource type.
+
+All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #pragma once
 #include <string>
 #include <unordered_map>
