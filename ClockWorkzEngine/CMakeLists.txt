@@ -68,7 +68,7 @@ FetchContent_MakeAvailable(freetype)
 
 # ---- FMOD (Core/low-level) ----
 option(ENGINE_ENABLE_FMOD "Enable FMOD audio" ON)
-set(FMOD_SDK_DIR "${CMAKE_BINARY_DIR}/fmod/api" CACHE PATH "Path to FMOD SDK root")
+set(FMOD_SDK_DIR "${CMAKE_SOURCE_DIR}/fmod/api" CACHE PATH "Path to FMOD SDK root")
 
 
 # --- Sources & Headers ---
