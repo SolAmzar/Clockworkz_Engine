@@ -30,6 +30,23 @@ macro(import_glm)
     endif()
 endmacro()
 
+
+# Macro to import freetype
+macro(import_freetype)
+    if(NOT TARGET freetype)  # Guard to prevent multiple inclusion
+        # Disable HarfBuzz (optional dependency)
+        set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz" FORCE)
+        
+        FetchContent_Declare(
+            freetype
+            GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+            GIT_TAG VER-2-13-3 # <-- use this (latest stable as of 2025)
+        )
+        FetchContent_MakeAvailable(freetype)
+    endif()
+endmacro()
+
+
 # Macro to import glew
 macro(import_glew)
     if(NOT TARGET glew_s)  # Guard to prevent multiple inclusion
@@ -97,6 +114,10 @@ macro(importDependencies)
     message(STATUS "Importing GLEW...")
     import_glew()
     message(STATUS "GLEW imported successfully.")
+
+    message(STATUS "Importing FreeType...")
+    import_freetype()
+    message(STATUS "FreeType imported successfully.")
 
     message(STATUS "Importing ImGui...")
     import_imgui()

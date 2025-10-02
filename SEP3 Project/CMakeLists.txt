@@ -1,7 +1,5 @@
 # ======================= Project Configuration =========================
-cmake_minimum_required(VERSION 2.8...3.13)
-
-cmake_policy(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 
 project(GlWithCMake)
 
@@ -42,7 +40,8 @@ target_link_libraries(MyEngine
     PUBLIC glfw
     PUBLIC libglew_static
     PUBLIC imgui
-    PUBLIC glm
+    PUBLIC glm::glm
+    PUBLIC freetype
 )
 
 # ======================= Copy Shaders =========================
