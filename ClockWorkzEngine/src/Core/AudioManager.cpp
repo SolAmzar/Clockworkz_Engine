@@ -1,3 +1,25 @@
+/******************************************************************************/
+/*!
+\file           AudioManager.cpp
+\project        Lights Out
+\author(s)      [Amzar]
+\brief          Handles Audio using FMOD API.
+                Responsibilities include:
+                - Initializing and shutting down the FMOD system
+                - Loading and unloading sound resources
+                - Playing sounds with options for volume, looping, and grouping (BGM, SFX)
+                - Managing audio channels and groups for volume control and pausing
+				- Providing 3D audio listener settings if needed
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
+
+
+
+
 #include "Core/AudioManager.hpp"
 #include <fmod.hpp>
 #include <fmod_errors.h>
@@ -102,7 +124,6 @@ int AudioManager::play(const std::string& id, Group g, float volume, bool paused
         ch->setVolume(volume);
         ch->setChannelGroup(groupHandle(g));
         ch->setPaused(paused);
-        ch->setPaused(false);
     }
     int handle = m_nextChannelId++;
     m_channels[handle] = { ch };

@@ -19,6 +19,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <string>
 #include <functional>
 #include <memory>
+
 namespace ClockWorkz::Assets { class FontManager; }
 
 namespace Platform { class InputManager; class WindowManager; }
@@ -61,6 +62,9 @@ namespace Runtime {
 
         int  m_selected{ 0 };
         bool m_dirty{ true };
+        int m_bgmChannel = 0;
+        bool m_bgmPaused = false;
+        float m_bgmVol = 0.7f;
     };
 
 } // namespace Runtime
