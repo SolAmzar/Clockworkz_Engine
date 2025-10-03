@@ -5,20 +5,34 @@
 \author(s)      [Lebon], 100%
 \brief          Declares Config, a container for engine settings.
                 Responsibilities include:
-                - loadFromFile() to parse configuration data (currently stubbed)
+                - loadFromFile() to parse configuration data json format
                 - Providing default values if file parsing is not yet supported
 
                 Designed for integration with JSON configuration files to
                 control engine parameters such as window size and graphics.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
 #include "Core/Config.hpp"
-#include <cstdio>
-bool Core::Config::loadFromFile(const std::string& path) {
-	// TODO: parse JSON later; keep defaults now
-	(void)path;
-	return true;
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+bool Core::Config::loadFromFile(const std::string &path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        return true; // fallback to defaults
+    }
+    nlohmann::json j;
+    file >> j;
+
+    width = j.value("width", width);
+    height = j.value("height", height);
+    vsync = j.value("vsync", vsync);
+    title = j.value("title", title);
+
+    return true;
 }

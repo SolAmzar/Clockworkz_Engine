@@ -114,10 +114,18 @@ FMOD::ChannelGroup* AudioManager::groupHandle(Group g) const {
 
 int AudioManager::play(const std::string& id, Group g, float volume, bool paused) {
     auto it = m_sounds.find(id);
+
     if (it == m_sounds.end()) {
         std::cerr << "[Audio] Sound not loaded: " << id << "\n";
         return 0;
     }
+
+    if (it->second == nullptr) {
+        std::cerr << "[Audio] Sound* is null: " << id << "\n";
+        return 0;
+    }
+
+
     FMOD::Channel* ch = nullptr;
     if (!FMOD_CHECK(m_system->playSound(it->second, groupHandle(g), true, &ch), "playSound")) return 0;
     if (ch) {
