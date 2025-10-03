@@ -1,3 +1,5 @@
-1. double click on 'run_build.bat' file
-2. Go in build folder, open .sln, set as startup project and click run
+1. Double click on 'run_build.bat' file
+2. Go in build folder, open .sln, and click run
+or
+2. Double click on 'script_run.bat' file
 --------------------------------------------------------

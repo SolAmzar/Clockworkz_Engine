@@ -63,6 +63,15 @@ namespace Gameplay {
 
     }
 
+    /** Function header comment
+     * @brief XXX
+     * 
+     * XXX
+     * 
+     * @param XXX
+     * 
+     * @return XXX
+     */
     void setupGameBlueprints() {
         auto& factory = PrefabFactory::get();
 
