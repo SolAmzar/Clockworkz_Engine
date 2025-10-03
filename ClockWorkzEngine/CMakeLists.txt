@@ -66,6 +66,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
+# ---- nlohmann JSON ----
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.11.3 # stable version
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # ---- FMOD (Core/low-level) ----
 option(ENGINE_ENABLE_FMOD "Enable FMOD audio" ON)
 set(FMOD_SDK_DIR "${CMAKE_SOURCE_DIR}/fmod/api" CACHE PATH "Path to FMOD SDK root")
@@ -110,13 +118,15 @@ if(WIN32)
     user32 
     gdi32 
     shell32
+    nlohmann_json::nlohmann_json
   )
 elseif(APPLE)
   target_link_libraries(${PROJECT_NAME} PRIVATE 
     glfw 
     libglew_static
     glm::glm 
-    freetype 
+    freetype
+    nlohmann_json::nlohmann_json
     "-framework OpenGL"
   )
 else()
@@ -126,6 +136,7 @@ else()
     glm::glm 
     freetype 
     GL
+    nlohmann_json::nlohmann_json
   )
 endif()
 
@@ -300,4 +311,35 @@ if(EXISTS "${ENGINE_ASSETS_DIR}")
       "${CMAKE_BINARY_DIR}/assets")
 endif()
 
+
+# Collect asset files
+file(GLOB_RECURSE ENGINE_ASSETS CONFIGURE_DEPENDS
+  "${CMAKE_SOURCE_DIR}/assets/*.*"
+)
+
+# Add them to the project so Visual Studio shows them
+target_sources(${PROJECT_NAME} PRIVATE ${ENGINE_ASSETS})
+
+# Put them in their own filter
+source_group(TREE "${CMAKE_SOURCE_DIR}/assets" PREFIX "Assets" FILES ${ENGINE_ASSETS})
+
+# Make CMake aware of asset files so rebuild triggers on changes
+set(ENGINE_ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets")
+file(GLOB_RECURSE ENGINE_ASSETS CONFIGURE_DEPENDS
+  "${ENGINE_ASSETS_DIR}/*.*"
+)
+
+# Add a custom target to always copy assets
+add_custom_target(copy_assets ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${ENGINE_ASSETS_DIR}"
+    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${ENGINE_ASSETS_DIR}"
+    "${CMAKE_BINARY_DIR}/assets"
+  DEPENDS ${ENGINE_ASSETS}
+)
+
+# Make the exe depend on this
+add_dependencies(${PROJECT_NAME} copy_assets)
 
