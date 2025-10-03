@@ -1,13 +1,26 @@
-# This file contains macros to import GLFW, GLM, FREETYPE, GLEW, IMGUI
+# This file contains macros to import GLFW, GLEW, GLM, FREETYPE, IMGUI
 
 include(FetchContent)
+
+# Define a consistent C++ standard for all dependencies
+set(DEPENDENCIES_CXX_STANDARD 17 CACHE STRING "C++ standard used for all imported dependencies")
+
+# Option to include ImGui demo windows
+option(IMGUI_INCLUDE_DEMO "Include ImGui demo source (demo window)" OFF)
+
+# Optional global override for all builds
+option(IMPORT_ALL_IMGUI_DEMO "Include ImGui demo for all builds" OFF)
+if(IMPORT_ALL_IMGUI_DEMO)
+    set(IMGUI_INCLUDE_DEMO ON)
+endif()
 
 # Macro to import GLFW into the project using FetchContent
 # This avoids needing users to install GLFW manually on their system.
 macro(import_glfw)
+
     # Prevent multiple inclusion:
     # If "glfw" is already imported as a CMake target, skip this block.
-    if(NOT TARGET glfw)  # Guard to prevent multiple inclusion
+    if(NOT TARGET glfw)
 
         # Disable building extra stuff we don't need for our project:
         set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)        # Don't build GLFW documentation
@@ -17,7 +30,7 @@ macro(import_glfw)
         set(GLFW_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Toggle off for static/ on for dynamic
 
         # Tell CMake where to fetch GLFW from (GitHub repo + version tag)
-        # GIT_TAG 3.4 means we are using the latest stable release (May 2024).
+        # GIT_TAG 3.4 means we are using the latest stable release.
         FetchContent_Declare(
             glfw
             GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -28,88 +41,163 @@ macro(import_glfw)
         # After this, you can link against it using: target_link_libraries(your_target PRIVATE glfw)
         FetchContent_MakeAvailable(glfw)
 
+        # Ensure the dependency uses the same C++ standard as the project
+        set_property(TARGET glfw PROPERTY CXX_STANDARD ${DEPENDENCIES_CXX_STANDARD})
+        set_property(TARGET glfw PROPERTY CXX_STANDARD_REQUIRED ON)
+
     endif()
 endmacro()
 
-# Macro to import glm
+# Macro to import GLEW via FetchContent
+macro(import_glew)
+
+    # If the CMake target "libglew_static" already exists,
+    # it means GLEW is already imported, so skip everything.
+    if(NOT TARGET libglew_static)
+
+        # Don't build the extra GLEW command-line utilities (not needed).
+        set(BUILD_UTILS OFF CACHE BOOL "" FORCE)
+
+        # Tell the GLEW CMake project to build ONLY the static library,
+        # not the shared/dynamic one.
+        set(glew-cmake_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+
+        # Where to fetch GLEW from (official cmake fork).
+        # "glew-cmake-2.2.0" is a stable tagged release.
+        FetchContent_Declare(
+            glew
+            GIT_REPOSITORY https://github.com/Perlmint/glew-cmake.git
+            GIT_TAG glew-cmake-2.2.0
+        )
+
+        # Actually download + add GLEW as a CMake target.
+        FetchContent_MakeAvailable(glew)
+
+        # Ensure the dependency uses the same C++ standard as the project
+        set_property(TARGET libglew_static PROPERTY CXX_STANDARD ${DEPENDENCIES_CXX_STANDARD})
+        set_property(TARGET libglew_static PROPERTY CXX_STANDARD_REQUIRED ON)
+
+    endif()
+endmacro()
+
+# Macro to import GLM into the project using FetchContent
+# GLM is a header-only math library (no .lib or .dll needed, just headers).
+# This macro fetches the library automatically instead of requiring the user to install it.
 macro(import_glm)
-    if(NOT TARGET glm)  # Guard to prevent multiple inclusion
+
+    # Prevent multiple inclusion:
+    # If the CMake target "glm" already exists, skip everything inside.
+    if(NOT TARGET glm)
+
+        # Declare where to fetch GLM from:
+        #   - "glm" here is just a local name/key used by CMake for this dependency
+        #   - GIT_REPOSITORY is the official GitHub repo
+        #   - GIT_TAG is the version
         FetchContent_Declare(
             glm
             GIT_REPOSITORY https://github.com/g-truc/glm.git
-            GIT_TAG master
+            GIT_TAG 1.0.1 # latest stable verison
         )
+
+        # Actually download GLM and make it available.
+        # After this line, you can link it with:
+        #   target_link_libraries(your_project PRIVATE glm::glm)
+        # Note: "glm::glm" is the target name defined inside GLM’s own CMakeLists.txt,
+        #       it is not the same as the "glm" handle above.
         FetchContent_MakeAvailable(glm)
+
+        # Ensure the dependency uses the same C++ standard as the project
+        set_property(TARGET glm PROPERTY CXX_STANDARD ${DEPENDENCIES_CXX_STANDARD})
+        set_property(TARGET glm PROPERTY CXX_STANDARD_REQUIRED ON)
 
     endif()
 endmacro()
 
-
-# Macro to import freetype
+# Macro to import FreeType into the project using FetchContent
+# FreeType is a library for loading and rendering fonts.
+# This macro automatically fetches it, so users don't have to install it manually.
 macro(import_freetype)
-    if(NOT TARGET freetype)  # Guard to prevent multiple inclusion
-        # Disable HarfBuzz (optional dependency)
+
+    # Guard: Only fetch FreeType if it hasn't been added already
+    if(NOT TARGET freetype)
+
+        # Optional dependency: HarfBuzz is used for advanced text shaping (e.g., complex scripts)
+        # We usually disable it in game/engine projects to keep things simple.
         set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz" FORCE)
         
+        # Declare where to fetch FreeType from:
+        # - "freetype" is the local name/handle for CMake
+        # - GIT_REPOSITORY is the official FreeType GitLab repo
+        # - GIT_TAG VER-2-13-3 ensures we use a stable version
         FetchContent_Declare(
             freetype
             GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
-            GIT_TAG VER-2-13-3 # <-- use this (latest stable as of 2025)
+            GIT_TAG VER-2-13-3
         )
+
+        # Actually download and make FreeType available as a CMake target.
+        # After this, you can link against it using:
+        #   target_link_libraries(your_project PRIVATE freetype)
         FetchContent_MakeAvailable(freetype)
-    endif()
-endmacro()
 
-
-# Macro to import glew
-macro(import_glew)
-    if(NOT TARGET glew_s)  # Guard to prevent multiple inclusion
-
-        FetchContent_Declare(
-            glew
-            GIT_REPOSITORY https://github.com/omniavinco/glew-cmake.git
-            GIT_TAG master  # Or use a specific commit or tag if preferred
-        )
-
-        # Disable shared builds if needed
-        set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libs" FORCE)
-        FetchContent_MakeAvailable(glew)
-
+        # Ensure the dependency uses the same C++ standard as the project
+        set_property(TARGET freetype PROPERTY CXX_STANDARD ${DEPENDENCIES_CXX_STANDARD})
+        set_property(TARGET freetype PROPERTY CXX_STANDARD_REQUIRED ON)
 
     endif()
 endmacro()
 
 # Macro to import ImGui
+# ImGui is a GUI library for C++ (e.g., used for debugging tools, editors, overlays)
 macro(import_imgui)
-    if(NOT TARGET imgui)  # Guard to prevent multiple inclusion
+
+    # Guard: If the CMake target "imgui" already exists, skip everything inside
+    if(NOT TARGET imgui)
+
+        # Tell CMake where to fetch ImGui from (GitHub + specific version)
         FetchContent_Declare(
             imgui
             GIT_REPOSITORY https://github.com/ocornut/imgui.git
             GIT_TAG v1.90.4
         )
+
+        # Download ImGui and make it available for use
         FetchContent_MakeAvailable(imgui)
 
-        # Create ImGui library manually since it doesn't have CMakeLists.txt
+        # ImGui doesn't have a proper CMake project, so we need to manually create a library
+        # List all source files that need to be compiled for ImGui
         set(IMGUI_SOURCES
-            ${imgui_SOURCE_DIR}/imgui.cpp
-            ${imgui_SOURCE_DIR}/imgui_demo.cpp
-            ${imgui_SOURCE_DIR}/imgui_draw.cpp
-            ${imgui_SOURCE_DIR}/imgui_tables.cpp
-            ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+            ${imgui_SOURCE_DIR}/imgui.cpp             # Core ImGui functionality
+            ${imgui_SOURCE_DIR}/imgui_draw.cpp        # Drawing/rendering core
+            ${imgui_SOURCE_DIR}/imgui_tables.cpp      # Tables support
+            ${imgui_SOURCE_DIR}/imgui_widgets.cpp     # Widgets like buttons, sliders, etc.
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp  # Backend for GLFW (input handling)
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp # Backend for OpenGL3 rendering
         )
 
+        # Optionally include demo
+        if(IMGUI_INCLUDE_DEMO)
+            list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/imgui_demo.cpp) # Demo window (can be removed if not needed)
+        endif()
+
+        # Create a STATIC library target called "imgui"
+        # STATIC means the code is compiled into your executable (not a separate .dll/.so)
         add_library(imgui STATIC ${IMGUI_SOURCES})
+
+        # Tell CMake where to find ImGui headers when building your project
         target_include_directories(imgui PUBLIC 
-            ${imgui_SOURCE_DIR}
-            ${imgui_SOURCE_DIR}/backends
+            ${imgui_SOURCE_DIR}           # Core ImGui headers
+            ${imgui_SOURCE_DIR}/backends  # Backend headers (GLFW + OpenGL)
         )
+
+        # Link ImGui with GLFW and GLEW (required for input and OpenGL rendering)
         target_link_libraries(imgui PUBLIC glfw libglew_static)
         
-        # Set C++ standard for ImGui (required for constexpr support)
-        set_property(TARGET imgui PROPERTY CXX_STANDARD 11)
+        # Ensure ImGui uses the same C++ standard as the rest of the project
+        # Needed because ImGui uses modern features like 'constexpr'
+        set_property(TARGET imgui PROPERTY CXX_STANDARD ${DEPENDENCIES_CXX_STANDARD})
         set_property(TARGET imgui PROPERTY CXX_STANDARD_REQUIRED ON)
+
     endif()
 endmacro()
 
@@ -121,13 +209,13 @@ macro(importDependencies)
     import_glfw()
     message(STATUS "GLFW imported successfully.")
 
-    message(STATUS "Importing GLM...")
-    import_glm()
-    message(STATUS "GLM imported successfully.")
-
     message(STATUS "Importing GLEW...")
     import_glew()
     message(STATUS "GLEW imported successfully.")
+
+    message(STATUS "Importing GLM...")
+    import_glm()
+    message(STATUS "GLM imported successfully.")
 
     message(STATUS "Importing FreeType...")
     import_freetype()

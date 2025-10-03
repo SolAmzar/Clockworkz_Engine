@@ -31,34 +31,6 @@ set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 # --- Dependencies ---
 include(FetchContent)
 
-# --- GLEW ---
-set(BUILD_UTILS OFF CACHE BOOL "" FORCE)
-set(glew-cmake_BUILD_SHARED OFF CACHE BOOL "" FORCE)  # build static library
-FetchContent_Declare(
-  glew
-  GIT_REPOSITORY https://github.com/Perlmint/glew-cmake.git
-  GIT_TAG glew-cmake-2.2.0
-)
-FetchContent_MakeAvailable(glew)
-
-# GLM (header-only)
-FetchContent_Declare(
-  glm
-  GIT_REPOSITORY https://github.com/g-truc/glm.git
-  GIT_TAG 1.0.1
-)
-FetchContent_MakeAvailable(glm)
-
-
-# FreeType
-set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "Disable HarfBuzz" FORCE)
-FetchContent_Declare(
-  freetype
-  GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
-  GIT_TAG VER-2-13-2 # (stable release, change if newer is needed)
-)
-FetchContent_MakeAvailable(freetype)
-
 # ---- FMOD (Core/low-level) ----
 option(ENGINE_ENABLE_FMOD "Enable FMOD audio" ON)
 set(FMOD_SDK_DIR "${CMAKE_SOURCE_DIR}/fmod/api" CACHE PATH "Path to FMOD SDK root")
