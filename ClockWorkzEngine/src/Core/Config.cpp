@@ -17,7 +17,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Core/Config.hpp"
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include <Core/json.hpp>
 
 bool Core::Config::loadFromFile(const std::string &path)
 {

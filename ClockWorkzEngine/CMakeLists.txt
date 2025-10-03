@@ -66,13 +66,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
-# ---- nlohmann JSON ----
-FetchContent_Declare(
-  nlohmann_json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3 # stable version
-)
-FetchContent_MakeAvailable(nlohmann_json)
 
 # ---- FMOD (Core/low-level) ----
 option(ENGINE_ENABLE_FMOD "Enable FMOD audio" ON)
@@ -118,7 +111,6 @@ if(WIN32)
     user32 
     gdi32 
     shell32
-    nlohmann_json::nlohmann_json
   )
 elseif(APPLE)
   target_link_libraries(${PROJECT_NAME} PRIVATE 
@@ -126,7 +118,6 @@ elseif(APPLE)
     libglew_static
     glm::glm 
     freetype
-    nlohmann_json::nlohmann_json
     "-framework OpenGL"
   )
 else()
@@ -136,7 +127,6 @@ else()
     glm::glm 
     freetype 
     GL
-    nlohmann_json::nlohmann_json
   )
 endif()
 
@@ -311,6 +301,23 @@ if(EXISTS "${ENGINE_ASSETS_DIR}")
       "${CMAKE_BINARY_DIR}/assets")
 endif()
 
+
+# --- copy fmod into build/fmod for Visual Studio ---
+set(ENGINE_FMOD_DIR "${CMAKE_SOURCE_DIR}/fmod")
+if(EXISTS "${ENGINE_FMOD_DIR}")
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${ENGINE_FMOD_DIR}"
+      "${CMAKE_BINARY_DIR}/fmod")
+endif()
+
+# --- Copy FMOD runtime DLL into build/bin ---
+if (ENGINE_ENABLE_FMOD AND WIN32)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/")
+endif()
 
 # Collect asset files
 file(GLOB_RECURSE ENGINE_ASSETS CONFIGURE_DEPENDS
