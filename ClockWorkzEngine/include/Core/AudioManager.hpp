@@ -1,3 +1,22 @@
+/******************************************************************************/
+/*!
+\file           AudioManager.hpp
+\project        Lights Out
+\author(s)      [Amzar]
+\brief          Handles Audio using FMOD API.
+                Responsibilities include:
+                - Initializing and shutting down the FMOD system
+                - Loading and unloading sound resources
+                - Playing sounds with options for volume, looping, and grouping (BGM, SFX)
+                - Managing audio channels and groups for volume control and pausing
+                - Providing 3D audio listener settings if needed
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
+
 #pragma once
 #include <string>
 #include <unordered_map>

@@ -93,8 +93,8 @@ namespace Core {
         m_audio->load("ui_move", { "assets/audio/ui_move.wav",   false, false, false });
         m_audio->load("ui_select", { "assets/audio/ui_select.wav", false, false, false });
 
-        // Example BGM (stream + loop)
-        // m_audio->load("menu_bgm", { "assets/audio/menu_bgm.ogg",  true,  true,  false });
+		// BGM Test but it's just random royalty-free music atm
+         m_audio->load("menu_bgm", { "assets/audio/menu_bgm.mp3",  true,  true,  false });
       
         m_running = true;
         return true;
@@ -151,9 +151,8 @@ namespace Core {
             m_booted = true;
         }
         m_audio->update(); // Update the audio manager class
-        m_input->update(); // Update the input manager class
         m_gsm->update(dt); // Update the game state manager class
-        
+        m_input->update(); // Update the input manager class
     }
 
     /** Function header comment

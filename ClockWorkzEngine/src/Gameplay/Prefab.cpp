@@ -1,7 +1,24 @@
+/******************************************************************************/
+/*!
+\file           Prefab.hpp
+\project        Lights Out
+\author(s)      [Amirul Syafiq], 100%
+\brief          Defines GameObjectBlueprint and PrefabFactory for creating
+                reusable, configurable GameObjects.
 
-/*
-Prefab.cpp by Amirul Syafiq (100%)
+GameObjectBlueprint stores type, texture, transform,
+                collision, and basic gameplay attributes (HP, damage, etc.).
+PrefabFactory saves and retrieves blueprints, and instantiates
+              new GameObjects with predefined properties via create() or
+              createAt().
+Provides setupGameBlueprints() to register standard prefabs.
+
+                Supports a "recipe book" system to easily spawn consistent
+                objects in levels.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
+/******************************************************************************/
 
 #include "Gameplay/Components/Prefab.hpp"
 
@@ -166,4 +183,4 @@ namespace Gameplay {
         }
     }
 
-} // namespace Gameplay
+}

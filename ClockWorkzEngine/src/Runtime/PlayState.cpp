@@ -95,20 +95,28 @@ namespace Runtime {
             m_gsm.pop();
             return;
         }
+        if (m_input.wasKeyPressed(GLFW_KEY_0)) {
+            m_debug = !m_debug;
+            if (m_debug) {
+                std::cout << "Debug is pressed\n";
+            }
+            return;
+        }
         m_scenes.update(dt);
     }
 
     void PlayState::render(Core::Time* timer) {
         if (!m_loaded) return;
         m_scenes.render();
-
-        /*Implement the IMGUI*/
-        ImGui::Begin("Game State");
-        ImGui::Text("Testing Window");
-        if (ImGui::Button("Back to Menu (ESC)")) {
-            m_gsm.pop();
+        if (m_debug) {
+            /*Implement the IMGUI*/
+            ImGui::Begin("Game State");
+            ImGui::Text("Testing Window");
+            if (ImGui::Button("Back to Menu (ESC)")) {
+                m_gsm.pop();
+            }
+            ImGui::End();
         }
-        ImGui::End();
     }
 
 } // namespace Runtime
