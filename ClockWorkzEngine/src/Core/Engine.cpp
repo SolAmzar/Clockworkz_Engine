@@ -58,7 +58,7 @@ namespace Core {
         m_renderer = std::make_unique<Graphics::RenderingManager>();
         m_camera = std::make_unique<Graphics::Camera2D>();
 
-        m_config->loadFromFile("assets/config.json");
+        m_config->loadFromFile("assets/configs/engine_config.json");
         m_logger->init();
         m_logger->info("Engine init...");
 

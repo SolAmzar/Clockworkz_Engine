@@ -5,7 +5,7 @@
 \author(s)      [Lebon], 100%
 \brief          Declares Config, a container for engine settings.
 				Responsibilities include:
-				- loadFromFile() to parse configuration data (currently stubbed)
+				- loadFromFile() to parse configuration data json format
 				- Providing default values if file parsing is not yet supported
 
 				Designed for integration with JSON configuration files to
