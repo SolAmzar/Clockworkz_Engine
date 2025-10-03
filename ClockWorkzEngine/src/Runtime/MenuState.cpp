@@ -160,7 +160,7 @@ namespace Runtime {
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
         if (m_input.wasKeyTriggered(GLFW_KEY_P)) {
-            std::cout << "P pressed � toggling BGM\n";
+            std::cout << "P pressed -> toggling BGM\n";
 			m_bgmPaused = !m_bgmPaused;
             if (m_bgmChannel) m_audio.setPaused(m_bgmChannel, m_bgmPaused);
         }
@@ -239,7 +239,7 @@ namespace Runtime {
         if (m_debug) {
             /*Implement the IMGUI*/
             ImGui::Begin("Welcome to Lights Out");
-            ImGui::Text("Press [Down] & [UP]");
+            ImGui::Text("Press [Down] & [UP] to select");
             ImGui::Text("[Enter] to select");
             ImGui::End();
         }
