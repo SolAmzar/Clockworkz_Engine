@@ -119,7 +119,7 @@ namespace Runtime {
         //yusuf
         if (choice == "Load Game")
         {
-            m_gsm.switchTo(std::make_shared<PlayState>("Level_01_autosave"));
+            m_gsm.switchTo(std::make_shared<PlayState>("Level_01_autosave", m_input, m_gsm));
             return;
         }
 
@@ -221,9 +221,6 @@ namespace Runtime {
         /*Implement the IMGUI*/
         ImGui::Begin("Welcome to Lights Out");
         ImGui::Text("Press the [Down] button first before pressing [Enter]");
-        if (ImGui::Button("Exit Game (ESC)")) {
-            m_gsm.pop();
-        }
         ImGui::End();
         //End: Syafiq
 
