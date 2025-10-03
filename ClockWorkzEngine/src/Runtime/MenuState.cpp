@@ -152,7 +152,7 @@ namespace Runtime {
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
         if (m_input.wasKeyTriggered(GLFW_KEY_P)) {
-            std::cout << "P pressed – toggling BGM\n";
+            std::cout << "P pressed ï¿½ toggling BGM\n";
 			m_bgmPaused = !m_bgmPaused;
             if (m_bgmChannel) m_audio.setPaused(m_bgmChannel, m_bgmPaused);
         }
