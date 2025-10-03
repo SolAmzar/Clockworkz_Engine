@@ -66,6 +66,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
+# ----Compiling using GLEW (For IMGUI) ----
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
+
+
 # ---- FMOD (Core/low-level) ----
 option(ENGINE_ENABLE_FMOD "Enable FMOD audio" ON)
 set(FMOD_SDK_DIR "${CMAKE_SOURCE_DIR}/fmod/api" CACHE PATH "Path to FMOD SDK root")
@@ -84,10 +88,10 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
 # Fallback if empty (lets you configure before writing code)
 if(ENGINE_SOURCES STREQUAL "" AND ENGINE_HEADERS STREQUAL "")
   file(WRITE "${CMAKE_BINARY_DIR}/_dummy.cpp" "int main(){return 0;}\n")
-  set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp")
+  set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp" "src/Graphics/IMGUI.cpp" "src/Graphics/ImGuiManager.cpp")
 endif()
 
-add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp")
 
 # Public headers in include/, private headers in src/
 target_include_directories(${PROJECT_NAME}

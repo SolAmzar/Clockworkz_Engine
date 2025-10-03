@@ -2,7 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon], 75% [Syafiq] 15%
 \brief          Declares PlayState, the main gameplay loop state.
                 Responsibilities include:
                 - Loading and managing the current Scene and its GameObjects
@@ -14,15 +14,30 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 */
 /******************************************************************************/
 
-#include "Runtime/PlayState.hpp"
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
+#include "IMGUI/imgui.h"
+#include "Runtime/MenuState.hpp"
+#include "Runtime/GameStateManager.hpp"
+#include "Platform/InputManager.hpp"
+#include "Platform/WindowManager.hpp"
+#include "Runtime/PlayState.hpp"
+#include "Core/AudioManager.hpp"
+#include <GLFW/glfw3.h>
+#include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
+#include "Graphics/Shader.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
+#include <memory>
 
 namespace Runtime {
-    PlayState::PlayState(std::string initialSceneId)
-        : m_initialSceneId(std::move(initialSceneId)) {
+    PlayState::PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm)
+        : m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm) {
     }
 
     const char* PlayState::name() const { return "PlayState"; }
@@ -74,12 +89,25 @@ namespace Runtime {
 
     void PlayState::update(double dt) {
         if (!m_loaded) return;
+
+        if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+            m_gsm.pop();
+            return;
+        }
         m_scenes.update(dt);
     }
 
     void PlayState::render() {
         if (!m_loaded) return;
         m_scenes.render();
+
+        /*Implement the IMGUI*/
+        ImGui::Begin("Game State");
+        ImGui::Text("Testing Window");
+        if (ImGui::Button("Back to Menu (ESC)")) {
+            m_gsm.pop();
+        }
+        ImGui::End();
     }
 
 } // namespace Runtime

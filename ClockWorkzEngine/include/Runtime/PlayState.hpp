@@ -24,7 +24,7 @@ namespace Runtime {
 
 	class PlayState final : public GameState {
 	public:
-		explicit PlayState(std::string initialSceneId);
+		explicit PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm);
 
 		const char* name() const override;
 
@@ -36,6 +36,8 @@ namespace Runtime {
 	private:
 		std::string m_initialSceneId;
 		SceneManager m_scenes;   // your existing scene manager
+		Platform::InputManager& m_input;
+		GameStateManager& m_gsm;
 		bool m_loaded{ false };
 	};
 

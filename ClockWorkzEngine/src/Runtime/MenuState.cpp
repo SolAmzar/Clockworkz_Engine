@@ -26,6 +26,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Graphics/Shader.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "IMGUI/imgui.h"
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -101,7 +102,7 @@ namespace Runtime {
         const std::string& choice = m_items[m_selected];
 
         if (choice == "Start Game") {
-            m_gsm.switchTo(std::make_shared<PlayState>("Level_01"));
+            m_gsm.push(std::make_shared<PlayState>("Level_01" , m_input, m_gsm));
             return;
         }
         if (choice == "Exit Game") {
@@ -193,6 +194,14 @@ namespace Runtime {
                 
             }
         }
+
+        /*Implement the IMGUI*/
+        ImGui::Begin("Welcome to Lights Out");
+        ImGui::Text("Press the [Down] button first before pressing [Enter]");
+        if (ImGui::Button("Exit Game (ESC)")) {
+            m_gsm.pop();
+        }
+        ImGui::End();
         //End: Syafiq
             
     }
