@@ -19,6 +19,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
 #include <iostream>
+#include <Core/Time.hpp>
 
 namespace Runtime {
     PlayState::PlayState(std::string initialSceneId)
@@ -77,7 +78,7 @@ namespace Runtime {
         m_scenes.update(dt);
     }
 
-    void PlayState::render() {
+    void PlayState::render(Core::Time* timer) {
         if (!m_loaded) return;
         m_scenes.render();
     }

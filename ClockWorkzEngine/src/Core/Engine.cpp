@@ -113,7 +113,7 @@ namespace Core {
     void Engine::render() {
         // clear & present
         // (Clear happens inside RenderingManager::beginFrame)
-        m_gsm->render();
+        m_gsm->render(m_time.get());
 
         if (m_renderer && m_camera) {
             m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);

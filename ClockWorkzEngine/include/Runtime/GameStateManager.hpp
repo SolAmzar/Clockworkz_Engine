@@ -21,10 +21,13 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <memory>
 #include <stack>
 
+namespace Core {
+	class Logger; class Time;
+}
+
 namespace Runtime {
 
 	class GameState;
-
 	class GameStateManager {
 	public:
 		void push(std::shared_ptr<GameState> s);
@@ -32,7 +35,7 @@ namespace Runtime {
 		void switchTo(std::shared_ptr<GameState> s);
 
 		void update(double dt);
-		void render();
+		void render(Core::Time* timer);
 
 		std::shared_ptr<GameState> top() const { return m_states.empty() ? nullptr : m_states.top(); }
 

@@ -19,9 +19,11 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Runtime/SceneManager.hpp"
 #include <memory>
 #include <string>
-
+namespace Core {
+	class Logger; class Time;
+}
 namespace Runtime {
-
+	
 	class PlayState final : public GameState {
 	public:
 		explicit PlayState(std::string initialSceneId);
@@ -31,7 +33,7 @@ namespace Runtime {
 		void onEnter() override;
 		void onExit()  override;
 		void update(double dt) override;
-		void render() override;
+		void render(Core::Time* timer) override;
 
 	private:
 		std::string m_initialSceneId;
