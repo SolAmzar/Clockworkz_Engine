@@ -4,7 +4,7 @@
 \file           PlayState.cpp
 \project        Lights Out
 \author(s)      [Syafiq] 100%
-\brief          Declares ImGuiManager, debugging window for our engine.
+\brief          Define ImGuiManager, debugging window for our engine.
 				Responsibilities include:
 				- Loading ImGui Window
 				- Intergrating all the external ImGui files

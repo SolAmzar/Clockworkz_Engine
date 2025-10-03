@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file           Collision.cpp
+\project        Lights Out
+\author(s)      [Amzar]
+\brief          Defines the collision functions declared in Collision.hpp.
+                Responsibilities include:
+                - Implementing static overlap test for two AABBs
+                - Implementing swept AABB test for moving AABBs over a time interval
+                - Providing accurate collision timing and detection for 2D games
+				- Serving as a lightweight, header-only utility for AABB collision detection
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Physics/Collision.hpp"
 #include <algorithm>
 #include <cmath>

@@ -2,7 +2,7 @@
 /*!
 \file           Engine.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon], 95%% [Wei An], 5%
 \brief          Declares Engine, the central orchestrator of the game loop.
                 Responsibilities include:
                 - Initializing and shutting down all subsystems
@@ -49,6 +49,15 @@ namespace Core {
         return *m_audio;
     }
 
+    /** Function header comment
+     * @brief Engine class private function
+     *
+     * XXX
+     *
+     * @param XXX
+     *
+     * @return XXX
+     */
     bool Engine::init() {
         m_config = std::make_unique<Config>();
         m_logger = std::make_unique<Logger>();
@@ -71,6 +80,8 @@ namespace Core {
         if (!m_window->create(*m_config)) return false;
         m_input->init(*m_window);
         if (!m_gfx->init(*m_window)) return false;
+
+        /* */
         if (!m_renderer->init()) return false;
 
         if (!m_imgui->init(m_window->handle())) return false;
@@ -82,8 +93,8 @@ namespace Core {
         m_audio->load("ui_move", { "assets/audio/ui_move.wav",   false, false, false });
         m_audio->load("ui_select", { "assets/audio/ui_select.wav", false, false, false });
 
-        // Example BGM (stream + loop)
-        // m_audio->load("menu_bgm", { "assets/audio/menu_bgm.ogg",  true,  true,  false });
+		// BGM Test but it's just random royalty-free music atm
+         m_audio->load("menu_bgm", { "assets/audio/menu_bgm.mp3",  true,  true,  false });
       
         m_running = true;
         return true;
@@ -117,6 +128,15 @@ namespace Core {
         m_audio.reset();
     }
 
+    /** Function header comment
+     * @brief Engine::update(double dt) is called once per frame in the game loop.
+     * 
+     * It updates all the engine systems and ensures the initial game state is set up.
+     *
+     * @param XXX
+     *
+     * @return XXX
+     */
     void Engine::update(double dt) {
         if (!m_booted) {
             // Initial State when Run Game, start off from Menu State
@@ -130,12 +150,20 @@ namespace Core {
             ));
             m_booted = true;
         }
-        m_audio->update();
-        m_input->update();
-        m_gsm->update(dt);
-        
+        m_audio->update(); // Update the audio manager class
+        m_gsm->update(dt); // Update the game state manager class
+        m_input->update(); // Update the input manager class
     }
 
+    /** Function header comment
+     * @brief
+     *
+     * XXX
+     *
+     * @param XXX
+     *
+     * @return XXX
+     */
     void Engine::render() {
         // clear & present
         // (Clear happens inside RenderingManager::beginFrame)
@@ -145,15 +173,45 @@ namespace Core {
             m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
 
             // Draw a red rectangle at (200, 150) with width 300 and height 200
-            m_renderer->drawRect(200.0f, 150.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
+            m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
         }
     }
 
+    /** Function header comment
+     * @brief Engine class public function
+     *
+     * XXX
+     *
+     * @param XXX
+     *
+     * @return XXX
+     */ 
     int Engine::Run() {
+        
+        // Call the engine private function `init()`
         if (!init()) return -1;
+
+        // `m_running` is a private data member of type bool, and was set to true by `init()`.
+        
+        // `m_window` is a WindowManager class, and `shouldClose()` seems to be a wrapper? not sure if it is the right term, i dont really understand 
+        // wrapper. [Done]
+        // Q: What is a wrapper?
+        // A: A wrapper is a function or class that “wraps around” another function, library, or system to make it easier, safer, or cleaner to use. It
+        // hides complexity of the underlying system. It can change the interface to be more convenient or type - safe. The rest of your code doesn’t
+        // need to know about the internal details.
+        
+        // `m_` seems to be a prefix for manager, not sure what it is suppose to mean? [Done]
+        // Q: What does the m_ prefix mean ?
+        // A : In C++, m_ is a convention for member variables. m_ stands for member. It tells you the variable belongs to the class instance, not a
+        // local variable or parameter. It has nothing to do with “manager”, even if it looks like that.
+
+        // Q: Is m_window->shouldClose() calling itself recursively?
+        // A: No.Engine::m_window is a WindowManager*, and WindowManager::shouldClose() calls glfwWindowShouldClose() on its GLFW window member.
+        // They just happen to share the name m_window.
         while (m_running && !m_window->shouldClose()) {
+            //
             m_time->beginFrame();
-            m_window->poll();
+            m_window->poll(); // seems to be another wrapper
 
             // game loop
             update(m_time->delta());

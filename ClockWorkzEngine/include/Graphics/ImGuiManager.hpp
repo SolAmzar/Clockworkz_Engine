@@ -19,12 +19,11 @@ struct GLFWwindow;
 namespace Graphics{
 	class ImGuiManager{
 	public:
-		bool init(GLFWwindow* window);
 
 		ImGuiManager() = default; //Ctor
 		~ImGuiManager(); //Destructor
 
-		bool init(void* glfwWindow);
+		bool init(GLFWwindow* window);
 		void shutdown();
 		void beginFrame();
 		void endFrame();
