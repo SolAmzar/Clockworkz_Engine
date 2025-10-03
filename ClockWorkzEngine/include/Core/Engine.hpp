@@ -51,29 +51,30 @@ namespace Core {
 		void update(double dt);
 		void render();
 
-		// Core
+	private: // engine seems to be made up of unique_ptr to class, like an instance?
+		// Inside namespace Core
 		std::unique_ptr<Config> m_config;
 		std::unique_ptr<Logger> m_logger;
 		std::unique_ptr<Time>   m_time;
 
-		// Platform
+		// Inside namespace Platform
 		std::unique_ptr<Platform::WindowManager> m_window;
 		std::unique_ptr<Platform::InputManager>  m_input;
 
-		// Graphics
+		// Inside namespace Graphics
 		std::unique_ptr<Graphics::GraphicsManager>   m_gfx;
 		std::unique_ptr<Graphics::RenderingManager>  m_renderer;
 		std::unique_ptr<Graphics::Camera2D>          m_camera;
 		std::unique_ptr<Graphics::ImGuiManager>		 m_imgui;
 
+		// Inside namespace Audio
 		std::unique_ptr<Audio::AudioManager> m_audio;
 
-		// Run Time
+		// Inside namespace Runtime
 		std::unique_ptr<Runtime::GameStateManager> m_gsm;
-		bool m_booted{ false }; // flag for Game state change
 
-
-		// Engine
-		bool m_running{ false };
+	private: // simple data member
+		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}
+		bool m_running{ false }; // Is the engine running?
 	};
 }
