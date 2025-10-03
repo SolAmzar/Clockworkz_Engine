@@ -11,6 +11,7 @@
 				- Serving as a lightweight, header-only utility for AABB collision detection
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
+/******************************************************************************/
 
 #include "Physics/Collision.hpp"
 #include <algorithm>
