@@ -18,6 +18,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 /******************************************************************************/
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/GameState.hpp"
+#include <Core/Time.hpp>
 
 using namespace Runtime;
 
@@ -47,6 +48,8 @@ void GameStateManager::update(double dt) {
 	if (!m_states.empty()) m_states.top()->update(dt);
 }
 
-void GameStateManager::render() {
-	if (!m_states.empty()) m_states.top()->render();
+void GameStateManager::render(Core::Time* timer) {
+	if (!m_states.empty()) {
+		m_states.top()->render(timer);
+	}
 }

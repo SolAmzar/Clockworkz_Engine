@@ -14,6 +14,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(ImportDependencies)
 importDependencies()  # fetch/build GLFW, GLEW, GLM, FreeType, ImGui
 
+# ---- nlohmann JSON ----
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.11.3 # stable version
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+# ----Compiling using GLEW (For IMGUI) ----
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
+
 # --- Sources & Headers ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/src/*.cpp"
@@ -27,10 +38,10 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
 # Fallback if empty (lets you configure before writing code)
 if(ENGINE_SOURCES STREQUAL "" AND ENGINE_HEADERS STREQUAL "")
   file(WRITE "${CMAKE_BINARY_DIR}/_dummy.cpp" "int main(){return 0;}\n")
-  set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp")
+  set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp" "src/Graphics/IMGUI.cpp" "src/Graphics/ImGuiManager.cpp")
 endif()
 
-add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp")
 
 # --- Optionally import FMOD ---
 if(ENGINE_ENABLE_FMOD)
@@ -102,6 +113,53 @@ if(EXISTS "${ENGINE_ASSETS_DIR}")
   )
 endif()
 
+# --- copy fmod into build/fmod for Visual Studio ---
+set(ENGINE_FMOD_DIR "${CMAKE_SOURCE_DIR}/fmod")
+if(EXISTS "${ENGINE_FMOD_DIR}")
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${ENGINE_FMOD_DIR}"
+      "${CMAKE_BINARY_DIR}/fmod")
+endif()
+
+# --- Copy FMOD runtime DLL into build/bin ---
+if (ENGINE_ENABLE_FMOD AND WIN32)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/")
+endif()
+
+# Collect asset files
+file(GLOB_RECURSE ENGINE_ASSETS CONFIGURE_DEPENDS
+  "${CMAKE_SOURCE_DIR}/assets/*.*"
+)
+
+# Add them to the project so Visual Studio shows them
+target_sources(${PROJECT_NAME} PRIVATE ${ENGINE_ASSETS})
+
+# Put them in their own filter
+source_group(TREE "${CMAKE_SOURCE_DIR}/assets" PREFIX "Assets" FILES ${ENGINE_ASSETS})
+
+# Make CMake aware of asset files so rebuild triggers on changes
+set(ENGINE_ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets")
+file(GLOB_RECURSE ENGINE_ASSETS CONFIGURE_DEPENDS
+  "${ENGINE_ASSETS_DIR}/*.*"
+)
+
+# Add a custom target to always copy assets
+add_custom_target(copy_assets ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${ENGINE_ASSETS_DIR}"
+    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${ENGINE_ASSETS_DIR}"
+    "${CMAKE_BINARY_DIR}/assets"
+  DEPENDS ${ENGINE_ASSETS}
+)
+
+# Make the exe depend on this
+add_dependencies(${PROJECT_NAME} copy_assets)
 
 
 # --- Default startup project in Visual Studio ---

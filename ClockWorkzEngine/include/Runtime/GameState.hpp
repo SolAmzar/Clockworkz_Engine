@@ -18,16 +18,17 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 /******************************************************************************/
 
 #pragma once
-
+namespace Core {
+	class Logger; class Time;
+}
 namespace Runtime {
-
 	class GameState {
 	public:
 		virtual ~GameState() = default;
 		virtual void onEnter() {}
 		virtual void onExit() {}
 		virtual void update(double dt) = 0;
-		virtual void render() = 0;
+		virtual void render(Core::Time* timer) = 0;
 		virtual const char* name() const { return "GameState"; }
 	};
 

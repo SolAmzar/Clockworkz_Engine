@@ -48,6 +48,7 @@ namespace Runtime {
 
 		const std::string& name() const;
 		std::vector<std::unique_ptr<Gameplay::GameObject>>& objects();
+		bool saveToFile(const std::string& filepath);
 	private:
 		std::string m_name;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> m_objects;

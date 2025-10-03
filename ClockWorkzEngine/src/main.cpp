@@ -1,5 +1,10 @@
 #include "Core/Engine.hpp"
-int main() { Core::Engine engine; return engine.Run(); }
+#include <Gameplay/Components/Prefab.hpp>
+
+int main() { 
+    Gameplay::setupGameBlueprints();
+    Core::Engine engine; 
+    return engine.Run(); }
 
 /*
 #include <GL/glew.h>
