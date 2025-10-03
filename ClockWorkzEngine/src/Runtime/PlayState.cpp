@@ -10,7 +10,7 @@
                 - Rendering the game world each frame (Game Object Render not done yet)
                 - Transitioning back to other states (e.g., pause or menu)
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -34,6 +34,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <chrono>
 #include <thread>
 #include <memory>
+#include <Core/Time.hpp>
 
 namespace Runtime {
     PlayState::PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm)
@@ -97,7 +98,7 @@ namespace Runtime {
         m_scenes.update(dt);
     }
 
-    void PlayState::render() {
+    void PlayState::render(Core::Time* timer) {
         if (!m_loaded) return;
         m_scenes.render();
 

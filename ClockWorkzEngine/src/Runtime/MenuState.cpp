@@ -1,16 +1,16 @@
-/******************************************************************************/
+ï»¿/******************************************************************************/
 /*!
 \file           MenuState.cpp
 \project        Lights Out
 \author(s)      [Lebon], 70%, [Amirul Syafiq] 30%
-\brief          Declares MenuState, the state representing the game’s main menu.
+\brief          Declares MenuState, the state representing the gameï¿½s main menu.
                 Responsibilities include:
                 - Displaying menu options such as Start, Options, Credits, Exit
                 - Handling keyboard and mouse input for menu navigation
                 - Triggering state transitions (e.g., moving from menu to PlayState)
                 - Rendering UI text using FontManager and Shader resources
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -31,6 +31,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <chrono>
 #include <thread>
 #include <memory>
+#include <sstream>
+#include "Core/Time.hpp"
 
 using ClockWorkz::Assets::ResourceManager;
 using Graphics::Shader;
@@ -46,8 +48,8 @@ namespace Runtime {
 
 
 
-    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input,Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn) 
-        : m_gsm(gsm) , m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn))
+    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn)
+        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn))
     {
     }
 
@@ -71,6 +73,10 @@ namespace Runtime {
 
         ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
             "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72
+        );
+
+        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+            "Debug", "assets/fonts/ANUNEDW_.TTF", 24
         );
 
         /* Syafiq*/
@@ -110,6 +116,12 @@ namespace Runtime {
             if (m_quitFn) m_quitFn();
             return;
         }
+        //yusuf
+        if (choice == "Load Game")
+        {
+            m_gsm.switchTo(std::make_shared<PlayState>("Level_01_autosave"));
+            return;
+        }
 
         std::cout << "[" << choice << "] selected (no state change).\n";
     }
@@ -142,7 +154,7 @@ namespace Runtime {
         }*/
     }
 
-    void MenuState::render() {
+    void MenuState::render(Core::Time* timer) {
         // Later, retrieve them anywhere:
         auto shader = ResourceManager<Shader>::Get("text");
         shader->use();
@@ -161,14 +173,25 @@ namespace Runtime {
 
         auto titleFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Title");
         auto subFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Subtitle");
+        auto debugFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Debug");
+        
         auto selectFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Selection");
 
         if (titleFont) {
-            titleFont->RenderText("Lights Out", w/2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+            titleFont->RenderText("Lights Out", w / 2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
         }
-            
+
         if (subFont) {
             subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+        }
+
+        if (debugFont) {
+            if (timer) {
+                std::stringstream ss{ };
+                ss << "FPS: " << timer->fps();
+                debugFont->RenderText(ss.str(), 10.f, h-40.f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+            }
+           
         }
 
         //Start: Syafiq
@@ -181,7 +204,7 @@ namespace Runtime {
                 const std::string& item = m_items[i];
 
 
-                glm::vec3 selCol = (i ==m_selected) ? selectedCol: normalCol;
+                glm::vec3 selCol = (i == m_selected) ? selectedCol : normalCol;
 
                 shader->setVec3("textColor", selCol);
 
@@ -191,7 +214,7 @@ namespace Runtime {
                 float xPos = (w / 2.0f) - (textWidth / 2.0f);
 
                 selectFont->RenderText(item, xPos, yPos, 0.8f, selCol);
-                
+
             }
         }
 
@@ -203,7 +226,7 @@ namespace Runtime {
         }
         ImGui::End();
         //End: Syafiq
-            
+
     }
 
     void MenuState::onExit() {

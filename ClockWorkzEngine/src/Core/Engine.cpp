@@ -60,7 +60,7 @@ namespace Core {
         m_camera = std::make_unique<Graphics::Camera2D>();
         m_imgui = std::make_unique<Graphics::ImGuiManager>();
 
-        m_config->loadFromFile("assets/config.json");
+        m_config->loadFromFile("assets/configs/engine_config.json");
         m_logger->init();
         m_logger->info("Engine init...");
 
@@ -91,12 +91,29 @@ namespace Core {
 
     void Engine::shutdown() {
         if (m_logger) m_logger->info("Engine shutdown.");
+        
+        // ADD THIS: Clean up game state manager (which will unload scenes)
+        if (m_gsm) {
+            // Pop all states, which triggers their onExit() methods
+            while (m_gsm->top()) {
+                m_gsm->pop();
+            }
+            m_gsm.reset();
+        }
+
         if (m_imgui) {
             m_imgui->shutdown();
             m_imgui.reset();
         }
-        m_renderer.reset(); m_gfx.reset(); m_input.reset(); m_window.reset();
-        m_time.reset(); m_logger.reset(); m_config.reset(); m_camera.reset();
+
+        m_renderer.reset();
+        m_gfx.reset();
+        m_input.reset();
+        m_window.reset();
+        m_time.reset();
+        m_logger.reset();
+        m_config.reset();
+        m_camera.reset();
         m_audio.reset();
     }
 
@@ -122,7 +139,7 @@ namespace Core {
     void Engine::render() {
         // clear & present
         // (Clear happens inside RenderingManager::beginFrame)
-        m_gsm->render();
+        m_gsm->render(m_time.get());
 
         if (m_renderer && m_camera) {
             m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
