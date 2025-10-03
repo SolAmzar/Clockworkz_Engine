@@ -1,3 +1,21 @@
+/******************************************************************************/
+/*!
+\file           Vec2.hpp
+\project        Lights Out
+\author(s)      [Amzar]
+\brief          Establishes a 2D vector structure with common vector operations.
+				Responsibilities include:
+				- Defining a vec2 struct with x and y components
+				- Implementing constructors for initialization
+				- Overloading arithmetic operators (+, -, *, /) for vector math
+				- Providing utility functions like dot product, cross product, normalization, length, and angle calculations
+				- Including helper functions for linear interpolation, perpendicular vectors, projection, reflection, and rotation
+				- Serving as a lightweight, header-only math utility for 2D vector operations
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+
+
 #pragma once
 #ifndef VEC2
 #define VEC2

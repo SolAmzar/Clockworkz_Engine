@@ -89,6 +89,8 @@ namespace Runtime {
             "assets/shaders/text.vert",
             "assets/shaders/text.frag"
         );
+
+        m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
     }
 
     void MenuState::printMenu() {
@@ -127,6 +129,7 @@ namespace Runtime {
     }
 
     void MenuState::update(double /*dt*/) {
+		
         // Keys: arrows or WASD
         if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
             m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
@@ -156,6 +159,13 @@ namespace Runtime {
 
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
+        if (m_input.wasKeyTriggered(GLFW_KEY_P)) {
+            std::cout << "P pressed � toggling BGM\n";
+			m_bgmPaused = !m_bgmPaused;
+            if (m_bgmChannel) m_audio.setPaused(m_bgmChannel, m_bgmPaused);
+        }
+        if (m_input.wasKeyPressed(GLFW_KEY_M)) m_audio.setGroupVolume(Audio::Group::BGM, 0.0f);
+        if (m_input.wasKeyPressed(GLFW_KEY_U)) m_audio.setGroupVolume(Audio::Group::BGM, 0.7f);
 
        /* if (m_dirty) {
             printMenu();
