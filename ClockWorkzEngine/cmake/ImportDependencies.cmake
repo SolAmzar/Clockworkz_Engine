@@ -371,9 +371,9 @@ macro(importDependencies)
     import_freetype()
     message(STATUS "FreeType imported successfully.")
 
-    message(STATUS "Importing ImGui...")
-    import_imgui()
-    message(STATUS "ImGui imported successfully.")
+    # message(STATUS "Importing ImGui...")
+    # import_imgui()
+    # message(STATUS "ImGui imported successfully.")
 
     message(STATUS "All dependencies have been imported successfully.")
 endmacro()
