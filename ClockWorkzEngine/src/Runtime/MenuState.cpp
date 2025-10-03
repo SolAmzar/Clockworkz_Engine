@@ -146,6 +146,14 @@ namespace Runtime {
             
         }
 
+        if (m_input.wasKeyPressed(GLFW_KEY_0)) {
+            m_debug = !m_debug;
+            if (m_debug) {
+                std::cout << "Debug is pressed\n";
+            }
+            return;
+        }
+
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
 
@@ -218,10 +226,13 @@ namespace Runtime {
             }
         }
 
-        /*Implement the IMGUI*/
-        ImGui::Begin("Welcome to Lights Out");
-        ImGui::Text("Press the [Down] button first before pressing [Enter]");
-        ImGui::End();
+        if (m_debug) {
+            /*Implement the IMGUI*/
+            ImGui::Begin("Welcome to Lights Out");
+            ImGui::Text("Press [Down] & [UP]");
+            ImGui::Text("[Enter] to select");
+            ImGui::End();
+        }
         //End: Syafiq
 
     }

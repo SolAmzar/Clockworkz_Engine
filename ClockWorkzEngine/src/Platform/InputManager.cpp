@@ -47,11 +47,13 @@ namespace Platform {
         trackKey(GLFW_KEY_S);
         trackKey(GLFW_KEY_A);
         trackKey(GLFW_KEY_D);
-
+   
         trackKey(GLFW_KEY_ENTER);
         trackKey(GLFW_KEY_KP_ENTER);
         trackKey(GLFW_KEY_ESCAPE);
         trackKey(GLFW_KEY_SPACE);
+
+        trackKey(GLFW_KEY_0);
 
         trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
         trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);

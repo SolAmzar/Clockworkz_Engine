@@ -62,6 +62,7 @@ namespace Runtime {
 
         int  m_selected{ 0 };
         bool m_dirty{ true };
+        bool m_debug{ false };
     };
 
 } // namespace Runtime

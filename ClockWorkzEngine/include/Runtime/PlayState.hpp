@@ -41,6 +41,7 @@ namespace Runtime {
 		Platform::InputManager& m_input;
 		GameStateManager& m_gsm;
 		bool m_loaded{ false };
+		bool m_debug{ false };
 	};
 
 } // namespace Runtime
