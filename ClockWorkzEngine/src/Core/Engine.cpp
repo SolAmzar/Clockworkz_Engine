@@ -31,6 +31,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <GLFW/glfw3.h>
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/MenuState.hpp"
+#include "Graphics/ImGuiManager.hpp"
 
 using namespace Core;
 
@@ -57,6 +58,7 @@ namespace Core {
         m_gfx = std::make_unique<Graphics::GraphicsManager>();
         m_renderer = std::make_unique<Graphics::RenderingManager>();
         m_camera = std::make_unique<Graphics::Camera2D>();
+        m_imgui = std::make_unique<Graphics::ImGuiManager>();
 
         m_config->loadFromFile("assets/configs/engine_config.json");
         m_logger->init();
@@ -70,6 +72,9 @@ namespace Core {
         m_input->init(*m_window);
         if (!m_gfx->init(*m_window)) return false;
         if (!m_renderer->init()) return false;
+
+        if (!m_imgui->init(m_window->handle())) return false;
+
 
         m_camera->setOrtho((float)m_window->width(), (float)m_window->height(), 1.0f);
         m_gsm = std::make_unique<Runtime::GameStateManager>();
@@ -86,7 +91,7 @@ namespace Core {
 
     void Engine::shutdown() {
         if (m_logger) m_logger->info("Engine shutdown.");
-
+        
         // ADD THIS: Clean up game state manager (which will unload scenes)
         if (m_gsm) {
             // Pop all states, which triggers their onExit() methods
@@ -94,6 +99,11 @@ namespace Core {
                 m_gsm->pop();
             }
             m_gsm.reset();
+        }
+
+        if (m_imgui) {
+            m_imgui->shutdown();
+            m_imgui.reset();
         }
 
         m_renderer.reset();
@@ -104,6 +114,7 @@ namespace Core {
         m_logger.reset();
         m_config.reset();
         m_camera.reset();
+        m_audio.reset();
     }
 
     void Engine::update(double dt) {
@@ -148,8 +159,13 @@ namespace Core {
             update(m_time->delta());
 
             m_renderer->beginFrame(*m_camera);
+            m_imgui->beginFrame();
+
             // TODO: submit sprites/meshes here in M2
             render();
+          
+            m_imgui->endFrame();
+
             m_renderer->endFrame();
 
             m_window->swap();
