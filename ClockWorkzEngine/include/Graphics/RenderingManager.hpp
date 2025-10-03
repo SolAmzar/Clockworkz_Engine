@@ -2,7 +2,7 @@
 /*!
 \file           RenderingManager.hpp
 \project        Lights Out
-\author(s)      [Wei An]
+\author(s)      [Wei An] 100%
 \brief          Declares RenderingManager, the graphics subsystem responsible
                 for all debug and primitive rendering in the engine.
                 Responsibilities include:
