@@ -17,9 +17,9 @@ namespace Gameplay {
 	struct GameObjectBlueprint {
 
 		//Initial base object
-		GameObjectType type;
-		std::string name;
-		std::string textureId;
+		GameObjectType type{};
+		std::string name{};
+		std::string textureId{};
 
 		//Positional 
 		glm::vec2 position{ 0.0f,0.0f };
