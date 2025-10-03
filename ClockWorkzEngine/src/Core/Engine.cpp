@@ -134,7 +134,7 @@ namespace Core {
             m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
 
             // Draw a red rectangle at (200, 150) with width 300 and height 200
-            m_renderer->drawRect(200.0f, 150.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
+            m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
         }
     }
 
