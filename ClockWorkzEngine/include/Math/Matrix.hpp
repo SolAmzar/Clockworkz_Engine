@@ -1,10 +1,20 @@
-// mat.hpp — header-only matrix library that plugs into your existing vec headers
-// Engine style: column-major matrices, right-handed lookAt, row vectors are NOT used.
-// Public API focuses on Mat2/Mat3/Mat4 with float elements, integrating with vec2/3/4.
-//
-// Include order: make sure your vec2.hpp, vec3.hpp, vec4.hpp are in the include path.
-// If your vector types live in a namespace, adjust the `using` lines below.
+/******************************************************************************/
+/*!
+\file           Matrix.hpp
+\project        Lights Out
+\author(s)      [Amzar]
+\brief          Helps with common matrix operations for 2D/3D transformations.
+                Responsibilities include:
+                - Defining Mat2, Mat3, and Mat4 structures for 2x2, 3x3, and 4x4 matrices
+                - Providing constructors and identity matrix functions
+                - Implementing common transformation builders (translation, rotation, scale)
+                - Overloading operators for matrix multiplication and vector transformation
+                - Including utility functions for determinant and inverse of Mat4
+				- Serving as a lightweight, header-only math utility for graphics applications
 
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #pragma once
 
 #include <cmath>
@@ -16,17 +26,14 @@
 #include "Math/vec3.hpp"
 #include "Math/vec4.hpp"
 
-// If your vectors are under a namespace, e.g., cwz::vec3, add `using` aliases here:
-// using vec2 = cwz::vec2; using vec3 = cwz::vec3; using vec4 = cwz::vec4;
-
 namespace cwz {
 
     struct Mat2 {
         // Column-major storage: m[col][row]
         //   | m00 m01 |
         //   | m10 m11 |
-        float m00, m10; // column 0
-        float m01, m11; // column 1
+        float m00, m10; 
+        float m01, m11; 
 
         // Constructors
         constexpr Mat2() : m00(1), m10(0), m01(0), m11(1) {}
@@ -77,9 +84,9 @@ namespace cwz {
         // [ m00 m01 m02 ]
         // [ m10 m11 m12 ]
         // [ m20 m21 m22 ]
-        float m00, m10, m20; // col 0
-        float m01, m11, m21; // col 1
-        float m02, m12, m22; // col 2
+        float m00, m10, m20; 
+        float m01, m11, m21; 
+        float m02, m12, m22; 
 
         constexpr Mat3()
             : m00(1), m10(0), m20(0), m01(0), m11(1), m21(0), m02(0), m12(0), m22(1) {
@@ -138,10 +145,10 @@ namespace cwz {
         // [ m10 m11 m12 m13 ]
         // [ m20 m21 m22 m23 ]
         // [ m30 m31 m32 m33 ]
-        float m00, m10, m20, m30; // col 0
-        float m01, m11, m21, m31; // col 1
-        float m02, m12, m22, m32; // col 2
-        float m03, m13, m23, m33; // col 3
+        float m00, m10, m20, m30; 
+        float m01, m11, m21, m31; 
+        float m02, m12, m22, m32; 
+        float m03, m13, m23, m33; 
 
         constexpr Mat4()
             : m00(1), m10(0), m20(0), m30(0),
@@ -209,7 +216,7 @@ namespace cwz {
             r.m32 = -1.0f;
             r.m23 = (2.0f * zFar * zNear) / (zNear - zFar);
             r.m33 = 0.0f;
-            r.m03 = r.m13 = 0.0f; // ensure
+            r.m03 = r.m13 = 0.0f; 
             return r;
         }
 

@@ -1,4 +1,19 @@
-// math/vec4.hpp
+/******************************************************************************/
+/*!
+\file           Vec4.hpp
+\project        Lights Out
+\author(s)      [Amzar]
+\brief          Establishes 4D vector structure with common vector operations.
+				Responsibilities include:
+				- Defining a vec4 struct with x, y, z, and w components
+				- Implementing constructors for initialization
+				- Overloading arithmetic operators (+, -, *, /) for vector math
+				- Providing utility functions like dot product, normalization, length
+				- Including helper functions for linear interpolation and conversion to vec3
+				- Serving as a lightweight, header-only math utility for 4D vector operations
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+
 #pragma once
 #include "config.hpp"  // f32, Epsilon
 #include "vec3.hpp"
