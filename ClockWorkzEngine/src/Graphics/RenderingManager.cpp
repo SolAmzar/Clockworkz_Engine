@@ -123,6 +123,10 @@ void RenderingManager::drawVelocity(const glm::vec2& pos, const glm::vec2& vel, 
 }
 
 void RenderingManager::beginFrame(const Camera2D& cam) {
+    // Clear buffers at the start of a new frame
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // background color
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glUseProgram(m_shader);
     glUniformMatrix4fv(glGetUniformLocation(m_shader, "uProjection"), 
                        1, GL_FALSE, &cam.viewProj()[0][0]);
