@@ -86,9 +86,24 @@ namespace Core {
 
     void Engine::shutdown() {
         if (m_logger) m_logger->info("Engine shutdown.");
-        m_renderer.reset(); m_gfx.reset(); m_input.reset(); m_window.reset();
-        m_time.reset(); m_logger.reset(); m_config.reset(); m_camera.reset();
-        m_audio.reset();
+
+        // ADD THIS: Clean up game state manager (which will unload scenes)
+        if (m_gsm) {
+            // Pop all states, which triggers their onExit() methods
+            while (m_gsm->top()) {
+                m_gsm->pop();
+            }
+            m_gsm.reset();
+        }
+
+        m_renderer.reset();
+        m_gfx.reset();
+        m_input.reset();
+        m_window.reset();
+        m_time.reset();
+        m_logger.reset();
+        m_config.reset();
+        m_camera.reset();
     }
 
     void Engine::update(double dt) {
