@@ -62,7 +62,7 @@ namespace Runtime {
                         "Exit Game" };
         }
 
-        printMenu();
+        //printMenu();
 
         ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
             "Title", "assets/fonts/ANUNE___.TTF", 48
@@ -115,16 +115,30 @@ namespace Runtime {
 
     void MenuState::update(double /*dt*/) {
         // Keys: arrows or WASD
-        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) (moveUp(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
-        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) (moveDown(), m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f));
+        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
+            m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+            moveUp();
+            
+        }
+        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
+            m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+            moveDown();
+            
+        }
 
         // Enter / KP_Enter to select
-        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) (select(), m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120)));
+        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
+            m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120));
+            select();
+            
+        }
 
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
 
-        if (m_dirty) printMenu();
+       /* if (m_dirty) {
+            printMenu();
+        }*/
     }
 
     void MenuState::render() {
