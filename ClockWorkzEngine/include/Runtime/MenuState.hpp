@@ -24,6 +24,7 @@ namespace ClockWorkz::Assets { class FontManager; }
 namespace Platform { class InputManager; class WindowManager; }
 namespace Runtime { class GameStateManager; }
 namespace Audio { class AudioManager; }
+namespace Core { class Time; }  // forward declare
 
 namespace Runtime {
 
@@ -36,7 +37,7 @@ namespace Runtime {
         void onEnter() override;
         void onExit()  override;
         void update(double dt) override;
-        void render() override;
+        void render(Core::Time* timer) override;
 
 
     private:

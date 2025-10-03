@@ -30,6 +30,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <chrono>
 #include <thread>
 #include <memory>
+#include <sstream>
+#include "Core/Time.hpp"
 
 using ClockWorkz::Assets::ResourceManager;
 using Graphics::Shader;
@@ -70,6 +72,10 @@ namespace Runtime {
 
         ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
             "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72
+        );
+
+        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+            "Debug", "assets/fonts/ANUNEDW_.TTF", 24
         );
 
         /* Syafiq*/
@@ -147,7 +153,7 @@ namespace Runtime {
         }*/
     }
 
-    void MenuState::render() {
+    void MenuState::render(Core::Time* timer) {
         // Later, retrieve them anywhere:
         auto shader = ResourceManager<Shader>::Get("text");
         shader->use();
@@ -166,6 +172,8 @@ namespace Runtime {
 
         auto titleFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Title");
         auto subFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Subtitle");
+        auto debugFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Debug");
+        
         auto selectFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Selection");
 
         if (titleFont) {
@@ -174,6 +182,15 @@ namespace Runtime {
 
         if (subFont) {
             subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+        }
+
+        if (debugFont) {
+            if (timer) {
+                std::stringstream ss{ };
+                ss << "FPS: " << timer->fps();
+                debugFont->RenderText(ss.str(), 10.f, h-40.f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+            }
+           
         }
 
         //Start: Syafiq
