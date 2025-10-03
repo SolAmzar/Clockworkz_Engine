@@ -73,6 +73,9 @@ FetchContent_Declare(
   GIT_TAG v3.11.3 # stable version
 )
 FetchContent_MakeAvailable(nlohmann_json)
+# ----Compiling using GLEW (For IMGUI) ----
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
+
 
 # ---- FMOD (Core/low-level) ----
 option(ENGINE_ENABLE_FMOD "Enable FMOD audio" ON)
@@ -92,10 +95,10 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
 # Fallback if empty (lets you configure before writing code)
 if(ENGINE_SOURCES STREQUAL "" AND ENGINE_HEADERS STREQUAL "")
   file(WRITE "${CMAKE_BINARY_DIR}/_dummy.cpp" "int main(){return 0;}\n")
-  set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp")
+  set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp" "src/Graphics/IMGUI.cpp" "src/Graphics/ImGuiManager.cpp")
 endif()
 
-add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp")
 
 # Public headers in include/, private headers in src/
 target_include_directories(${PROJECT_NAME}
@@ -118,7 +121,6 @@ if(WIN32)
     user32 
     gdi32 
     shell32
-    nlohmann_json::nlohmann_json
   )
 elseif(APPLE)
   target_link_libraries(${PROJECT_NAME} PRIVATE 
@@ -126,7 +128,6 @@ elseif(APPLE)
     libglew_static
     glm::glm 
     freetype
-    nlohmann_json::nlohmann_json
     "-framework OpenGL"
   )
 else()
@@ -136,7 +137,6 @@ else()
     glm::glm 
     freetype 
     GL
-    nlohmann_json::nlohmann_json
   )
 endif()
 
@@ -311,6 +311,23 @@ if(EXISTS "${ENGINE_ASSETS_DIR}")
       "${CMAKE_BINARY_DIR}/assets")
 endif()
 
+
+# --- copy fmod into build/fmod for Visual Studio ---
+set(ENGINE_FMOD_DIR "${CMAKE_SOURCE_DIR}/fmod")
+if(EXISTS "${ENGINE_FMOD_DIR}")
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${ENGINE_FMOD_DIR}"
+      "${CMAKE_BINARY_DIR}/fmod")
+endif()
+
+# --- Copy FMOD runtime DLL into build/bin ---
+if (ENGINE_ENABLE_FMOD AND WIN32)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/")
+endif()
 
 # Collect asset files
 file(GLOB_RECURSE ENGINE_ASSETS CONFIGURE_DEPENDS

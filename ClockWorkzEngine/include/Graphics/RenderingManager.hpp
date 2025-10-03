@@ -1,3 +1,22 @@
+/******************************************************************************/
+/*!
+\file           RenderingManager.hpp
+\project        Lights Out
+\author(s)      [Wei An]
+\brief          Declares RenderingManager, the graphics subsystem responsible
+                for all debug and primitive rendering in the engine.
+                Responsibilities include:
+                - Initializing and managing OpenGL resources for rendering
+                - Providing methods to draw points, lines, rectangles, circles,
+                  and other debug primitives
+                - Supporting frame lifecycle (beginFrame, endFrame) and camera
+                - Offering convenience methods for game object visualization
+                - Used by Engine and game states to visualize gameplay and debug
+                - Coordinates with GraphicsManager for rendering state
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #pragma once
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>

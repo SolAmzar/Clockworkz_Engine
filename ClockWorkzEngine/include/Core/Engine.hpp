@@ -20,6 +20,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 #pragma once
 #include <memory>
+#include "Graphics/ImGuiManager.hpp"
+
 namespace Runtime { class GameStateManager; class MenuState; }
 
 namespace Audio { class AudioManager; }
@@ -62,6 +64,7 @@ namespace Core {
 		std::unique_ptr<Graphics::GraphicsManager>   m_gfx;
 		std::unique_ptr<Graphics::RenderingManager>  m_renderer;
 		std::unique_ptr<Graphics::Camera2D>          m_camera;
+		std::unique_ptr<Graphics::ImGuiManager>		 m_imgui;
 
 		std::unique_ptr<Audio::AudioManager> m_audio;
 
