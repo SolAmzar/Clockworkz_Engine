@@ -22,6 +22,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <GL/glew.h>
 #include <vector>
 #include <cmath>
+#include <Assets/ResourceManager.hpp>
+#include <Graphics/Shader.hpp>
 
 namespace Graphics {
 
@@ -70,6 +72,13 @@ namespace Graphics {
 		// Create buffers
 		glGenVertexArrays(1, &m_vao);
 		glGenBuffers(1, &m_vbo);
+
+		m_renderer2D.init();
+
+		// Critical GL state for 2D sprites
+		glDisable(GL_DEPTH_TEST);                     // 2D: avoid depth hiding sprites
+		glEnable(GL_BLEND);                           // enable alpha blending
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		return true;
 	}
@@ -142,11 +151,36 @@ namespace Graphics {
 		drawLine(pos.x, pos.y, pos.x + vel.x, pos.y + vel.y, color.r, color.g, color.b);
 	}
 
+	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
+		const glm::vec2& size, const glm::vec4& color)
+	{
+		m_renderer2D.drawQuad(
+			pos.x, pos.y, size.x, size.y,
+			1, 1, texId,
+			0, 0, 1, 1,
+			color.r, color.g, color.b, color.a
+		);
+	}
+
 	void RenderingManager::beginFrame(const Camera2D& cam) {
 		// Clear buffers at the start of a new frame
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // background color
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// Activate texture shader
+		if (auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture")) {
+			shader->use();
+			shader->setMat4("projection", cam.viewProj());
+
+			// Ensure sampler 'image' uses GL_TEXTURE0
+			int loc = glGetUniformLocation(shader->ID, "image");
+			if (loc >= 0) glUniform1i(loc, 0);
+		}
+
+		// Pass VP to the 2D renderer so it can upload 'projection' when drawing
+		m_renderer2D.begin(cam.viewProj());
+
+		// Optional: also keep debug shader for overlays
 		glUseProgram(m_shader);
 		glUniformMatrix4fv(glGetUniformLocation(m_shader, "uProjection"), 1, GL_FALSE, &cam.viewProj()[0][0]);
 	}

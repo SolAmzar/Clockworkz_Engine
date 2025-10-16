@@ -30,7 +30,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <ft2build.h> // Free Type Library
 #include FT_FREETYPE_H
 
-namespace ClockWorkz::Assets
+namespace Assets
 {
 
   struct Character

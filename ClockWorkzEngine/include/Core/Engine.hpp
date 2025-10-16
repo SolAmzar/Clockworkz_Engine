@@ -1,4 +1,4 @@
-/******************************************************************************/
+﻿/******************************************************************************/
 /*!
 \file           Engine.hpp
 \project        Lights Out
@@ -14,7 +14,7 @@
 				Serves as the core runtime that coordinates gameplay, rendering,
 				and platform-level services.
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -42,9 +42,20 @@ namespace Core {
 		Engine();
 		~Engine();
 		int Run();
+
 		Audio::AudioManager& audio();
 		Audio::AudioManager const& audio() const;
 
+		// --- Accessors ---
+		static Engine& Get();  // Singleton accessor
+
+		// Subsystem accessors
+		Graphics::RenderingManager& rendering() { return *m_renderer; }
+		Graphics::GraphicsManager& graphics() { return *m_gfx; }
+		Graphics::Camera2D& camera() { return *m_camera; }
+		Platform::WindowManager& window() { return *m_window; }
+		Platform::InputManager& input() { return *m_input; }
+		//Audio::AudioManager& audio() { return *m_audio; }
 	private:
 		bool init();
 		void shutdown();
@@ -76,5 +87,6 @@ namespace Core {
 	private: // simple data member
 		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}
 		bool m_running{ false }; // Is the engine running?
+		static Engine* s_instance;
 	};
 }

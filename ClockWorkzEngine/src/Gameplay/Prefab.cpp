@@ -16,31 +16,43 @@ Provides setupGameBlueprints() to register standard prefabs.
                 Supports a "recipe book" system to easily spawn consistent
                 objects in levels.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
 #include "Gameplay/Components/Prefab.hpp"
+#include "Gameplay/GameObject.hpp"
+#include "Gameplay/Components/SpriteRenderer.hpp"
+#include "Gameplay/Components/Health.hpp"
+#include "Gameplay/Components/DamageDealer.hpp"
+#include "Gameplay/Components/LightOccluder.hpp"
+#include <glm/vec2.hpp>
+#include <memory>
+#include <unordered_map>
+namespace Gameplay
+{
 
-namespace Gameplay {
-
-    PrefabFactory& PrefabFactory::get() {
-        static PrefabFactory instance; 
+    PrefabFactory &PrefabFactory::get()
+    {
+        static PrefabFactory instance;
         return instance;
     }
 
-    void PrefabFactory::saveBlueprint(const std::string& name, const GameObjectBlueprint& blueprint) {
+    void PrefabFactory::saveBlueprint(const std::string &name, const GameObjectBlueprint &blueprint)
+    {
         blueprints_[name] = blueprint;
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::create(const std::string& blueprintName) {
+    std::unique_ptr<GameObject> PrefabFactory::create(const std::string &blueprintName)
+    {
 
         auto it = blueprints_.find(blueprintName);
-        if (it == blueprints_.end()) {
+        if (it == blueprints_.end())
+        {
             return nullptr;
         }
 
-        const GameObjectBlueprint& blueprint = it->second;
+        const GameObjectBlueprint &blueprint = it->second;
 
         auto gameObject = std::make_unique<GameObject>(blueprint.type, blueprint.name);
 
@@ -49,138 +61,213 @@ namespace Gameplay {
         return gameObject;
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& blueprintName, glm::vec2 position) {
+    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string &blueprintName, glm::vec2 position)
+    {
 
         auto gameObject = create(blueprintName);
 
-        if (gameObject) {
+        if (gameObject)
+        {
             gameObject->transform().position = position;
         }
 
         return gameObject;
     }
 
-    void PrefabFactory::applyBlueprint(GameObject& obj, const GameObjectBlueprint& blueprint) {
-        // Transform properties
-        obj.transform().position = blueprint.position;
-        obj.transform().scale = blueprint.scale;
-        obj.transform().rotationDeg = blueprint.rotation;
-        obj.setSize(blueprint.size);
+    // void PrefabFactory::applyBlueprint(GameObject &obj, const GameObjectBlueprint &blueprint)
+    // {
+    //     // Transform properties
+    //     obj.transform().position = blueprint.position;
+    //     obj.transform().scale = blueprint.scale;
+    //     obj.transform().rotationDeg = blueprint.rotation;
+    //     obj.setSize(blueprint.size);
 
-        // Behavior properties
-        obj.setSolid(blueprint.isSolid);
-        obj.setHazard(blueprint.isHazard);
-        obj.setBlocksLight(blueprint.blocksLight);
+    //     // Behavior properties
+    //     obj.setSolid(blueprint.isSolid);
+    //     obj.setHazard(blueprint.isHazard);
+    //     obj.setBlocksLight(blueprint.blocksLight);
 
-        // Rendering and collision
-        obj.setTextureId(blueprint.textureId);
-        obj.setLayer(blueprint.layer);
-        obj.setCollisionMask(blueprint.collisionMask);
-        obj.setActive(blueprint.active);
+    //     // Rendering and collision
+    //     obj.setTextureId(blueprint.textureId);
+    //     obj.setLayer(blueprint.layer);
+    //     obj.setCollisionMask(blueprint.collisionMask);
+    //     obj.setActive(blueprint.active);
+    // }
 
+    void PrefabFactory::applyBlueprint(GameObject &obj, const GameObjectBlueprint &bp)
+    {
+        obj.setSize(bp.size);
+        obj.setSolid(bp.isSolid);
+        obj.setHazard(bp.isHazard);
+        obj.setBlocksLight(bp.blocksLight);
+        obj.setLayer(bp.layer);
+        obj.setCollisionMask(bp.collisionMask);
+        obj.setActive(bp.active);
+        obj.setTextureId(bp.textureId);
+
+        // Attach standard components
+        obj.addComponent<SpriteRendererComponent>(bp.textureId);
+
+        // Conditional gameplay components
+        if (bp.type == GameObjectType::Player)
+            obj.addComponent<HealthComponent>(3); // Example
+        if (bp.type == GameObjectType::Enemy)
+            obj.addComponent<DamageDealerComponent>(1);
     }
 
     /** Function header comment
      * @brief XXX
-     * 
+     *
      * XXX
-     * 
+     *
      * @param XXX
-     * 
+     *
      * @return XXX
      */
-    void setupGameBlueprints() {
-        auto& factory = PrefabFactory::get();
-
-        // WALL BLUEPRINT
+    void setupGameBlueprints()
+    {
+        auto &factory = PrefabFactory::get();
+        // Floor
         {
-            GameObjectBlueprint wallBP;
-            wallBP.type = GameObjectType::Wall;
-            wallBP.name = "Wall";
-            wallBP.textureId = "wall_texture";
-            wallBP.size = glm::vec2(1.0f, 1.0f);
-            wallBP.isSolid = true;
-            wallBP.blocksLight = true;
-            wallBP.layer = 1;
-
-            factory.saveBlueprint("Wall", wallBP);
+            GameObjectBlueprint bp;
+            bp.type = GameObjectType::Floor;
+            bp.name = "Floor";
+            bp.textureId = "floor_texture";
+            bp.isSolid = false;
+            bp.layer = 0;
+            factory.saveBlueprint("Floor", bp);
         }
 
-        // FLOOR BLUEPRINT  
+        // Wall
         {
-            GameObjectBlueprint floorBP;
-            floorBP.type = GameObjectType::Floor;
-            floorBP.name = "Floor";
-            floorBP.textureId = "floor_texture";
-            floorBP.size = glm::vec2(1.0f, 1.0f);
-            floorBP.isSolid = false;
-            floorBP.layer = 0;
-
-            factory.saveBlueprint("Floor", floorBP);
+            GameObjectBlueprint bp;
+            bp.type = GameObjectType::Wall;
+            bp.name = "Wall";
+            bp.textureId = "wall_texture";
+            bp.isSolid = true;
+            bp.blocksLight = true;
+            bp.layer = 1;
+            factory.saveBlueprint("Wall", bp);
         }
 
-        // PLAYER BLUEPRINT
+        // Player
         {
-            GameObjectBlueprint playerBP;
-            playerBP.type = GameObjectType::Player;
-            playerBP.name = "Player";
-            playerBP.textureId = "player_texture";
-            playerBP.size = glm::vec2(0.8f, 0.8f);
-            playerBP.isSolid = true;
-            playerBP.layer = 2;
-            playerBP.health = 1;
-            playerBP.speed = 5.0f;
-
-            factory.saveBlueprint("Player", playerBP);
+            GameObjectBlueprint bp;
+            bp.type = GameObjectType::Player;
+            bp.name = "Player";
+            bp.textureId = "player_texture";
+            bp.size = {0.8f, 0.8f};
+            bp.isSolid = true;
+            bp.layer = 2;
+            factory.saveBlueprint("Player", bp);
         }
 
-        // NORMAL ENEMY BLUEPRINT
+        // Enemy
         {
-            GameObjectBlueprint enemyBP;
-            enemyBP.type = GameObjectType::Enemy;
-            enemyBP.name = "Enemy";
-            enemyBP.textureId = "enemy_texture";
-            enemyBP.size = glm::vec2(0.9f, 0.9f);
-            enemyBP.isSolid = true;
-            enemyBP.layer = 2;
-            enemyBP.health = 1;
-            enemyBP.damage = 10;
-            enemyBP.speed = 3.0f;
-
-            factory.saveBlueprint("Enemy", enemyBP);
+            GameObjectBlueprint bp;
+            bp.type = GameObjectType::Enemy;
+            bp.name = "Enemy";
+            bp.textureId = "enemy_texture";
+            bp.size = {0.9f, 0.9f};
+            bp.isSolid = true;
+            bp.layer = 2;
+            factory.saveBlueprint("Enemy", bp);
         }
+        // // WALL BLUEPRINT
+        // {
+        //     GameObjectBlueprint wallBP;
+        //     wallBP.type = GameObjectType::Wall;
+        //     wallBP.name = "Wall";
+        //     wallBP.textureId = "wall_texture";
+        //     wallBP.size = glm::vec2(1.0f, 1.0f);
+        //     wallBP.isSolid = true;
+        //     wallBP.blocksLight = true;
+        //     wallBP.layer = 1;
 
-        // FAST ENEMY
-        {
-            GameObjectBlueprint fastEnemyBP;
-            fastEnemyBP.type = GameObjectType::Enemy;
-            fastEnemyBP.name = "FastEnemy";
-            fastEnemyBP.textureId = "fast_enemy_texture";
-            fastEnemyBP.size = glm::vec2(0.7f, 0.7f);
-            fastEnemyBP.isSolid = true;
-            fastEnemyBP.layer = 2;
-            fastEnemyBP.health = 1;
-            fastEnemyBP.damage = 5;
-            fastEnemyBP.speed = 8.0f;
+        //     factory.saveBlueprint("Wall", wallBP);
+        // }
 
-            factory.saveBlueprint("FastEnemy", fastEnemyBP);
-        }
+        // // FLOOR BLUEPRINT
+        // {
+        //     GameObjectBlueprint floorBP;
+        //     floorBP.type = GameObjectType::Floor;
+        //     floorBP.name = "Floor";
+        //     floorBP.textureId = "floor_texture";
+        //     floorBP.size = glm::vec2(1.0f, 1.0f);
+        //     floorBP.isSolid = false;
+        //     floorBP.layer = 0;
 
-        // BIG ENEMY
-        {
-            GameObjectBlueprint bigEnemyBP;
-            bigEnemyBP.type = GameObjectType::Enemy;
-            bigEnemyBP.name = "BigEnemy";
-            bigEnemyBP.textureId = "big_enemy_texture";
-            bigEnemyBP.size = glm::vec2(1.5f, 1.5f);
-            bigEnemyBP.isSolid = true;
-            bigEnemyBP.layer = 2;
-            bigEnemyBP.health = 150;
-            bigEnemyBP.damage = 25;
-            bigEnemyBP.speed = 2.0f;
+        //     factory.saveBlueprint("Floor", floorBP);
+        // }
 
-            factory.saveBlueprint("BigEnemy", bigEnemyBP);
-        }
+        // // PLAYER BLUEPRINT
+        // {
+        //     GameObjectBlueprint playerBP;
+        //     playerBP.type = GameObjectType::Player;
+        //     playerBP.name = "Player";
+        //     playerBP.textureId = "player_texture";
+        //     playerBP.size = glm::vec2(0.8f, 0.8f);
+        //     playerBP.isSolid = true;
+        //     playerBP.layer = 2;
+        //     playerBP.health = 1;
+        //     playerBP.speed = 5.0f;
+        //     playerBP.type = GameObjectType::Player;
+
+        //     // Attach SpriteRendererComponent
+        //     auto player = factory.createAt("Player", glm::vec2(0, 0));
+        //     if (player)
+        //         player->addComponent<SpriteRendererComponent>("player_texture");
+
+        //     factory.saveBlueprint("Player", playerBP);
+        // }
+
+        // // NORMAL ENEMY BLUEPRINT
+        // {
+        //     GameObjectBlueprint enemyBP;
+        //     enemyBP.type = GameObjectType::Enemy;
+        //     enemyBP.name = "Enemy";
+        //     enemyBP.textureId = "enemy_texture";
+        //     enemyBP.size = glm::vec2(0.9f, 0.9f);
+        //     enemyBP.isSolid = true;
+        //     enemyBP.layer = 2;
+        //     enemyBP.health = 1;
+        //     enemyBP.damage = 10;
+        //     enemyBP.speed = 3.0f;
+
+        //     factory.saveBlueprint("Enemy", enemyBP);
+        // }
+
+        // // FAST ENEMY
+        // {
+        //     GameObjectBlueprint fastEnemyBP;
+        //     fastEnemyBP.type = GameObjectType::Enemy;
+        //     fastEnemyBP.name = "FastEnemy";
+        //     fastEnemyBP.textureId = "fast_enemy_texture";
+        //     fastEnemyBP.size = glm::vec2(0.7f, 0.7f);
+        //     fastEnemyBP.isSolid = true;
+        //     fastEnemyBP.layer = 2;
+        //     fastEnemyBP.health = 1;
+        //     fastEnemyBP.damage = 5;
+        //     fastEnemyBP.speed = 8.0f;
+
+        //     factory.saveBlueprint("FastEnemy", fastEnemyBP);
+        // }
+
+        // // BIG ENEMY
+        // {
+        //     GameObjectBlueprint bigEnemyBP;
+        //     bigEnemyBP.type = GameObjectType::Enemy;
+        //     bigEnemyBP.name = "BigEnemy";
+        //     bigEnemyBP.textureId = "big_enemy_texture";
+        //     bigEnemyBP.size = glm::vec2(1.5f, 1.5f);
+        //     bigEnemyBP.isSolid = true;
+        //     bigEnemyBP.layer = 2;
+        //     bigEnemyBP.health = 150;
+        //     bigEnemyBP.damage = 25;
+        //     bigEnemyBP.speed = 2.0f;
+
+        //     factory.saveBlueprint("BigEnemy", bigEnemyBP);
+        // }
     }
 
 }

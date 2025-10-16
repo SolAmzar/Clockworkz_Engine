@@ -20,6 +20,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #pragma once
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include "Graphics/Renderer2D.hpp"
 
 namespace Graphics { 
     class Camera2D; 
@@ -39,8 +40,12 @@ namespace Graphics {
         // Convenience methods for game objects
         void drawAABB(const glm::vec2& min, const glm::vec2& max, const glm::vec3& color);
         void drawVelocity(const glm::vec2& pos, const glm::vec2& vel, const glm::vec3& color);
+        // new high-level sprite draw
+        void drawSprite(unsigned texId, const glm::vec2& pos, const glm::vec2& size,
+            const glm::vec4& color = glm::vec4(1.0f));
 
     private:
+        Renderer2D m_renderer2D; // textured renderer
         unsigned int m_vao{0}, m_vbo{0};
         unsigned int m_shader{0};
     };

@@ -31,7 +31,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap };
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown
+    };
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {

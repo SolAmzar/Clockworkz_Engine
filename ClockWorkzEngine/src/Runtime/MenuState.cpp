@@ -34,7 +34,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <sstream>
 #include "Core/Time.hpp"
 
-using ClockWorkz::Assets::ResourceManager;
+using Assets::ResourceManager;
 using Graphics::Shader;
 
 
@@ -67,20 +67,20 @@ namespace Runtime {
 
         //printMenu();
 
-        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+        Assets::ResourceManager<Assets::FontManager>::Load(
             "Title", "assets/fonts/ANUNE___.TTF", 48
         );
 
-        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+        Assets::ResourceManager<Assets::FontManager>::Load(
             "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72
         );
 
-        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+        Assets::ResourceManager<Assets::FontManager>::Load(
             "Debug", "assets/fonts/ANUNEDW_.TTF", 24
         );
 
         /* Syafiq*/
-        ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Load(
+        Assets::ResourceManager<Assets::FontManager>::Load(
             "Selection", "assets/fonts/ANUNEDW_.TTF", 50
         );
 
@@ -189,11 +189,11 @@ namespace Runtime {
 
         shader->setMat4("projection", projection);
 
-        auto titleFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Title");
-        auto subFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Subtitle");
-        auto debugFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Debug");
+        auto titleFont = Assets::ResourceManager<Assets::FontManager>::Get("Title");
+        auto subFont = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
+        auto debugFont = Assets::ResourceManager<Assets::FontManager>::Get("Debug");
         
-        auto selectFont = ClockWorkz::Assets::ResourceManager<ClockWorkz::Assets::FontManager>::Get("Selection");
+        auto selectFont = Assets::ResourceManager<Assets::FontManager>::Get("Selection");
 
         if (titleFont) {
             titleFont->RenderText("Lights Out", w / 2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));

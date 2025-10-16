@@ -26,8 +26,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>
+#include <iostream>
 
-namespace ClockWorkz::Assets {
+namespace Assets {
 
 template <typename T>
 class ResourceManager {
@@ -42,7 +43,9 @@ public:
 
         auto resource = std::make_shared<T>();
         if (!resource->Load(std::forward<Args>(args)...)) {
-            throw std::runtime_error("Failed to load resource: " + name);
+            //throw std::runtime_error("Failed to load resource: " + name);
+            std::cout << "Failed to load resource: " + name << std::endl;
+            return nullptr;
         }
 
         resources[name] = resource;
@@ -53,7 +56,9 @@ public:
     static std::shared_ptr<T> Get(const std::string& name) {
         auto it = resources.find(name);
         if (it == resources.end()) {
-            throw std::runtime_error("Resource not found: " + name);
+            //throw std::runtime_error("Resource not found: " + name);
+            std::cout << "Resource not found: " + name << std::endl;
+            return nullptr;
         }
         return it->second;
     }

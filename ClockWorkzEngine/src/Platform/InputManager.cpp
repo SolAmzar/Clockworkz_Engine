@@ -47,6 +47,9 @@ namespace Platform {
         trackKey(GLFW_KEY_S);
         trackKey(GLFW_KEY_A);
         trackKey(GLFW_KEY_D);
+
+        trackKey(GLFW_KEY_Q);
+        trackKey(GLFW_KEY_E);
    
         trackKey(GLFW_KEY_ENTER);
         trackKey(GLFW_KEY_KP_ENTER);

@@ -35,6 +35,11 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <thread>
 #include <memory>
 #include <Core/Time.hpp>
+#include <Graphics/Renderer2D.hpp>
+#include <Graphics/Camera2D.hpp>
+#include <Core/Engine.hpp>
+using namespace Graphics;
+using namespace Assets;
 
 namespace Runtime {
     PlayState::PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm)
@@ -57,6 +62,12 @@ namespace Runtime {
 
     void PlayState::onEnter() {
         std::cout << "[PlayState] Enter, loading scene: " << m_initialSceneId << "\n";
+
+        auto textureShader = ResourceManager<Shader>::Load(
+            "texture",
+            "assets/shaders/texture.vert",
+            "assets/shaders/texture.frag"
+        );
         if (m_scenes.loadScene(m_initialSceneId)) {
             m_loaded = true;
 
@@ -102,6 +113,18 @@ namespace Runtime {
             }
             return;
         }
+
+        Core::Engine& engine = Core::Engine::Get();
+        Graphics::Camera2D& cam = engine.camera();
+
+        if (m_input.isKeyDown(GLFW_KEY_Q)) {
+            cam.setZoom(cam.zoom() * 1.02f);
+        }
+        if (m_input.isKeyDown(GLFW_KEY_E)) {
+            cam.setZoom(cam.zoom() / 1.02f);
+        }
+        
+
         m_scenes.update(dt);
     }
 

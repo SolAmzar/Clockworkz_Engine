@@ -1,11 +1,14 @@
-#include "Core/Engine.hpp"
-#include <Gameplay/Components/Prefab.hpp>
+﻿#include "Core/Engine.hpp"
+#include "Gameplay/Components/Prefab.hpp"
+#include <iostream>
 
 int main() {
+	std::cout << "[Main] Booting ClockWorkz Engine...\n";
+
+	// 1️ Register all prefab blueprints
 	Gameplay::setupGameBlueprints();
 
-	// Creates an instance of your engine.
-	// Default initializes subsystems like rendering, audio, input, physics, etc.
+	// 2️ Create and run the engine (registers itself via Engine::Get)
 	Core::Engine engine;
 	return engine.Run();
 }

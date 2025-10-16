@@ -20,12 +20,31 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 #pragma once
 #include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
+
 namespace Graphics {
-	class Camera2D {
-	public:
-		void setOrtho(float width, float height, float scale = 1.0f);
-		const glm::mat4& viewProj() const { return m_vp; }
-	private:
-		glm::mat4 m_vp{ 1.0f };
-	};
+  class Camera2D {
+  public:
+    void setViewport(int width, int height) { m_viewW = width; m_viewH = height; recalcProj(); }
+    void setPosition(glm::vec2 p) { m_pos = p; recalcView(); }
+    void setZoom(float z) { m_zoom = z; recalcProj(); }
+    glm::vec2 position() const { return m_pos; }
+    float zoom() const { return m_zoom; }
+
+    const glm::mat4& viewProj() const { return m_vp; }
+
+  private:
+    void recalcProj();
+    void recalcView();
+    void recalcVP();
+
+    int m_viewW = 1280, m_viewH = 720;
+    glm::vec2 m_pos{0.0f, 0.0f};
+    float m_zoom = 1.0f;
+
+    glm::mat4 m_proj{1.0f};
+    glm::mat4 m_view{1.0f};
+    glm::mat4 m_vp{1.0f};
+  };
 }
+

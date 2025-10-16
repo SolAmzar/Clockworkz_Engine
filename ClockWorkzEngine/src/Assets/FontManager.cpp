@@ -27,7 +27,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-namespace ClockWorkz::Assets
+namespace Assets
 {
 
     FontManager::FontManager() : face(nullptr), VAO(0), VBO(0)
