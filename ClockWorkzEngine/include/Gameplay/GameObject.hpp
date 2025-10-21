@@ -28,6 +28,11 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <memory>
 #include <glm/vec2.hpp> // if you prefer, swap to your own Vec2
 
+//Syafiq - forward decalre the class to be used alter in cpp, cpp file will include the required class file.
+namespace Graphics {
+    class RenderingManager;
+}
+
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
@@ -61,7 +66,7 @@ namespace Gameplay {
 
         // Lifecycle
         virtual void update(double dt);
-        virtual void render(); // hook into Graphics later
+        virtual void render(Graphics::RenderingManager& renderer); // hook into Graphics later
 
         // Interactions
         virtual void onCollision(GameObject& other);

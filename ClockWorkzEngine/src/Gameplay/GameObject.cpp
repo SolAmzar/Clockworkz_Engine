@@ -27,6 +27,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 #include "Gameplay/Components/Health.hpp"
 #include "Gameplay/Components/DamageDealer.hpp"
+#include "Graphics/RenderingManager.hpp"
 namespace Gameplay {
 
     uint32_t GameObject::s_nextId = 1;
@@ -41,7 +42,41 @@ namespace Gameplay {
         for (auto& c : m_components) c->onUpdate(*this, dt);
     }
 
-    void GameObject::render() {
+    //Syafiq - Create game object using rect
+    void GameObject::render(Graphics::RenderingManager& renderer) {
+        glm::vec3 color(1.0f,1.0f,1.0f);
+
+        switch (m_type) {
+        case GameObjectType::Player:
+            color = glm::vec3(0.0f, 1.0f, 0.0f);
+            break;
+        case GameObjectType::Enemy:
+            color = glm::vec3(1.0f, 0.0f, 0.0f);
+            break;
+        case GameObjectType::Floor:
+            color = glm::vec3(0.0f, 0.0f, 1.0f);
+            break;
+        case GameObjectType::Trap:
+            color = glm::vec3(0.0f, 1.0f, 1.0f);
+            break;
+        case GameObjectType::Wall:
+            color = glm::vec3(1.0f, 1.0f, 0.0f);
+            break;
+        case GameObjectType::Unknown:
+            color = glm::vec3(0.6f, 0.6f, 0.6f);
+            break;
+        }
+
+
+        renderer.drawRect(
+            m_transform.position.x,
+            m_transform.position.y,
+            m_size.x * m_transform.scale.x,
+            m_size.y * m_transform.scale.y,
+            color.r,color.g,color.b
+        );
+
+
         // later: call RenderingManager with textureId/transform/size
         for (auto& c : m_components) c->onRender(*this);
     }

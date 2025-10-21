@@ -202,11 +202,11 @@ void Scene::update(double dt)
     }
 }
 
-void Scene::render()
+void Scene::render(Graphics::RenderingManager& renderer)
 {
     for (auto &o : objects())
     {
         if (o->active())
-            o->render();
+            o->render(renderer);
     }
 }

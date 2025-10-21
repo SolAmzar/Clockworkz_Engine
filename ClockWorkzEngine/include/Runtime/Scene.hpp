@@ -29,6 +29,10 @@ namespace Gameplay {
 	class Physics2D;
 }
 
+//Syafiq
+namespace Graphics {
+	class RenderingManager;
+}
 
 namespace Runtime {
 
@@ -44,7 +48,7 @@ namespace Runtime {
 
 		// Frame
 		void update(double dt);
-		void render();
+		void render(Graphics::RenderingManager& renderer);
 
 		const std::string& name() const;
 		std::vector<std::unique_ptr<Gameplay::GameObject>>& objects();

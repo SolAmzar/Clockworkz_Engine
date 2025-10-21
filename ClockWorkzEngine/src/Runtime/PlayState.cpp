@@ -37,6 +37,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Core/Time.hpp>
 #include <Graphics/Renderer2D.hpp>
 #include <Graphics/Camera2D.hpp>
+#include <Graphics/GraphicsManager.hpp>
 #include <Core/Engine.hpp>
 using namespace Graphics;
 using namespace Assets;
@@ -62,6 +63,10 @@ namespace Runtime {
 
     void PlayState::onEnter() {
         std::cout << "[PlayState] Enter, loading scene: " << m_initialSceneId << "\n";
+
+        //Syafiq - 
+        Core::Engine& engine = Core::Engine::Get();
+        m_renderer = &engine.rendering();
 
         auto textureShader = ResourceManager<Shader>::Load(
             "texture",
@@ -114,6 +119,40 @@ namespace Runtime {
             return;
         }
 
+        //Syafiq - Player movement
+        if (auto* scene = m_scenes.current()){
+            for (auto& obj : scene->objects()) {
+                if (obj->type() == Gameplay::GameObjectType::Player) {
+                    float moveSpeed = 10.0f;
+                    float moveAmount = moveSpeed * static_cast<float>(dt);
+
+                    if (m_input.isKeyDown(GLFW_KEY_W)) {
+                        obj->velocity().y = moveSpeed;
+                    }
+                    else if(m_input.isKeyDown(GLFW_KEY_S)) {
+                        obj->velocity().y = -moveSpeed;
+                    }
+                    else {
+                        obj->velocity().y = 0;
+                    }
+
+                    if (m_input.isKeyDown(GLFW_KEY_A)) {
+                        obj->velocity().x = -moveSpeed;
+                    }
+                    else if (m_input.isKeyDown(GLFW_KEY_D)) {
+                        obj->velocity().x = moveSpeed;
+                    }
+                    else {
+                        obj->velocity().x = 0;
+                    }
+
+
+                    break;
+                }
+            }
+        }
+
+
         Core::Engine& engine = Core::Engine::Get();
         Graphics::Camera2D& cam = engine.camera();
 
@@ -129,17 +168,39 @@ namespace Runtime {
     }
 
     void PlayState::render(Core::Time* timer) {
-        if (!m_loaded) return;
-        m_scenes.render();
+        if (!m_loaded || !m_renderer) return;
+
+        //Syafiq
+        if (auto* scene = m_scenes.current()) {
+            scene->render(*m_renderer);
+        }
+
+        m_scenes.render(*m_renderer);
+
         if (m_debug) {
             /*Implement the IMGUI*/
             ImGui::Begin("Game State");
             ImGui::Text("Testing Window");
+
+            if (ImGui::Button("Reset Scene")) {
+                resetScene();
+            }
+
             if (ImGui::Button("Back to Menu (ESC)")) {
                 m_gsm.pop();
             }
+
             ImGui::End();
         }
     }
 
+    void PlayState::resetScene() {
+        if (m_scenes.reloadCurrent()) {
+            std::cout << "[PlayState] Scene reset Success\n";
+        }
+        else {
+            m_scenes.loadScene(m_initialSceneId);
+        }
+        
+    }
 } // namespace Runtime

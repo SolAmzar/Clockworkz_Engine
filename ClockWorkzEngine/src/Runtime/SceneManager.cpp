@@ -19,7 +19,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/Scene.hpp"
+#include "Graphics/RenderingManager.hpp"
 #include <iostream>
+
 
 using namespace Runtime;
 
@@ -53,10 +55,24 @@ void SceneManager::update(double dt) {
     if (m_current) m_current->update(dt);
 }
 
-void SceneManager::render() {
-    if (m_current) m_current->render();
+void SceneManager::render(Graphics::RenderingManager& m_renderer) {
+    if (m_current) m_current->render(m_renderer);
 }
 
 Runtime::Scene* SceneManager::current() { return m_current.get(); }
 Runtime::Scene const* SceneManager::current() const { return m_current.get(); }
+
+bool SceneManager::reloadCurrent() {
+    if (!m_current) return false;
+
+    std::string id = m_current->name();
+    m_current->unload();
+
+    if (!m_current->load()) {
+        m_current.reset();
+        m_cache.erase(id);
+        return false;
+    }
+    return true;
+}
 

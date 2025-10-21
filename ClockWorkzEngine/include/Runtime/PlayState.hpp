@@ -22,6 +22,10 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 namespace Core {
 	class Logger; class Time;
 }
+
+namespace Graphics {
+	class RenderingManager;
+}
 namespace Runtime {
 	
 	class PlayState final : public GameState {
@@ -42,6 +46,8 @@ namespace Runtime {
 		GameStateManager& m_gsm;
 		bool m_loaded{ false };
 		bool m_debug{ false };
+		Graphics::RenderingManager* m_renderer{ nullptr };
+		void resetScene();
 	};
 
 } // namespace Runtime

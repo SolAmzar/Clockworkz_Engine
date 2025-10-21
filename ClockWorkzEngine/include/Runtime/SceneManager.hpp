@@ -22,6 +22,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <string>
 #include <unordered_map>
 
+namespace Graphics { class RenderingManager; }
 namespace Runtime {
 
 	class Scene;
@@ -37,10 +38,13 @@ namespace Runtime {
 		void unloadCurrent();
 
 		void update(double dt);
-		void render();
+		void render(Graphics::RenderingManager& m_renderer);
 		Scene* current();
 		Scene const* current() const;
 		std::shared_ptr<Scene> currentScene() const { return m_current; }
+
+		//Reload Content
+		bool reloadCurrent();
 
 	private:
 		std::unordered_map<std::string, std::shared_ptr<Scene>> m_cache;
