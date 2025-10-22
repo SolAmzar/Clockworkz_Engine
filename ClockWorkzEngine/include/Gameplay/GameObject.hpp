@@ -18,7 +18,7 @@
                 Serves as the core building block for interactive entities in
                 the game world.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #pragma once
@@ -42,7 +42,7 @@ namespace Gameplay {
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {
         glm::vec2 position{ 0.f, 0.f };
-        float     rotationDeg{ 0.f };
+        float     rotationRad{ 0.f };
         glm::vec2 scale{ 1.f, 1.f };
     };
 

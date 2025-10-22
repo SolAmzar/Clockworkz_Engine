@@ -3,35 +3,35 @@
   "objects": [
     {
       "blueprint": "Floor",
-      "position": [0, 0],
-      "scale": [1, 1],
+      "position": [-100, -100],
+      "scale": [100, 100],
       "rotation": 0,
       "active": true,
       "texture": "floor_texture"
     },
     {
       "blueprint": "Wall",
-      "position": [-10, 0],
-      "scale": [1, 1],
+      "position": [100, 100],
+        "scale": [ 100, 100 ],
       "rotation": 0,
       "active": true,
       "texture": "wall_texture"
     },
     {
       "blueprint": "Player",
-      "position": [ -5, 0 ],
-      "scale": [ 1, 1 ],
+      "position": [ -300, -200 ],
+        "scale": [ 100, 100 ],
       "rotation": 0,
       "active": true,
       "texture": "player_texture"
     },
     {
-      "blueprint": "Enemy",
-      "position": [3, 0],
-      "scale": [1, 1],
-      "rotation": 0,
-      "active": true,
-      "texture": "enemy_texture"
+        "blueprint": "Enemy",
+        "position": [ 300, 200 ],
+        "scale": [ 100, 100 ],
+        "rotation": 0,
+        "active": true,
+        "texture": "enemy_texture"
     }
   ]
 }

@@ -14,7 +14,7 @@
 				- Used by Engine and game states to render gameplay and debug info
 				- Works with GraphicsManager for rendering state and configuration
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #include "Graphics/RenderingManager.hpp"
@@ -122,10 +122,28 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawRect(float x, float y, float w, float h, float r, float g, float b) {
-		drawLine(x, y, x + w, y, r, g, b);
+		// top left
+		/*drawLine(x, y, x + w, y, r, g, b);
 		drawLine(x + w, y, x + w, y + h, r, g, b);
 		drawLine(x + w, y + h, x, y + h, r, g, b);
-		drawLine(x, y + h, x, y, r, g, b);
+		drawLine(x, y + h, x, y, r, g, b);*/
+
+		// center
+		 // Compute half extents
+		float halfW = w * 0.5f;
+		float halfH = h * 0.5f;
+
+		// Compute corner coordinates based on center (x, y)
+		float left = x - halfW;
+		float right = x + halfW;
+		float bottom = y - halfH;
+		float top = y + halfH;
+
+		// Draw rectangle edges (clockwise)
+		drawLine(left, bottom, right, bottom, r, g, b); // bottom
+		drawLine(right, bottom, right, top, r, g, b); // right
+		drawLine(right, top, left, top, r, g, b); // top
+		drawLine(left, top, left, bottom, r, g, b); // left
 	}
 
 	void RenderingManager::drawCircle(float x, float y, float radius, float r, float g, float b, int segments) {
@@ -152,13 +170,14 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
-		const glm::vec2& size, const glm::vec4& color)
+		const glm::vec2& size, float angleRad, const glm::vec4& color)
 	{
+		// hard code angle to 0 first.
 		m_renderer2D.drawQuad(
 			pos.x, pos.y, size.x, size.y,
-			1, 1, texId,
-			0, 0, 1, 1,
-			color.r, color.g, color.b, color.a
+			1, 1, texId, // texture width/height ratio
+			0, 0, 1, 1, // uv position, uv dimension
+			color.r, color.g, color.b, color.a, angleRad, Graphics::Anchor::Center
 		);
 	}
 
@@ -170,7 +189,7 @@ namespace Graphics {
 		// Activate texture shader
 		if (auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture")) {
 			shader->use();
-			shader->setMat4("projection", cam.viewProj());
+			shader->setMat4("uVP", cam.viewProj());
 
 			// Ensure sampler 'image' uses GL_TEXTURE0
 			int loc = glGetUniformLocation(shader->ID, "image");
@@ -180,7 +199,7 @@ namespace Graphics {
 		// Pass VP to the 2D renderer so it can upload 'projection' when drawing
 		m_renderer2D.begin(cam.viewProj());
 
-		// Optional: also keep debug shader for overlays
+		// Debug shader for overlays, line draw etc
 		glUseProgram(m_shader);
 		glUniformMatrix4fv(glGetUniformLocation(m_shader, "uProjection"), 1, GL_FALSE, &cam.viewProj()[0][0]);
 	}

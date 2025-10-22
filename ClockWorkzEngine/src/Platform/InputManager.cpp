@@ -19,11 +19,12 @@ References:
 - GLFW Mouse Input: https://www.glfw.org/docs/latest/input_guide.html#input_mouse
 - GLFW Keyboard Input: https://www.glfw.org/docs/latest/input_guide.html#input_keyboard
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
+#include "Graphics/Camera2D.hpp"
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -50,6 +51,7 @@ namespace Platform {
 
         trackKey(GLFW_KEY_Q);
         trackKey(GLFW_KEY_E);
+        trackKey(GLFW_KEY_G);
    
         trackKey(GLFW_KEY_ENTER);
         trackKey(GLFW_KEY_KP_ENTER);
@@ -205,6 +207,23 @@ namespace Platform {
     bool InputManager::wasMouseClicked(int button) const {
         auto it = m_mouseClickedThisFrame.find(button);
         return it != m_mouseClickedThisFrame.end() && it->second;
+    }
+
+
+    glm::vec2 InputManager::getMouseWorldPos(const Graphics::Camera2D& camera,
+        float windowWidth,
+        float windowHeight) const {
+        // Convert window-space (pixels) to Normalized Device Coordinates (NDC)
+        float ndcX = (2.0f * static_cast<float>(m_mouseX) / windowWidth) - 1.0f;
+        float ndcY = 1.0f - (2.0f * static_cast<float>(m_mouseY) / windowHeight);
+
+        glm::vec4 clipCoords(ndcX, ndcY, 0.0f, 1.0f);
+
+        // Transform back into world space using inverse of (Projection * View)
+        glm::mat4 invVP = glm::inverse(camera.viewProj());
+        glm::vec4 world = invVP * clipCoords;
+
+        return glm::vec2(world.x, world.y);
     }
 
 } // namespace Platform

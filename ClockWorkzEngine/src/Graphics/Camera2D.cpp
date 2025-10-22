@@ -14,18 +14,18 @@
                 Provides a central way to control how the world is viewed
                 in screen space.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
 #include "Graphics/Camera2D.hpp"
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <iostream>
 using namespace Graphics;
 
 void Camera2D::recalcProj() {
-  const float halfW = (m_viewW * 0.5f) / m_zoom;
-  const float halfH = (m_viewH * 0.5f) / m_zoom;
+  const float halfW = (m_viewW * 0.5f);
+  const float halfH = (m_viewH * 0.5f);
   m_proj = glm::ortho(-halfW, halfW, -halfH, halfH, -1.0f, 1.0f);
   recalcVP();
 }
@@ -34,3 +34,15 @@ void Camera2D::recalcView() {
   recalcVP();
 }
 void Camera2D::recalcVP() { m_vp = m_proj * m_view; }
+
+void Camera2D::setViewport(int width, int height) { m_viewW = width; m_viewH = height; recalcProj(); }
+void Camera2D::setPosition(glm::vec2 p) { m_pos = p; recalcView(); }
+void Camera2D::setZoom(float z) { 
+    std::cout << "Zoom: " << z << std::endl;
+    m_zoom = z; 
+    recalcProj();
+}
+glm::vec2 Camera2D::position() const { return m_pos; }
+float Camera2D::zoom() const { return m_zoom; }
+
+const glm::mat4& Camera2D::viewProj() const { return m_vp; }

@@ -18,7 +18,7 @@
                 Serves as the core building block for interactive entities in
                 the game world.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -67,7 +67,7 @@ namespace Gameplay {
             break;
         }
 
-
+        // Collision draw
         renderer.drawRect(
             m_transform.position.x,
             m_transform.position.y,

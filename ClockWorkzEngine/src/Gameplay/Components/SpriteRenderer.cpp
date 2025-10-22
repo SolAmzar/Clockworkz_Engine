@@ -6,7 +6,7 @@
 \brief          Implements SpriteRendererComponent, responsible for rendering
                 textured sprites attached to GameObjects. Integrates with
                 RenderingManager for batched 2D drawing.
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -43,7 +43,7 @@ namespace Gameplay {
         Graphics::RenderingManager& renderer = Core::Engine::Get().rendering();
         renderer.drawSprite(texture->id(),
             owner.transform().position,
-            owner.size(),
+            owner.size() * owner.transform().scale, owner.transform().rotationRad,
             m_tint);
     }
 

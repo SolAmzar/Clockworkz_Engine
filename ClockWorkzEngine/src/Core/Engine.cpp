@@ -109,7 +109,9 @@ namespace Core
         if (!m_imgui->init(m_window->handle()))
             return false;
 
+        //m_camera->setViewport((float)m_window->width(), (float)m_window->height());
         m_camera->setViewport((float)m_window->width(), (float)m_window->height());
+        m_camera->setPosition(glm::vec2{ 0,0 });
         m_camera->setZoom(1.0f);
 
         m_gsm = std::make_unique<Runtime::GameStateManager>();

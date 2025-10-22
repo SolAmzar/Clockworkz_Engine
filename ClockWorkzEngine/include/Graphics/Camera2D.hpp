@@ -14,7 +14,7 @@
                 Provides a central way to control how the world is viewed
                 in screen space.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -25,20 +25,19 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 namespace Graphics {
   class Camera2D {
   public:
-    void setViewport(int width, int height) { m_viewW = width; m_viewH = height; recalcProj(); }
-    void setPosition(glm::vec2 p) { m_pos = p; recalcView(); }
-    void setZoom(float z) { m_zoom = z; recalcProj(); }
-    glm::vec2 position() const { return m_pos; }
-    float zoom() const { return m_zoom; }
-
-    const glm::mat4& viewProj() const { return m_vp; }
+      void setViewport(int width, int height);
+      void setPosition(glm::vec2 p);
+      void setZoom(float z); 
+      glm::vec2 position() const; 
+      float zoom() const; 
+      const glm::mat4& viewProj() const; 
 
   private:
     void recalcProj();
     void recalcView();
     void recalcVP();
 
-    int m_viewW = 1280, m_viewH = 720;
+    int m_viewW = 800, m_viewH = 600;
     glm::vec2 m_pos{0.0f, 0.0f};
     float m_zoom = 1.0f;
 
