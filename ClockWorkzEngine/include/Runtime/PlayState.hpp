@@ -38,6 +38,9 @@ namespace Runtime {
 		void onExit()  override;
 		void update(double dt) override;
 		void render(Core::Time* timer) override;
+		bool m_spawning = false;
+		int m_spawnedCount = 0;
+		const int SPAWN_PER_FRAME = 100;
 
 	private:
 		std::string m_initialSceneId;

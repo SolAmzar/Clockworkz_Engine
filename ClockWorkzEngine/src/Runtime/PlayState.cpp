@@ -39,6 +39,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Graphics/Camera2D.hpp>
 #include <Graphics/GraphicsManager.hpp>
 #include <Core/Engine.hpp>
+#include <Gameplay/Components/Prefab.hpp>
+
+
 using namespace Graphics;
 using namespace Assets;
 
@@ -162,6 +165,37 @@ namespace Runtime {
         if (m_input.isKeyDown(GLFW_KEY_E)) {
             cam.setZoom(cam.zoom() / 1.02f);
         }
+
+        if (m_spawning && m_spawnedCount < 2500) {
+            auto& factory = Gameplay::PrefabFactory::get();
+            auto currentScene = m_scenes.currentScene();
+
+            if (currentScene) {
+                int toSpawn = std::min(SPAWN_PER_FRAME, 2500 - m_spawnedCount);
+
+                for (int i = 0; i < toSpawn; ++i) {
+                    int gridSize = 50;
+                    float spacing = 2.0f;
+                    int idx = m_spawnedCount + i;
+                    int row = idx / gridSize;
+                    int col = idx % gridSize;
+
+                    float x = -gridSize * spacing / 2.0f + col * spacing;
+                    float y = -gridSize * spacing / 2.0f + row * spacing;
+
+                    auto obj = factory.createAt("Enemy", glm::vec2(x, y));
+                    if (obj) {
+                        currentScene->objects().push_back(std::move(obj));
+                    }
+                }
+
+                m_spawnedCount += toSpawn;
+                if (m_spawnedCount >= 2500) {
+                    m_spawning = false;
+                    std::cout << "Finished spawning 2500 objects!\n";
+                }
+            }
+        }
         
 
         m_scenes.update(dt);
@@ -177,20 +211,48 @@ namespace Runtime {
 
         m_scenes.render(*m_renderer);
 
+        // In PlayState::render() method:
         if (m_debug) {
-            /*Implement the IMGUI*/
             ImGui::Begin("Game State");
             ImGui::Text("Testing Window");
 
-            if (ImGui::Button("Reset Scene")) {
-                resetScene();
+            // Add button to spawn 2500 objects
+            if (ImGui::Button("Spawn 2500 Objects")) {
+                // Get the current scene using the existing method
+                auto& factory = Gameplay::PrefabFactory::get();
+                auto currentScene = m_scenes.currentScene(); // Returns std::shared_ptr<Scene>
+                if (currentScene) {
+                    // Spawn objects in a grid pattern
+                    int gridSize = 50; // 50x50 = 2500 objects
+                    float spacing = 2.0f;
+                    float startX = -gridSize * spacing / 2.0f;
+                    float startY = -gridSize * spacing / 2.0f;
+
+                    for (int i = 0; i < gridSize; ++i) {
+                        for (int j = 0; j < gridSize; ++j) {
+                            float x = startX + i * spacing;
+                            float y = startY + j * spacing;
+
+                            // Create an object using your prefab system
+                            auto obj = factory.createAt("Enemy", glm::vec2(x, y));
+                            if (obj) {
+                                currentScene->objects().push_back(std::move(obj));
+                            }
+                        }
+                    }
+                    std::cout << "Spawned 2500 objects!\n";
+                }
             }
 
             if (ImGui::Button("Back to Menu (ESC)")) {
                 m_gsm.pop();
             }
-
             ImGui::End();
+        }
+
+        if (ImGui::Button("Spawn 2500 Objects Gradually")) {
+            m_spawning = true;
+            m_spawnedCount = 0;
         }
     }
 
