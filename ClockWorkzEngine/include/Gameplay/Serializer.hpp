@@ -24,7 +24,7 @@
                 needed to persist game state to disk and restore it, enabling
                 save/load functionality and level design workflows.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 

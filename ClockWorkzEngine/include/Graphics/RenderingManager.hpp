@@ -14,7 +14,7 @@
                 - Used by Engine and game states to visualize gameplay and debug
                 - Coordinates with GraphicsManager for rendering state
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #pragma once
@@ -41,7 +41,7 @@ namespace Graphics {
         void drawAABB(const glm::vec2& min, const glm::vec2& max, const glm::vec3& color);
         void drawVelocity(const glm::vec2& pos, const glm::vec2& vel, const glm::vec3& color);
         // new high-level sprite draw
-        void drawSprite(unsigned texId, const glm::vec2& pos, const glm::vec2& size,
+        void drawSprite(unsigned texId, const glm::vec2& pos, const glm::vec2& size, float angleRad = 0.f,
             const glm::vec4& color = glm::vec4(1.0f));
 
     private:

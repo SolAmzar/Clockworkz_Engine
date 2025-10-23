@@ -124,9 +124,12 @@ namespace Runtime {
 
         //Syafiq - Player movement
         if (auto* scene = m_scenes.current()){
+
+            // Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
+            // objMap["Player"][0] <- since only 1 player. index 0 will work.
             for (auto& obj : scene->objects()) {
                 if (obj->type() == Gameplay::GameObjectType::Player) {
-                    float moveSpeed = 10.0f;
+                    float moveSpeed = 100.0f;
                     float moveAmount = moveSpeed * static_cast<float>(dt);
 
                     if (m_input.isKeyDown(GLFW_KEY_W)) {
@@ -149,6 +152,39 @@ namespace Runtime {
                         obj->velocity().x = 0;
                     }
 
+                    if (m_input.isKeyDown(GLFW_KEY_G)) {
+                        obj->transform().scale.x += 10*dt;
+                        obj->transform().scale.y += 10 * dt;
+                    }
+
+                    Core::Engine& engine = Core::Engine::Get();
+                    Platform::InputManager& input = engine.input();
+                    Graphics::Camera2D& cam = engine.camera();
+                    Platform::WindowManager& window = engine.window();
+
+                    glm::vec2 mouseWorld = input.getMouseWorldPos(cam,
+                        static_cast<float>(window.width()),
+                        static_cast<float>(window.height()));
+
+                    // Player world position
+                    glm::vec2 playerPos = obj->transform().position;
+
+                    // Direction vector from player to mouse
+                    glm::vec2 dir = mouseWorld - playerPos;
+
+                    // Distance check to prevent jitter
+                    float dist = glm::length(dir);
+                    if (dist > 10.0f) { // 10 units = threshold distance
+                        // Normalize direction
+                        dir = glm::normalize(dir);
+
+                        // Compute angle in radians — atan2(y, x)
+                        float angleRad = std::atan2(dir.y, dir.x);
+
+                        // Convert to degrees if your transform uses degrees
+                        obj->transform().rotationRad = angleRad;
+
+                    }
 
                     break;
                 }
@@ -205,9 +241,10 @@ namespace Runtime {
         if (!m_loaded || !m_renderer) return;
 
         //Syafiq
-        if (auto* scene = m_scenes.current()) {
+        // why render twice. not required
+       /* if (auto* scene = m_scenes.current()) {
             scene->render(*m_renderer);
-        }
+        }*/
 
         m_scenes.render(*m_renderer);
 

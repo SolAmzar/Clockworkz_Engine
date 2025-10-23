@@ -12,7 +12,7 @@
 				- Providing utility functions for graphics configuration
 				- Used by Engine to prepare rendering environment
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #include "Graphics/GraphicsManager.hpp"
@@ -38,5 +38,27 @@ bool GraphicsManager::init(Platform::WindowManager& window) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	return true;
 }
-void GraphicsManager::setViewport(int w, int h) { glViewport(0, 0, w, h); }
+void GraphicsManager::setViewport(int w, int h) {
+	const float targetAspect = 16.0f / 9.0f;
+	float windowAspect = static_cast<float>(w) / static_cast<float>(h);
+
+	int vpWidth = w;
+	int vpHeight = h;
+	int vpX = 0;
+	int vpY = 0;
+
+	if (windowAspect > targetAspect) {
+		// Window too wide pillarbox
+		vpWidth = static_cast<int>(h * targetAspect);
+		vpX = (w - vpWidth) / 2;
+	}
+	else if (windowAspect < targetAspect) {
+		// Window too tall letterbox
+		vpHeight = static_cast<int>(w / targetAspect);
+		vpY = (h - vpHeight) / 2;
+	}
+
+	glViewport(vpX, vpY, vpWidth, vpHeight);
+
+}
 void GraphicsManager::setClearColor(float r, float g, float b, float a) { glClearColor(r, g, b, a); }

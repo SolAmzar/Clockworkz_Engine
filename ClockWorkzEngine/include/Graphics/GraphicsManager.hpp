@@ -12,7 +12,7 @@
                 - Providing utility functions for graphics configuration
                 - Used by Engine to prepare rendering environment
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #pragma once

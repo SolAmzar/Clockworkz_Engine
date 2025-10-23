@@ -29,7 +29,7 @@
                 and persistent storage, allowing scenes to be saved when exiting
                 and restored when loading, as well as enabling autosave functionality.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -41,7 +41,7 @@ namespace Gameplay {
         // Store transform data
         data.position = obj.transform().position;
         data.scale = obj.transform().scale;
-        data.rotation = obj.transform().rotationDeg;
+        data.rotation = obj.transform().rotationRad;
         data.active = obj.active();
 
         // Store texture if set
@@ -84,7 +84,7 @@ namespace Gameplay {
 
         // Apply transform overrides
         obj->transform().scale = data.scale;
-        obj->transform().rotationDeg = data.rotation;
+        obj->transform().rotationRad = data.rotation;
         obj->setActive(data.active);
 
         // Apply texture override

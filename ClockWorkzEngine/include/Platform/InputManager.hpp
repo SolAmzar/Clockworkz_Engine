@@ -19,7 +19,7 @@ References:
 - GLFW Mouse Input: https://www.glfw.org/docs/latest/input_guide.html#input_mouse
 - GLFW Keyboard Input: https://www.glfw.org/docs/latest/input_guide.html#input_keyboard
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -31,6 +31,10 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <glm/vec2.hpp>
 
 struct GLFWwindow;
+
+namespace Graphics {
+    class Camera2D;
+}
 
 namespace Platform {
 
@@ -76,6 +80,10 @@ namespace Platform {
             if (maxSeconds >= 0.0) m_clickTimeMax = maxSeconds;
             if (maxPixels >= 0.0) m_clickMoveMax = maxPixels;
         }
+
+        glm::vec2 getMouseWorldPos(const Graphics::Camera2D& camera,
+            float windowWidth,
+            float windowHeight) const;
 
     private:
         // Internals
