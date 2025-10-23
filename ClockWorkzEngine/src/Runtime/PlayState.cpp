@@ -281,15 +281,20 @@ namespace Runtime {
                 }
             }
 
+            if (ImGui::Button("Spawn 2500 Objects Gradually")) {
+                m_spawning = true;
+                m_spawnedCount = 0;
+            }
+
             if (ImGui::Button("Back to Menu (ESC)")) {
                 m_gsm.pop();
             }
-            ImGui::End();
-        }
 
-        if (ImGui::Button("Spawn 2500 Objects Gradually")) {
-            m_spawning = true;
-            m_spawnedCount = 0;
+            if (ImGui::Button("Reset Scene")) {
+                resetScene();
+            }
+
+            ImGui::End();
         }
     }
 
