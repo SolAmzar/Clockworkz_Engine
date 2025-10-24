@@ -32,6 +32,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/MenuState.hpp"
 #include "Graphics/ImGuiManager.hpp"
+#include <iostream>
+#include <exception>
+#include <string>        // ADD THIS - for std::string
 
 using namespace Core;
 
@@ -225,6 +228,7 @@ namespace Core
     {
 
         // Call the engine private function `init()`
+        try {
         if (!init())
             return -1;
 
@@ -269,5 +273,31 @@ namespace Core
         }
         shutdown();
         return 0;
+        }
+        catch (const std::exception& e)
+        {
+            // Log fatal exceptions with crash report
+            if (m_logger) {
+                m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
+            }
+            else {
+                std::cerr << "[FATAL] Exception before logger initialized: " << e.what() << std::endl;
+            }
+
+            shutdown();
+            return -1;
+        }
+        catch (...) {
+            // Log unknown fatal exceptions
+            if (m_logger) {
+                m_logger->fatal("Unknown fatal exception caught");
+            }
+            else {
+                std::cerr << "[FATAL] Unknown exception before logger initialized" << std::endl;
+            }
+
+            shutdown();
+            return -1;
+        }
     }
 }
