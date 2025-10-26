@@ -32,8 +32,8 @@ namespace Gameplay {
 
     uint32_t GameObject::s_nextId = 1;
 
-    GameObject::GameObject(GameObjectType type, std::string name)
-        : m_id(s_nextId++), m_type(type), m_name(std::move(name)) {
+    GameObject::GameObject(GameObjectType type, std::string name, GameObjectShape shape)
+        : m_id(s_nextId++), m_type(type), m_name(std::move(name)), m_shapeid(std::move(shape)) {
     }
 
     void GameObject::update(double dt) {

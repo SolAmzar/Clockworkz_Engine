@@ -34,12 +34,12 @@
       "texture": "enemy_texture"
     },
     {
-      "blueprint": ,
+      "blueprint": "Ball",
       "position": [ 0, 0 ],
       "scale": [ 50, 200 ],
       "rotation": 0,
       "active": true,
-      "texture": 
+      "texture": "enemy_texture"
     }
   ]
 }

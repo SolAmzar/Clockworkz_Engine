@@ -46,7 +46,7 @@ namespace Gameplay
 		GameObjectType type = GameObjectType::Unknown;
 		std::string name;
 		std::string textureId;
-		std::string shapeId = "Square";
+		GameObjectShape shapeId = GameObjectShape::Square;
 		glm::vec2 size{1.0f, 1.0f};
 		bool isSolid = false;
 		bool isHazard = false;

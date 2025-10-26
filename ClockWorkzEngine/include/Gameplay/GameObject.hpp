@@ -43,7 +43,7 @@ namespace Gameplay {
 	};
 	// To disguish between different game object shapes
     enum class GameObjectShape : uint8_t {
-        Rectangle, Circle, Polygon, Unknown
+        Square ,Rectangle, Circle, Polygon, Unknown
     };
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
@@ -65,7 +65,7 @@ namespace Gameplay {
 
     class GameObject {
     public:
-        GameObject(GameObjectType type, std::string name);
+		GameObject(GameObjectType type, std::string name, GameObjectShape shape = GameObjectShape::Square); // default shape is square
         virtual ~GameObject() = default;
 
         GameObject(GameObject const&) = delete;
@@ -81,7 +81,8 @@ namespace Gameplay {
         // Data
         uint32_t              id() const { return m_id; }
         GameObjectType        type() const { return m_type; }
-        std::string const& name() const { return m_name; }
+        std::string const&    name() const { return m_name; }
+        GameObjectShape       shapeId() const { return m_shapeid; }
         bool                  active() const { return m_active; }
         void                  setActive(bool a) { m_active = a; }
 
@@ -132,20 +133,21 @@ namespace Gameplay {
     private:
         static uint32_t s_nextId;
 
-        uint32_t       m_id{ 0 };
-        GameObjectType m_type{ GameObjectType::Floor };
-        std::string    m_name;
-        bool           m_active{ true };
+        uint32_t        m_id{ 0 };
+        GameObjectType  m_type{ GameObjectType::Floor };
+        std::string     m_name;
+		GameObjectShape m_shapeid{ GameObjectShape::Square };
+        bool            m_active{ true };
 
-        Transform2D    m_transform{};
-        glm::vec2      m_size{ 1.f, 1.f };
-        glm::vec2      m_velocity{ 0.f, 0.f };
+        Transform2D     m_transform{};
+        glm::vec2       m_size{ 1.f, 1.f };
+        glm::vec2       m_velocity{ 0.f, 0.f };
 
-        uint32_t       m_layer{ 0 };
-        uint32_t       m_collisionMask{ 0xFFFFFFFFu };
-        bool           m_isSolid{ false };
-        bool           m_isHazard{ false };
-        bool           m_blocksLight{ false };
+        uint32_t        m_layer{ 0 };
+        uint32_t        m_collisionMask{ 0xFFFFFFFFu };
+        bool            m_isSolid{ false };
+        bool            m_isHazard{ false };
+        bool            m_blocksLight{ false };
 
         std::string    m_textureId{};
 

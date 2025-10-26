@@ -45,16 +45,16 @@ namespace Gameplay
 
     std::unique_ptr<GameObject> PrefabFactory::create(const std::string &blueprintName)
     {
-
+		// Find the blueprint by name
         auto it = blueprints_.find(blueprintName);
         if (it == blueprints_.end())
         {
             return nullptr;
         }
-
+		// Retrieve the blueprint
         const GameObjectBlueprint &blueprint = it->second;
-
-        auto gameObject = std::make_unique<GameObject>(blueprint.type, blueprint.name);
+		// Create a new GameObject
+        auto gameObject = std::make_unique<GameObject>(blueprint.type, blueprint.name, blueprint.shapeId);
 
         applyBlueprint(*gameObject, blueprint);
 
@@ -135,7 +135,6 @@ namespace Gameplay
             bp.textureId = "floor_texture";
             bp.isSolid = false;
             bp.layer = 0;
-            bp.shapeId = "Square";
             factory.saveBlueprint("Floor", bp);
 			
         }
@@ -149,7 +148,6 @@ namespace Gameplay
             bp.isSolid = true;
             bp.blocksLight = true;
             bp.layer = 1;
-            bp.shapeId = "Square";
             factory.saveBlueprint("Wall", bp);
         }
 
@@ -162,7 +160,6 @@ namespace Gameplay
             bp.size = {0.8f, 0.8f};
             bp.isSolid = true;
             bp.layer = 2;
-            bp.shapeId = "Square";
             factory.saveBlueprint("Player", bp);
         }
 
@@ -175,7 +172,6 @@ namespace Gameplay
             bp.size = {0.9f, 0.9f};
             bp.isSolid = true;
             bp.layer = 2;
-            bp.shapeId = "Square";
             factory.saveBlueprint("Enemy", bp);
         }
 
@@ -188,7 +184,7 @@ namespace Gameplay
             bp.size = {0.5f, 0.5f};
             bp.isSolid = true;
             bp.layer = 2;
-            bp.shapeId = "Circle";
+            bp.shapeId = GameObjectShape::Circle;
 			factory.saveBlueprint("Ball", bp);
         }
         // // WALL BLUEPRINT

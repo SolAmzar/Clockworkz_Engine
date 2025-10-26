@@ -60,6 +60,7 @@ namespace Runtime {
         case T::Player: return "Player";
         case T::Enemy:  return "Enemy";
         case T::Trap:   return "Trap";
+		case T::Ball:   return "Ball";
         default:        return "Unknown";
         }
     }
@@ -246,6 +247,7 @@ namespace Runtime {
             scene->render(*m_renderer);
         }*/
 
+		// Use SceneManager's render to render the current scene
         m_scenes.render(*m_renderer);
 
         // In PlayState::render() method:
@@ -296,6 +298,8 @@ namespace Runtime {
 
             ImGui::End();
         }
+
+
         ImDrawList* dl = ImGui::GetForegroundDrawList();
 
         const ImVec2 center{ 640.0f, 360.0f };

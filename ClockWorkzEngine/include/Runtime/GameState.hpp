@@ -16,7 +16,8 @@ Reference: GIT
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
-
+// Acts as an abstract base class for different game states (menu, play, pause, etc.)
+// Requires the other Game States to include this class as a friend class to avoid circular dependency
 #pragma once
 namespace Core {
 	class Logger; class Time;
