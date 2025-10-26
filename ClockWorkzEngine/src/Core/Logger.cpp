@@ -17,12 +17,83 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 #include "Core/Logger.hpp"
 #include <iostream>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <filesystem>
+
 bool Core::Logger::init(const std::string& logfile) {
-	(void)logfile; // TODO: For Writing into log file with time frame, line number, error/warning.
-	info("Logger ready");
-	return true;
+    m_logFilePath = logfile;
+    m_logFile.open(m_logFilePath, std::ios::out | std::ios::app);
+
+    std::cout << "========================================\n";
+    std::cout << "[LOGGER] Log files location:\n";
+    std::cout << "[LOGGER] " << std::filesystem::absolute(m_logFilePath) << "\n";
+    std::cout << "[LOGGER] Working directory: " << std::filesystem::current_path() << "\n";
+    std::cout << "========================================\n";
+
+    if (!m_logFile.is_open()) {
+        std::cerr << "[LOGGER] Failed to open log file\n";
+    }
+
+    info("Logger ready");
+    return true;
 }
-void Core::Logger::info(const std::string& m) { std::cout << "[INFO] " << m << "\n"; }
-void Core::Logger::warn(const std::string& m) { std::cout << "[WARN] " << m << "\n"; }
-void Core::Logger::error(const std::string& m) { std::cerr << "[ERROR] " << m << "\n"; }
+void Core::Logger::info(const std::string& m) {
+    std::string fullMsg = "[INFO] " + m;
+    std::cout << fullMsg << "\n";
+    writeToFile(fullMsg);
+}
+void Core::Logger::warn(const std::string& m) {
+    std::string fullMsg = "[WARN] " + m;
+    std::cout << fullMsg << "\n";
+    writeToFile(fullMsg);
+}
+void Core::Logger::error(const std::string& m) {
+    std::string fullMsg = "[ERROR] " + m;
+    std::cerr << fullMsg << "\n";
+    writeToFile(fullMsg);
+}
+
+
+
+void Core::Logger::fatal(const std::string& msg)
+{
+    std::string timestamp = getCurrentTimestamp();
+    std::string logMsg = "[FATAL] [" + timestamp + "] " + msg + "\n";
+
+    std::cerr << logMsg;  // Print to console
+
+    if (m_logFile.is_open()) {
+        m_logFile << logMsg;
+        m_logFile.flush();  // Ensure it's written immediately
+    }
+
+    // Optionally write to a crash dump file
+    std::ofstream crashFile("crash_report.txt", std::ios::app);
+    if (crashFile.is_open()) {
+        crashFile << logMsg;
+        crashFile << "Stack trace: (implement if needed)\n";
+        crashFile.close();
+    }
+}
 void Core::Logger::shutdown() { info("Logger shutdown"); }
+
+std::string Core::Logger::getCurrentTimestamp() const
+{
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+    return ss.str();
+}
+
+void Core::Logger::writeToFile(const std::string& msg)
+{
+    if (m_logFile.is_open()) {
+        std::string timestamp = getCurrentTimestamp();
+        m_logFile << "[" << timestamp << "] " << msg << "\n";
+        m_logFile.flush();  // Ensure it's written immediately
+    }
+}

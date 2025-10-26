@@ -43,6 +43,7 @@ namespace Runtime {
 		bool m_spawning = false;
 		int m_spawnedCount = 0;
 		const int SPAWN_PER_FRAME = 100;
+		bool m_shouldReturnToMenu{ false };
 
 	private:
 		std::string m_initialSceneId;

@@ -17,6 +17,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 #pragma once
 #include <string>
+#include <fstream>
 namespace Core {
 	class Logger {
 	public:
@@ -24,6 +25,14 @@ namespace Core {
 		void info(const std::string& msg);
 		void warn(const std::string& msg);
 		void error(const std::string& msg);
+		void fatal(const std::string& msg);//for crashes
 		void shutdown();
+
+	private:
+		std::string getCurrentTimestamp() const;
+		void writeToFile(const std::string& msg);
+
+		std::ofstream m_logFile;
+		std::string m_logFilePath;
 	};
 }

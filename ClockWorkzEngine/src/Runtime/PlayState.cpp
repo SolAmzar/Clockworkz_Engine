@@ -99,21 +99,36 @@ namespace Runtime {
         }
         else {
             std::cout << "[PlayState] Scene load FAILED.\n";
+            std::cout << "[PlayState] Returning to menu...\n";
+            m_shouldReturnToMenu = true;  //Returns to menu
         }
     }
 
     void PlayState::onExit() {
-        m_scenes.unloadCurrent();
+        // Only unload if a scene was actually loaded successfully
+        if (m_loaded) {
+            m_scenes.unloadCurrent();
+            m_scenes.unloadCurrent();
+        }
         m_loaded = false;
+
     }
 
     void PlayState::update(double dt) {
+
+        if (m_shouldReturnToMenu) {
+            m_gsm.pop();
+            return;
+        }
+
         if (!m_loaded) return;
 
         if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
             m_gsm.pop();
             return;
         }
+
+
         if (m_input.wasKeyPressed(GLFW_KEY_0)) {
             m_debug = !m_debug;
             if (m_debug) {
