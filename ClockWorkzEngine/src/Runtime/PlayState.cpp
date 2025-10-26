@@ -40,6 +40,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Graphics/GraphicsManager.hpp>
 #include <Core/Engine.hpp>
 #include <Gameplay/Components/Prefab.hpp>
+#include "Core/Profiler.hpp" 
 
 
 using namespace Graphics;
@@ -249,7 +250,8 @@ namespace Runtime {
         }
         
 
-        m_scenes.update(dt);
+
+         m_scenes.update(dt);
     }
 
     void PlayState::render(Core::Time* timer) {
@@ -261,12 +263,32 @@ namespace Runtime {
             scene->render(*m_renderer);
         }*/
 
+
         m_scenes.render(*m_renderer);
 
         // In PlayState::render() method:
         if (m_debug) {
             ImGui::Begin("Game State");
             ImGui::Text("Testing Window");
+
+            if (timer) {
+                double fps = timer->fps();;
+                double frameTime = timer->delta() * 1000.0;
+
+                ImGui::Text("FPS: %.1f", fps);
+                ImGui::Text("Frame Time: %.2f ms", frameTime);
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Show Performance Profile")) {
+                Core::Profiler::Get().print();
+            }
+
+            if (ImGui::Button("Reset Profiler")) {
+                Core::Profiler::Get().reset();
+            }
+
 
             // Add button to spawn 2500 objects
             if (ImGui::Button("Spawn 2500 Objects")) {

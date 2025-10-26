@@ -34,7 +34,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Graphics/ImGuiManager.hpp"
 #include <iostream>
 #include <exception>
-#include <string>        // ADD THIS - for std::string
+#include <string>
+#include "Core/Profiler.hpp"
 
 using namespace Core;
 
@@ -251,26 +252,36 @@ namespace Core
         // Q: Is m_window->shouldClose() calling itself recursively?
         // A: No.Engine::m_window is a WindowManager*, and WindowManager::shouldClose() calls glfwWindowShouldClose() on its GLFW window member.
         // They just happen to share the name m_window.
-        while (m_running && !m_window->shouldClose())
-        {
-            //
-            m_time->beginFrame();
-            m_window->poll(); // seems to be another wrapper
+        while (m_running && !m_window->shouldClose()) {
 
-            // game loop
-            update(m_time->delta());
 
-            m_renderer->beginFrame(*m_camera);
-            m_imgui->beginFrame();
+            PROFILE_SCOPE("Frame");
 
-            // TODO: submit sprites/meshes here in M2
-            render();
+            {
+                PROFILE_SCOPE("FrameSetup");
+                m_time->beginFrame();
+                m_window->poll();
+            }
 
-            m_imgui->endFrame();
+            {
+                PROFILE_SCOPE("Update");
+                update(m_time->delta());
+            }
 
-            m_renderer->endFrame();
+            {
+                PROFILE_SCOPE("Rendering");
+                m_renderer->beginFrame(*m_camera);
+                m_imgui->beginFrame();
+                render();
+                m_imgui->endFrame();
+                m_renderer->endFrame();
+            }
 
-            m_window->swap();
+            {
+                PROFILE_SCOPE("SwapBuffers");
+                m_window->swap();
+            }
+
             m_time->endFrame();
         }
         shutdown();

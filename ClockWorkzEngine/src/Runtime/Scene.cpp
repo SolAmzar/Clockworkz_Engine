@@ -29,6 +29,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <filesystem>
 #include "Graphics/Texture2D.hpp"
 #include "Core/Engine.hpp"
+#include <Core/Profiler.hpp>
 
 using namespace Runtime;
 using namespace Gameplay;
@@ -241,20 +242,25 @@ void Scene::update(double dt)
     //    }
     //    timer = 0.0;
     //}
-
-    for (auto &o : objects())
     {
-        if (o->active())
-            o->update(dt);
+        PROFILE_SCOPE("GameObjectUpdates");
+        for (auto& o : objects())
+        {
+            if (o->active())
+                o->update(dt);
+        }
     }
+
     if (m_physics)
     {
+        PROFILE_SCOPE("Physics");
         m_physics->step(objects(), dt);
     }
 }
 
 void Scene::render(Graphics::RenderingManager& renderer)
 {
+    PROFILE_SCOPE("GameObjectRender");
     for (auto &o : objects())
     {
         if (o->active())
