@@ -135,7 +135,9 @@ namespace Gameplay
             bp.textureId = "floor_texture";
             bp.isSolid = false;
             bp.layer = 0;
+            bp.shapeId = "Square";
             factory.saveBlueprint("Floor", bp);
+			
         }
 
         // Wall
@@ -147,6 +149,7 @@ namespace Gameplay
             bp.isSolid = true;
             bp.blocksLight = true;
             bp.layer = 1;
+            bp.shapeId = "Square";
             factory.saveBlueprint("Wall", bp);
         }
 
@@ -159,6 +162,7 @@ namespace Gameplay
             bp.size = {0.8f, 0.8f};
             bp.isSolid = true;
             bp.layer = 2;
+            bp.shapeId = "Square";
             factory.saveBlueprint("Player", bp);
         }
 
@@ -171,7 +175,21 @@ namespace Gameplay
             bp.size = {0.9f, 0.9f};
             bp.isSolid = true;
             bp.layer = 2;
+            bp.shapeId = "Square";
             factory.saveBlueprint("Enemy", bp);
+        }
+
+        // Ball
+        {
+			GameObjectBlueprint bp;
+            bp.type = GameObjectType::Ball;
+			bp.name = "Ball";
+            bp.textureId = "ball_texture";
+            bp.size = {0.5f, 0.5f};
+            bp.isSolid = true;
+            bp.layer = 2;
+            bp.shapeId = "Circle";
+			factory.saveBlueprint("Ball", bp);
         }
         // // WALL BLUEPRINT
         // {

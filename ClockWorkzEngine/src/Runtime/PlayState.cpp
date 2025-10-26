@@ -296,6 +296,14 @@ namespace Runtime {
 
             ImGui::End();
         }
+        ImDrawList* dl = ImGui::GetForegroundDrawList();
+
+        const ImVec2 center{ 640.0f, 360.0f };
+        const float radius = 60.0f;
+        const int segments = 48; // More segments = smoother circle
+        const float thickness = 3.0f;
+
+        dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
     }
 
     void PlayState::resetScene() {
@@ -307,4 +315,8 @@ namespace Runtime {
         }
         
     }
+
+	
+
+
 } // namespace Runtime

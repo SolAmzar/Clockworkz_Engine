@@ -144,10 +144,12 @@ void AudioManager::playOneShot(const std::string& id, Group g, float volume) {
 
 void AudioManager::stop(int h) {
     auto it = m_channels.find(h);
-    if (it != m_channels.end() && it->second.ch) {
-        it->second.ch->stop();
+	if (it == m_channels.end()) return;
+	FMOD::Channel* ch = it->second.ch;
+    if (ch) {
+        ch->stop();
         m_channels.erase(it);
-    }
+	}
 }
 
 void AudioManager::setPaused(int h, bool paused) {

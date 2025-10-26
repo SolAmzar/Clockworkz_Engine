@@ -65,6 +65,7 @@ namespace Runtime {
                         "Exit Game" };
         }
 
+        // m_audio.stopGroup(Audio::Group::Music);
         //printMenu();
 
         Assets::ResourceManager<Assets::FontManager>::Load(
@@ -89,7 +90,7 @@ namespace Runtime {
             "assets/shaders/text.vert",
             "assets/shaders/text.frag"
         );
-
+       // Amzar
         m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
     }
 
@@ -248,6 +249,10 @@ namespace Runtime {
     }
 
     void MenuState::onExit() {
+        if (m_bgmChannel != 0) {
+            m_audio.stop(m_bgmChannel);
+            m_bgmChannel = 0;
+        }
     }
 
 

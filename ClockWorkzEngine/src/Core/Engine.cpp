@@ -116,6 +116,7 @@ namespace Core
 
         m_gsm = std::make_unique<Runtime::GameStateManager>();
 
+
         m_audio->load("ui_move", {"assets/audio/ui_move.wav", false, false, false});
         m_audio->load("ui_select", {"assets/audio/ui_select.wav", false, false, false});
 
@@ -205,10 +206,10 @@ namespace Core
 
         if (m_renderer && m_camera)
         {
-            m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
+           // m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
 
             // Draw a red rectangle at (200, 150) with width 300 and height 200
-            m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
+           // m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
         }
     }
 

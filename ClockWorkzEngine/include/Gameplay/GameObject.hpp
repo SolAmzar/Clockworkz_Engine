@@ -36,7 +36,14 @@ namespace Graphics {
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball
+    };
+	// To disguish between different collision shapes
+    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown
+	};
+	// To disguish between different game object shapes
+    enum class GameObjectShape : uint8_t {
+        Rectangle, Circle, Polygon, Unknown
     };
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
