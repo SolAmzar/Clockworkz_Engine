@@ -68,13 +68,20 @@ namespace Gameplay {
         }
 
         // Collision draw
+        /*
+        renderer.drawCircle(
+            m_transform.position.x,
+            m_transform.position.y,
+            m_size.x * m_transform.scale.x,
+            color.r, color.g, color.b);
+        */
+
         renderer.drawRect(
             m_transform.position.x,
             m_transform.position.y,
             m_size.x * m_transform.scale.x,
             m_size.y * m_transform.scale.y,
-            color.r,color.g,color.b
-        );
+            color.r,color.g,color.b );
 
 
         // later: call RenderingManager with textureId/transform/size

@@ -1,7 +1,7 @@
 
 /******************************************************************************/
 /*!
-\file           PlayState.cpp
+\file           ImGuiManager.cpp
 \project        Lights Out
 \author(s)      [Syafiq] 100%
 \brief          Define ImGuiManager, debugging window for our engine.
