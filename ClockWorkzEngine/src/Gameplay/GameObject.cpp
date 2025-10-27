@@ -33,7 +33,7 @@ namespace Gameplay {
     uint32_t GameObject::s_nextId = 1;
 
     GameObject::GameObject(GameObjectType type, std::string name, GameObjectShape shape)
-        : m_id(s_nextId++), m_type(type), m_name(std::move(name)), m_shapeid(std::move(shape)) {
+        : m_id(s_nextId++), m_type(type), m_name(std::move(name)), m_shapeid(shape) {
     }
 
     void GameObject::update(double dt) {
@@ -62,20 +62,44 @@ namespace Gameplay {
         case GameObjectType::Wall:
             color = glm::vec3(1.0f, 1.0f, 0.0f);
             break;
+        case GameObjectType::Ball:
+            color = glm::vec3(1.0f, 0.0f, 1.0f);
+			break;
         case GameObjectType::Unknown:
             color = glm::vec3(0.6f, 0.6f, 0.6f);
             break;
         }
-
-        // Collision draw
-        renderer.drawRect(
-            m_transform.position.x,
-            m_transform.position.y,
-            m_size.x * m_transform.scale.x,
-            m_size.y * m_transform.scale.y,
-            color.r,color.g,color.b
-        );
-
+        
+        switch (m_shapeid) {
+        case GameObjectShape::Circle:
+            renderer.drawCircle(
+                m_transform.position.x + (m_size.x * 0.5f * m_transform.scale.x),
+                m_transform.position.y + (m_size.y * 0.5f * m_transform.scale.y),
+                (m_size.x * 0.5f) * m_transform.scale.x,
+                color.r, color.g, color.b
+            );
+            break;
+        case GameObjectShape::Rectangle:
+            // Collision draw
+            renderer.drawRect(
+                m_transform.position.x,
+                m_transform.position.y,
+                m_size.x * m_transform.scale.x,
+                m_size.y * m_transform.scale.y,
+                color.r, color.g, color.b
+            );
+            break;
+        default:
+            // Collision draw
+            renderer.drawRect(
+                m_transform.position.x,
+                m_transform.position.y,
+                m_size.x * m_transform.scale.x,
+                m_size.y * m_transform.scale.y,
+                color.r, color.g, color.b
+            );
+            break;
+        }
 
         // later: call RenderingManager with textureId/transform/size
         for (auto& c : m_components) c->onRender(*this);
