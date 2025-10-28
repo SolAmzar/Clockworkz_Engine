@@ -20,12 +20,13 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 */
 /******************************************************************************/
 
-#include "Gameplay/Components/Prefab.hpp"
+#include "Gameplay/Prefab.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Components/SpriteRenderer.hpp"
 #include "Gameplay/Components/Health.hpp"
 #include "Gameplay/Components/DamageDealer.hpp"
 #include "Gameplay/Components/LightOccluder.hpp"
+#include "Gameplay/Serializer.hpp"
 #include <glm/vec2.hpp>
 #include <memory>
 #include <unordered_map>
@@ -61,7 +62,7 @@ namespace Gameplay
         return gameObject;
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string &blueprintName, glm::vec2 position)
+    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& blueprintName, glm::vec2 position)
     {
 
         auto gameObject = create(blueprintName);
@@ -73,6 +74,24 @@ namespace Gameplay
 
         return gameObject;
     }
+
+    //std::unique_ptr<GameObject> PrefabFactory::createAt(const SerializedGameObject &sGO)
+    //{
+    //    auto gameObject = create(sGO.blueprintName);
+
+    //    if (gameObject)
+    //    {
+    //        gameObject->transform().position = sGO.position;
+    //        // Apply transform overrides
+    //        gameObject->transform().scale = sGO.scale;
+    //        gameObject->transform().rotationRad = sGO.rotation;
+    //        gameObject->setActive(sGO.active);
+    //    }
+
+    //    return gameObject;
+    //}
+
+
 
     // void PrefabFactory::applyBlueprint(GameObject &obj, const GameObjectBlueprint &blueprint)
     // {
@@ -113,6 +132,29 @@ namespace Gameplay
             obj.addComponent<HealthComponent>(3); // Example
         if (bp.type == GameObjectType::Enemy)
             obj.addComponent<DamageDealerComponent>(1);
+
+        for (auto type : bp.colliderTypes)
+        {
+            switch (type)
+            {
+            case ColliderType::AABB:
+            {
+                auto aabb = obj.addCollider<AABBCollider>();
+                // aabb->halfExtents = obj.transform().scale * 0.5f;
+                aabb->solid = bp.isSolid;
+                aabb->blocksLight = bp.blocksLight;
+                break;
+            }
+            case ColliderType::Circle:
+            {
+                auto circ = obj.addCollider<CircleCollider>();
+                /*circ->r = std::max(obj.transform().scale.x, obj.transform().scale.y) * 0.45f;*/
+                circ->solid = bp.isSolid;
+                circ->blocksLight = bp.blocksLight;
+                break;
+            }
+            }
+        }
     }
 
     /** Function header comment
@@ -147,6 +189,7 @@ namespace Gameplay
             bp.isSolid = true;
             bp.blocksLight = true;
             bp.layer = 1;
+            bp.colliderTypes = {ColliderType::AABB};
             factory.saveBlueprint("Wall", bp);
         }
 
@@ -159,6 +202,7 @@ namespace Gameplay
             bp.size = {0.8f, 0.8f};
             bp.isSolid = true;
             bp.layer = 2;
+            bp.colliderTypes = {ColliderType::Circle};
             factory.saveBlueprint("Player", bp);
         }
 
@@ -171,6 +215,8 @@ namespace Gameplay
             bp.size = {0.9f, 0.9f};
             bp.isSolid = true;
             bp.layer = 2;
+            bp.blocksLight = true;
+            bp.colliderTypes = {ColliderType::Circle};
             factory.saveBlueprint("Enemy", bp);
         }
         // // WALL BLUEPRINT

@@ -26,6 +26,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <string>
 #include <vector>
 #include <memory>
+#include "Gameplay/Collider.hpp"
 #include <glm/vec2.hpp> // if you prefer, swap to your own Vec2
 
 //Syafiq - forward decalre the class to be used alter in cpp, cpp file will include the required class file.
@@ -106,6 +107,7 @@ namespace Gameplay {
         std::string const& textureId() const { return m_textureId; }
         void setTextureId(std::string id) { m_textureId = std::move(id); }
 
+        void autoUpdateCollisionBaseOnScale();
         AABB aabbWorld() const;
 
         // Very light component hook (safe to ignore at start)
@@ -121,6 +123,17 @@ namespace Gameplay {
         static std::unique_ptr<GameObject> MakePlayer(glm::vec2 pos, glm::vec2 size, std::string tex = "");
         static std::unique_ptr<GameObject> MakeEnemy(glm::vec2 pos, glm::vec2 size, int hp = 2, std::string tex = "");
         static std::unique_ptr<GameObject> MakeTrap(glm::vec2 pos, glm::vec2 size, int damage = 1, std::string tex = "");
+
+        template <typename T, typename... Args>
+        T* addCollider(Args&&... args) {
+            auto col = std::make_unique<T>(std::forward<Args>(args)...);
+            T* ptr = col.get();
+            m_colliders.push_back(std::move(col));
+            return ptr;
+        }
+
+        const std::vector<std::unique_ptr<Collider>>& colliders() const { return m_colliders; }
+        std::vector<std::unique_ptr<Collider>>& colliders() { return m_colliders; }
 
     private:
         static uint32_t s_nextId;
@@ -138,10 +151,11 @@ namespace Gameplay {
         uint32_t       m_collisionMask{ 0xFFFFFFFFu };
         bool           m_isSolid{ false };
         bool           m_isHazard{ false };
-        bool           m_blocksLight{ false };
+        bool           m_blocksLight{ true };
 
         std::string    m_textureId{};
 
+        std::vector<std::unique_ptr<Collider>> m_colliders;
         std::vector<std::unique_ptr<Component>> m_components;
     };
 

@@ -39,8 +39,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Graphics/Camera2D.hpp>
 #include <Graphics/GraphicsManager.hpp>
 #include <Core/Engine.hpp>
-#include <Gameplay/Components/Prefab.hpp>
+#include <Gameplay/Prefab.hpp>
 #include "Core/Profiler.hpp" 
+#include "Graphics/RenderingManager.hpp"
 
 
 using namespace Graphics;
@@ -76,6 +77,12 @@ namespace Runtime {
             "texture",
             "assets/shaders/texture.vert",
             "assets/shaders/texture.frag"
+        );
+
+        ResourceManager<Shader>::Load(
+            "light",
+            "assets/shaders/light.vert",
+            "assets/shaders/light.frag"
         );
         if (m_scenes.loadScene(m_initialSceneId)) {
             m_loaded = true;
@@ -265,6 +272,52 @@ namespace Runtime {
 
 
         m_scenes.render(*m_renderer);
+
+        // ==================== Torch Light Rendering ====================
+        Core::Engine& engine = Core::Engine::Get();
+        auto* scene = m_scenes.current();
+        if (!scene) return;
+
+        auto* physics = scene->getPhysics();
+        if (physics) {
+            std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+
+            // Find the player (you can cache this later)
+            Gameplay::GameObject* player = nullptr;
+            for (auto& o : objs) {
+                if (o->type() == Gameplay::GameObjectType::Player) {
+                    player = o.get();
+                    break;
+                }
+            }
+            if (!player) return;
+
+            glm::vec2 origin = player->transform().position;
+            float angle = player->transform().rotationRad;
+
+            // Compute visibility polygon
+            std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+                origin,
+                angle,
+                glm::radians(60.0f), // FOV in radians (torch cone width)
+                300.0f,              // radius
+                *physics,
+                objs
+            );
+
+            // Draw the light cone (via RenderingManager)
+            auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
+            if (!shader) return;
+
+            shader->use();
+            shader->setVec3("uColor", glm::vec3(1.0f, 0.9f, 0.6f)); // optional
+            shader->setVec2("uLightPos", origin);
+            shader->setFloat("uRadius", 600.0f);
+            shader->setMat4("uProjection", engine.camera().viewProj());
+            m_renderer->drawLightCone(origin, lightPoly, glm::vec3(1.0f, 0.9f, 0.6f));
+        }
+        // ===============================================================
+
 
         // In PlayState::render() method:
         if (m_debug) {

@@ -21,8 +21,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Physics2D.hpp"
-#include "Gameplay\Serializer.hpp"        // ADD THIS
-#include "Gameplay/Components/Prefab.hpp" // ADD THIS
+#include "Gameplay/Serializer.hpp"        // ADD THIS
+#include "Gameplay/Prefab.hpp" // ADD THIS
 #include <iostream>
 #include <exception>
 #include "Assets/ResourceManager.hpp"
@@ -213,6 +213,14 @@ bool Scene::saveToFile(const std::string &filepath)
     return GameObjectSerializer::saveSceneToFile(sceneData, filepath);
 }
 
+Gameplay::Physics2D* Scene::getPhysics() {
+    return m_physics.get();
+}
+
+const Gameplay::Physics2D* Scene::getPhysics() const {
+    return m_physics.get();
+}
+
 // temp commented out for testing of serializer
 // void Scene::update(double dt) {
 //     for (auto& o : objects()) {
@@ -254,6 +262,7 @@ void Scene::update(double dt)
     if (m_physics)
     {
         PROFILE_SCOPE("Physics");
+        // collision detection
         m_physics->step(objects(), dt);
     }
 }

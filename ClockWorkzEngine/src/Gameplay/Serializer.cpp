@@ -1,8 +1,9 @@
 #include "Gameplay/Serializer.hpp"
 #include "Gameplay/GameObject.hpp"
-#include "Gameplay/Components/Prefab.hpp"
+#include "Gameplay/Prefab.hpp"
 #include "Gameplay/Components/Health.hpp"
 #include "Gameplay/Components/DamageDealer.hpp"
+#include "Gameplay/Collider.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -75,6 +76,7 @@ namespace Gameplay {
         auto& factory = PrefabFactory::get();
 
         // Create from blueprint
+        //auto obj = factory.createAt(data);
         auto obj = factory.createAt(data.blueprintName, data.position);
         if (!obj) {
             std::cerr << "[Serializer] Failed to create object from blueprint: "
@@ -82,10 +84,18 @@ namespace Gameplay {
             return nullptr;
         }
 
-        // Apply transform overrides
-        obj->transform().scale = data.scale;
-        obj->transform().rotationRad = data.rotation;
-        obj->setActive(data.active);
+		if (obj)
+		{
+            obj->transform().position = data.position;
+			// Apply transform overrides
+            obj->transform().scale = data.scale;
+            obj->transform().rotationRad = data.rotation;
+            obj->setActive(data.active);
+		}
+
+        obj->autoUpdateCollisionBaseOnScale();
+
+
 
         // Apply texture override
         if (!data.textureOverride.empty()) {

@@ -1,5 +1,5 @@
 ﻿#include "Core/Engine.hpp"
-#include "Gameplay/Components/Prefab.hpp"
+#include "Gameplay/Prefab.hpp"
 #include <iostream>
 
 int main() {
