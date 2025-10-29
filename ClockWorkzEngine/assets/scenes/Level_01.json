@@ -36,10 +36,10 @@
     {
       "blueprint": "Ball",
       "position": [ 0, 0 ],
-      "scale": [ 50, 200 ],
+      "scale": [100 , 100 ],
       "rotation": 0,
       "active": true,
-      "texture": "enemy_texture"
+      "texture": "ball_texture"
     }
   ]
 }

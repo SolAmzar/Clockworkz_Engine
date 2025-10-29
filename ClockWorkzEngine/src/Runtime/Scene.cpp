@@ -65,6 +65,7 @@ bool Scene::load()
     ResourceManager<Graphics::Texture2D>::Load("enemy_texture", "assets/textures/enemy.png");
     ResourceManager<Graphics::Texture2D>::Load("floor_texture", "assets/textures/floor.png");
     ResourceManager<Graphics::Texture2D>::Load("wall_texture", "assets/textures/wall.png");
+	ResourceManager<Graphics::Texture2D>::Load("ball_texture", "assets/textures/ball.png");
 
     if (GameObjectSerializer::loadSceneFromFile(filepath, sceneData))
     {

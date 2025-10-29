@@ -183,4 +183,13 @@ namespace Gameplay {
         return go;
     }
 
+    std::unique_ptr<GameObject> GameObject::MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex) {
+        auto go = std::make_unique<GameObject>(GameObjectType::Ball, "Ball", GameObjectShape::Circle);
+        go->transform().position = pos; go->setSize(glm::vec2(radius * 2.f, radius * 2.f));
+        go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
+        go->setCollisionMask(0xFFFFFFFFu); go->setLayer(2);
+        go->setTextureId(std::move(tex));
+        return go;
+	}
+
 } // namespace Gameplay

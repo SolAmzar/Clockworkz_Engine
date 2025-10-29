@@ -189,6 +189,18 @@ namespace Runtime {
 
                     break;
                 }
+                if (obj->type() == Gameplay::GameObjectType::Ball) {
+                    static int count = 0;
+                    obj->velocity().x += 1000.0f;
+                    /*if (m_input.isKeyDown(GLFW_KEY_UP)) {
+                        obj->velocity().y = m
+                    }*/
+
+                    count++;
+                    if (count % 300 == 0) {
+                        obj->velocity().y += 50.0f;
+					}
+                }
             }
         }
 

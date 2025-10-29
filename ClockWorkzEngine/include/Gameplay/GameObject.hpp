@@ -129,7 +129,7 @@ namespace Gameplay {
         static std::unique_ptr<GameObject> MakePlayer(glm::vec2 pos, glm::vec2 size, std::string tex = "");
         static std::unique_ptr<GameObject> MakeEnemy(glm::vec2 pos, glm::vec2 size, int hp = 2, std::string tex = "");
         static std::unique_ptr<GameObject> MakeTrap(glm::vec2 pos, glm::vec2 size, int damage = 1, std::string tex = "");
-		static std::unique_ptr<GameObject> MakeBall(glm::vec2 pos, float radius, glm::vec2 initialVelocity, std::string tex = "");
+		static std::unique_ptr<GameObject> MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex = "");
 
     private:
         static uint32_t s_nextId;
