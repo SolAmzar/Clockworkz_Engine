@@ -137,7 +137,7 @@ namespace Runtime {
         }
 
 
-        if (m_input.wasKeyPressed(GLFW_KEY_0)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_P)) {
             m_debug = !m_debug;
             if (m_debug) {
                 std::cout << "Debug is pressed\n";
@@ -255,23 +255,18 @@ namespace Runtime {
                 }
             }
         }
-        
-
-
          m_scenes.update(dt);
     }
 
     void PlayState::render(Core::Time* timer) {
         if (!m_loaded || !m_renderer) return;
 
-        //Syafiq
-        // why render twice. not required
-       /* if (auto* scene = m_scenes.current()) {
-            scene->render(*m_renderer);
-        }*/
-
-
         m_scenes.render(*m_renderer);
+
+        //to spawn objects (syafiq)
+        for (auto& obj : gameObjects) {
+            obj->render(*m_renderer);
+        }
 
         // ==================== Torch Light Rendering ====================
         Core::Engine& engine = Core::Engine::Get();
@@ -316,12 +311,77 @@ namespace Runtime {
             shader->setMat4("uProjection", engine.camera().viewProj());
             m_renderer->drawLightCone(origin, lightPoly, glm::vec3(1.0f, 0.9f, 0.6f));
         }
-        // ===============================================================
 
+    }
 
-        // In PlayState::render() method:
+    //test for IMGUI (still broken)
+    const char* defaultTextures[] = {
+    "player_texture",
+        "enemy.png",
+    "assets/textures/wall.png",
+    "assets/textures/floor.png",
+    "assets/textures/trap.png"
+    };
+    static int objCounter = 0;
+
+    void PlayState::renderImGui(Core::Time* timer) {
+        if (!m_debug) return;
+
         if (m_debug) {
-            ImGui::Begin("Game State");
+            ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
+            ImGui::Begin("Game State", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+            // ******* Object Creation **********
+            static int selectedType = 0;
+            const char* types[] = { "Player", "Enemy", "Wall", "Floor", "Trap" };
+            ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
+
+            static float pos[2] = { 0, 0 };
+            static float size[2] = { 100, 100 };
+            ImGui::InputFloat2("Position", pos);
+            ImGui::InputFloat2("Size", size);
+
+            
+            static int hp = 10, damage = 1;
+            if (selectedType == 0 || selectedType == 1) //if its enemy or player, set health
+                ImGui::InputInt("HP", &hp);
+            if (selectedType == 1 || selectedType == 4) //if its enemy or trap, set damage
+                ImGui::InputInt("Damage", &damage);
+
+            static char texture[64] = "";
+            ImGui::InputText("Texture", texture, IM_ARRAYSIZE(texture));
+
+            if (ImGui::Button("Create Object")) {
+
+                ++objCounter;
+                const char* texToUse = texture[0] ? texture : defaultTextures[selectedType];
+
+                //Supposedly spawn the corresponding gameobject (texture and logic not fixed)
+                if (selectedType == 0)
+                    gameObjects.push_back(Gameplay::GameObject::MakePlayer({ pos[0], pos[1] }, { size[0], size[1] }, texture));
+                else if (selectedType == 1)
+                    gameObjects.push_back(Gameplay::GameObject::MakeEnemy({ pos[0], pos[1] }, { size[0], size[1] }, hp, texture));
+                else if (selectedType == 2)
+                    gameObjects.push_back(Gameplay::GameObject::MakeWall({ pos[0], pos[1] }, { size[0], size[1] }, texture));
+                else if (selectedType == 3)
+                    gameObjects.push_back(Gameplay::GameObject::MakeFloor({ pos[0], pos[1] }, { size[0], size[1] }, texture));
+                else if (selectedType == 4)
+                    gameObjects.push_back(Gameplay::GameObject::MakeTrap({ pos[0], pos[1] }, { size[0], size[1] }, damage, texture));
+            }
+
+            if (ImGui::Button("Delete Object")) {
+                if (objCounter > 0) {
+                    --objCounter;
+                }
+                if (!gameObjects.empty()) {
+                    gameObjects.pop_back();
+                }
+            }
+            ImGui::Text("Object counter: %d ", objCounter);
+
+            ImGui::Separator();
+            
+            // ******* Testing Window **********
             ImGui::Text("Testing Window");
 
             if (timer) {
@@ -387,7 +447,6 @@ namespace Runtime {
             ImGui::End();
         }
     }
-
     void PlayState::resetScene() {
         if (m_scenes.reloadCurrent()) {
             std::cout << "[PlayState] Scene reset Success\n";
