@@ -19,6 +19,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/GameState.hpp"
 #include <Core/Time.hpp>
+#include <iostream>
 
 using namespace Runtime;
 
@@ -29,7 +30,10 @@ void GameStateManager::push(std::shared_ptr<GameState> s) {
 }
 
 void GameStateManager::pop() {
-	if (m_states.empty()) return;
+	if (m_states.empty()) 
+	{
+		return;
+	}
 	m_states.top()->onExit();
 	m_states.pop();
 }

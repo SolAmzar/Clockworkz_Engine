@@ -24,6 +24,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <cmath>
 #include <Assets/ResourceManager.hpp>
 #include <Graphics/Shader.hpp>
+#include "Gameplay/Physics2D.hpp"
+#include "Gameplay/GameObject.hpp"
 
 namespace Graphics {
 
@@ -32,6 +34,7 @@ namespace Graphics {
         #version 330 core
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec3 aColor;
+		layout(location = 2) in float aAlpha;
         uniform mat4 uProjection;
         out vec3 Color;
         void main() {
@@ -40,14 +43,14 @@ namespace Graphics {
         }
     )";
 
-		const char* debugFragmentShader = R"(
-        #version 330 core
-        in vec3 Color;
-        out vec4 FragColor;
-        void main() {
-            FragColor = vec4(Color, 1.0);
-        }
-    )";
+			const char* debugFragmentShader = R"(
+			#version 330 core
+			in vec3 Color;
+			out vec4 FragColor;
+			void main() {
+				FragColor = vec4(Color, 1.0);
+			}
+		)";
 	}
 
 	// Call Stack: engine run -> engine init -> rendering manager init
@@ -180,6 +183,73 @@ namespace Graphics {
 			color.r, color.g, color.b, color.a, angleRad, Graphics::Anchor::Center
 		);
 	}
+
+
+
+	std::vector<glm::vec2> RenderingManager::computeVisibilityPolygon(
+		const glm::vec2& origin,
+		float angleCenter,
+		float fov,
+		float radius,
+		Gameplay::Physics2D& physics,
+		const std::vector<std::unique_ptr<Gameplay::GameObject>>& objs)
+	{
+		std::vector<glm::vec2> points;
+		const int numRays = 200;
+		float halfFov = fov * 0.5f;
+
+		for (int i = 0; i < numRays; ++i) {
+			float angle = angleCenter - halfFov + fov * (i / (float)(numRays - 1));
+			glm::vec2 dir = { cos(angle), sin(angle) };
+			auto hit = physics.raycastLight(origin, dir, radius, objs);
+			points.push_back(hit.value_or(origin + dir * radius));
+		}
+
+		return points;
+	}
+
+	void RenderingManager::drawLightCone(
+		const glm::vec2& origin,
+		const std::vector<glm::vec2>& polygon,
+		const glm::vec3& color)
+	{
+		std::vector<float> verts;
+
+		// Center (brightest)
+		verts.push_back(origin.x);
+		verts.push_back(origin.y);
+		verts.push_back(color.r);
+		verts.push_back(color.g);
+		verts.push_back(color.b);
+
+		float radius = 300.0f;
+		for (auto& p : polygon) {
+			float dist = glm::length(p - origin);
+			float alpha = glm::clamp(1.0f - dist / radius, 0.0f, 1.0f) * 0.8f;
+			verts.push_back(p.x);
+			verts.push_back(p.y);
+			verts.push_back(color.r);
+			verts.push_back(color.g);
+			verts.push_back(color.b);
+		}
+
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+		glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_DYNAMIC_DRAW);
+
+		// Position
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		// Color
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		// Alpha
+		//glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+		//glEnableVertexAttribArray(2);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.size() + 1);
+	}
+
 
 	void RenderingManager::beginFrame(const Camera2D& cam) {
 		// Clear buffers at the start of a new frame

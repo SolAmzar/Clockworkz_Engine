@@ -14,7 +14,7 @@ References:
 - Scene management patterns (Simillar to GIT): https://gameprogrammingpatterns.com/state.html
 - Unity Scenes (conceptual reference): https://docs.unity3d.com/Manual/CreatingScenes.html
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -53,6 +53,8 @@ namespace Runtime {
 		const std::string& name() const;
 		std::vector<std::unique_ptr<Gameplay::GameObject>>& objects();
 		bool saveToFile(const std::string& filepath);
+		Gameplay::Physics2D* getPhysics();            // returns raw pointer
+		const Gameplay::Physics2D* getPhysics() const; // optional const overload
 	private:
 		std::string m_name;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> m_objects;

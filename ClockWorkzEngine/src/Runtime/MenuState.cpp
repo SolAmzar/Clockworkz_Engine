@@ -122,7 +122,8 @@ namespace Runtime {
         //yusuf
         if (choice == "Load Game")
         {
-            m_gsm.switchTo(std::make_shared<PlayState>("Level_01_autosave", m_input, m_gsm));
+            m_gsm.push(std::make_shared<PlayState>("Level_01_autosave", m_input, m_gsm));
+            //might want to create a text to say that there is no autosavefile
             return;
         }
 

@@ -32,6 +32,10 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/MenuState.hpp"
 #include "Graphics/ImGuiManager.hpp"
+#include <iostream>
+#include <exception>
+#include <string>
+#include "Core/Profiler.hpp"
 
 using namespace Core;
 
@@ -206,10 +210,12 @@ namespace Core
 
         if (m_renderer && m_camera)
         {
-           // m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
+            /*
+            m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
 
             // Draw a red rectangle at (200, 150) with width 300 and height 200
-           // m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
+            m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
+            */
         }
     }
 
@@ -226,6 +232,7 @@ namespace Core
     {
 
         // Call the engine private function `init()`
+        try {
         if (!init())
             return -1;
 
@@ -246,29 +253,65 @@ namespace Core
         // Q: Is m_window->shouldClose() calling itself recursively?
         // A: No.Engine::m_window is a WindowManager*, and WindowManager::shouldClose() calls glfwWindowShouldClose() on its GLFW window member.
         // They just happen to share the name m_window.
-        while (m_running && !m_window->shouldClose())
-        {
-            //
-            m_time->beginFrame();
-            m_window->poll(); // seems to be another wrapper
+        while (m_running && !m_window->shouldClose()) {
 
-            // game loop
-            update(m_time->delta());
 
-            m_renderer->beginFrame(*m_camera);
-            m_imgui->beginFrame();
+            PROFILE_SCOPE("Frame");
 
-            // TODO: submit sprites/meshes here in M2
-            render();
+            {
+                PROFILE_SCOPE("FrameSetup");
+                m_time->beginFrame();
+                m_window->poll();
+            }
 
-            m_imgui->endFrame();
+            {
+                PROFILE_SCOPE("Update");
+                update(m_time->delta());
+            }
 
-            m_renderer->endFrame();
+            {
+                PROFILE_SCOPE("Rendering");
+                m_renderer->beginFrame(*m_camera);
+                m_imgui->beginFrame();
+                render();
+                m_imgui->endFrame();
+                m_renderer->endFrame();
+            }
 
-            m_window->swap();
+            {
+                PROFILE_SCOPE("SwapBuffers");
+                m_window->swap();
+            }
+
             m_time->endFrame();
         }
         shutdown();
         return 0;
+        }
+        catch (const std::exception& e)
+        {
+            // Log fatal exceptions with crash report
+            if (m_logger) {
+                m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
+            }
+            else {
+                std::cerr << "[FATAL] Exception before logger initialized: " << e.what() << std::endl;
+            }
+
+            shutdown();
+            return -1;
+        }
+        catch (...) {
+            // Log unknown fatal exceptions
+            if (m_logger) {
+                m_logger->fatal("Unknown fatal exception caught");
+            }
+            else {
+                std::cerr << "[FATAL] Unknown exception before logger initialized" << std::endl;
+            }
+
+            shutdown();
+            return -1;
+        }
     }
 }

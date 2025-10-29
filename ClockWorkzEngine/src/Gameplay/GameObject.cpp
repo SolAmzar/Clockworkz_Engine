@@ -124,6 +124,23 @@ namespace Gameplay {
         }
     }
 
+    void GameObject::autoUpdateCollisionBaseOnScale() {
+        glm::vec2 objScale = m_transform.scale;
+        glm::vec2 objSize = m_size; // assuming you have a size field
+
+        for (auto& col : m_colliders) {
+            if (col->type == ColliderType::AABB) {
+                auto* aabb = static_cast<AABBCollider*>(col.get());
+                aabb->halfExtents = (objSize * 0.5f) * objScale; // update half size
+            }
+            else if (col->type == ColliderType::Circle) {
+                auto* circ = static_cast<CircleCollider*>(col.get());
+                float avgScale = (objScale.x + objScale.y) * 0.5f;
+                circ->r = std::max(objSize.x, objSize.y) * 0.5f * avgScale;
+            }
+        }
+    }
+
     AABB GameObject::aabbWorld() const {
         glm::vec2 half = 0.5f * m_size * m_transform.scale;
         return { m_transform.position - half, m_transform.position + half };

@@ -19,6 +19,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/SceneManager.hpp"
 #include <memory>
 #include <string>
+
 namespace Core {
 	class Logger; class Time;
 }
@@ -26,6 +27,7 @@ namespace Core {
 namespace Graphics {
 	class RenderingManager;
 }
+
 namespace Runtime {
 	
 	class PlayState final : public GameState {
@@ -41,6 +43,7 @@ namespace Runtime {
 		bool m_spawning = false;
 		int m_spawnedCount = 0;
 		const int SPAWN_PER_FRAME = 100;
+		bool m_shouldReturnToMenu{ false };
 
 	private:
 		std::string m_initialSceneId;

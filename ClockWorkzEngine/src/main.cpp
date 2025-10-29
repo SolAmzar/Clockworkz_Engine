@@ -1,5 +1,5 @@
 ﻿#include "Core/Engine.hpp"
-#include "Gameplay/Components/Prefab.hpp"
+#include "Gameplay/Prefab.hpp"
 #include <iostream>
 
 int main() {
@@ -11,6 +11,7 @@ int main() {
 	// 2️ Create and run the engine (registers itself via Engine::Get)
 	Core::Engine engine;
 	return engine.Run();
+
 }
 
 /*

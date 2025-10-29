@@ -21,6 +21,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #pragma once
 #include <memory>
 #include "Graphics/ImGuiManager.hpp"
+#include "Core/Logger.hpp"
 
 namespace Runtime { class GameStateManager; class MenuState; }
 
@@ -48,6 +49,7 @@ namespace Core {
 
 		// --- Accessors ---
 		static Engine& Get();  // Singleton accessor
+		static bool IsInitialized() { return s_instance != nullptr; }
 
 		// Subsystem accessors
 		Graphics::RenderingManager& rendering() { return *m_renderer; }
@@ -55,6 +57,7 @@ namespace Core {
 		Graphics::Camera2D& camera() { return *m_camera; }
 		Platform::WindowManager& window() { return *m_window; }
 		Platform::InputManager& input() { return *m_input; }
+		Core::Logger& logger() { return *m_logger; }
 		//Audio::AudioManager& audio() { return *m_audio; }
 	private:
 		bool init();

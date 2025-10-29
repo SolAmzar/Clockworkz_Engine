@@ -10,7 +10,7 @@
                 - Implementing swept AABB test for moving AABBs over a time interval
                 - Providing accurate collision timing and detection for 2D games
 				- Serving as a lightweight, header-only utility for AABB collision detection
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 
 #pragma once

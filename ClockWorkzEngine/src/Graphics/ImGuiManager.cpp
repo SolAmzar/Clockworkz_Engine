@@ -1,7 +1,7 @@
 
 /******************************************************************************/
 /*!
-\file           PlayState.cpp
+\file           ImGuiManager.cpp
 \project        Lights Out
 \author(s)      [Syafiq] 100%
 \brief          Define ImGuiManager, debugging window for our engine.
@@ -9,7 +9,7 @@
 				- Loading ImGui Window
 				- Intergrating all the external ImGui files
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM 

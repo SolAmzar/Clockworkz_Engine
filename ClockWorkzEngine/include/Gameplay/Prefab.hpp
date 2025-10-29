@@ -13,7 +13,8 @@ Prefab.cpp by Amirul Syafiq (100%)
 
 namespace Gameplay
 {
-	 //struct GameObjectBlueprint {
+	class SerializedGameObject;
+	// struct GameObjectBlueprint {
 
 	 //	//Initial base object
 	 //	GameObjectType type{};
@@ -54,6 +55,7 @@ namespace Gameplay
 		int layer = 0;
 		unsigned collisionMask = 0xFFFFFFFFu;
 		bool active = true;
+		std::vector<ColliderType> colliderTypes;
 	};
 
 	class PrefabFactory
@@ -63,9 +65,9 @@ namespace Gameplay
 		static PrefabFactory &get();
 
 		void saveBlueprint(const std::string &name, const GameObjectBlueprint &blueprint);					// Save a new recipe for each object (What to call the recipe, actual recipe data)
-		std::unique_ptr<GameObject> create(const std::string &blueprintName);												// Create a new Obj with recipe
-		std::unique_ptr<GameObject> createAt(const std::string &blueprintName, glm::vec2 position); // Create a new Obj with recipe AND at location.
-
+		std::unique_ptr<GameObject> create(const std::string &blueprintName);
+		//std::unique_ptr<GameObject> createAt(const SerializedGameObject& sGO); // Create a new Obj with recipe AND at location.
+		std::unique_ptr<GameObject> createAt(const std::string& blueprintName, glm::vec2 position);// Create a new Obj with recipe
 	private:
 		std::map<std::string, GameObjectBlueprint> blueprints_;											// The actual storage for all the recipes, refering GameObjectBlueprint
 		void applyBlueprint(GameObject &obj, const GameObjectBlueprint &blueprint); // Takes a blank GameObject and applies a recipe to configure it
