@@ -36,6 +36,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <exception>
 #include <string>
 #include "Core/Profiler.hpp"
+#include "Assets/TextureManager.hpp"
 
 using namespace Core;
 
@@ -106,6 +107,11 @@ namespace Core
         if (!m_gfx->init(*m_window))
             return false;
 
+        if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json")) {
+            m_logger->fatal("Failed to load textures from config");
+            return false;
+        }
+
         /* */
         if (!m_renderer->init())
             return false;
@@ -162,6 +168,8 @@ namespace Core
         m_config.reset();
         m_camera.reset();
         m_audio.reset();
+
+        Assets::TextureManager::Clear();
     }
 
     /** Function header comment
