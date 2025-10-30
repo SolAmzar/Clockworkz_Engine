@@ -117,6 +117,7 @@ namespace Gameplay {
 
         void autoUpdateCollisionBaseOnScale();
         AABB aabbWorld() const;
+        void respawnAt(glm::vec2 spawn, bool resetVelocity = true, bool resetHealth = true);
 
         // Very light component hook (safe to ignore at start)
         template<typename T, typename... Args>
@@ -191,6 +192,14 @@ namespace Gameplay {
         for (auto& c : m_components)
             if (auto p = dynamic_cast<T*>(c.get())) return p;
         return nullptr;
+    }
+
+    template <typename T, typename... Args>
+    T* addCollider(Args&&... args) {
+        auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+        T* raw = ptr.get();
+        m_colliders.emplace_back(std::move(ptr));
+        return raw;
     }
 
 } // namespace Gameplay

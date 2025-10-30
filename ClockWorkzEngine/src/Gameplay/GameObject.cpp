@@ -28,6 +28,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Components/Health.hpp"
 #include "Gameplay/Components/DamageDealer.hpp"
 #include "Graphics/RenderingManager.hpp"
+#include "Physics/Collision.hpp"
+#include "Gameplay/Collider.hpp" 
 namespace Gameplay {
 
     uint32_t GameObject::s_nextId = 1;
@@ -70,11 +72,12 @@ namespace Gameplay {
             break;
         }
         
+
         switch (m_shapeid) {
         case GameObjectShape::Circle:
             renderer.drawCircle(
-                m_transform.position.x + (m_size.x * 0.5f * m_transform.scale.x),
-                m_transform.position.y + (m_size.y * 0.5f * m_transform.scale.y),
+                m_transform.position.x, 
+                m_transform.position.y,
                 (m_size.x * 0.5f) * m_transform.scale.x,
                 color.r, color.g, color.b
             );
@@ -110,6 +113,49 @@ namespace Gameplay {
         // have to modify along the way.
         // Generic contact damage: if THIS has DamageDealer and OTHER has Health, apply
         // Current object damage other object with health on collide
+
+        auto resolvePlayerVsWall = [](GameObject& player, GameObject& wall) {
+            // Compute world-space AABBs (center-anchored in your code)
+            AABB pa = player.aabbWorld();
+            AABB wa = wall.aabbWorld();
+
+            // centers and half-sizes
+            glm::vec2 pc = 0.5f * (pa.min + pa.max);
+            glm::vec2 wc = 0.5f * (wa.min + wa.max);
+            glm::vec2 ph = 0.5f * (pa.max - pa.min);
+            glm::vec2 wh = 0.5f * (wa.max - wa.min);
+
+            // overlap along each axis
+            glm::vec2 d = pc - wc;                          // center delta
+            glm::vec2 o = (ph + wh) - glm::abs(d);          // raw overlap
+
+            // if both overlaps are positive, we are intersecting
+            if (o.x > 0.f && o.y > 0.f) {
+                if (o.x < o.y) {
+                    // resolve on X
+                    float push = (d.x < 0.f) ? -o.x : o.x;
+                    player.transform().position.x += push;
+                    // kill X velocity so we don't slide back in
+                    player.velocity().x = 0.f;
+                }
+                else {
+                    // resolve on Y
+                    float push = (d.y < 0.f) ? -o.y : o.y;
+                    player.transform().position.y += push;
+                    // kill Y velocity
+                    player.velocity().y = 0.f;
+                }
+            }
+            };
+
+        // Run resolution if the pair is (Player, Wall) in either order
+        if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall)) {
+            resolvePlayerVsWall(*this, other);
+        }
+        else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player)) {
+            resolvePlayerVsWall(other, *this);
+        }
+
         if (auto* dealer = this->getComponent<DamageDealerComponent>()) {
             if (auto* hp = other.getComponent<HealthComponent>()) {
                 hp->damage(other, dealer->damage());
@@ -122,6 +168,8 @@ namespace Gameplay {
                 hp2->damage(*this, dealer2->damage());
             }
         }
+
+        other.getComponent<HealthComponent>();
     }
 
     void GameObject::autoUpdateCollisionBaseOnScale() {
@@ -141,6 +189,33 @@ namespace Gameplay {
         }
     }
 
+    void GameObject::respawnAt(glm::vec2 spawn, bool resetVelocity, bool resetHealth) {
+        // Only meaningful for the Player type
+        if (m_type != GameObjectType::Player) return;
+
+        // Place at spawn and reactivate
+        m_transform.position = spawn;
+        if (resetVelocity)   m_velocity = { 0.f, 0.f };
+        setActive(true);
+
+        // Restore health if the component exists
+        if (resetHealth) {
+            if (auto* hp = getComponent<HealthComponent>()) {
+                // Prefer a 'reset' or 'restore-to-max' API if your HealthComponent exposes it:
+                // hp->reset();   // (common pattern)
+                // Otherwise, set to max explicitly (uncomment if you have these accessors):
+                // hp->setCurrent(hp->max());
+            }
+        }
+
+        // Keep colliders in sync (in case size/scale changed earlier)
+        autoUpdateCollisionBaseOnScale();
+
+        // Optional: clear transient state here (e.g., stun, knockback, i-frames, animation)
+        // m_flags.grounded = false;
+        // m_animation.play("idle");
+    }
+
     AABB GameObject::aabbWorld() const {
         glm::vec2 half = 0.5f * m_size * m_transform.scale;
         return { m_transform.position - half, m_transform.position + half };
@@ -149,40 +224,63 @@ namespace Gameplay {
     // ----------------- Prefabs -----------------
 
     std::unique_ptr<GameObject> GameObject::MakeFloor(glm::vec2 pos, glm::vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Floor, "Floor");
+        auto go = std::make_unique<GameObject>(GameObjectType::Floor, "Floor", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(false); go->setHazard(false); go->setBlocksLight(false);
-        go->setCollisionMask(0); go->setLayer(0);
+        go->setLayer(Layer::Wall);
+        go->setCollisionMask(0); // floors are visual only; no collision
         go->setTextureId(std::move(tex));
+        // No collider on purpose (not collidable)
         return go;
     }
 
     std::unique_ptr<GameObject> GameObject::MakeWall(glm::vec2 pos, glm::vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Wall, "Wall");
+        auto go = std::make_unique<GameObject>(GameObjectType::Wall, "Wall", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(true); go->setBlocksLight(true); go->setHazard(false);
-        go->setCollisionMask(0xFFFFFFFFu); go->setLayer(1);
+        go->setLayer(Layer::Wall);
+        // walls collide with players, enemies, and balls
+        go->setCollisionMask(Mask(Layer::Player, Layer::Enemy, Layer::Ball));
         go->setTextureId(std::move(tex));
+        // AABB collider the size of the object
+        auto* aabb = go->addCollider<AABBCollider>();
+        aabb->type = ColliderType::AABB;
+        aabb->halfExtents = 0.5f * size * go->transform().scale;
+        aabb->offset = { 0.f, 0.f };
         return go;
     }
 
     std::unique_ptr<GameObject> GameObject::MakePlayer(glm::vec2 pos, glm::vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Player, "Player");
+        auto go = std::make_unique<GameObject>(GameObjectType::Player, "Player", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
-        go->setCollisionMask(0xFFFFFFFFu); go->setLayer(2);
+        go->setLayer(Layer::Player);
+        // player hits walls, enemies, traps, balls
+        go->setCollisionMask(Mask(Layer::Wall, Layer::Enemy, Layer::Trap, Layer::Ball));
         go->setTextureId(std::move(tex));
+        // Collider
+        auto* aabb = go->addCollider<AABBCollider>();
+        aabb->type = ColliderType::AABB;
+        aabb->halfExtents = 0.5f * size * go->transform().scale;
+        aabb->offset = { 0.f, 0.f };
         // Components
-        go->addComponent<HealthComponent>(3); // e.g., 3 HP
+        go->addComponent<HealthComponent>(3);
         return go;
     }
 
     std::unique_ptr<GameObject> GameObject::MakeEnemy(glm::vec2 pos, glm::vec2 size, int hp, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Enemy, "Enemy");
+        auto go = std::make_unique<GameObject>(GameObjectType::Enemy, "Enemy", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(true); go->setBlocksLight(false); go->setHazard(true);
-        go->setCollisionMask(0xFFFFFFFFu); go->setLayer(2);
+        go->setLayer(Layer::Enemy);
+        // enemy hits walls, player, balls (but not other enemies if you prefer)
+        go->setCollisionMask(Mask(Layer::Wall, Layer::Player, Layer::Ball));
         go->setTextureId(std::move(tex));
+        // Collider
+        auto* aabb = go->addCollider<AABBCollider>();
+        aabb->type = ColliderType::AABB;
+        aabb->halfExtents = 0.5f * size * go->transform().scale;
+        aabb->offset = { 0.f, 0.f };
         // Components
         go->addComponent<HealthComponent>(hp);
         go->addComponent<DamageDealerComponent>(1); // contact damage
@@ -190,11 +288,18 @@ namespace Gameplay {
     }
 
     std::unique_ptr<GameObject> GameObject::MakeTrap(glm::vec2 pos, glm::vec2 size, int damage, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Trap, "Trap");
+        auto go = std::make_unique<GameObject>(GameObjectType::Trap, "Trap", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(false); go->setBlocksLight(false); go->setHazard(true);
-        go->setCollisionMask(0xFFFFFFFFu); go->setLayer(1);
+        go->setLayer(Layer::Trap);
+        // traps only affect player (and optionally enemy)
+        go->setCollisionMask(Mask(Layer::Player));
         go->setTextureId(std::move(tex));
+        // Collider (if you want the trap to have a volume)
+        auto* aabb = go->addCollider<AABBCollider>();
+        aabb->type = ColliderType::AABB;
+        aabb->halfExtents = 0.5f * size * go->transform().scale;
+        aabb->offset = { 0.f, 0.f };
         // Components
         go->addComponent<DamageDealerComponent>(damage);
         return go;
@@ -202,11 +307,18 @@ namespace Gameplay {
 
     std::unique_ptr<GameObject> GameObject::MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Ball, "Ball", GameObjectShape::Circle);
-        go->transform().position = pos; go->setSize(glm::vec2(radius * 2.f, radius * 2.f));
+        go->transform().position = pos; go->setSize({ radius * 2.f, radius * 2.f });
         go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
-        go->setCollisionMask(0xFFFFFFFFu); go->setLayer(2);
+        go->setLayer(Layer::Ball);
+        // ball collides with walls, player, enemies
+        go->setCollisionMask(Mask(Layer::Wall, Layer::Player, Layer::Enemy));
         go->setTextureId(std::move(tex));
+        // Circle collider
+        auto* circ = go->addCollider<CircleCollider>();
+        circ->type = ColliderType::Circle;
+        circ->r = radius * 0.5f * (go->transform().scale.x + go->transform().scale.y); // average scale
+        circ->offset = { 0.f, 0.f };
         return go;
-	}
+    }
 
 } // namespace Gameplay

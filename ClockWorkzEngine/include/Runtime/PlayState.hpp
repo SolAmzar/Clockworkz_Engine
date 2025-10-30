@@ -53,6 +53,10 @@ namespace Runtime {
 		bool m_loaded{ false };
 		bool m_debug{ false };
 		Graphics::RenderingManager* m_renderer{ nullptr };
+		float m_leftBound{ 100.f };
+		float m_rightBound{ 700.f };
+		float m_ballSpeed{ 220.f };
+		int   m_ballDir{ +1 };
 		void resetScene();
 	};
 

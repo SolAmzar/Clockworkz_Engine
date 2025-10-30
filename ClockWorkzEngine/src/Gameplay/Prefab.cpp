@@ -226,7 +226,7 @@ namespace Gameplay
 			GameObjectBlueprint bp;
             bp.type = GameObjectType::Ball;
 			bp.name = "Ball";
-            bp.textureId = "enemy_texture";
+            bp.textureId = "ball_texture";
             bp.size = {0.5f, 0.5f};
             bp.isSolid = true;
             bp.layer = 2;

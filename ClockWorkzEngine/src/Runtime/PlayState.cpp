@@ -181,6 +181,7 @@ namespace Runtime {
                         obj->transform().scale.y += 10 * dt;
                     }
 
+
                     Core::Engine& engine = Core::Engine::Get();
                     Platform::InputManager& input = engine.input();
                     Graphics::Camera2D& cam = engine.camera();
@@ -209,20 +210,21 @@ namespace Runtime {
                         obj->transform().rotationRad = angleRad;
 
                     }
+                    if (obj->type() == Gameplay::GameObjectType::Player && !obj->active()) {
+						obj->respawnAt(glm::vec2(0.0f, 0.0f), true, true);
+                    }
 
-                    break;
                 }
                 if (obj->type() == Gameplay::GameObjectType::Ball) {
-                    static int count = 0;
-                    obj->velocity().x += 1000.0f;
-                    /*if (m_input.isKeyDown(GLFW_KEY_UP)) {
-                        obj->velocity().y = m
-                    }*/
+                    obj->velocity().y = 0.0f;
+                    obj->velocity().x += m_ballDir * m_ballSpeed;
 
-                    count++;
-                    if (count % 300 == 0) {
-                        obj->velocity().y += 50.0f;
-					}
+                    // Predict next X and flip if we would cross a bound
+                    float nextX = obj->transform().position.x + obj->velocity().x * static_cast<float>(dt);
+                    if (nextX < m_leftBound) { nextX = m_leftBound;  m_ballDir = +1; }
+                    if (nextX > m_rightBound) { nextX = m_rightBound; m_ballDir = -1; }
+
+                    obj->transform().position.x = nextX; // snap to keep within bounds (optional)
                 }
             }
         }
@@ -255,7 +257,7 @@ namespace Runtime {
                     float x = -gridSize * spacing / 2.0f + col * spacing;
                     float y = -gridSize * spacing / 2.0f + row * spacing;
 
-                    auto obj = factory.createAt("Enemy", glm::vec2(x, y));
+                    auto obj = factory.createAt("Wall", glm::vec2(x, y));
                     if (obj) {
                         currentScene->objects().push_back(std::move(obj));
                     }
@@ -401,14 +403,14 @@ namespace Runtime {
         }
 
 
-        ImDrawList* dl = ImGui::GetForegroundDrawList();
+        //ImDrawList* dl = ImGui::GetForegroundDrawList();
 
-        const ImVec2 center{ 640.0f, 360.0f };
-        const float radius = 60.0f;
-        const int segments = 48; // More segments = smoother circle
-        const float thickness = 3.0f;
+        //const ImVec2 center{ 640.0f, 360.0f };
+        //const float radius = 60.0f;
+        //const int segments = 48; // More segments = smoother circle
+        //const float thickness = 3.0f;
 
-        dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
+        //dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
     }
 
     void PlayState::resetScene() {
