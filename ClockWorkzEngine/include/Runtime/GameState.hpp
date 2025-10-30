@@ -31,6 +31,8 @@ namespace Runtime {
 		virtual void update(double dt) = 0;
 		virtual void render(Core::Time* timer) = 0;
 		virtual const char* name() const { return "GameState"; }
+
+		virtual void renderImGui(Core::Time* timer) = 0; //Render the ImGUI for the state
 	};
 
 } // namespace Runtime

@@ -55,5 +55,6 @@ void GameStateManager::update(double dt) {
 void GameStateManager::render(Core::Time* timer) {
 	if (!m_states.empty()) {
 		m_states.top()->render(timer);
+		m_states.top()->renderImGui(timer);
 	}
 }
