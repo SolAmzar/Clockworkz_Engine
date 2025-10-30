@@ -50,6 +50,7 @@ namespace Runtime {
 		SceneManager m_scenes;   // your existing scene manager
 		Platform::InputManager& m_input;
 		GameStateManager& m_gsm;
+		bool m_spawnonclick{ false };
 		bool m_loaded{ false };
 		bool m_debug{ false };
 		Graphics::RenderingManager* m_renderer{ nullptr };

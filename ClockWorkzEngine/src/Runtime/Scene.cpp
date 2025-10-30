@@ -72,6 +72,7 @@ bool Scene::load()
         auto wallTex = Assets::TextureManager::Get("wall_texture");
         auto enemyTex = Assets::TextureManager::Get("enemy_texture");
         auto playerTex = Assets::TextureManager::Get("player_texture");
+		auto ballTex = Assets::TextureManager::Get("ball_texture");
 
         if (!playerTex) {
             Core::Engine::Get().logger().warn("Failed to get player_texture");
@@ -86,11 +87,9 @@ bool Scene::load()
         if (!wallTex) {
             Core::Engine::Get().logger().warn("Failed to get wall_texture");
         }
-
-        auto ballTex = ResourceManager<Graphics::Texture2D>::Load("ball_texture", "assets/textures/ball.png");
-        if (!ballTex){
-            throw std::runtime_error("[Scene] Warning: Failed to load ball_texture\n");
-        }
+        if (!ballTex) {
+            Core::Engine::Get().logger().warn("Failed to get ball_texture");
+		}
 
         if (!std::filesystem::exists(filepath)) {
             std::cerr << "Scene file does not exist: " << filepath << "\n";

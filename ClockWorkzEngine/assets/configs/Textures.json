@@ -23,6 +23,12 @@
 			"path": "assets/textures/wall.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "ball_texture",
+			"path": "assets/textures/ball.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
 	]
 }

@@ -146,6 +146,18 @@ namespace Runtime {
             return;
         }
 
+        if (m_input.wasKeyPressed(GLFW_KEY_1)) {
+            m_spawnonclick = !m_spawnonclick;
+            std::cout << "Spawn on click is "
+                << (m_spawnonclick ? "enabled" : "disabled")
+                << std::endl;
+            return; 
+        }
+
+        if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick) {
+               
+		}
+
         //Syafiq - Player movement
         if (auto* scene = m_scenes.current()){
 
@@ -249,7 +261,7 @@ namespace Runtime {
 
                 for (int i = 0; i < toSpawn; ++i) {
                     int gridSize = 50;
-                    float spacing = 2.0f;
+                    float spacing = 50.f;
                     int idx = m_spawnedCount + i;
                     int row = idx / gridSize;
                     int col = idx % gridSize;
@@ -366,7 +378,7 @@ namespace Runtime {
                 if (currentScene) {
                     // Spawn objects in a grid pattern
                     int gridSize = 50; // 50x50 = 2500 objects
-                    float spacing = 2.0f;
+                    float spacing = 20.f;
                     float startX = -gridSize * spacing / 2.0f;
                     float startY = -gridSize * spacing / 2.0f;
 
