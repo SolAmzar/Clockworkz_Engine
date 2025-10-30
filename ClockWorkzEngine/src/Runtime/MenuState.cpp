@@ -151,7 +151,7 @@ namespace Runtime {
             
         }
 
-        if (m_input.wasKeyPressed(GLFW_KEY_0)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_P)) {
             m_debug = !m_debug;
             if (m_debug) {
                 std::cout << "Debug is pressed\n";
@@ -237,6 +237,11 @@ namespace Runtime {
 
             }
         }
+    }
+
+    //Implementation of ImGui
+    void Runtime::MenuState::renderImGui(Core::Time* timer) {
+        if (!m_debug) return;
 
         if (m_debug) {
             /*Implement the IMGUI*/
@@ -245,8 +250,6 @@ namespace Runtime {
             ImGui::Text("[Enter] to select");
             ImGui::End();
         }
-        //End: Syafiq
-
     }
 
     void MenuState::onExit() {

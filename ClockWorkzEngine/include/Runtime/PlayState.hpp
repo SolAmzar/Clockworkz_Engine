@@ -17,8 +17,11 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/SceneManager.hpp"
+#include "Gameplay/GameObject.hpp"
 #include <memory>
 #include <string>
+#include <vector>
+
 
 namespace Core {
 	class Logger; class Time;
@@ -45,6 +48,8 @@ namespace Runtime {
 		const int SPAWN_PER_FRAME = 100;
 		bool m_shouldReturnToMenu{ false };
 
+		void renderImGui(Core::Time* timer) override; //Imgui for playstate
+
 	private:
 		std::string m_initialSceneId;
 		SceneManager m_scenes;   // your existing scene manager
@@ -58,6 +63,8 @@ namespace Runtime {
 		float m_ballSpeed{ 220.f };
 		int   m_ballDir{ +1 };
 		void resetScene();
+		std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
+
 	};
 
 } // namespace Runtime

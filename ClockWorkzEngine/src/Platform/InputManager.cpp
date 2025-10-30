@@ -58,7 +58,7 @@ namespace Platform {
         trackKey(GLFW_KEY_ESCAPE);
         trackKey(GLFW_KEY_SPACE);
 
-        trackKey(GLFW_KEY_0); //For debugging
+        trackKey(GLFW_KEY_P); //For debugging
 
         trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
         trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
