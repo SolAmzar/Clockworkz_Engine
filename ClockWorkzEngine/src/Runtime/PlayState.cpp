@@ -146,7 +146,7 @@ namespace Runtime {
             return;
         }
 
-        if (m_input.wasKeyPressed(GLFW_KEY_1)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_L)) {
             m_spawnonclick = !m_spawnonclick;
             std::cout << "Spawn on click is "
                 << (m_spawnonclick ? "enabled" : "disabled")

@@ -57,7 +57,7 @@ namespace Platform {
         trackKey(GLFW_KEY_KP_ENTER);
         trackKey(GLFW_KEY_ESCAPE);
         trackKey(GLFW_KEY_SPACE);
-        trackKey(GLFW_KEY_1);
+        trackKey(GLFW_KEY_L);
 
         trackKey(GLFW_KEY_P); //For debugging
 
