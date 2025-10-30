@@ -125,6 +125,16 @@ namespace Runtime {
 
     void PlayState::update(double dt) {
 
+        Core::Engine& engine = Core::Engine::Get();
+        Platform::InputManager& input = engine.input();
+        Graphics::Camera2D& cam = engine.camera();
+        Platform::WindowManager& window = engine.window();
+        glm::vec2 mouseWorld = m_input.getMouseWorldPos(
+            cam,
+            static_cast<float>(window.width()),
+            static_cast<float>(window.height())
+        );
+
         if (m_shouldReturnToMenu) {
             m_gsm.pop();
             return;
@@ -155,8 +165,45 @@ namespace Runtime {
         }
 
         if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick) {
-               
-		}
+            // Convert from screen to world coordinates
+            glm::vec2 mouseWorld = m_input.getMouseWorldPos(
+                cam,
+                static_cast<float>(window.width()),
+                static_cast<float>(window.height())
+            );
+
+            // 2) Choose wall size/texture (tweak as you like)
+            glm::vec2 wallSize{ 64.f, 64.f };
+            std::string texture = "wall.png";  // or "" if you’re not texturing yet
+            // 3) Make the wall and add it to the current scene
+			// Optional: snap to grid
+            /*float grid = 32.f;
+            mouseWorld = glm::floor(mouseWorld / grid) * grid;*/
+            auto wall = Gameplay::GameObject::MakeWall(mouseWorld, wallSize, texture);
+
+            gameObjects.push_back(std::move(wall));
+            std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+        }
+
+		// function to delete objects on right click 
+        if ((m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && !m_spawnonclick)) {
+                    for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
+                        auto& obj = *it;
+                        // Simple AABB check
+                        glm::vec2 pos = obj->transform().position;
+                        glm::vec2 size = obj->size();
+                        if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
+                            mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
+                            std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
+                            it = gameObjects.erase(it); // Remove object and get new iterator
+                        }
+                        else {
+                            ++it; // Only increment if not erased
+                        }
+                    }
+  
+			}
+		
 
         //Syafiq - Player movement
         if (auto* scene = m_scenes.current()){
@@ -164,6 +211,7 @@ namespace Runtime {
             // Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
             // objMap["Player"][0] <- since only 1 player. index 0 will work.
             for (auto& obj : scene->objects()) {
+
                 if (obj->type() == Gameplay::GameObjectType::Player) {
                     float moveSpeed = 100.0f;
                     float moveAmount = moveSpeed * static_cast<float>(dt);
@@ -189,15 +237,9 @@ namespace Runtime {
                     }
 
                     if (m_input.isKeyDown(GLFW_KEY_G)) {
-                        obj->transform().scale.x += 10*dt;
+                        obj->transform().scale.x += 10 * dt;
                         obj->transform().scale.y += 10 * dt;
                     }
-
-
-                    Core::Engine& engine = Core::Engine::Get();
-                    Platform::InputManager& input = engine.input();
-                    Graphics::Camera2D& cam = engine.camera();
-                    Platform::WindowManager& window = engine.window();
 
                     glm::vec2 mouseWorld = input.getMouseWorldPos(cam,
                         static_cast<float>(window.width()),
@@ -240,10 +282,6 @@ namespace Runtime {
                 }
             }
         }
-
-
-        Core::Engine& engine = Core::Engine::Get();
-        Graphics::Camera2D& cam = engine.camera();
 
         if (m_input.isKeyDown(GLFW_KEY_Q)) {
             cam.setZoom(cam.zoom() * 1.02f);
@@ -436,6 +474,12 @@ namespace Runtime {
                 Core::Profiler::Get().reset();
             }
 
+            if (ImGui::Button("Activate OnClickSpawn")) {
+                m_spawnonclick = true;
+            }
+            if (ImGui::Button("Activate Object Delete")) {
+                m_spawnonclick = false;
+			}
 
             // Add button to spawn 2500 objects
             if (ImGui::Button("Spawn 2500 Objects")) {
