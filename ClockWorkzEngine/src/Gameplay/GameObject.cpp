@@ -115,7 +115,7 @@ namespace Gameplay {
         // Current object damage other object with health on collide
 
         auto resolvePlayerVsWall = [](GameObject& player, GameObject& wall) {
-            // Compute world-space AABBs (center-anchored in your code)
+            // Compute world-space AABBs 
             AABB pa = player.aabbWorld();
             AABB wa = wall.aabbWorld();
 
@@ -126,8 +126,8 @@ namespace Gameplay {
             glm::vec2 wh = 0.5f * (wa.max - wa.min);
 
             // overlap along each axis
-            glm::vec2 d = pc - wc;                          // center delta
-            glm::vec2 o = (ph + wh) - glm::abs(d);          // raw overlap
+            glm::vec2 d = pc - wc;                        
+            glm::vec2 o = (ph + wh) - glm::abs(d);          
 
             // if both overlaps are positive, we are intersecting
             if (o.x > 0.f && o.y > 0.f) {
