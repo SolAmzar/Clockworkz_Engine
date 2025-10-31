@@ -60,6 +60,8 @@ namespace Platform {
         trackKey(GLFW_KEY_L);
 
         trackKey(GLFW_KEY_P); //For debugging
+		trackKey(GLFW_KEY_M); //Mute BGM
+		trackKey(GLFW_KEY_U); //Unmute BGM
 
         trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
         trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
