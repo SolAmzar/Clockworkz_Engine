@@ -252,6 +252,7 @@ namespace Gameplay {
         aabb->type = ColliderType::AABB;
         aabb->halfExtents = 0.5f * size * go->transform().scale;
         aabb->offset = { 0.f, 0.f };
+        aabb->blocksLight = true;
         return go;
     }
 
@@ -268,6 +269,7 @@ namespace Gameplay {
         aabb->type = ColliderType::AABB;
         aabb->halfExtents = 0.5f * size * go->transform().scale;
         aabb->offset = { 0.f, 0.f };
+        aabb->blocksLight = false;
         // Components
         go->addComponent<HealthComponent>(3);
         return go;
@@ -286,6 +288,7 @@ namespace Gameplay {
         aabb->type = ColliderType::AABB;
         aabb->halfExtents = 0.5f * size * go->transform().scale;
         aabb->offset = { 0.f, 0.f };
+        aabb->blocksLight = false;
         // Components
         go->addComponent<HealthComponent>(hp);
         go->addComponent<DamageDealerComponent>(1); // contact damage
@@ -305,6 +308,7 @@ namespace Gameplay {
         aabb->type = ColliderType::AABB;
         aabb->halfExtents = 0.5f * size * go->transform().scale;
         aabb->offset = { 0.f, 0.f };
+        aabb->blocksLight = false;
         // Components
         go->addComponent<DamageDealerComponent>(damage);
         return go;
@@ -323,6 +327,7 @@ namespace Gameplay {
         circ->type = ColliderType::Circle;
         circ->r = radius * 0.5f * (go->transform().scale.x + go->transform().scale.y); // average scale
         circ->offset = { 0.f, 0.f };
+        circ->blocksLight = false;
         return go;
     }
 
