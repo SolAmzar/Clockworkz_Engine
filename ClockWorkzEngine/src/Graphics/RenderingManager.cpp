@@ -83,6 +83,9 @@ namespace Graphics {
 		glEnable(GL_BLEND);                           // enable alpha blending
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		// allocate memoru
+		//glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+		//glBufferData(GL_ARRAY_BUFFER, 1000, nullptr, GL_STATIC_DRAW);
 		return true;
 	}
 
@@ -111,8 +114,8 @@ namespace Graphics {
 			{x2, y2, r, g, b}
 		};
 
-		glUseProgram(m_shader);
 		glBindVertexArray(m_vao);
+		glUseProgram(m_shader);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 

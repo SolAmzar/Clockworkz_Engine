@@ -172,6 +172,11 @@ namespace Gameplay {
         other.getComponent<HealthComponent>();
     }
 
+    void GameObject::setName(const std::string& newName)
+    {
+        m_name = newName;
+    }
+
     void GameObject::autoUpdateCollisionBaseOnScale() {
         glm::vec2 objScale = m_transform.scale;
         glm::vec2 objSize = m_size; // assuming you have a size field

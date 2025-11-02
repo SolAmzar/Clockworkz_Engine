@@ -58,6 +58,7 @@ namespace Runtime {
 		bool m_spawnonclick{ false };
 		bool m_loaded{ false };
 		bool m_debug{ false };
+		bool m_flashlightOn{ true };
 		Graphics::RenderingManager* m_renderer{ nullptr };
 		float m_leftBound{ 100.f };
 		float m_rightBound{ 700.f };

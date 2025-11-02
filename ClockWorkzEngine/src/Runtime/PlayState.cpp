@@ -164,6 +164,11 @@ namespace Runtime {
             return; 
         }
 
+        if (m_input.wasKeyPressed(GLFW_KEY_Q)) {
+            m_flashlightOn = !m_flashlightOn;
+            std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
+        }
+
         if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick) {
             // Convert from screen to world coordinates
             glm::vec2 mouseWorld = m_input.getMouseWorldPos(
@@ -341,47 +346,51 @@ namespace Runtime {
         }
 
         // ==================== Torch Light Rendering ====================
-        Core::Engine& engine = Core::Engine::Get();
-        auto* scene = m_scenes.current();
-        if (!scene) return;
+        if (m_flashlightOn) {
+            Core::Engine& engine = Core::Engine::Get();
+            auto* scene = m_scenes.current();
+            if (!scene) return;
 
-        auto* physics = scene->getPhysics();
-        if (physics) {
-            std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+            auto* physics = scene->getPhysics();
+            if (physics) {
+                std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 
-            // Find the player (you can cache this later)
-            Gameplay::GameObject* player = nullptr;
-            for (auto& o : objs) {
-                if (o->type() == Gameplay::GameObjectType::Player) {
-                    player = o.get();
-                    break;
+                Gameplay::GameObject* player = nullptr;
+                for (auto& o : objs) {
+                    if (o->type() == Gameplay::GameObjectType::Player) {
+                        player = o.get();
+                        break;
+                    }
                 }
+                if (!player)
+                {
+                    return;
+                }
+
+                glm::vec2 origin = player->transform().position;
+                float angle = player->transform().rotationRad;
+
+                // Compute visibility polygon
+                std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+                    origin,
+                    angle,
+                    glm::radians(60.0f), // FOV in radians (torch cone width)
+                    300.0f,              // radius
+                    *physics,
+                    objs
+                );
+
+                // Draw the light cone (via RenderingManager)
+                auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
+                if (!shader) return;
+
+                shader->use();
+                shader->setVec3("uColor", glm::vec3(1.0f, 0.9f, 0.6f)); // optional
+                shader->setVec2("uLightPos", origin);
+                shader->setFloat("uRadius", 600.0f);
+                shader->setMat4("uProjection", engine.camera().viewProj());
+                m_renderer->drawLightCone(origin, lightPoly, glm::vec3(1.0f, 0.9f, 0.6f));
             }
-            if (!player) return;
-
-            glm::vec2 origin = player->transform().position;
-            float angle = player->transform().rotationRad;
-
-            // Compute visibility polygon
-            std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-                origin,
-                angle,
-                glm::radians(60.0f), // FOV in radians (torch cone width)
-                300.0f,              // radius
-                *physics,
-                objs
-            );
-
-            // Draw the light cone (via RenderingManager)
-            auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
-            if (!shader) return;
-
-            shader->use();
-            shader->setVec3("uColor", glm::vec3(1.0f, 0.9f, 0.6f)); // optional
-            shader->setVec2("uLightPos", origin);
-            shader->setFloat("uRadius", 600.0f);
-            shader->setMat4("uProjection", engine.camera().viewProj());
-            m_renderer->drawLightCone(origin, lightPoly, glm::vec3(1.0f, 0.9f, 0.6f));
         }
 
     }
@@ -499,7 +508,7 @@ namespace Runtime {
                             float y = startY + j * spacing;
 
                             // Create an object using your prefab system
-                            auto obj = factory.createAt("Enemy", glm::vec2(x, y));
+                            auto obj = factory.createAt("Floor", glm::vec2(x, y));
                             if (obj) {
                                 currentScene->objects().push_back(std::move(obj));
                             }

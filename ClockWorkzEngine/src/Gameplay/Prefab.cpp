@@ -20,314 +20,352 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 */
 /******************************************************************************/
 
+
+
 #include "Gameplay/Prefab.hpp"
 #include "Gameplay/GameObject.hpp"
-#include "Gameplay/Components/SpriteRenderer.hpp"
+#include "Gameplay/Serializer.hpp"
 #include "Gameplay/Components/Health.hpp"
 #include "Gameplay/Components/DamageDealer.hpp"
-#include "Gameplay/Components/LightOccluder.hpp"
-#include "Gameplay/Serializer.hpp"
-#include <glm/vec2.hpp>
-#include <memory>
-#include <unordered_map>
+#include <fstream>
+#include <iostream>
+#include <filesystem>
+
 namespace Gameplay
 {
-
-    PrefabFactory &PrefabFactory::get()
+    PrefabFactory& PrefabFactory::get()
     {
         static PrefabFactory instance;
         return instance;
     }
 
-    void PrefabFactory::saveBlueprint(const std::string &name, const GameObjectBlueprint &blueprint)
-    {
-        blueprints_[name] = blueprint;
+    // ========================================================================
+    // PREFAB FILE I/O
+    // ========================================================================
+
+    static GameObjectType getTypeFromPrefabName(const std::string& name) {
+        if (name == "Player") return GameObjectType::Player;
+        if (name == "Enemy")  return GameObjectType::Enemy;
+        if (name == "Wall")   return GameObjectType::Wall;
+        if (name == "Floor")  return GameObjectType::Floor;
+        if (name == "Trap")   return GameObjectType::Trap;
+        return GameObjectType::Unknown;
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::create(const std::string &blueprintName)
+    bool PrefabFactory::loadPrefabFromFile(const std::string& filepath)
     {
-		// Find the blueprint by name
-        auto it = blueprints_.find(blueprintName);
-        if (it == blueprints_.end())
-        {
+        try {
+            std::ifstream file(filepath);
+            if (!file.is_open()) {
+                std::cerr << "[PrefabFactory] Failed to open prefab file: " << filepath << "\n";
+                return false;
+            }
+
+            json j;
+            file >> j;
+            file.close();
+
+            // Support two formats:
+            // Format 1 (Single prefab):
+            // {
+            //   "prefabName": "PlayerPrefab",
+            //   "components": { ... }
+            // }
+            //
+            // Format 2 (Multiple prefabs):
+            // {
+            //   "prefabs": [
+            //     { "prefabName": "Player", "components": {...} },
+            //     { "prefabName": "Enemy", "components": {...} }
+            //   ]
+            // }
+
+            int loadedCount = 0;
+
+            // Check if it's the multiple prefabs format
+            if (j.contains("prefabs") && j["prefabs"].is_array()) {
+                for (const auto& prefabJson : j["prefabs"]) {
+                    if (!prefabJson.contains("prefabName") || !prefabJson.contains("components")) {
+                        std::cerr << "[PrefabFactory] Invalid prefab entry in: " << filepath << "\n";
+                        continue;
+                    }
+
+                    std::string prefabName = prefabJson["prefabName"].get<std::string>();
+                    registerPrefab(prefabName, prefabJson["components"]);
+                    loadedCount++;
+                }
+
+                std::cout << "[PrefabFactory] Loaded " << loadedCount << " prefabs from: " << filepath << "\n";
+                return loadedCount > 0;
+            }
+            // Single prefab format
+            else if (j.contains("prefabName") && j.contains("components")) {
+                std::string prefabName = j["prefabName"].get<std::string>();
+                registerPrefab(prefabName, j["components"]);
+
+                std::cout << "[PrefabFactory] Loaded prefab '" << prefabName << "' from: " << filepath << "\n";
+                return true;
+            }
+            else {
+                std::cerr << "[PrefabFactory] Invalid prefab format in: " << filepath << "\n";
+                return false;
+            }
+        }
+        catch (const std::exception& e) {
+            std::cerr << "[PrefabFactory] Error loading prefab: " << e.what() << "\n";
+            return false;
+        }
+    }
+
+    bool PrefabFactory::savePrefabToFile(const std::string& prefabName, const std::string& filepath)
+    {
+        auto it = prefabs_.find(prefabName);
+        if (it == prefabs_.end()) {
+            std::cerr << "[PrefabFactory] Prefab '" << prefabName << "' not found\n";
+            return false;
+        }
+
+        try {
+            json j;
+            j["prefabName"] = prefabName;
+            j["components"] = it->second.componentData;
+
+            std::ofstream file(filepath);
+            if (!file.is_open()) {
+                std::cerr << "[PrefabFactory] Failed to open file for writing: " << filepath << "\n";
+                return false;
+            }
+
+            file << j.dump(4);
+            file.close();
+
+            std::cout << "[PrefabFactory] Saved prefab '" << prefabName << "' to: " << filepath << "\n";
+            return true;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "[PrefabFactory] Error saving prefab: " << e.what() << "\n";
+            return false;
+        }
+    }
+
+    bool PrefabFactory::loadAllPrefabsFromDirectory(const std::string& directory)
+    {
+        namespace fs = std::filesystem;
+
+        if (!fs::exists(directory) || !fs::is_directory(directory)) {
+            std::cerr << "[PrefabFactory] Directory not found: " << directory << "\n";
+            return false;
+        }
+
+        int loadedCount = 0;
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                if (loadPrefabFromFile(entry.path().string())) {
+                    loadedCount++;
+                }
+            }
+        }
+
+        std::cout << "[PrefabFactory] Loaded " << loadedCount << " prefabs from: " << directory << "\n";
+        return loadedCount > 0;
+    }
+
+    // ========================================================================
+    // PREFAB REGISTRATION
+    // ========================================================================
+
+    void PrefabFactory::registerPrefab(const std::string& name, const json& componentData)
+    {
+        PrefabData prefab;
+        prefab.name = name;
+        prefab.componentData = componentData;
+        prefabs_[name] = prefab;
+
+        std::cout << "[PrefabFactory] Registered prefab: " << name << "\n";
+    }
+
+    // ========================================================================
+    // GAMEOBJECT CREATION
+    // ========================================================================
+
+    std::unique_ptr<GameObject> PrefabFactory::create(const std::string& prefabName)
+    {
+        auto it = prefabs_.find(prefabName);
+        if (it == prefabs_.end()) {
+            std::cerr << "[PrefabFactory] Prefab not found: " << prefabName << "\n";
             return nullptr;
         }
-		// Retrieve the blueprint
-        const GameObjectBlueprint &blueprint = it->second;
-		// Create a new GameObject
-        auto gameObject = std::make_unique<GameObject>(blueprint.type, blueprint.name, blueprint.shapeId);
 
-        applyBlueprint(*gameObject, blueprint);
+        // Create a temporary JSON object with the prefab data
+        json objJson;
+        objJson["name"] = prefabName;
+        objJson["type"] = static_cast<int>(getTypeFromPrefabName(prefabName));
+        objJson["active"] = true;
+        objJson["components"] = it->second.componentData;
 
-        return gameObject;
+        // Use the serializer to create the GameObject
+        return GameObjectSerializer::deserializeGameObject(objJson);
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& blueprintName, glm::vec2 position)
+    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& prefabName, glm::vec2 position)
     {
+        auto obj = create(prefabName);
+        if (obj) {
+            obj->transform().position = position;
+        }
+        return obj;
+    }
 
-        auto gameObject = create(blueprintName);
-
-        if (gameObject)
-        {
-            gameObject->transform().position = position;
+    std::unique_ptr<GameObject> PrefabFactory::createWithOverrides(
+        const std::string& prefabName,
+        const json& overrides)
+    {
+        auto it = prefabs_.find(prefabName);
+        if (it == prefabs_.end()) {
+            std::cerr << "[PrefabFactory] Prefab not found: " << prefabName << "\n";
+            return nullptr;
         }
 
-        return gameObject;
-    }
+        // Start with prefab data
+        json objJson;
+        objJson["name"] = prefabName;
+        objJson["type"] = static_cast<int>(getTypeFromPrefabName(prefabName));
+        objJson["active"] = true;
+        objJson["components"] = it->second.componentData;
 
-    //std::unique_ptr<GameObject> PrefabFactory::createAt(const SerializedGameObject &sGO)
-    //{
-    //    auto gameObject = create(sGO.blueprintName);
-
-    //    if (gameObject)
-    //    {
-    //        gameObject->transform().position = sGO.position;
-    //        // Apply transform overrides
-    //        gameObject->transform().scale = sGO.scale;
-    //        gameObject->transform().rotationRad = sGO.rotation;
-    //        gameObject->setActive(sGO.active);
-    //    }
-
-    //    return gameObject;
-    //}
-
-
-
-    // void PrefabFactory::applyBlueprint(GameObject &obj, const GameObjectBlueprint &blueprint)
-    // {
-    //     // Transform properties
-    //     obj.transform().position = blueprint.position;
-    //     obj.transform().scale = blueprint.scale;
-    //     obj.transform().rotationDeg = blueprint.rotation;
-    //     obj.setSize(blueprint.size);
-
-    //     // Behavior properties
-    //     obj.setSolid(blueprint.isSolid);
-    //     obj.setHazard(blueprint.isHazard);
-    //     obj.setBlocksLight(blueprint.blocksLight);
-
-    //     // Rendering and collision
-    //     obj.setTextureId(blueprint.textureId);
-    //     obj.setLayer(blueprint.layer);
-    //     obj.setCollisionMask(blueprint.collisionMask);
-    //     obj.setActive(blueprint.active);
-    // }
-
-    void PrefabFactory::applyBlueprint(GameObject &obj, const GameObjectBlueprint &bp)
-    {
-        obj.setSize(bp.size);
-        obj.setSolid(bp.isSolid);
-        obj.setHazard(bp.isHazard);
-        obj.setBlocksLight(bp.blocksLight);
-        obj.setLayer(bp.layer);
-        obj.setCollisionMask(bp.collisionMask);
-        obj.setActive(bp.active);
-        obj.setTextureId(bp.textureId);
-
-        // Attach standard components
-        obj.addComponent<SpriteRendererComponent>(bp.textureId);
-
-        // Conditional gameplay components
-        if (bp.type == GameObjectType::Player)
-            obj.addComponent<HealthComponent>(3); // Example
-        if (bp.type == GameObjectType::Enemy)
-            obj.addComponent<DamageDealerComponent>(1);
-
-        for (auto type : bp.colliderTypes)
-        {
-            switch (type)
-            {
-            case ColliderType::AABB:
-            {
-                auto aabb = obj.addCollider<AABBCollider>();
-                // aabb->halfExtents = obj.transform().scale * 0.5f;
-                aabb->solid = bp.isSolid;
-                aabb->blocksLight = bp.blocksLight;
-                break;
-            }
-            case ColliderType::Circle:
-            {
-                auto circ = obj.addCollider<CircleCollider>();
-                /*circ->r = std::max(obj.transform().scale.x, obj.transform().scale.y) * 0.45f;*/
-                circ->solid = bp.isSolid;
-                circ->blocksLight = bp.blocksLight;
-                break;
-            }
+        // Apply overrides (merge with prefab data)
+        if (overrides.contains("name")) {
+            objJson["name"] = overrides["name"];
+        }
+        if (overrides.contains("active")) {
+            objJson["active"] = overrides["active"];
+        }
+        if (overrides.contains("components")) {
+            // Merge component overrides
+            for (auto& [key, value] : overrides["components"].items()) {
+                objJson["components"][key] = value;
             }
         }
+
+        return GameObjectSerializer::deserializeGameObject(objJson);
     }
 
-    /** Function header comment
-     * @brief XXX
-     *
-     * XXX
-     *
-     * @param XXX
-     *
-     * @return XXX
-     */
+    // ========================================================================
+    // UTILITY
+    // ========================================================================
+
+    bool PrefabFactory::hasPrefab(const std::string& name) const
+    {
+        return prefabs_.find(name) != prefabs_.end();
+    }
+
+    std::vector<std::string> PrefabFactory::getPrefabNames() const
+    {
+        std::vector<std::string> names;
+        for (const auto& [name, _] : prefabs_) {
+            names.push_back(name);
+        }
+        return names;
+    }
+
+    // ========================================================================
+    // SETUP BUILT-IN PREFABS (Optional - for backwards compatibility)
+    // ========================================================================
+
     void setupGameBlueprints()
     {
-        auto &factory = PrefabFactory::get();
-        // Floor
+        auto& factory = PrefabFactory::get();
+
+        // Player Prefab
         {
-            GameObjectBlueprint bp;
-            bp.type = GameObjectType::Floor;
-            bp.name = "Floor";
-            bp.textureId = "floor_texture";
-            bp.isSolid = false;
-            bp.layer = 0;
-            factory.saveBlueprint("Floor", bp);
-			
+            json components;
+
+            components["transform"]["position"]["x"] = 0.0f;
+            components["transform"]["position"]["y"] = 0.0f;
+            components["transform"]["rotation"] = 0.0f;
+            components["transform"]["scale"]["x"] = 1.0f;
+            components["transform"]["scale"]["y"] = 1.0f;
+
+            components["collider"]["width"] = 0.8f;
+            components["collider"]["height"] = 0.8f;
+            components["collider"]["isSolid"] = true;
+            components["collider"]["layer"] = 2;
+            components["collider"]["collisionMask"] = 0xFFFFFFFFu;
+
+            components["health"]["hp"] = 10;
+
+            components["spriteRenderer"]["textureId"] = "player_texture";
+
+            factory.registerPrefab("Player", components);
         }
 
-        // Wall
+        // Enemy Prefab
         {
-            GameObjectBlueprint bp;
-            bp.type = GameObjectType::Wall;
-            bp.name = "Wall";
-            bp.textureId = "wall_texture";
-            bp.isSolid = true;
-            bp.blocksLight = true;
-            bp.layer = 1;
-            bp.colliderTypes = {ColliderType::AABB};
-            factory.saveBlueprint("Wall", bp);
+            json components;
+
+            components["transform"]["position"]["x"] = 0.0f;
+            components["transform"]["position"]["y"] = 0.0f;
+            components["transform"]["rotation"] = 0.0f;
+            components["transform"]["scale"]["x"] = 1.0f;
+            components["transform"]["scale"]["y"] = 1.0f;
+
+            components["collider"]["width"] = 0.9f;
+            components["collider"]["height"] = 0.9f;
+            components["collider"]["isSolid"] = true;
+            components["collider"]["layer"] = 2;
+            components["collider"]["collisionMask"] = 0xFFFFFFFFu;
+
+            components["health"]["hp"] = 3;
+            components["damage"]["damage"] = 2;
+
+            components["spriteRenderer"]["textureId"] = "enemy_texture";
+
+            factory.registerPrefab("Enemy", components);
         }
 
-        // Player
+        // Wall Prefab
         {
-            GameObjectBlueprint bp;
-            bp.type = GameObjectType::Player;
-            bp.name = "Player";
-            bp.textureId = "player_texture";
-            bp.size = {0.8f, 0.8f};
-            bp.isSolid = true;
-            bp.layer = 2;
-            bp.colliderTypes = {ColliderType::Circle};
-            factory.saveBlueprint("Player", bp);
+            json components;
+
+            components["transform"]["position"]["x"] = 0.0f;
+            components["transform"]["position"]["y"] = 0.0f;
+            components["transform"]["rotation"] = 0.0f;
+            components["transform"]["scale"]["x"] = 1.0f;
+            components["transform"]["scale"]["y"] = 1.0f;
+
+            components["collider"]["width"] = 1.0f;
+            components["collider"]["height"] = 1.0f;
+            components["collider"]["isSolid"] = true;
+            components["collider"]["layer"] = 1;
+            components["collider"]["collisionMask"] = 0xFFFFFFFFu;
+
+            components["spriteRenderer"]["textureId"] = "wall_texture";
+
+            factory.registerPrefab("Wall", components);
         }
 
-        // Enemy
+        // Floor Prefab
         {
-            GameObjectBlueprint bp;
-            bp.type = GameObjectType::Enemy;
-            bp.name = "Enemy";
-            bp.textureId = "enemy_texture";
-            bp.size = {0.9f, 0.9f};
-            bp.isSolid = true;
-            bp.layer = 2;
-            bp.blocksLight = true;
-            bp.colliderTypes = {ColliderType::Circle};
-            factory.saveBlueprint("Enemy", bp);
+            json components;
+
+            components["transform"]["position"]["x"] = 0.0f;
+            components["transform"]["position"]["y"] = 0.0f;
+            components["transform"]["rotation"] = 0.0f;
+            components["transform"]["scale"]["x"] = 1.0f;
+            components["transform"]["scale"]["y"] = 1.0f;
+
+            components["collider"]["width"] = 1.0f;
+            components["collider"]["height"] = 1.0f;
+            components["collider"]["isSolid"] = false;
+            components["collider"]["layer"] = 0;
+            components["collider"]["collisionMask"] = 0xFFFFFFFFu;
+
+            components["spriteRenderer"]["textureId"] = "floor_texture";
+
+            factory.registerPrefab("Floor", components);
         }
 
-        // Ball
-        {
-			GameObjectBlueprint bp;
-            bp.type = GameObjectType::Ball;
-			bp.name = "Ball";
-            bp.textureId = "ball_texture";
-            bp.size = {0.5f, 0.5f};
-            bp.isSolid = true;
-            bp.layer = 2;
-            bp.shapeId = GameObjectShape::Circle;
-			factory.saveBlueprint("Ball", bp);
-        }
-        // // WALL BLUEPRINT
-        // {
-        //     GameObjectBlueprint wallBP;
-        //     wallBP.type = GameObjectType::Wall;
-        //     wallBP.name = "Wall";
-        //     wallBP.textureId = "wall_texture";
-        //     wallBP.size = glm::vec2(1.0f, 1.0f);
-        //     wallBP.isSolid = true;
-        //     wallBP.blocksLight = true;
-        //     wallBP.layer = 1;
-
-        //     factory.saveBlueprint("Wall", wallBP);
-        // }
-
-        // // FLOOR BLUEPRINT
-        // {
-        //     GameObjectBlueprint floorBP;
-        //     floorBP.type = GameObjectType::Floor;
-        //     floorBP.name = "Floor";
-        //     floorBP.textureId = "floor_texture";
-        //     floorBP.size = glm::vec2(1.0f, 1.0f);
-        //     floorBP.isSolid = false;
-        //     floorBP.layer = 0;
-
-        //     factory.saveBlueprint("Floor", floorBP);
-        // }
-
-        // // PLAYER BLUEPRINT
-        // {
-        //     GameObjectBlueprint playerBP;
-        //     playerBP.type = GameObjectType::Player;
-        //     playerBP.name = "Player";
-        //     playerBP.textureId = "player_texture";
-        //     playerBP.size = glm::vec2(0.8f, 0.8f);
-        //     playerBP.isSolid = true;
-        //     playerBP.layer = 2;
-        //     playerBP.health = 1;
-        //     playerBP.speed = 5.0f;
-        //     playerBP.type = GameObjectType::Player;
-
-        //     // Attach SpriteRendererComponent
-        //     auto player = factory.createAt("Player", glm::vec2(0, 0));
-        //     if (player)
-        //         player->addComponent<SpriteRendererComponent>("player_texture");
-
-        //     factory.saveBlueprint("Player", playerBP);
-        // }
-
-        // // NORMAL ENEMY BLUEPRINT
-        // {
-        //     GameObjectBlueprint enemyBP;
-        //     enemyBP.type = GameObjectType::Enemy;
-        //     enemyBP.name = "Enemy";
-        //     enemyBP.textureId = "enemy_texture";
-        //     enemyBP.size = glm::vec2(0.9f, 0.9f);
-        //     enemyBP.isSolid = true;
-        //     enemyBP.layer = 2;
-        //     enemyBP.health = 1;
-        //     enemyBP.damage = 10;
-        //     enemyBP.speed = 3.0f;
-
-        //     factory.saveBlueprint("Enemy", enemyBP);
-        // }
-
-        // // FAST ENEMY
-        // {
-        //     GameObjectBlueprint fastEnemyBP;
-        //     fastEnemyBP.type = GameObjectType::Enemy;
-        //     fastEnemyBP.name = "FastEnemy";
-        //     fastEnemyBP.textureId = "fast_enemy_texture";
-        //     fastEnemyBP.size = glm::vec2(0.7f, 0.7f);
-        //     fastEnemyBP.isSolid = true;
-        //     fastEnemyBP.layer = 2;
-        //     fastEnemyBP.health = 1;
-        //     fastEnemyBP.damage = 5;
-        //     fastEnemyBP.speed = 8.0f;
-
-        //     factory.saveBlueprint("FastEnemy", fastEnemyBP);
-        // }
-
-        // // BIG ENEMY
-        // {
-        //     GameObjectBlueprint bigEnemyBP;
-        //     bigEnemyBP.type = GameObjectType::Enemy;
-        //     bigEnemyBP.name = "BigEnemy";
-        //     bigEnemyBP.textureId = "big_enemy_texture";
-        //     bigEnemyBP.size = glm::vec2(1.5f, 1.5f);
-        //     bigEnemyBP.isSolid = true;
-        //     bigEnemyBP.layer = 2;
-        //     bigEnemyBP.health = 150;
-        //     bigEnemyBP.damage = 25;
-        //     bigEnemyBP.speed = 2.0f;
-
-        //     factory.saveBlueprint("BigEnemy", bigEnemyBP);
-        // }
+        std::cout << "[PrefabFactory] Built-in prefabs registered\n";
     }
 
-}
+} // namespace Gameplay

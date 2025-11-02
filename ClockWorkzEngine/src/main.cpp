@@ -1,5 +1,4 @@
 ﻿#include "Core/Engine.hpp"
-#include "Gameplay/Prefab.hpp"
 #include <iostream>
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
@@ -17,8 +16,7 @@ int main() {
 	#ifdef _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	#endif
-	// 1️ Register all prefab blueprints
-	Gameplay::setupGameBlueprints();
+
 
 	// 2️ Create and run the engine (registers itself via Engine::Get)
 	Core::Engine engine;

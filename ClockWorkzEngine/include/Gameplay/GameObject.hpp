@@ -109,6 +109,7 @@ namespace Gameplay {
         void setSolid(bool v) { m_isSolid = v; }
         void setHazard(bool v) { m_isHazard = v; }
         void setBlocksLight(bool v) { m_blocksLight = v; }
+        void setName(const std::string& newName);
 
 
         // Rendering handle for now (swap to Sprite component later)

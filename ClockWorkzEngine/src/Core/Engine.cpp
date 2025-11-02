@@ -37,6 +37,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <string>
 #include "Core/Profiler.hpp"
 #include "Assets/TextureManager.hpp"
+#include "Gameplay/Prefab.hpp"
 
 using namespace Core;
 
@@ -109,6 +110,13 @@ namespace Core
 
         if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json")) {
             m_logger->fatal("Failed to load textures from config");
+            return false;
+        }
+
+        // 1️ Register all prefab blueprints
+        const std::string prefabFile = "assets/configs/Prefab.json";
+        if (!Gameplay::PrefabFactory::get().loadPrefabFromFile(prefabFile)) {
+            std::cerr << "Failed to load prefab from file: " << prefabFile << "\n";
             return false;
         }
 
