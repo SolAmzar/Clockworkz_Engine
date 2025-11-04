@@ -2,7 +2,7 @@
 /*!
 \file           RenderingManager.hpp
 \project        Lights Out
-\author(s)      [Wei An] 100%
+\author(s)      [Wei An] 50% [Lebon]50%
 \brief          Declares RenderingManager, the graphics subsystem responsible
                 for all debug and primitive rendering in the engine.
                 Responsibilities include:
@@ -35,6 +35,8 @@ namespace Graphics {
         bool init();
         void beginFrame();
         void endFrame();
+        void beginDebugPass(const glm::mat4& vp);
+        void endDebugPass();
         void beginScenePass(const glm::mat4& vp);
         void endScenePass();
 
@@ -67,7 +69,7 @@ namespace Graphics {
     private:
         static constexpr int MAX_TEXTURE_SLOTS = 8;
         Renderer2D m_renderer2D; // textured renderer
-        unsigned int m_vao{0}, m_vbo{0};
-        unsigned int m_shader{0};
+        unsigned int m_vao{0}, m_vbo{0}; // Debug draw
+        //unsigned int m_shader{0};
     };
 }

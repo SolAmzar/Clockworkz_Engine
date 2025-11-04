@@ -176,8 +176,8 @@ void Scene::update(double dt)
 {
     {
         PROFILE_SCOPE("GameObjectUpdates");
-        for (auto &o : objects())
-        {
+        std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+        for (auto& o : objs){
             if (o->active())
                 o->update(dt);
         }
@@ -194,7 +194,8 @@ void Scene::update(double dt)
 void Scene::render(Graphics::RenderingManager &renderer)
 {
     PROFILE_SCOPE("GameObjectRender");
-    for (auto &o : objects())
+    std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+    for (auto &o : objs)
     {
         if (o->active())
             o->render(renderer);

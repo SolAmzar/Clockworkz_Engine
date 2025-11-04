@@ -1,3 +1,4 @@
+// Lebon 100% Texture Class that read and load Image using stb_image library
 #include "Graphics/Texture2D.hpp"
 #include <GL/glew.h>
 

@@ -1,3 +1,4 @@
+// Lebon for Resource Manager to Load in Textures
 #pragma once
 #include <string>
 #include <cstdint>

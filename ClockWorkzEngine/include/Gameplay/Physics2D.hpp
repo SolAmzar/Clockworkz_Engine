@@ -1,3 +1,5 @@
+// Steps - Modify to support AABB and Circle collision detection
+// Raycast- Lebon
 #pragma once
 #include <vector>
 #include <memory>

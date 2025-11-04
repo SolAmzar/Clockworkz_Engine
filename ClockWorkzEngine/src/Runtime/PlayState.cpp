@@ -278,9 +278,7 @@ namespace Runtime
 						obj->transform().scale.y += 10 * dt;
 					}
 
-					glm::vec2 mouseWorld = input.getMouseWorldPos(cam,
-																												static_cast<float>(window.width()),
-																												static_cast<float>(window.height()));
+					glm::vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
 					// Player world position
 					glm::vec2 playerPos = obj->transform().position;
@@ -430,6 +428,15 @@ namespace Runtime
 			}
 
 		}
+
+		std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+		m_renderer->beginDebugPass(engine.camera().viewProj());
+		for (auto& o : objs)
+		{
+			if (o->active())
+				o->debugRender(*m_renderer);
+		}
+		m_renderer->endDebugPass();
 		
 	}
 

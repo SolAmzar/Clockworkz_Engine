@@ -14,13 +14,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(ImportDependencies)
 importDependencies()  # fetch/build GLFW, GLEW, GLM, FreeType, ImGui
 
-# ---- nlohmann JSON ----
-FetchContent_Declare(
-  nlohmann_json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3 # stable version
-)
-FetchContent_MakeAvailable(nlohmann_json)
 
 # ----Compiling using GLEW (For IMGUI) ----
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
@@ -42,6 +35,10 @@ if(ENGINE_SOURCES STREQUAL "" AND ENGINE_HEADERS STREQUAL "")
 endif()
 
 add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp")
+
+if(MSVC)
+  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus)
+endif()
 
 # --- Optionally import FMOD ---
 if(ENGINE_ENABLE_FMOD)

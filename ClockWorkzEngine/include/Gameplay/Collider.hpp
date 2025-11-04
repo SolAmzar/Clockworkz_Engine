@@ -1,3 +1,8 @@
+// Lebon refactor game object to have multiple colliders.
+// glm need to replace later with own Math library in game version.
+// also used to support light blockage based on shape of collider when doing ray casting
+
+// Give credits to physics guy
 #pragma once
 #include <glm/glm.hpp>
 

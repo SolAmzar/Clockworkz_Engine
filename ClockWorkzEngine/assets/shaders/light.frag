@@ -1,34 +1,4 @@
-//#version 330 core
-//in vec2 FragWorldPos;
-//in vec3 Color;
-//out vec4 FragColor;
-//uniform vec2 uLightPos;
-//uniform float uRadius;
-//void main() {
-//    float dist = length(FragWorldPos - uLightPos);
-//    float intensity = clamp(1.0 - dist / uRadius, 0.0, 1.0);
-//    intensity = pow(intensity, 2.0);
-//    FragColor = vec4(Color * intensity, intensity);
-//}
-
-// Version2
-//#version 330 core
-//in vec2 FragWorldPos;
-//out vec4 FragColor;
-//
-//uniform vec2 uLightPos;
-//uniform float uRadius;
-//uniform vec3 uLightColor;   // <-- new uniform (e.g. vec3(1.0, 0.9, 0.6))
-//
-//void main() {
-//    float dist = length(FragWorldPos - uLightPos);
-//    float intensity = clamp(1.0 - dist / uRadius, 0.0, 1.0);
-//    intensity = pow(intensity, 2.0);
-//
-//    vec3 color = uLightColor * intensity;
-//    FragColor = vec4(color, intensity);
-//}
-
+// Lebon
 #version 330 core
 in vec2 FragWorldPos;
 out vec4 FragColor;

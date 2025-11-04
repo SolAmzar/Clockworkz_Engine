@@ -2,7 +2,7 @@
 /*!
 \file           RenderingManager.cpp
 \project        Lights Out
-\author(s)      [Wei An] 100%
+\author(s)      [Wei An] 50% [Lebon] 50%
 \brief          Implements RenderingManager, the graphics subsystem responsible
 				for all debug and primitive rendering in the engine.
 				Responsibilities include:
@@ -28,60 +28,18 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/GameObject.hpp"
 
 namespace Graphics {
-
-	namespace {
-		const char* debugVertexShader = R"(
-        #version 330 core
-        layout(location = 0) in vec2 aPos;
-        layout(location = 1) in vec3 aColor;
-		layout(location = 2) in float aAlpha;
-        uniform mat4 uProjection;
-        out vec3 Color;
-        void main() {
-            gl_Position = uProjection * vec4(aPos, 0.0, 1.0);
-            Color = aColor;
-        }
-    )";
-
-			const char* debugFragmentShader = R"(
-			#version 330 core
-			in vec3 Color;
-			out vec4 FragColor;
-			void main() {
-				FragColor = vec4(Color, 1.0);
-			}
-		)";
-	}
-
 	// Call Stack: engine run -> engine init -> rendering manager init
 	bool RenderingManager::init() {
-		// Create and compile shaders
-		unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vs, 1, &debugVertexShader, nullptr);
-		glCompileShader(vs);
-
-		unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fs, 1, &debugFragmentShader, nullptr);
-		glCompileShader(fs);
-
-		m_shader = glCreateProgram();
-		glAttachShader(m_shader, vs);
-		glAttachShader(m_shader, fs);
-		glLinkProgram(m_shader);
-
-		glDeleteShader(vs);
-		glDeleteShader(fs);
+		Assets::ResourceManager<Shader>::Load(
+			"debug",
+			"assets/shaders/debug.vert",
+			"assets/shaders/debug.frag");
 
 		// Create buffers
 		glGenVertexArrays(1, &m_vao);
 		glGenBuffers(1, &m_vbo);
 
 		m_renderer2D.init();
-
-		// Critical GL state for 2D sprites
-		glDisable(GL_DEPTH_TEST);                     // 2D: avoid depth hiding sprites
-		glEnable(GL_BLEND);                           // enable alpha blending
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// allocate memoru
 		//glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -94,7 +52,6 @@ namespace Graphics {
 		Vertex v = { x, y, r, g, b };
 
 		glPointSize(size);
-		glUseProgram(m_shader);
 		glBindVertexArray(m_vao);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(v), &v, GL_STATIC_DRAW);
@@ -115,7 +72,6 @@ namespace Graphics {
 		};
 
 		glBindVertexArray(m_vao);
-		glUseProgram(m_shader);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
@@ -174,18 +130,6 @@ namespace Graphics {
 	void RenderingManager::drawVelocity(const glm::vec2& pos, const glm::vec2& vel, const glm::vec3& color) {
 		drawLine(pos.x, pos.y, pos.x + vel.x, pos.y + vel.y, color.r, color.g, color.b);
 	}
-
-	//void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
-	//	const glm::vec2& size, float angleRad, const glm::vec4& color)
-	//{
-	//	// hard code angle to 0 first.
-	//	m_renderer2D.drawQuad(
-	//		pos.x, pos.y, size.x, size.y,
-	//		1, 1, texId, // texture width/height ratio
-	//		0, 0, 1, 1, // uv position, uv dimension
-	//		color.r, color.g, color.b, color.a, angleRad, Graphics::Anchor::Center
-	//	);
-	//}
 
 	void RenderingManager::drawSprite(
 		unsigned texId, const glm::vec2& pos,
@@ -279,6 +223,24 @@ namespace Graphics {
 		glUseProgram(0);
 	}
 
+	void RenderingManager::beginDebugPass(const glm::mat4& vp) {
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("debug");
+		if (!shader) return;
+		shader->use();
+		shader->setMat4("uVP", vp);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+	}
+
+
+	void RenderingManager::endDebugPass() {
+		glDepthMask(GL_TRUE);
+		glEnable(GL_DEPTH_TEST);
+		glUseProgram(0);
+	}
+
 	void RenderingManager::beginScenePass(const glm::mat4& vp) {
 		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
 		if (!shader) return;
@@ -297,6 +259,7 @@ namespace Graphics {
 
 	void RenderingManager::endScenePass() {
 		m_renderer2D.flush();
+		glUseProgram(0);
 	}
 
 	void RenderingManager::beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle) {
@@ -326,35 +289,6 @@ namespace Graphics {
 		glDepthMask(GL_TRUE);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
-
-
-	//void RenderingManager::beginFrame(const Camera2D& cam) {
-	//	// Clear buffers at the start of a new frame
-	//	glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // background color
-	//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//	// Activate texture shader
-	//	if (auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture")) {
-	//		shader->use();
-	//		shader->setMat4("uVP", cam.viewProj());
-
-	//		// Ensure sampler 'image' uses GL_TEXTURE0
-	//		int loc = glGetUniformLocation(shader->ID, "image");
-	//		if (loc >= 0) glUniform1i(loc, 0);
-	//	}
-
-	//	// Pass VP to the 2D renderer so it can upload 'projection' when drawing
-	//	m_renderer2D.begin(cam.viewProj());
-
-	//	// Debug shader for overlays, line draw etc
-	//	glUseProgram(m_shader);
-	//	glUniformMatrix4fv(glGetUniformLocation(m_shader, "uProjection"), 1, GL_FALSE, &cam.viewProj()[0][0]);
-	//}
-
-	//void RenderingManager::endFrame() {
-	//	glBindVertexArray(0);
-	//	glUseProgram(0);
-	//}
 
 } // namespace Graphics
 
