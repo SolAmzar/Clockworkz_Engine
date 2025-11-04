@@ -31,7 +31,7 @@ namespace Core {
 	class Config; class Logger; class Time;
 }
 namespace Platform {
-	class WindowManager; class InputManager;
+	class WindowManager; class InputManager; class LevelEditor;
 }
 namespace Graphics {
 	class GraphicsManager; class RenderingManager; class Camera2D;
@@ -57,6 +57,7 @@ namespace Core {
 		Graphics::Camera2D& camera() { return *m_camera; }
 		Platform::WindowManager& window() { return *m_window; }
 		Platform::InputManager& input() { return *m_input; }
+		Platform::LevelEditor& editor() { return *m_editor; }
 		Core::Logger& logger() { return *m_logger; }
 		//Audio::AudioManager& audio() { return *m_audio; }
 	private:
@@ -74,12 +75,14 @@ namespace Core {
 		// Inside namespace Platform
 		std::unique_ptr<Platform::WindowManager> m_window;
 		std::unique_ptr<Platform::InputManager>  m_input;
+		std::unique_ptr<Platform::LevelEditor>		 m_editor;
 
 		// Inside namespace Graphics
 		std::unique_ptr<Graphics::GraphicsManager>   m_gfx;
 		std::unique_ptr<Graphics::RenderingManager>  m_renderer;
 		std::unique_ptr<Graphics::Camera2D>          m_camera;
 		std::unique_ptr<Graphics::ImGuiManager>		 m_imgui;
+
 
 		// Inside namespace Audio
 		std::unique_ptr<Audio::AudioManager> m_audio;

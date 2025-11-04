@@ -38,6 +38,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Profiler.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Gameplay/Prefab.hpp"
+#include "Platform/LevelEditor.hpp"
 
 using namespace Core;
 
@@ -86,6 +87,7 @@ namespace Core
         m_time = std::make_unique<Time>();
         m_window = std::make_unique<Platform::WindowManager>();
         m_input = std::make_unique<Platform::InputManager>();
+        m_editor = std::make_unique<Platform::LevelEditor>();
         m_gfx = std::make_unique<Graphics::GraphicsManager>();
         m_renderer = std::make_unique<Graphics::RenderingManager>();
         m_camera = std::make_unique<Graphics::Camera2D>();

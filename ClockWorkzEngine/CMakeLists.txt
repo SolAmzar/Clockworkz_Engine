@@ -41,7 +41,7 @@ if(ENGINE_SOURCES STREQUAL "" AND ENGINE_HEADERS STREQUAL "")
   set(ENGINE_SOURCES "${CMAKE_BINARY_DIR}/_dummy.cpp" "src/Graphics/IMGUI.cpp" "src/Graphics/ImGuiManager.cpp")
 endif()
 
-add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp")
+add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp" "src/Platform/LevelEditor.cpp" "src/Platform/LevelEditorState.cpp")
 
 # --- Optionally import FMOD ---
 if(ENGINE_ENABLE_FMOD)

@@ -42,6 +42,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Gameplay/Prefab.hpp>
 #include "Core/Profiler.hpp" 
 #include "Graphics/RenderingManager.hpp"
+#include <Platform/LevelEditorState.hpp>
 
 
 using namespace Graphics;
@@ -167,8 +168,9 @@ namespace Runtime {
         }
 
         if (m_input.wasKeyPressed(GLFW_KEY_Q)) {
-            m_flashlightOn = !m_flashlightOn;
-            std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
+            m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
+            //m_flashlightOn = !m_flashlightOn;
+            //std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
         }
 
 
