@@ -174,29 +174,27 @@ namespace Platform {
         // Render scene
         m_currentScene->render(*m_renderer);
 
-        // Render gizmos for selected object (Rubric 1210 - Advanced)
         if (m_mode == EditorMode::Edit && m_selectedObject && m_showGizmos) {
             renderGizmos();
         }
     }
 
     void LevelEditor::renderUI() {
-        // Render all ImGui windows (Rubric 1201 - Simple: Working GUI)
         renderMenuBar();
 
         if (m_mode == EditorMode::Edit) {
             renderToolbar();
 
             if (m_showHierarchy) {
-                renderHierarchy();          // Rubric 1204 - Good
+                renderHierarchy();         
             }
 
             if (m_showProperties) {
-                renderProperties();         // Rubric 1203 - Good
+                renderProperties();       
             }
 
             if (m_showPrefabPalette) {
-                renderPrefabPalette();      // Rubric 1206 - Advanced
+                renderPrefabPalette();      
             }
 
             if (m_showLevelSettings) {

@@ -15,19 +15,7 @@
                 - Play/Stop testing mode
                 - Drag-and-drop asset placement
                 - Free camera navigation with docking support
-                - In-world object picking with gizmos (optional)
-
-                Rubric Requirements Fulfilled:
-                [1201] Simple - Working level editor GUI
-                [1202] Good - Most content not hardcoded, loaded through data files
-                [1203] Good - Property editor for modifying object properties
-                [1204] Good - Hierarchy objects list window
-                [1205] Advanced - Multiple levels can be saved/edited/loaded
-                [1206] Advanced - Archetypes/Prefabs editing
-                [1207] Advanced - Play/Stop button with UI docking
-                [1208] Advanced - Free editor camera + zoom/pan
-                [1209] Advanced - Drag-and-drop assets from Windows Explorer
-                [1210] Advanced - In-world object picking with gizmos (optional)
+                - In-world object picking with gizmos
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */

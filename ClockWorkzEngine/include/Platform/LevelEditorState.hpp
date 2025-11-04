@@ -15,7 +15,6 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Runtime/GameState.hpp"
 #include <memory>
 
-// Forward declarations
 namespace Platform {
     class LevelEditor;
     class InputManager;
