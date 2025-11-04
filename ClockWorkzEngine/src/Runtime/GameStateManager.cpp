@@ -13,13 +13,15 @@
 
 Reference: GIT
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/GameState.hpp"
 #include <Core/Time.hpp>
 #include <iostream>
+#include <Core/Profiler.hpp>
+#include <Core/Engine.hpp>
 
 using namespace Runtime;
 
@@ -54,6 +56,20 @@ void GameStateManager::update(double dt) {
 
 void GameStateManager::render(Core::Time* timer) {
 	if (!m_states.empty()) {
-		m_states.top()->render(timer);
+		
+		{
+			PROFILE_SCOPE("Render Game State");
+			m_states.top()->render(timer);
+		}
+		
+		{
+			PROFILE_SCOPE("Render IMGUI");
+			Core::Engine& engine = Core::Engine::Get();
+			Graphics::ImGuiManager& imgui = engine.imguiManager();
+			imgui.beginFrame();
+			m_states.top()->renderImGui(timer);
+			imgui.endFrame();
+		}
+		
 	}
 }

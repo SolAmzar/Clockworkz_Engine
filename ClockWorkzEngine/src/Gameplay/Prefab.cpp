@@ -46,16 +46,16 @@ namespace Gameplay
 
     std::unique_ptr<GameObject> PrefabFactory::create(const std::string &blueprintName)
     {
-
+		// Find the blueprint by name
         auto it = blueprints_.find(blueprintName);
         if (it == blueprints_.end())
         {
             return nullptr;
         }
-
+		// Retrieve the blueprint
         const GameObjectBlueprint &blueprint = it->second;
-
-        auto gameObject = std::make_unique<GameObject>(blueprint.type, blueprint.name);
+		// Create a new GameObject
+        auto gameObject = std::make_unique<GameObject>(blueprint.type, blueprint.name, blueprint.shapeId);
 
         applyBlueprint(*gameObject, blueprint);
 
@@ -176,8 +176,10 @@ namespace Gameplay
             bp.name = "Floor";
             bp.textureId = "floor_texture";
             bp.isSolid = false;
+            bp.blocksLight = false;
             bp.layer = 0;
             factory.saveBlueprint("Floor", bp);
+			
         }
 
         // Wall
@@ -218,6 +220,19 @@ namespace Gameplay
             bp.blocksLight = true;
             bp.colliderTypes = {ColliderType::Circle};
             factory.saveBlueprint("Enemy", bp);
+        }
+
+        // Ball
+        {
+			GameObjectBlueprint bp;
+            bp.type = GameObjectType::Ball;
+			bp.name = "Ball";
+            bp.textureId = "ball_texture";
+            bp.size = {0.5f, 0.5f};
+            bp.isSolid = true;
+            bp.layer = 2;
+            bp.shapeId = GameObjectShape::Circle;
+			factory.saveBlueprint("Ball", bp);
         }
         // // WALL BLUEPRINT
         // {

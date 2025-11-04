@@ -16,37 +16,38 @@ namespace Gameplay
 	class SerializedGameObject;
 	// struct GameObjectBlueprint {
 
-	// 	//Initial base object
-	// 	GameObjectType type{};
-	// 	std::string name{};
-	// 	std::string textureId{};
+	 //	//Initial base object
+	 //	GameObjectType type{};
+	 //	std::string name{};
+	 //	std::string textureId{};
 
-	// 	//Positional
-	// 	glm::vec2 position{ 0.0f,0.0f };
-	// 	glm::vec2 size{ 1.0f, 1.0f };
-	// 	glm::vec2 scale{ 1.0f,1.0f };
-	// 	float rotation = { 0.0f };
+	 //	//Positional
+	 //	glm::vec2 position{ 0.0f,0.0f };
+	 //	glm::vec2 size{ 1.0f, 1.0f };
+	 //	glm::vec2 scale{ 1.0f,1.0f };
+	 //	float rotation = { 0.0f };
 
-	// 	//Conditional
-	// 	bool isSolid = false;
-	// 	bool isHazard = false;
-	// 	bool blocksLight = false;
-	// 	uint32_t layer = 0;
-	// 	uint32_t collisionMask = 0xFFFFFFu;
+	 //	//Conditional
+	 //	bool isSolid = false;
+	 //	bool isHazard = false;
+	 //	bool blocksLight = false;
+	 //	uint32_t layer = 0;
+	 //	uint32_t collisionMask = 0xFFFFFFu;
 
-	// 	//Basic Attributes
-	// 	int health = 0;
-	// 	int damage = 0;
-	// 	float speed = 0.0f;
-	// 	bool active = true;
+	 //	//Basic Attributes
+	 //	int health = 0;
+	 //	int damage = 0;
+	 //	float speed = 0.0f;
+	 //	bool active = true;
 
-	// };
+	 //};
 
 	struct GameObjectBlueprint
 	{
 		GameObjectType type = GameObjectType::Unknown;
 		std::string name;
 		std::string textureId;
+		GameObjectShape shapeId = GameObjectShape::Square;
 		glm::vec2 size{1.0f, 1.0f};
 		bool isSolid = false;
 		bool isHazard = false;

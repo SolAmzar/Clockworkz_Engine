@@ -172,16 +172,23 @@ namespace Graphics {
 		drawLine(pos.x, pos.y, pos.x + vel.x, pos.y + vel.y, color.r, color.g, color.b);
 	}
 
-	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
+	//void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
+	//	const glm::vec2& size, float angleRad, const glm::vec4& color)
+	//{
+	//	// hard code angle to 0 first.
+	//	m_renderer2D.drawQuad(
+	//		pos.x, pos.y, size.x, size.y,
+	//		1, 1, texId, // texture width/height ratio
+	//		0, 0, 1, 1, // uv position, uv dimension
+	//		color.r, color.g, color.b, color.a, angleRad, Graphics::Anchor::Center
+	//	);
+	//}
+
+	void RenderingManager::drawSprite(
+		unsigned texId, const glm::vec2& pos,
 		const glm::vec2& size, float angleRad, const glm::vec4& color)
 	{
-		// hard code angle to 0 first.
-		m_renderer2D.drawQuad(
-			pos.x, pos.y, size.x, size.y,
-			1, 1, texId, // texture width/height ratio
-			0, 0, 1, 1, // uv position, uv dimension
-			color.r, color.g, color.b, color.a, angleRad, Graphics::Anchor::Center
-		);
+		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, { 0,0,1,1 }, Graphics::Anchor::Center);
 	}
 
 
@@ -250,34 +257,101 @@ namespace Graphics {
 		glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.size() + 1);
 	}
 
-
-	void RenderingManager::beginFrame(const Camera2D& cam) {
-		// Clear buffers at the start of a new frame
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // background color
+	void RenderingManager::beginFrame() {
+		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Activate texture shader
-		if (auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture")) {
-			shader->use();
-			shader->setMat4("uVP", cam.viewProj());
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Normal alpha blending
+		glDepthMask(GL_TRUE);
+		glDisable(GL_DEPTH_TEST);
 
-			// Ensure sampler 'image' uses GL_TEXTURE0
-			int loc = glGetUniformLocation(shader->ID, "image");
-			if (loc >= 0) glUniform1i(loc, 0);
-		}
-
-		// Pass VP to the 2D renderer so it can upload 'projection' when drawing
-		m_renderer2D.begin(cam.viewProj());
-
-		// Debug shader for overlays, line draw etc
-		glUseProgram(m_shader);
-		glUniformMatrix4fv(glGetUniformLocation(m_shader, "uProjection"), 1, GL_FALSE, &cam.viewProj()[0][0]);
 	}
 
 	void RenderingManager::endFrame() {
+		// Ensure any unflushed sprites are drawn
+		m_renderer2D.flush();
+
 		glBindVertexArray(0);
 		glUseProgram(0);
 	}
+
+	void RenderingManager::beginScenePass(const glm::mat4& vp) {
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
+		if (!shader) return;
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		shader->use();
+		shader->setMat4("uVP", vp);
+
+		int samplers[MAX_TEXTURE_SLOTS];
+		for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i) samplers[i] = i;
+		glUniform1iv(glGetUniformLocation(shader->ID, "uTextures"), MAX_TEXTURE_SLOTS, samplers);
+
+		m_renderer2D.beginBatch();
+	}
+
+	void RenderingManager::endScenePass() {
+		m_renderer2D.flush();
+	}
+
+	void RenderingManager::beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle) {
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
+		if (!shader) return;
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
+		shader->use();
+		//shader->setMat4("uProjection", vp);
+		//shader->setVec2("uLightPos", lightPos);
+		//shader->setVec3("uLightColor", color);
+		//shader->setFloat("uRadius", radius);
+
+		shader->setMat4("uProjection", vp);
+		shader->setVec2("uLightPos", lightPos);
+		shader->setVec2("uLightDir", glm::normalize(glm::vec2(cos(playerRotationAngle), sin(playerRotationAngle))));
+		shader->setFloat("uAngle", glm::radians(lightAngle));   // cone width ~60° total
+		shader->setFloat("uRadius", 300.0f);
+		shader->setVec3("uLightColor", glm::vec3(1.0f, 0.9f, 0.6f));
+	}
+
+	void RenderingManager::endLightPass() {
+		// nothing to flush unless batching light meshes
+		glDepthMask(GL_TRUE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+
+	//void RenderingManager::beginFrame(const Camera2D& cam) {
+	//	// Clear buffers at the start of a new frame
+	//	glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // background color
+	//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//	// Activate texture shader
+	//	if (auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture")) {
+	//		shader->use();
+	//		shader->setMat4("uVP", cam.viewProj());
+
+	//		// Ensure sampler 'image' uses GL_TEXTURE0
+	//		int loc = glGetUniformLocation(shader->ID, "image");
+	//		if (loc >= 0) glUniform1i(loc, 0);
+	//	}
+
+	//	// Pass VP to the 2D renderer so it can upload 'projection' when drawing
+	//	m_renderer2D.begin(cam.viewProj());
+
+	//	// Debug shader for overlays, line draw etc
+	//	glUseProgram(m_shader);
+	//	glUniformMatrix4fv(glGetUniformLocation(m_shader, "uProjection"), 1, GL_FALSE, &cam.viewProj()[0][0]);
+	//}
+
+	//void RenderingManager::endFrame() {
+	//	glBindVertexArray(0);
+	//	glUseProgram(0);
+	//}
 
 } // namespace Graphics
 

@@ -16,7 +16,8 @@ Reference: GIT
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
-
+// Acts as an abstract base class for different game states (menu, play, pause, etc.)
+// Requires the other Game States to include this class as a friend class to avoid circular dependency
 #pragma once
 namespace Core {
 	class Logger; class Time;
@@ -30,6 +31,8 @@ namespace Runtime {
 		virtual void update(double dt) = 0;
 		virtual void render(Core::Time* timer) = 0;
 		virtual const char* name() const { return "GameState"; }
+
+		virtual void renderImGui(Core::Time* timer) = 0; //Render the ImGUI for the state
 	};
 
 } // namespace Runtime

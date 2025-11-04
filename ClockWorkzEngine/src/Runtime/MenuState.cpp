@@ -65,6 +65,7 @@ namespace Runtime {
                         "Exit Game" };
         }
 
+        // m_audio.stopGroup(Audio::Group::Music);
         //printMenu();
 
         Assets::ResourceManager<Assets::FontManager>::Load(
@@ -89,7 +90,7 @@ namespace Runtime {
             "assets/shaders/text.vert",
             "assets/shaders/text.frag"
         );
-
+       // Amzar
         m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
     }
 
@@ -150,7 +151,7 @@ namespace Runtime {
             
         }
 
-        if (m_input.wasKeyPressed(GLFW_KEY_0)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_P)) {
             m_debug = !m_debug;
             if (m_debug) {
                 std::cout << "Debug is pressed\n";
@@ -236,6 +237,11 @@ namespace Runtime {
 
             }
         }
+    }
+
+    //Implementation of ImGui
+    void Runtime::MenuState::renderImGui(Core::Time* timer) {
+        if (!m_debug) return;
 
         if (m_debug) {
             /*Implement the IMGUI*/
@@ -244,11 +250,13 @@ namespace Runtime {
             ImGui::Text("[Enter] to select");
             ImGui::End();
         }
-        //End: Syafiq
-
     }
 
     void MenuState::onExit() {
+        if (m_bgmChannel != 0) {
+            m_audio.stop(m_bgmChannel);
+            m_bgmChannel = 0;
+        }
     }
 
 

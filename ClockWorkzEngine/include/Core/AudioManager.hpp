@@ -55,6 +55,12 @@ namespace Audio {
         int  play(const std::string& id, Group group = Group::SFX, float volume = 1.0f, bool paused = false);
         void playOneShot(const std::string& id, Group group = Group::SFX, float volume = 1.0f);
 
+        // Stop control
+        void stop(std::string const& name);      // stop a specific playing sound by key
+        void stopGroup(Group g);                  // stop everything in a group
+        void stopAll();                           // panic-stop everything
+
+
         // Channel control
         void stop(int channel);
         void setPaused(int channel, bool paused);

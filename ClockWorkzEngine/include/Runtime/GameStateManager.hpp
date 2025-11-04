@@ -26,7 +26,7 @@ namespace Core {
 }
 
 namespace Runtime {
-
+	// Gamestate is forward declared to avoid circular dependency
 	class GameState;
 	class GameStateManager {
 	public:

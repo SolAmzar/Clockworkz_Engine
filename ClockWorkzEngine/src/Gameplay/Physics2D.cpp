@@ -26,6 +26,11 @@ namespace Gameplay {
 
                 if (!A.active() || !B.active()) continue;
 
+                const bool aHitsB = (A.collisionMask() & B.layer()) != 0;
+                const bool bHitsA = (B.collisionMask() & A.layer()) != 0;
+                if (!aHitsB && !bHitsA) continue;
+				if ((A.type() == GameObjectType::Wall) && (B.type() == GameObjectType::Wall)) continue;
+
                 for (auto& colA : A.colliders()) {
                     for (auto& colB : B.colliders()) {
                         if (!colA->solid || !colB->solid) continue;

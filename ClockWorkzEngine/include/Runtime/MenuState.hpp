@@ -40,6 +40,8 @@ namespace Runtime {
         void update(double dt) override;
         void render(Core::Time* timer) override;
 
+        void renderImGui(Core::Time* timer) override;
+
 
     private:
         void printMenu();

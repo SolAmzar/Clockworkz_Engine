@@ -30,6 +30,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Graphics/Texture2D.hpp"
 #include "Core/Engine.hpp"
 #include <Core/Profiler.hpp>
+#include <Assets/TextureManager.hpp>
 
 using namespace Runtime;
 using namespace Gameplay;
@@ -67,25 +68,28 @@ bool Scene::load()
         // Preload common textures
         std::cout << "[Scene] Loading textures...\n";
 
-        auto playerTex = ResourceManager<Graphics::Texture2D>::Load("player_texture", "assets/textures/player.png");
+        auto floorTex = Assets::TextureManager::Get("floor_texture");
+        auto wallTex = Assets::TextureManager::Get("wall_texture");
+        auto enemyTex = Assets::TextureManager::Get("enemy_texture");
+        auto playerTex = Assets::TextureManager::Get("player_texture");
+		auto ballTex = Assets::TextureManager::Get("ball_texture");
+
         if (!playerTex) {
-            throw std::runtime_error("Failed to load critical texture: player_texture\n");
+            Core::Engine::Get().logger().warn("Failed to get player_texture");
         }
-
-        auto enemyTex = ResourceManager<Graphics::Texture2D>::Load("enemy_texture", "assets/textures/enemy.png");
         if (!enemyTex) {
-            throw std::runtime_error("[Scene] Warning: Failed to load enemy_texture\n");
+            Core::Engine::Get().logger().warn("Failed to get enemyTex_texture");
         }
-
-        auto floorTex = ResourceManager<Graphics::Texture2D>::Load("floor_texture", "assets/textures/floor.png");
         if (!floorTex) {
-            throw std::runtime_error("[Scene] Warning: Failed to load floor_texture\n");
+            Core::Engine::Get().logger().warn("Failed to get floor_texture");
         }
 
-        auto wallTex = ResourceManager<Graphics::Texture2D>::Load("wall_texture", "assets/textures/wall.png");
         if (!wallTex) {
-            throw std::runtime_error("[Scene] Warning: Failed to load wall_texture\n");
+            Core::Engine::Get().logger().warn("Failed to get wall_texture");
         }
+        if (!ballTex) {
+            Core::Engine::Get().logger().warn("Failed to get ball_texture");
+		}
 
         if (!std::filesystem::exists(filepath)) {
             std::cerr << "Scene file does not exist: " << filepath << "\n";

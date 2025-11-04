@@ -12,7 +12,7 @@
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
-#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM 
+//#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM 
 
 #include "Graphics/ImGuiManager.hpp"
 #include <GLFW/glfw3.h>

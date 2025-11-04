@@ -15,21 +15,20 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #pragma once
 #include <glm/vec2.hpp>
+#include <cstdint>
 
-namespace Gameplay {
-
-    struct AABB {
-        glm::vec2 min;
-        glm::vec2 max;
+namespace Gameplay::Layer {
+    enum : uint32_t {
+        Player = 1u << 0,
+        Enemy = 1u << 1,
+        Wall = 1u << 2,
+        Trap = 1u << 3,
+        Ball = 1u << 4,
     };
+}
 
-    /// Static overlap test (no velocities).
-    bool RectRect_Static(AABB const& a, AABB const& b) noexcept;
-
-    /// Swept AABB (relative motion). Returns true if they will touch within [0, dt].
-    /// On hit: tFirst is the first time of contact in seconds (0..dt).
-    bool RectRect_Swept(AABB const& a, glm::vec2 const& va,
-        AABB const& b, glm::vec2 const& vb,
-        float dt, float& tFirst) noexcept;
-
-} // namespace Gameplay
+// convenience: OR a list of layers into a mask
+template <typename... Bits>
+constexpr uint32_t Mask(Bits... bits) {
+    return (0u | ... | bits);
+}

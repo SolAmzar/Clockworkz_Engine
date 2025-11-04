@@ -35,7 +35,10 @@ static std::string loadFile(const std::string &path)
     return ss.str();
 }
 
-void Shader::use() const { glUseProgram(ID); }
+void Shader::use() const { 
+    std::cout << "Use Shader: " << ID << std::endl;
+    glUseProgram(ID); 
+}
 
 void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const
 {

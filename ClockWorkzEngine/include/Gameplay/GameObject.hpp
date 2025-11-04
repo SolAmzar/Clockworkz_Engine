@@ -37,7 +37,14 @@ namespace Graphics {
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball
+    };
+	// To disguish between different collision shapes
+    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown
+	};
+	// To disguish between different game object shapes
+    enum class GameObjectShape : uint8_t {
+        Square ,Rectangle, Circle, Polygon, Unknown
     };
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
@@ -59,7 +66,7 @@ namespace Gameplay {
 
     class GameObject {
     public:
-        GameObject(GameObjectType type, std::string name);
+		GameObject(GameObjectType type, std::string name, GameObjectShape shape = GameObjectShape::Square); // default shape is square
         virtual ~GameObject() = default;
 
         GameObject(GameObject const&) = delete;
@@ -75,7 +82,8 @@ namespace Gameplay {
         // Data
         uint32_t              id() const { return m_id; }
         GameObjectType        type() const { return m_type; }
-        std::string const& name() const { return m_name; }
+        std::string const&    name() const { return m_name; }
+        GameObjectShape       shapeId() const { return m_shapeid; }
         bool                  active() const { return m_active; }
         void                  setActive(bool a) { m_active = a; }
 
@@ -109,6 +117,7 @@ namespace Gameplay {
 
         void autoUpdateCollisionBaseOnScale();
         AABB aabbWorld() const;
+        void respawnAt(glm::vec2 spawn, bool resetVelocity = true, bool resetHealth = true);
 
         // Very light component hook (safe to ignore at start)
         template<typename T, typename... Args>
@@ -123,6 +132,7 @@ namespace Gameplay {
         static std::unique_ptr<GameObject> MakePlayer(glm::vec2 pos, glm::vec2 size, std::string tex = "");
         static std::unique_ptr<GameObject> MakeEnemy(glm::vec2 pos, glm::vec2 size, int hp = 2, std::string tex = "");
         static std::unique_ptr<GameObject> MakeTrap(glm::vec2 pos, glm::vec2 size, int damage = 1, std::string tex = "");
+		static std::unique_ptr<GameObject> MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex = "");
 
         template <typename T, typename... Args>
         T* addCollider(Args&&... args) {
@@ -138,14 +148,15 @@ namespace Gameplay {
     private:
         static uint32_t s_nextId;
 
-        uint32_t       m_id{ 0 };
-        GameObjectType m_type{ GameObjectType::Floor };
-        std::string    m_name;
-        bool           m_active{ true };
+        uint32_t        m_id{ 0 };
+        GameObjectType  m_type{ GameObjectType::Floor };
+        std::string     m_name;
+		GameObjectShape m_shapeid{ GameObjectShape::Square };
+        bool            m_active{ true };
 
-        Transform2D    m_transform{};
-        glm::vec2      m_size{ 1.f, 1.f };
-        glm::vec2      m_velocity{ 0.f, 0.f };
+        Transform2D     m_transform{};
+        glm::vec2       m_size{ 1.f, 1.f };
+        glm::vec2       m_velocity{ 0.f, 0.f };
 
         uint32_t       m_layer{ 0 };
         uint32_t       m_collisionMask{ 0xFFFFFFFFu };
@@ -181,6 +192,14 @@ namespace Gameplay {
         for (auto& c : m_components)
             if (auto p = dynamic_cast<T*>(c.get())) return p;
         return nullptr;
+    }
+
+    template <typename T, typename... Args>
+    T* addCollider(Args&&... args) {
+        auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+        T* raw = ptr.get();
+        m_colliders.emplace_back(std::move(ptr));
+        return raw;
     }
 
 } // namespace Gameplay
