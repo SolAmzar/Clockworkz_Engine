@@ -378,76 +378,59 @@ namespace Runtime
 
 	void PlayState::render(Core::Time *timer)
 	{
-		if (!m_loaded || !m_renderer)
-			return;
+		if (!m_loaded || !m_renderer) return;
 
-		// Syafiq
-		//  why render twice. not required
-		/* if (auto* scene = m_scenes.current()) {
-				 scene->render(*m_renderer);
-		 }*/
+		Core::Engine& engine = Core::Engine::Get();
 
 		// Use SceneManager's render to render the current scene
+		// --- Pass: Scene ---
+		// Batch rendering
+		m_renderer->beginScenePass(engine.camera().viewProj());
 		m_scenes.render(*m_renderer);
-
-		// to spawn objects (syafiq)
-		for (auto &obj : gameObjects)
-		{
-			obj->render(*m_renderer);
-		}
+		m_renderer->endScenePass();
 
 		// ==================== Torch Light Rendering ====================
-		if (m_flashlightOn)
-		{
-			Core::Engine &engine = Core::Engine::Get();
-			auto *scene = m_scenes.current();
-			if (!scene)
-				return;
+		auto* scene = m_scenes.current();
+		if (!scene) return;
 
-			auto *physics = scene->getPhysics();
-			if (physics)
-			{
-				std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+		auto* physics = scene->getPhysics();
+		if (physics) {
+			std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 
-				Gameplay::GameObject *player = nullptr;
-				for (auto &o : objs)
-				{
-					if (o->type() == Gameplay::GameObjectType::Player)
-					{
-						player = o.get();
-						break;
-					}
+			// Find the player (you can cache this later)
+			Gameplay::GameObject* player = nullptr;
+			for (auto& o : objs) {
+				if (o->type() == Gameplay::GameObjectType::Player) {
+					player = o.get();
+					break;
 				}
-				if (!player)
-				{
-					return;
-				}
-
-				glm::vec2 origin = player->transform().position;
-				float angle = player->transform().rotationRad;
-
-				// Compute visibility polygon
-				std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-						origin,
-						angle,
-						glm::radians(60.0f), // FOV in radians (torch cone width)
-						300.0f,							 // radius
-						*physics,
-						objs);
-
-				// Draw the light cone (via RenderingManager)
-				auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
-				if (!shader)
-					return;
-
-				shader->use();
-				shader->setVec3("uColor", glm::vec3(1.0f, 0.9f, 0.6f)); // optional
-				shader->setVec2("uLightPos", origin);
-				shader->setFloat("uRadius", 600.0f);
-				shader->setMat4("uProjection", engine.camera().viewProj());
-				m_renderer->drawLightCone(origin, lightPoly, glm::vec3(1.0f, 0.9f, 0.6f));
 			}
+			if (!player) return;
+
+			glm::vec2 origin = player->transform().position;
+			float angle = player->transform().rotationRad;
+
+			// Compute visibility polygon
+			std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+				origin,
+				angle,
+				glm::radians(60.0f), // FOV in radians (torch cone width)
+				300.0f,              // radius
+				*physics,
+				objs
+			);
+
+			// --- Pass: Light ---
+			// Draw the light cone (via RenderingManager)
+			if (m_flashlightOn)
+			{
+				m_renderer->beginLightPass(engine.camera().viewProj(), origin, { 1.0f, 0.9f, 0.6f }, 300.0f, angle, glm::radians(60.0f));
+				m_renderer->drawLightCone(origin, lightPoly, { 1.0f, 0.9f, 0.6f });
+				m_renderer->endLightPass();
+			}
+
 		}
+		
 	}
 
 	// test for IMGUI (still broken)
@@ -534,13 +517,41 @@ namespace Runtime
 				ImGui::Text("FPS: %.1f", fps);
 				ImGui::Text("Frame Time: %.2f ms", frameTime);
 			}
-
 			ImGui::Separator();
 
-			if (ImGui::Button("Show Performance Profile"))
+			ImGui::Text("Performance Profiler (Live)");
+			ImGui::Spacing();
+
+			auto& profiler = Core::Profiler::Get();
+			const auto& data = profiler.data();
+
+			if (data.empty()) {
+				ImGui::TextDisabled("No profiling data recorded yet...");
+			}
+			else {
+				for (const auto& [scope, info] : data) {
+					double avg = info.avgTime();
+					double total = info.totalTime;
+					int count = info.callCount;
+
+					// Color code performance (green=fast, red=slow)
+					ImVec4 color;
+					if (avg < 1.0)       color = ImVec4(0.3f, 1.0f, 0.3f, 1.0f);   // fast (<1ms)
+					else if (avg < 8.0)  color = ImVec4(1.0f, 1.0f, 0.3f, 1.0f);   // moderate
+					else                 color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);   // slow
+
+					ImGui::TextColored(color, "%-18s | Avg: %.3f ms | Calls: %d | Total: %.2f ms",
+						scope.c_str(), avg, count, total);
+				}
+			}
+
+			ImGui::Spacing();
+
+
+			/*if (ImGui::Button("Show Performance Profile"))
 			{
 				Core::Profiler::Get().print();
-			}
+			}*/
 
 			if (ImGui::Button("Reset Profiler"))
 			{

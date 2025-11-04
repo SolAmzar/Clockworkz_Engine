@@ -51,61 +51,62 @@ namespace Gameplay
     // Syafiq - Create game object using rect
     void GameObject::render(Graphics::RenderingManager &renderer)
     {
-        // glm::vec3 color(1.0f,1.0f,1.0f);
+        // Need to segment out this rendering of debug draw somewhere else, cannot do it here. too expensive.
+        //glm::vec3 color(1.0f,1.0f,1.0f);
 
-        switch (m_type)
-        {
-        case GameObjectType::Player:
-            color = glm::vec3(0.0f, 1.0f, 0.0f);
-            break;
-        case GameObjectType::Enemy:
-            color = glm::vec3(1.0f, 0.0f, 0.0f);
-            break;
-        case GameObjectType::Floor:
-            color = glm::vec3(0.0f, 0.0f, 1.0f);
-            break;
-        case GameObjectType::Trap:
-            color = glm::vec3(0.0f, 1.0f, 1.0f);
-            break;
-        case GameObjectType::Wall:
-            color = glm::vec3(1.0f, 1.0f, 0.0f);
-            break;
-        case GameObjectType::Ball:
-            color = glm::vec3(1.0f, 0.0f, 1.0f);
-            break;
-        case GameObjectType::Unknown:
-            color = glm::vec3(0.6f, 0.6f, 0.6f);
-            break;
-        }
+        //switch (m_type)
+        //{
+        //case GameObjectType::Player:
+        //    color = glm::vec3(0.0f, 1.0f, 0.0f);
+        //    break;
+        //case GameObjectType::Enemy:
+        //    color = glm::vec3(1.0f, 0.0f, 0.0f);
+        //    break;
+        //case GameObjectType::Floor:
+        //    color = glm::vec3(0.0f, 0.0f, 1.0f);
+        //    break;
+        //case GameObjectType::Trap:
+        //    color = glm::vec3(0.0f, 1.0f, 1.0f);
+        //    break;
+        //case GameObjectType::Wall:
+        //    color = glm::vec3(1.0f, 1.0f, 0.0f);
+        //    break;
+        //case GameObjectType::Ball:
+        //    color = glm::vec3(1.0f, 0.0f, 1.0f);
+        //    break;
+        //case GameObjectType::Unknown:
+        //    color = glm::vec3(0.6f, 0.6f, 0.6f);
+        //    break;
+        //}
 
-        switch (m_shapeid)
-        {
-        case GameObjectShape::Circle:
-            renderer.drawCircle(
-                m_transform.position.x,
-                m_transform.position.y,
-                (m_size.x * 0.5f) * m_transform.scale.x,
-                color.r, color.g, color.b);
-            break;
-        case GameObjectShape::Rectangle:
-            // Collision draw
-            renderer.drawRect(
-                m_transform.position.x,
-                m_transform.position.y,
-                m_size.x * m_transform.scale.x,
-                m_size.y * m_transform.scale.y,
-                color.r, color.g, color.b);
-            break;
-        default:
-            // Collision draw
-            renderer.drawRect(
-                m_transform.position.x,
-                m_transform.position.y,
-                m_size.x * m_transform.scale.x,
-                m_size.y * m_transform.scale.y,
-                color.r, color.g, color.b);
-            break;
-        }
+        //switch (m_shapeid)
+        //{
+        //case GameObjectShape::Circle:
+        //    renderer.drawCircle(
+        //        m_transform.position.x,
+        //        m_transform.position.y,
+        //        (m_size.x * 0.5f) * m_transform.scale.x,
+        //        color.r, color.g, color.b);
+        //    break;
+        //case GameObjectShape::Rectangle:
+        //    // Collision draw
+        //    renderer.drawRect(
+        //        m_transform.position.x,
+        //        m_transform.position.y,
+        //        m_size.x * m_transform.scale.x,
+        //        m_size.y * m_transform.scale.y,
+        //        color.r, color.g, color.b);
+        //    break;
+        //default:
+        //    // Collision draw
+        //    renderer.drawRect(
+        //        m_transform.position.x,
+        //        m_transform.position.y,
+        //        m_size.x * m_transform.scale.x,
+        //        m_size.y * m_transform.scale.y,
+        //        color.r, color.g, color.b);
+        //    break;
+        //}
 
         // later: call RenderingManager with textureId/transform/size
         for (auto &c : m_components)
