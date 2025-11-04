@@ -186,6 +186,7 @@ namespace Runtime
 
 		if (m_input.wasKeyPressed(GLFW_KEY_Q))
 		{
+			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
 			m_flashlightOn = !m_flashlightOn;
 			std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
 		}
