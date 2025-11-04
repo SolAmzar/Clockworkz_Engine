@@ -89,19 +89,21 @@ namespace Runtime {
             m_loaded = true;
 
             // Print all GameObjects created by the loaded scene
-            if (auto* scene = m_scenes.current()) {
-                auto& objs = scene->objects();
-                std::cout << "GameObjects created (" << objs.size() << "):\n";
-                for (auto const& u : objs) {
-                    auto const& o = *u;
-                    auto p = o.transform().position;
-                    auto s = o.size();
-                    std::cout << " - id=" << o.id()
-                        << " type=" << toString(o.type())
-                        << " name=\"" << o.name() << "\""
-                        << " pos=(" << p.x << "," << p.y << ")"
-                        << " size=(" << s.x << "," << s.y << ")"
-                        << (o.active() ? "" : " [inactive]") << "\n";
+            if (auto* loadedScene = m_scenes.current()) {
+                auto& loadedObjects = loadedScene->objects();
+                std::cout << "GameObjects created (" << loadedObjects.size() << "):\n";
+                for (auto const& objectPtr : loadedObjects) {
+
+                    auto const& gameObject = *objectPtr;
+                    auto objectPosition = gameObject.transform().position;
+                    auto objectSize = gameObject.size();
+
+                    std::cout   << " - id=" << gameObject.id()
+                                << " type=" << toString(gameObject.type())
+                                << " name=\"" << gameObject.name() << "\""
+                                << " pos=(" << objectPosition.x << "," << objectPosition.y << ")"
+                                << " size=(" << objectSize.x << "," << objectSize.y << ")"
+                                << (gameObject.active() ? "" : " [inactive]") << "\n";
                 }
                 std::cout.flush();
             }
@@ -169,46 +171,51 @@ namespace Runtime {
             std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
         }
 
+
+
         if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick) {
-            // Convert from screen to world coordinates
-            glm::vec2 mouseWorld = m_input.getMouseWorldPos(
-                cam,
+            // Convert screen to world
+            glm::vec2 mouseWorld = m_input.getMouseWorldPos(cam,
                 static_cast<float>(window.width()),
-                static_cast<float>(window.height())
-            );
+                static_cast<float>(window.height()));
 
-            // 2) Choose wall size/texture (tweak as you like)
-            glm::vec2 wallSize{ 64.f, 64.f };
-            std::string texture = "wall.png";  // or "" if you’re not texturing yet
-            // 3) Make the wall and add it to the current scene
-			// Optional: snap to grid
-            /*float grid = 32.f;
-            mouseWorld = glm::floor(mouseWorld / grid) * grid;*/
-            auto wall = Gameplay::GameObject::MakeWall(mouseWorld, wallSize, texture);
+            bool wallFound = false; // flag
 
-            gameObjects.push_back(std::move(wall));
-            std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
-        }
-
-		// function to delete objects on right click 
-        if ((m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && !m_spawnonclick)) {
-                    for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
-                        auto& obj = *it;
-                        // Simple AABB check
-                        glm::vec2 pos = obj->transform().position;
-                        glm::vec2 size = obj->size();
-                        if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-                            mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
-                            std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
-                            it = gameObjects.erase(it); // Remove object and get new iterator
-                        }
-                        else {
-                            ++it; // Only increment if not erased
-                        }
+            // Check for an existing wall
+            for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
+                auto& obj = *it;
+                if (obj->type() == Gameplay::GameObjectType::Wall) {
+                    glm::vec2 pos = obj->transform().position;
+                    glm::vec2 size = obj->size();
+                    if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
+                        mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
+                        // Found wall, delete it
+                        std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
+                        it = gameObjects.erase(it);
+                        wallFound = true;
+                        break; // Only delete one wall per click
                     }
-  
-			}
-		
+                    else {
+                        ++it;
+                    }
+                }
+                else {
+                    ++it;
+                }
+            }
+
+            if (!wallFound) {
+                // If no wall was found, spawn one
+                glm::vec2 wallSize{ 100.f, 100.f };
+                auto wall = Gameplay::PrefabFactory::get().create("Wall");
+                if (wall) {
+                    wall->setPosition(mouseWorld);
+                    wall->setSize(wallSize);
+                    gameObjects.push_back(std::move(wall));
+                    std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+                }
+            }
+        }
 
         //Syafiq - Player movement
         if (auto* scene = m_scenes.current()){
@@ -218,24 +225,22 @@ namespace Runtime {
             for (auto& obj : scene->objects()) {
 
                 if (obj->type() == Gameplay::GameObjectType::Player) {
-                    float moveSpeed = 100.0f;
-                    float moveAmount = moveSpeed * static_cast<float>(dt);
 
                     if (m_input.isKeyDown(GLFW_KEY_W)) {
-                        obj->velocity().y = moveSpeed;
+                        obj->velocity().y = obj->moveSpeed();
                     }
                     else if(m_input.isKeyDown(GLFW_KEY_S)) {
-                        obj->velocity().y = -moveSpeed;
+                        obj->velocity().y =  - (obj->moveSpeed());
                     }
                     else {
                         obj->velocity().y = 0;
                     }
 
                     if (m_input.isKeyDown(GLFW_KEY_A)) {
-                        obj->velocity().x = -moveSpeed;
+                        obj->velocity().x = -(obj->moveSpeed());
                     }
                     else if (m_input.isKeyDown(GLFW_KEY_D)) {
-                        obj->velocity().x = moveSpeed;
+                        obj->velocity().x = obj->moveSpeed();
                     }
                     else {
                         obj->velocity().x = 0;
@@ -403,7 +408,7 @@ namespace Runtime {
     "assets/textures/floor.png",
     "assets/textures/trap.png"
     };
-    static int objCounter = 0;
+
 
     void PlayState::renderImGui(Core::Time* timer) {
         if (!m_debug) return;
@@ -411,6 +416,10 @@ namespace Runtime {
         if (m_debug) {
             ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
             ImGui::Begin("Game State", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+            // ****** Metric showcase ******
+            //static bool show_metrics = false;
+            //ImGui::ShowMetricsWindow(&show_metrics);
 
             // ******* Object Creation **********
             static int selectedType = 0;
@@ -423,8 +432,9 @@ namespace Runtime {
             ImGui::InputFloat2("Size", size);
 
             
-            static int hp = 10, damage = 1;
+            static int hp = 10, damage = 1, ms = 10;
             if (selectedType == 0 || selectedType == 1) //if its enemy or player, set health
+                ImGui::InputInt("Movement Speed", &ms);
                 ImGui::InputInt("HP", &hp);
             if (selectedType == 1 || selectedType == 4) //if its enemy or trap, set damage
                 ImGui::InputInt("Damage", &damage);
@@ -434,31 +444,70 @@ namespace Runtime {
 
             if (ImGui::Button("Create Object")) {
 
-                ++objCounter;
                 const char* texToUse = texture[0] ? texture : defaultTextures[selectedType];
 
-                //Supposedly spawn the corresponding gameobject (texture and logic not fixed)
-                if (selectedType == 0)
-                    gameObjects.push_back(Gameplay::GameObject::MakePlayer({ pos[0], pos[1] }, { size[0], size[1] }, texture));
-                else if (selectedType == 1)
-                    gameObjects.push_back(Gameplay::GameObject::MakeEnemy({ pos[0], pos[1] }, { size[0], size[1] }, hp, texture));
-                else if (selectedType == 2)
-                    gameObjects.push_back(Gameplay::GameObject::MakeWall({ pos[0], pos[1] }, { size[0], size[1] }, texture));
-                else if (selectedType == 3)
-                    gameObjects.push_back(Gameplay::GameObject::MakeFloor({ pos[0], pos[1] }, { size[0], size[1] }, texture));
-                else if (selectedType == 4)
-                    gameObjects.push_back(Gameplay::GameObject::MakeTrap({ pos[0], pos[1] }, { size[0], size[1] }, damage, texture));
+                //Supposedly spawn the corresponding gameobject
+                if (selectedType == 0){
+                    auto obj = Gameplay::PrefabFactory::get().create("Player");
+                    if (obj) {
+                        obj->setMoveSpeed(ms);
+                        obj->setPosition(glm::vec2(pos[0], pos[1]));
+                        obj->setSize(glm::vec2(size[0], size[1]));
+                        auto scene = m_scenes.current();
+                        if (scene) {
+                            scene->objects().push_back(std::move(obj));
+                        }
+                    }
+                }
+                else if (selectedType == 1) {
+                    auto obj = Gameplay::PrefabFactory::get().create("Enemy");
+                    if (obj) {
+                        obj->setPosition(glm::vec2(pos[0], pos[1]));
+                        obj->setSize(glm::vec2(size[0], size[1]));
+                        auto scene = m_scenes.current();
+                        if (scene) {
+                            scene->objects().push_back(std::move(obj));
+                        }
+                    }
+                }
+                else if (selectedType == 2) {
+                    auto obj = Gameplay::PrefabFactory::get().create("Wall");
+                    if (obj) {
+                        obj->setPosition(glm::vec2(pos[0], pos[1]));
+                        obj->setSize(glm::vec2(size[0], size[1]));
+                        auto scene = m_scenes.current();
+                        if (scene) {
+                            scene->objects().push_back(std::move(obj));
+                        }
+                    }
+                }
+                else if (selectedType == 3) {
+                    auto obj = Gameplay::PrefabFactory::get().create("Floor");
+                    if (obj) {
+                        obj->setPosition(glm::vec2(pos[0], pos[1]));
+                        obj->setSize(glm::vec2(size[0], size[1]));
+                        auto scene = m_scenes.current();
+                        if (scene) {
+                            scene->objects().push_back(std::move(obj));
+                        }
+                    }
+                }
+                else if (selectedType == 4) {
+                    auto obj = Gameplay::PrefabFactory::get().create("Trap");
+                    if (obj) {
+                        obj->setPosition(glm::vec2(pos[0], pos[1]));
+                        obj->setSize(glm::vec2(size[0], size[1]));
+                        gameObjects.push_back(std::move(obj));
+                    }
+                }
             }
 
             if (ImGui::Button("Delete Object")) {
-                if (objCounter > 0) {
-                    --objCounter;
-                }
-                if (!gameObjects.empty()) {
-                    gameObjects.pop_back();
+                if (!m_scenes.current()->objects().empty()) {
+                    m_scenes.current()->objects().pop_back();
                 }
             }
-            ImGui::Text("Object counter: %d ", objCounter);
+            ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
 
             ImGui::Separator();
             
@@ -483,12 +532,14 @@ namespace Runtime {
                 Core::Profiler::Get().reset();
             }
 
-            if (ImGui::Button("Activate OnClickSpawn")) {
+            ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
+
+            /*if (ImGui::Button("Activate OnClickSpawn")) {
                 m_spawnonclick = true;
             }
             if (ImGui::Button("Activate Object Delete")) {
                 m_spawnonclick = false;
-			}
+			}*/
 
             // Add button to spawn 2500 objects
             if (ImGui::Button("Spawn 2500 Objects")) {

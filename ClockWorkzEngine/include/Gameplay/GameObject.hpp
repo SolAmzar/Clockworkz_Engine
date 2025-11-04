@@ -87,14 +87,19 @@ namespace Gameplay {
         bool                  active() const { return m_active; }
         void                  setActive(bool a) { m_active = a; }
 
-        Transform2D& transform() { return m_transform; }
-        Transform2D const& transform() const { return m_transform; }
+        Transform2D&            transform() { return m_transform; }
+        Transform2D const&      transform() const { return m_transform; }
+        void                    setPosition(glm::vec2 pos) { m_transform.position.x = pos.x;  m_transform.position.y = pos.y;}
 
-        glm::vec2             size() const { return m_size; }
-        void                  setSize(glm::vec2 s) { m_size = s; }
 
-        glm::vec2& velocity() { return m_velocity; }
-        glm::vec2 const& velocity() const { return m_velocity; }
+        glm::vec2               size() const { return m_size; }
+        void                    setSize(glm::vec2 s) { m_size = s; }
+
+        glm::vec2&              velocity() { return m_velocity; }
+        glm::vec2 const&        velocity() const { return m_velocity; }
+
+        float const&            moveSpeed() { return m_moveSpeed; }
+        void                    setMoveSpeed(float ms) { m_moveSpeed = ms; }
 
         // Collision + rendering layers
         uint32_t              layer() const { return m_layer; }
@@ -158,6 +163,7 @@ namespace Gameplay {
         Transform2D     m_transform{};
         glm::vec2       m_size{ 1.f, 1.f };
         glm::vec2       m_velocity{ 0.f, 0.f };
+        float           m_moveSpeed{ 100.0f };
 
         uint32_t       m_layer{ 0 };
         uint32_t       m_collisionMask{ 0xFFFFFFFFu };

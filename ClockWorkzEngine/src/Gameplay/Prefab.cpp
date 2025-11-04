@@ -203,6 +203,7 @@ namespace Gameplay
         objJson["active"] = true;
         objJson["components"] = it->second.componentData;
 
+
         // Use the serializer to create the GameObject
         return GameObjectSerializer::deserializeGameObject(objJson);
     }
@@ -283,8 +284,8 @@ namespace Gameplay
             components["transform"]["position"]["x"] = 0.0f;
             components["transform"]["position"]["y"] = 0.0f;
             components["transform"]["rotation"] = 0.0f;
-            components["transform"]["scale"]["x"] = 1.0f;
-            components["transform"]["scale"]["y"] = 1.0f;
+            components["transform"]["scale"]["x"] = 100.0f;
+            components["transform"]["scale"]["y"] = 100.0f;
 
             components["collider"]["width"] = 0.8f;
             components["collider"]["height"] = 0.8f;
@@ -306,8 +307,8 @@ namespace Gameplay
             components["transform"]["position"]["x"] = 0.0f;
             components["transform"]["position"]["y"] = 0.0f;
             components["transform"]["rotation"] = 0.0f;
-            components["transform"]["scale"]["x"] = 1.0f;
-            components["transform"]["scale"]["y"] = 1.0f;
+            components["transform"]["scale"]["x"] = 100.0f;
+            components["transform"]["scale"]["y"] = 100.0f;
 
             components["collider"]["width"] = 0.9f;
             components["collider"]["height"] = 0.9f;

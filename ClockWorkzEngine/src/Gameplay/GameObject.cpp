@@ -226,7 +226,7 @@ namespace Gameplay {
         return { m_transform.position - half, m_transform.position + half };
     }
 
-    // ----------------- Prefabs -----------------
+    // ----------------- Prefabs ----------------- (Temp)
 
     std::unique_ptr<GameObject> GameObject::MakeFloor(glm::vec2 pos, glm::vec2 size, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Floor, "Floor", GameObjectShape::Rectangle);
