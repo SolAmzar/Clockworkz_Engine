@@ -3,6 +3,7 @@
 \file           GameObject.hpp
 \project        Lights Out
 \author(s)      [Lebon], 100% - Will be shared later once other features combine in.
+Serializer guy come in split the 100%
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
@@ -74,6 +75,7 @@ namespace Gameplay {
 
         // Lifecycle
         virtual void update(double dt);
+        virtual void debugRender(Graphics::RenderingManager& renderer);
         virtual void render(Graphics::RenderingManager& renderer); // hook into Graphics later
 
         // Interactions
@@ -201,12 +203,12 @@ namespace Gameplay {
         return nullptr;
     }
 
-    template <typename T, typename... Args>
-    T* addCollider(Args&&... args) {
-        auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
-        T* raw = ptr.get();
-        m_colliders.emplace_back(std::move(ptr));
-        return raw;
-    }
+    //template <typename T, typename... Args>
+    //T* addCollider(Args&&... args) {
+    //    auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+    //    T* raw = ptr.get();
+    //    m_colliders.emplace_back(std::move(ptr));
+    //    return raw;
+    //}
 
 } // namespace Gameplay

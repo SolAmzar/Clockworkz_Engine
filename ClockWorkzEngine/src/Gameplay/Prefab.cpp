@@ -20,8 +20,6 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 */
 /******************************************************************************/
 
-
-
 #include "Gameplay/Prefab.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Serializer.hpp"
@@ -33,7 +31,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 namespace Gameplay
 {
-    PrefabFactory& PrefabFactory::get()
+    PrefabFactory &PrefabFactory::get()
     {
         static PrefabFactory instance;
         return instance;
@@ -43,20 +41,28 @@ namespace Gameplay
     // PREFAB FILE I/O
     // ========================================================================
 
-    static GameObjectType getTypeFromPrefabName(const std::string& name) {
-        if (name == "Player") return GameObjectType::Player;
-        if (name == "Enemy")  return GameObjectType::Enemy;
-        if (name == "Wall")   return GameObjectType::Wall;
-        if (name == "Floor")  return GameObjectType::Floor;
-        if (name == "Trap")   return GameObjectType::Trap;
+    static GameObjectType getTypeFromPrefabName(const std::string &name)
+    {
+        if (name == "Player")
+            return GameObjectType::Player;
+        if (name == "Enemy")
+            return GameObjectType::Enemy;
+        if (name == "Wall")
+            return GameObjectType::Wall;
+        if (name == "Floor")
+            return GameObjectType::Floor;
+        if (name == "Trap")
+            return GameObjectType::Trap;
         return GameObjectType::Unknown;
     }
 
-    bool PrefabFactory::loadPrefabFromFile(const std::string& filepath)
+    bool PrefabFactory::loadPrefabFromFile(const std::string &filepath)
     {
-        try {
+        try
+        {
             std::ifstream file(filepath);
-            if (!file.is_open()) {
+            if (!file.is_open())
+            {
                 std::cerr << "[PrefabFactory] Failed to open prefab file: " << filepath << "\n";
                 return false;
             }
@@ -83,9 +89,12 @@ namespace Gameplay
             int loadedCount = 0;
 
             // Check if it's the multiple prefabs format
-            if (j.contains("prefabs") && j["prefabs"].is_array()) {
-                for (const auto& prefabJson : j["prefabs"]) {
-                    if (!prefabJson.contains("prefabName") || !prefabJson.contains("components")) {
+            if (j.contains("prefabs") && j["prefabs"].is_array())
+            {
+                for (const auto &prefabJson : j["prefabs"])
+                {
+                    if (!prefabJson.contains("prefabName") || !prefabJson.contains("components"))
+                    {
                         std::cerr << "[PrefabFactory] Invalid prefab entry in: " << filepath << "\n";
                         continue;
                     }
@@ -99,39 +108,45 @@ namespace Gameplay
                 return loadedCount > 0;
             }
             // Single prefab format
-            else if (j.contains("prefabName") && j.contains("components")) {
+            else if (j.contains("prefabName") && j.contains("components"))
+            {
                 std::string prefabName = j["prefabName"].get<std::string>();
                 registerPrefab(prefabName, j["components"]);
 
                 std::cout << "[PrefabFactory] Loaded prefab '" << prefabName << "' from: " << filepath << "\n";
                 return true;
             }
-            else {
+            else
+            {
                 std::cerr << "[PrefabFactory] Invalid prefab format in: " << filepath << "\n";
                 return false;
             }
         }
-        catch (const std::exception& e) {
+        catch (const std::exception &e)
+        {
             std::cerr << "[PrefabFactory] Error loading prefab: " << e.what() << "\n";
             return false;
         }
     }
 
-    bool PrefabFactory::savePrefabToFile(const std::string& prefabName, const std::string& filepath)
+    bool PrefabFactory::savePrefabToFile(const std::string &prefabName, const std::string &filepath)
     {
         auto it = prefabs_.find(prefabName);
-        if (it == prefabs_.end()) {
+        if (it == prefabs_.end())
+        {
             std::cerr << "[PrefabFactory] Prefab '" << prefabName << "' not found\n";
             return false;
         }
 
-        try {
+        try
+        {
             json j;
             j["prefabName"] = prefabName;
             j["components"] = it->second.componentData;
 
             std::ofstream file(filepath);
-            if (!file.is_open()) {
+            if (!file.is_open())
+            {
                 std::cerr << "[PrefabFactory] Failed to open file for writing: " << filepath << "\n";
                 return false;
             }
@@ -142,25 +157,30 @@ namespace Gameplay
             std::cout << "[PrefabFactory] Saved prefab '" << prefabName << "' to: " << filepath << "\n";
             return true;
         }
-        catch (const std::exception& e) {
+        catch (const std::exception &e)
+        {
             std::cerr << "[PrefabFactory] Error saving prefab: " << e.what() << "\n";
             return false;
         }
     }
 
-    bool PrefabFactory::loadAllPrefabsFromDirectory(const std::string& directory)
+    bool PrefabFactory::loadAllPrefabsFromDirectory(const std::string &directory)
     {
         namespace fs = std::filesystem;
 
-        if (!fs::exists(directory) || !fs::is_directory(directory)) {
+        if (!fs::exists(directory) || !fs::is_directory(directory))
+        {
             std::cerr << "[PrefabFactory] Directory not found: " << directory << "\n";
             return false;
         }
 
         int loadedCount = 0;
-        for (const auto& entry : fs::directory_iterator(directory)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".json") {
-                if (loadPrefabFromFile(entry.path().string())) {
+        for (const auto &entry : fs::directory_iterator(directory))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".json")
+            {
+                if (loadPrefabFromFile(entry.path().string()))
+                {
                     loadedCount++;
                 }
             }
@@ -174,7 +194,7 @@ namespace Gameplay
     // PREFAB REGISTRATION
     // ========================================================================
 
-    void PrefabFactory::registerPrefab(const std::string& name, const json& componentData)
+    void PrefabFactory::registerPrefab(const std::string &name, const json &componentData)
     {
         PrefabData prefab;
         prefab.name = name;
@@ -188,10 +208,11 @@ namespace Gameplay
     // GAMEOBJECT CREATION
     // ========================================================================
 
-    std::unique_ptr<GameObject> PrefabFactory::create(const std::string& prefabName)
+    std::unique_ptr<GameObject> PrefabFactory::create(const std::string &prefabName)
     {
         auto it = prefabs_.find(prefabName);
-        if (it == prefabs_.end()) {
+        if (it == prefabs_.end())
+        {
             std::cerr << "[PrefabFactory] Prefab not found: " << prefabName << "\n";
             return nullptr;
         }
@@ -208,21 +229,23 @@ namespace Gameplay
         return GameObjectSerializer::deserializeGameObject(objJson);
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& prefabName, glm::vec2 position)
+    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string &prefabName, glm::vec2 position)
     {
         auto obj = create(prefabName);
-        if (obj) {
+        if (obj)
+        {
             obj->transform().position = position;
         }
         return obj;
     }
 
     std::unique_ptr<GameObject> PrefabFactory::createWithOverrides(
-        const std::string& prefabName,
-        const json& overrides)
+        const std::string &prefabName,
+        const json &overrides)
     {
         auto it = prefabs_.find(prefabName);
-        if (it == prefabs_.end()) {
+        if (it == prefabs_.end())
+        {
             std::cerr << "[PrefabFactory] Prefab not found: " << prefabName << "\n";
             return nullptr;
         }
@@ -235,15 +258,19 @@ namespace Gameplay
         objJson["components"] = it->second.componentData;
 
         // Apply overrides (merge with prefab data)
-        if (overrides.contains("name")) {
+        if (overrides.contains("name"))
+        {
             objJson["name"] = overrides["name"];
         }
-        if (overrides.contains("active")) {
+        if (overrides.contains("active"))
+        {
             objJson["active"] = overrides["active"];
         }
-        if (overrides.contains("components")) {
+        if (overrides.contains("components"))
+        {
             // Merge component overrides
-            for (auto& [key, value] : overrides["components"].items()) {
+            for (auto &[key, value] : overrides["components"].items())
+            {
                 objJson["components"][key] = value;
             }
         }
@@ -255,7 +282,7 @@ namespace Gameplay
     // UTILITY
     // ========================================================================
 
-    bool PrefabFactory::hasPrefab(const std::string& name) const
+    bool PrefabFactory::hasPrefab(const std::string &name) const
     {
         return prefabs_.find(name) != prefabs_.end();
     }
@@ -263,7 +290,8 @@ namespace Gameplay
     std::vector<std::string> PrefabFactory::getPrefabNames() const
     {
         std::vector<std::string> names;
-        for (const auto& [name, _] : prefabs_) {
+        for (const auto &[name, _] : prefabs_)
+        {
             names.push_back(name);
         }
         return names;
@@ -275,7 +303,7 @@ namespace Gameplay
 
     void setupGameBlueprints()
     {
-        auto& factory = PrefabFactory::get();
+        auto &factory = PrefabFactory::get();
 
         // Player Prefab
         {

@@ -55,6 +55,8 @@ namespace Core {
 		Graphics::RenderingManager& rendering() { return *m_renderer; }
 		Graphics::GraphicsManager& graphics() { return *m_gfx; }
 		Graphics::Camera2D& camera() { return *m_camera; }
+		Graphics::ImGuiManager& imguiManager() { return *m_imgui; }
+
 		Platform::WindowManager& window() { return *m_window; }
 		Platform::InputManager& input() { return *m_input; }
 		Platform::LevelEditor& editor() { return *m_editor; }
@@ -94,5 +96,6 @@ namespace Core {
 		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}
 		bool m_running{ false }; // Is the engine running?
 		static Engine* s_instance;
+		double m_accuml;
 	};
 }

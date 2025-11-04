@@ -26,9 +26,5 @@ namespace Graphics {
         void setViewport(int w, int h);
         void setClearColor(float r, float g, float b, float a);
         
-        // Helper methods for debug rendering state
-        void enableLineSmooth();
-        void setLineWidth(float width);
-        void setPointSize(float size);
     };
 }

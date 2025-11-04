@@ -17,11 +17,12 @@ References:
 - GLEW (OpenGL Extension Wrangler): http://glew.sourceforge.net/basic.html
 - OpenGL Context Basics: https://www.khronos.org/opengl/wiki/OpenGL_Context
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
 #pragma once
+#include <string>
 struct GLFWwindow;
 namespace Core { struct Config; }
 namespace Platform {
@@ -29,6 +30,7 @@ namespace Platform {
 	public:
 		WindowManager(); ~WindowManager();
 		bool create(const Core::Config& cfg);
+		void setTitle(const std::string& title);
 		void poll();
 		void swap();
 		bool shouldClose() const;

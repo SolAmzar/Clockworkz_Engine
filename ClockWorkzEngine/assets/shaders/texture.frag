@@ -1,19 +1,14 @@
+// Lebon
 #version 330 core
-
-in vec2 TexCoord;
+in vec2 vUV;
+in vec4 vColor;
+flat in int vTexIndex;
 
 out vec4 FragColor;
 
-uniform sampler2D image;
-uniform vec3 spriteColor;
+uniform sampler2D uTextures[8];
 
-void main()
-{
-    vec4 texColor = texture(image, TexCoord);
-
-    // Multiply texture color by tint color (useful for fading, color mod, etc.)
-    FragColor = vec4(spriteColor, 1.0) * texColor;
-
-    // Optional: discard transparent pixels for better blending on cutout sprites
-    // if (FragColor.a < 0.1) discard;
+void main() {
+    vec4 texColor = texture(uTextures[vTexIndex], vUV);
+    FragColor = texColor * vColor;
 }

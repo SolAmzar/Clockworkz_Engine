@@ -1,3 +1,4 @@
+// Lebon - This is incomplete, intention is to do the spritesheet frame change
 #pragma once
 #include <vector>
 #include <glm/vec4.hpp> // x,y,w,h in pixels
