@@ -1,0 +1,34 @@
+{
+	"textures": [
+		{
+			"name": "player_texture",
+			"path": "assets/textures/player.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "enemy_texture",
+			"path": "assets/textures/enemy.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "floor_texture",
+			"path": "assets/textures/floor.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture",
+			"path": "assets/textures/wall.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "ball_texture",
+			"path": "assets/textures/ball.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		}
+	]
+}

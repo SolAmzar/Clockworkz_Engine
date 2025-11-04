@@ -1,398 +1,353 @@
-#include "Gameplay/Serializer.hpp"
-#include "Gameplay/GameObject.hpp"
-#include "Gameplay/Prefab.hpp"
-#include "Gameplay/Components/Health.hpp"
-#include "Gameplay/Components/DamageDealer.hpp"
-#include "Gameplay/Collider.hpp"
+﻿
+#include "Gameplay\Serializer.hpp"
+#include "Gameplay\GameObject.hpp"
+#include "Gameplay\Components\Health.hpp"
+#include "Gameplay\Components\DamageDealer.hpp"
+#include "Gameplay\Collider.hpp"
+#include "Gameplay\Prefab.hpp"
 #include <fstream>
-#include <sstream>
 #include <iostream>
-#include <cctype>
-
-/******************************************************************************/
-/*!
-\file           Serializer.cpp
-\project        Lights Out
-\author(s)      [Yusuf], 100%
-\brief          Declares Serializer, a system for converting GameObjects to/from
-                JSON format and managing scene persistence.
-                Responsibilities include:
-                - Serializing GameObject instances to JSON-compatible data structures
-                - Deserializing JSON data back into GameObjects using PrefabFactory
-                - Reading and writing scene files in JSON format
-                - Converting between in-memory SerializedScene structures and JSON strings
-                - Handling data validation and error recovery during load operations
-                - Supporting save/load functionality for game state persistence
-                - Enabling level design through human-readable JSON files
-                - Managing blueprint-based instantiation with property overrides
-
-                The Serializer acts as the bridge between runtime game objects
-                and persistent storage, allowing scenes to be saved when exiting
-                and restored when loading, as well as enabling autosave functionality.
-
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
-*/
-/******************************************************************************/
+#include <Gameplay/Components/SpriteRenderer.hpp>
 
 namespace Gameplay {
 
-    SerializedGameObject GameObjectSerializer::serialize(const GameObject& obj) {
-        SerializedGameObject data;
+    // ========================================================================
+    // COMPONENT SERIALIZATION
+    // ========================================================================
 
-        // Store transform data
-        data.position = obj.transform().position;
-        data.scale = obj.transform().scale;
-        data.rotation = obj.transform().rotationRad;
-        data.active = obj.active();
-
-        // Store texture if set
-        if (!obj.textureId().empty()) {
-            data.textureOverride = obj.textureId();
-        }
-
-        // Store component data
-        if (auto* hp = obj.getComponent<HealthComponent>()) {
-            data.healthOverride = hp->hp();
-        }
-        if (auto* dmg = obj.getComponent<DamageDealerComponent>()) {
-            data.damageOverride = dmg->damage();
-        }
-
-        // Determine blueprint name based on type
-        // This is a reverse lookup - you might want to store this in GameObject
-        switch (obj.type()) {
-        case GameObjectType::Floor:  data.blueprintName = "Floor"; break;
-        case GameObjectType::Wall:   data.blueprintName = "Wall"; break;
-        case GameObjectType::Player: data.blueprintName = "Player"; break;
-        case GameObjectType::Enemy:  data.blueprintName = "Enemy"; break;
-        case GameObjectType::Trap:   data.blueprintName = "Trap"; break;
-        default: data.blueprintName = "Unknown"; break;
-        }
-
-        return data;
+    json GameObjectSerializer::serializeTransform(const GameObject& obj) {
+        json j;
+        j["position"]["x"] = obj.transform().position.x;
+        j["position"]["y"] = obj.transform().position.y;
+        j["rotation"] = obj.transform().rotationRad;
+        j["scale"]["x"] = obj.transform().scale.x;
+        j["scale"]["y"] = obj.transform().scale.y;
+        return j;
     }
 
-    std::unique_ptr<GameObject> GameObjectSerializer::deserialize(const SerializedGameObject& data) {
-        auto& factory = PrefabFactory::get();
+    json GameObjectSerializer::serializeCollider(const GameObject& obj) {
+        json j;
+        j["width"] = obj.size().x;
+        j["height"] = obj.size().y;
+        j["isSolid"] = obj.isSolid();
+        j["layer"] = obj.layer();
+        j["collisionMask"] = obj.collisionMask();
+        return j;
+    }
 
-        // Create from blueprint
-        //auto obj = factory.createAt(data);
-        auto obj = factory.createAt(data.blueprintName, data.position);
-        if (!obj) {
-            std::cerr << "[Serializer] Failed to create object from blueprint: "
-                << data.blueprintName << "\n";
-            return nullptr;
+    json GameObjectSerializer::serializeHealth(const GameObject& obj) {
+        auto* health = obj.getComponent<HealthComponent>();
+        if (!health) return json();
+
+        json j;
+        j["hp"] = health->hp();
+        return j;
+    }
+
+    json GameObjectSerializer::serializeDamage(const GameObject& obj) {
+        auto* damage = obj.getComponent<DamageDealerComponent>();
+        if (!damage) return json();
+
+        json j;
+        j["damage"] = damage->damage();
+        return j;
+    }
+
+    json GameObjectSerializer::serializeSpriteRenderer(const GameObject& obj) {
+        json j;
+        j["textureId"] = obj.textureId();
+        return j;
+    }
+
+    // ========================================================================
+    // COMPONENT DESERIALIZATION
+    // ========================================================================
+
+    void GameObjectSerializer::deserializeTransform(GameObject& obj, const json& j) {
+        if (j.contains("position")) {
+            obj.transform().position.x = j["position"].value("x", 0.0f);
+            obj.transform().position.y = j["position"].value("y", 0.0f);
+        }
+        if (j.contains("rotation")) {
+            obj.transform().rotationRad = j["rotation"].get<float>();
+        }
+        if (j.contains("scale")) {
+            obj.transform().scale.x = j["scale"].value("x", 1.0f);
+            obj.transform().scale.y = j["scale"].value("y", 1.0f);
+        }
+    }
+
+    void GameObjectSerializer::deserializeCollider(GameObject& obj, const json& j) {
+        if (j.contains("width") && j.contains("height")) {
+            obj.setSize(glm::vec2(j["width"].get<float>(), j["height"].get<float>()));
+        }
+        if (j.contains("isSolid")) {
+            obj.setSolid(j["isSolid"].get<bool>());
+        }
+        if (j.contains("layer")) {
+            obj.setLayer(j["layer"].get<uint32_t>());
+        }
+        if (j.contains("collisionMask")) {
+            obj.setCollisionMask(j["collisionMask"].get<uint32_t>());
+        }
+    }
+
+    void GameObjectSerializer::deserializeHealth(GameObject& obj, const json& j) {
+        if (j.contains("hp")) {
+            obj.addComponent<HealthComponent>(j["hp"].get<int>());
+        }
+    }
+
+    void GameObjectSerializer::deserializeDamage(GameObject& obj, const json& j) {
+        if (j.contains("damage")) {
+            obj.addComponent<DamageDealerComponent>(j["damage"].get<int>());
+        }
+    }
+
+    void GameObjectSerializer::deserializeSpriteRenderer(GameObject& obj, const json& j) {
+        if (j.contains("textureId")) {
+            std::string texId = j["textureId"].get<std::string>();
+            obj.setTextureId(texId);
+
+            obj.addComponent<SpriteRendererComponent>(texId);
+        }
+    }
+
+    // ========================================================================
+    // GAMEOBJECT SERIALIZATION
+    // ========================================================================
+
+    json GameObjectSerializer::serializeGameObject(const GameObject& obj) {
+        json j;
+
+        // Basic properties
+        j["name"] = obj.name();
+        j["active"] = obj.active();
+        j["type"] = static_cast<int>(obj.type());
+
+        // Components object
+        json components;
+
+        // Always include transform
+        components["transform"] = serializeTransform(obj);
+
+        // Optional collider (only if size is not default)
+        if (obj.size().x != 1.0f || obj.size().y != 1.0f || obj.isSolid()) {
+            components["collider"] = serializeCollider(obj);
         }
 
-		if (obj)
-		{
-            obj->transform().position = data.position;
-			// Apply transform overrides
-            obj->transform().scale = data.scale;
-            obj->transform().rotationRad = data.rotation;
-            obj->setActive(data.active);
-		}
-
-        obj->autoUpdateCollisionBaseOnScale();
-
-
-
-        // Apply texture override
-        if (!data.textureOverride.empty()) {
-            obj->setTextureId(data.textureOverride);
+        // Optional health component
+        if (obj.getComponent<HealthComponent>()) {
+            components["health"] = serializeHealth(obj);
         }
 
-        // Apply component overrides
-        if (data.healthOverride >= 0) {
-            if (auto* hp = obj->getComponent<HealthComponent>()) {
-                // Health exists but we can't change it easily - would need to add setter
-                // For now, recreate component if value differs
+        // Optional damage component
+        if (obj.getComponent<DamageDealerComponent>()) {
+            components["damage"] = serializeDamage(obj);
+        }
+
+        // Optional sprite renderer
+        if (!obj.textureId().empty()) {
+            components["spriteRenderer"] = serializeSpriteRenderer(obj);
+        }
+
+        j["components"] = components;
+
+        return j;
+    }
+
+    // ========================================================================
+    // GAMEOBJECT DESERIALIZATION (WITH PREFAB SUPPORT)
+    // ========================================================================
+
+    std::unique_ptr<GameObject> GameObjectSerializer::deserializeGameObject(const json& j) {
+        std::unique_ptr<GameObject> obj;
+
+        // 1️⃣ Prefab-based creation
+        if (j.contains("prefab")) {
+            std::string prefabName = j["prefab"].get<std::string>();
+            std::cout << "[Serializer] Loading prefab: " << prefabName << "\n";
+
+            // Extract some basic overrides early (position, scale, texture, hp, dmg)
+            glm::vec2 pos{ 0.f }, scale{ 100.f, 100.f };
+            std::string tex = "";
+            int hp = 3, dmg = 1;
+
+            if (j.contains("components")) {
+                const auto& comps = j["components"];
+
+                if (comps.contains("transform")) {
+                    const auto& t = comps["transform"];
+                    if (t.contains("position"))
+                        pos = { t["position"].value("x", 0.f), t["position"].value("y", 0.f) };
+                    if (t.contains("scale"))
+                        scale = { t["scale"].value("x", 100.f), t["scale"].value("y", 100.f) };
+                }
+
+                if (comps.contains("spriteRenderer"))
+                    tex = comps["spriteRenderer"].value("textureId", "");
+
+                if (comps.contains("health"))
+                    hp = comps["health"].value("hp", 3);
+
+                if (comps.contains("damage"))
+                    dmg = comps["damage"].value("damage", 1);
             }
+
+            // 2️⃣ Create prefab with correct factory (preserves colliders & masks)
+            if (prefabName == "Player")
+                obj = GameObject::MakePlayer(pos, scale, tex);
+            else if (prefabName == "Enemy")
+                obj = GameObject::MakeEnemy(pos, scale, hp, tex);
+            else if (prefabName == "Wall")
+                obj = GameObject::MakeWall(pos, scale, tex);
+            else if (prefabName == "Floor")
+                obj = GameObject::MakeFloor(pos, scale, tex);
+            else if (prefabName == "Trap")
+                obj = GameObject::MakeTrap(pos, scale, dmg, tex);
+            else if (prefabName == "Ball")
+                obj = GameObject::MakeBall(pos, 50.f, scale, tex);
             else {
-                obj->addComponent<HealthComponent>(data.healthOverride);
+                std::cerr << "[Serializer] Unknown prefab type: " << prefabName << "\n";
+                obj = std::make_unique<GameObject>(GameObjectType::Unknown, prefabName);
             }
+
+            // 3️⃣ Apply overrides AFTER prefab creation (so you don’t lose collider)
+            if (j.contains("components")) {
+                const auto& comps = j["components"];
+
+                if (comps.contains("transform"))
+                    deserializeTransform(*obj, comps["transform"]);
+                if (comps.contains("health"))
+                    deserializeHealth(*obj, comps["health"]);
+                if (comps.contains("damage"))
+                    deserializeDamage(*obj, comps["damage"]);
+                if (comps.contains("spriteRenderer"))
+                    deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);
+                if (comps.contains("collider"))
+                    deserializeCollider(*obj, comps["collider"]);
+            }
+
+            // 4️⃣ Apply generic fields (name, active)
+            if (j.contains("name"))
+                obj->setName(j["name"].get<std::string>());
+            if (j.contains("active"))
+                obj->setActive(j["active"].get<bool>());
+            obj->autoUpdateCollisionBaseOnScale();
+            return obj;
         }
 
-        if (data.damageOverride >= 0) {
-            if (auto* dmg = obj->getComponent<DamageDealerComponent>()) {
-                dmg->setDamage(data.damageOverride);
-            }
-            else {
-                obj->addComponent<DamageDealerComponent>(data.damageOverride);
-            }
+        // 5️⃣ Fallback: Non-prefab legacy JSON
+        std::string name = j.value("name", "Unnamed");
+        GameObjectType type = GameObjectType::Unknown;
+        if (j.contains("type")) {
+            type = static_cast<GameObjectType>(j["type"].get<int>());
+        }
+
+        obj = std::make_unique<GameObject>(type, name);
+
+        if (j.contains("active"))
+            obj->setActive(j["active"].get<bool>());
+
+        if (j.contains("components") && j["components"].is_object()) {
+            const json& comps = j["components"];
+            if (comps.contains("transform"))
+                deserializeTransform(*obj, comps["transform"]);
+            if (comps.contains("collider"))
+                deserializeCollider(*obj, comps["collider"]);
+            if (comps.contains("health"))
+                deserializeHealth(*obj, comps["health"]);
+            if (comps.contains("damage"))
+                deserializeDamage(*obj, comps["damage"]);
+            if (comps.contains("spriteRenderer"))
+                deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);
         }
 
         return obj;
     }
 
-    std::string GameObjectSerializer::toJSON(const SerializedScene& scene) {
-        std::ostringstream oss;
-        oss << "{\n";
-        oss << "  \"sceneName\": \"" << escapeJSON(scene.sceneName) << "\",\n";
-        oss << "  \"objects\": [\n";
 
-        for (size_t i = 0; i < scene.objects.size(); ++i) {
-            const auto& obj = scene.objects[i];
-            oss << "    {\n";
-            oss << "      \"blueprint\": \"" << escapeJSON(obj.blueprintName) << "\",\n";
-            oss << "      \"position\": [" << obj.position.x << ", " << obj.position.y << "],\n";
-            oss << "      \"scale\": [" << obj.scale.x << ", " << obj.scale.y << "],\n";
-            oss << "      \"rotation\": " << obj.rotation << ",\n";
-            oss << "      \"active\": " << (obj.active ? "true" : "false");
+    // ========================================================================
+    // SCENE SERIALIZATION
+    // ========================================================================
 
-            if (obj.healthOverride >= 0) {
-                oss << ",\n      \"health\": " << obj.healthOverride;
-            }
-            if (obj.damageOverride >= 0) {
-                oss << ",\n      \"damage\": " << obj.damageOverride;
-            }
-            if (obj.speedOverride >= 0.0f) {
-                oss << ",\n      \"speed\": " << obj.speedOverride;
-            }
-            if (!obj.textureOverride.empty()) {
-                oss << ",\n      \"texture\": \"" << escapeJSON(obj.textureOverride) << "\"";
-            }
+    json GameObjectSerializer::serializeScene(const std::string& sceneName,
+        const std::vector<std::unique_ptr<GameObject>>& objects) {
+        json j;
+        j["sceneName"] = sceneName;
 
-            oss << "\n    }";
-            if (i < scene.objects.size() - 1) oss << ",";
-            oss << "\n";
+        json objectsArray = json::array();
+        for (const auto& obj : objects) {
+            if (obj) {
+                objectsArray.push_back(serializeGameObject(*obj));
+            }
         }
+        j["objects"] = objectsArray;
 
-        oss << "  ]\n";
-        oss << "}\n";
-        return oss.str();
+        return j;
     }
 
-    bool GameObjectSerializer::fromJSON(const std::string& json, SerializedScene& outScene) {
-        // Parse sceneName
-        outScene.sceneName = extractJSONValue(json, "sceneName");
+    bool GameObjectSerializer::saveSceneToFile(const std::string& sceneName,
+        const std::vector<std::unique_ptr<GameObject>>& objects,
+        const std::string& filepath) {
+        try {
+            json sceneJson = serializeScene(sceneName, objects);
 
-        // Find objects array
-        size_t objsStart = json.find("\"objects\"");
-        if (objsStart == std::string::npos) {
-            std::cerr << "[Serializer] No 'objects' array found in JSON\n";
-            return false;
-        }
-
-        size_t arrayStart = json.find("[", objsStart);
-        size_t arrayEnd = json.rfind("]");
-
-        if (arrayStart == std::string::npos || arrayEnd == std::string::npos) {
-            std::cerr << "[Serializer] Invalid objects array\n";
-            return false;
-        }
-
-        // Extract objects array content
-        std::string arrayContent = json.substr(arrayStart + 1, arrayEnd - arrayStart - 1);
-
-        // Parse individual objects
-        size_t pos = 0;
-        int braceDepth = 0;
-        size_t objStart = std::string::npos;
-
-        for (size_t i = 0; i < arrayContent.length(); ++i) {
-            char c = arrayContent[i];
-
-            if (c == '{') {
-                if (braceDepth == 0) {
-                    objStart = i;
-                }
-                braceDepth++;
+            std::ofstream file(filepath);
+            if (!file.is_open()) {
+                std::cerr << "[Serializer] Failed to open file for writing: " << filepath << "\n";
+                return false;
             }
-            else if (c == '}') {
-                braceDepth--;
-                if (braceDepth == 0 && objStart != std::string::npos) {
-                    // Extract this object
-                    std::string objStr = arrayContent.substr(objStart, i - objStart + 1);
-                    SerializedGameObject obj;
-                    if (parseJSONObject(objStr, obj)) {
-                        outScene.objects.push_back(obj);
+
+            // Write with pretty formatting (4 spaces indent)
+            file << sceneJson.dump(4);
+            file.close();
+
+            std::cout << "[Serializer] Scene '" << sceneName << "' saved to: " << filepath << "\n";
+            return true;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "[Serializer] Error saving scene: " << e.what() << "\n";
+            return false;
+        }
+    }
+
+    bool GameObjectSerializer::loadSceneFromFile(const std::string& filepath,
+        std::string& outSceneName,
+        std::vector<std::unique_ptr<GameObject>>& outObjects) {
+        try {
+            std::ifstream file(filepath);
+            if (!file.is_open()) {
+                std::cerr << "[Serializer] Failed to open file for reading: " << filepath << "\n";
+                return false;
+            }
+
+            json j;
+            file >> j;
+            file.close();
+
+            // Parse scene name
+            outSceneName = j.value("sceneName", "Unnamed Scene");
+
+            // Parse objects
+            outObjects.clear();
+            if (j.contains("objects") && j["objects"].is_array()) {
+                for (const auto& objJson : j["objects"]) {
+                    auto obj = deserializeGameObject(objJson);
+                    if (obj) {
+                        outObjects.push_back(std::move(obj));
                     }
-                    objStart = std::string::npos;
                 }
             }
+
+            std::cout << "[Serializer] Scene '" << outSceneName << "' loaded from: " << filepath
+                << " (" << outObjects.size() << " objects)\n";
+            return true;
         }
-
-        std::cout << "[Serializer] Parsed " << outScene.objects.size() << " objects from JSON\n";
-        return true;
-    }
-
-    bool GameObjectSerializer::parseJSONObject(const std::string& objStr, SerializedGameObject& outObj) {
-        outObj.blueprintName = extractJSONValue(objStr, "blueprint");
-        extractJSONVec2(objStr, "position", outObj.position);
-        extractJSONVec2(objStr, "scale", outObj.scale);
-        outObj.rotation = extractJSONFloat(objStr, "rotation", 0.0f);
-        outObj.active = extractJSONBool(objStr, "active", true);
-        outObj.healthOverride = extractJSONInt(objStr, "health", -1);
-        outObj.damageOverride = extractJSONInt(objStr, "damage", -1);
-        outObj.speedOverride = extractJSONFloat(objStr, "speed", -1.0f);
-        outObj.textureOverride = extractJSONValue(objStr, "texture");
-
-        return !outObj.blueprintName.empty();
-    }
-
-    std::string GameObjectSerializer::extractJSONValue(const std::string& json, const std::string& key) {
-        std::string searchKey = "\"" + key + "\"";
-        size_t keyPos = json.find(searchKey);
-        if (keyPos == std::string::npos) return "";
-
-        size_t colonPos = json.find(":", keyPos);
-        if (colonPos == std::string::npos) return "";
-
-        size_t valueStart = json.find("\"", colonPos);
-        if (valueStart == std::string::npos) return "";
-
-        size_t valueEnd = json.find("\"", valueStart + 1);
-        if (valueEnd == std::string::npos) return "";
-
-        return unescapeJSON(json.substr(valueStart + 1, valueEnd - valueStart - 1));
-    }
-
-    float GameObjectSerializer::extractJSONFloat(const std::string& json, const std::string& key, float defaultVal) {
-        std::string searchKey = "\"" + key + "\"";
-        size_t keyPos = json.find(searchKey);
-        if (keyPos == std::string::npos) return defaultVal;
-
-        size_t colonPos = json.find(":", keyPos);
-        if (colonPos == std::string::npos) return defaultVal;
-
-        // Skip whitespace
-        size_t valueStart = colonPos + 1;
-        while (valueStart < json.length() && std::isspace(json[valueStart])) valueStart++;
-
-        // Find end of number
-        size_t valueEnd = valueStart;
-        while (valueEnd < json.length() &&
-            (std::isdigit(json[valueEnd]) || json[valueEnd] == '.' ||
-                json[valueEnd] == '-' || json[valueEnd] == 'e' || json[valueEnd] == 'E')) {
-            valueEnd++;
-        }
-
-        if (valueStart == valueEnd) return defaultVal;
-
-        std::string valueStr = json.substr(valueStart, valueEnd - valueStart);
-        return std::stof(valueStr);
-    }
-
-    int GameObjectSerializer::extractJSONInt(const std::string& json, const std::string& key, int defaultVal) {
-        return static_cast<int>(extractJSONFloat(json, key, static_cast<float>(defaultVal)));
-    }
-
-    bool GameObjectSerializer::extractJSONBool(const std::string& json, const std::string& key, bool defaultVal) {
-        std::string searchKey = "\"" + key + "\"";
-        size_t keyPos = json.find(searchKey);
-        if (keyPos == std::string::npos) return defaultVal;
-
-        size_t colonPos = json.find(":", keyPos);
-        if (colonPos == std::string::npos) return defaultVal;
-
-        size_t truePos = json.find("true", colonPos);
-        size_t falsePos = json.find("false", colonPos);
-
-        // Make sure we find the closest one after the colon
-        if (truePos != std::string::npos && truePos < colonPos + 10) return true;
-        if (falsePos != std::string::npos && falsePos < colonPos + 10) return false;
-
-        return defaultVal;
-    }
-
-    void GameObjectSerializer::extractJSONVec2(const std::string& json, const std::string& key, glm::vec2& outVec) {
-        std::string searchKey = "\"" + key + "\"";
-        size_t keyPos = json.find(searchKey);
-        if (keyPos == std::string::npos) return;
-
-        size_t bracketStart = json.find("[", keyPos);
-        if (bracketStart == std::string::npos) return;
-
-        size_t bracketEnd = json.find("]", bracketStart);
-        if (bracketEnd == std::string::npos) return;
-
-        std::string arrayStr = json.substr(bracketStart + 1, bracketEnd - bracketStart - 1);
-
-        // Parse two floats separated by comma
-        size_t commaPos = arrayStr.find(",");
-        if (commaPos != std::string::npos) {
-            std::string xStr = arrayStr.substr(0, commaPos);
-            std::string yStr = arrayStr.substr(commaPos + 1);
-
-            // Trim whitespace
-            xStr.erase(0, xStr.find_first_not_of(" \t\n\r"));
-            xStr.erase(xStr.find_last_not_of(" \t\n\r") + 1);
-            yStr.erase(0, yStr.find_first_not_of(" \t\n\r"));
-            yStr.erase(yStr.find_last_not_of(" \t\n\r") + 1);
-
-            outVec.x = std::stof(xStr);
-            outVec.y = std::stof(yStr);
-        }
-    }
-
-    bool GameObjectSerializer::saveSceneToFile(const SerializedScene& scene, const std::string& filepath) {
-        std::ofstream file(filepath);
-        if (!file.is_open()) {
-            std::cerr << "[Serializer] Failed to open file for writing: " << filepath << "\n";
+        catch (const std::exception& e) {
+            std::cerr << "[Serializer] Error loading scene: " << e.what() << "\n";
             return false;
         }
-
-        std::string json = toJSON(scene);
-        file << json;
-        file.close();
-
-        std::cout << "[Serializer] Scene saved to: " << filepath << "\n";
-        return true;
-    }
-
-    bool GameObjectSerializer::loadSceneFromFile(const std::string& filepath, SerializedScene& outScene) {
-        std::ifstream file(filepath);
-        if (!file.is_open()) {
-            std::cerr << "[Serializer] Failed to open file for reading: " << filepath << "\n";
-            return false;
-        }
-
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        std::string json = buffer.str();
-        file.close();
-
-        bool success = fromJSON(json, outScene);
-        if (success) {
-            std::cout << "[Serializer] Scene loaded from: " << filepath << "\n";
-        }
-        return success;
-    }
-
-    std::string GameObjectSerializer::escapeJSON(const std::string& str) {
-        std::ostringstream oss;
-        for (char c : str) {
-            switch (c) {
-            case '\"': oss << "\\\""; break;
-            case '\\': oss << "\\\\"; break;
-            case '\n': oss << "\\n"; break;
-            case '\r': oss << "\\r"; break;
-            case '\t': oss << "\\t"; break;
-            default: oss << c; break;
-            }
-        }
-        return oss.str();
-    }
-
-    std::string GameObjectSerializer::unescapeJSON(const std::string& str) {
-        std::ostringstream oss;
-        for (size_t i = 0; i < str.length(); ++i) {
-            if (str[i] == '\\' && i + 1 < str.length()) {
-                switch (str[i + 1]) {
-                case '\"': oss << '\"'; ++i; break;
-                case '\\': oss << '\\'; ++i; break;
-                case 'n': oss << '\n'; ++i; break;
-                case 'r': oss << '\r'; ++i; break;
-                case 't': oss << '\t'; ++i; break;
-                default: oss << str[i]; break;
-                }
-            }
-            else {
-                oss << str[i];
-            }
-        }
-        return oss.str();
     }
 
 } // namespace Gameplay

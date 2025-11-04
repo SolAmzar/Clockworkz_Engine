@@ -73,7 +73,7 @@ void Core::Logger::fatal(const std::string& msg)
     std::ofstream crashFile("crash_report.txt", std::ios::app);
     if (crashFile.is_open()) {
         crashFile << logMsg;
-        crashFile << "Stack trace: (implement if needed)\n";
+        //crashFile << "Stack trace: (implement if needed)\n";
         crashFile.close();
     }
 }

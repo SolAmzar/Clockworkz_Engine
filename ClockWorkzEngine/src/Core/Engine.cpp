@@ -6,7 +6,7 @@
 \brief          Declares Engine, the central orchestrator of the game loop.
 				Responsibilities include:
 				- Initializing and shutting down all subsystems
-				  (Config, Logger, Time, Window, Input, Graphics, Renderer, Camera)
+					(Config, Logger, Time, Window, Input, Graphics, Renderer, Camera)
 				- Managing the GameStateManager and bootstrapping the MenuState
 				- Running the main loop (update, render, timing, input polling)
 				- Providing Run() as the entry point to start the application
@@ -37,34 +37,38 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <string>
 #include "Core/Profiler.hpp"
 #include "Assets/TextureManager.hpp"
+#include "Gameplay/Prefab.hpp"
 
 using namespace Core;
 
 namespace Core
 {
-	Engine* Engine::s_instance = nullptr;
-	Engine::Engine() {
-		s_instance = this;  // register singleton instance
+	Engine *Engine::s_instance = nullptr;
+	Engine::Engine()
+	{
+		s_instance = this; // register singleton instance
 		m_accuml = 0.0;
 	}
 
-	Engine::~Engine() {
-		s_instance = nullptr;  // clear singleton instance
+	Engine::~Engine()
+	{
+		s_instance = nullptr; // clear singleton instance
 		shutdown();
 	}
 
-	Engine& Engine::Get() {
+	Engine &Engine::Get()
+	{
 		assert(s_instance && "Engine::Get() called before engine instance was created!");
 		return *s_instance;
 	}
 
-	Audio::AudioManager& Engine::audio()
+	Audio::AudioManager &Engine::audio()
 	{
 		assert(m_audio && "Engine::audio() called before AudioManager is initialized");
 		return *m_audio;
 	}
 
-	Audio::AudioManager const& Engine::audio() const
+	Audio::AudioManager const &Engine::audio() const
 	{
 		assert(m_audio && "Engine::audio() called before AudioManager is initialized");
 		return *m_audio;
@@ -108,8 +112,17 @@ namespace Core
 		if (!m_gfx->init(*m_window))
 			return false;
 
-		if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json")) {
+		if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json"))
+		{
 			m_logger->fatal("Failed to load textures from config");
+			return false;
+		}
+
+		// 1️ Register all prefab blueprints
+		const std::string prefabFile = "assets/configs/Prefab.json";
+		if (!Gameplay::PrefabFactory::get().loadPrefabFromFile(prefabFile))
+		{
+			std::cerr << "Failed to load prefab from file: " << prefabFile << "\n";
 			return false;
 		}
 
@@ -120,19 +133,18 @@ namespace Core
 		if (!m_imgui->init(m_window->handle()))
 			return false;
 
-		//m_camera->setViewport((float)m_window->width(), (float)m_window->height());
+		// m_camera->setViewport((float)m_window->width(), (float)m_window->height());
 		m_camera->setViewport((float)m_window->width(), (float)m_window->height());
-		m_camera->setPosition(glm::vec2{ 0,0 });
+		m_camera->setPosition(glm::vec2{0, 0});
 		m_camera->setZoom(1.0f);
 
 		m_gsm = std::make_unique<Runtime::GameStateManager>();
 
-
-		m_audio->load("ui_move", { "assets/audio/ui_move.wav", false, false, false });
-		m_audio->load("ui_select", { "assets/audio/ui_select.wav", false, false, false });
+		m_audio->load("ui_move", {"assets/audio/ui_move.wav", false, false, false});
+		m_audio->load("ui_select", {"assets/audio/ui_select.wav", false, false, false});
 
 		// BGM Test but it's just random royalty-free music atm
-		m_audio->load("menu_bgm", { "assets/audio/menu_bgm.mp3", true, true, false });
+		m_audio->load("menu_bgm", {"assets/audio/menu_bgm.mp3", true, true, false});
 
 		m_running = true;
 		return true;
@@ -189,12 +201,12 @@ namespace Core
 			// Initial State when Run Game, start off from Menu State
 			// Push MenuState once
 			m_gsm->push(std::make_shared<Runtime::MenuState>(
-				*m_gsm,
-				*m_input,
-				*m_window,
-				this->audio(),
-				[this]()
-				{ m_running = false; }));
+					*m_gsm,
+					*m_input,
+					*m_window,
+					this->audio(),
+					[this]()
+					{ m_running = false; }));
 			m_booted = true;
 		}
 		m_audio->update(); // Update the audio manager class
@@ -241,7 +253,8 @@ namespace Core
 	{
 
 		// Call the engine private function `init()`
-		try {
+		try
+		{
 			if (!init())
 				return -1;
 
@@ -262,81 +275,223 @@ namespace Core
 			// Q: Is m_window->shouldClose() calling itself recursively?
 			// A: No.Engine::m_window is a WindowManager*, and WindowManager::shouldClose() calls glfwWindowShouldClose() on its GLFW window member.
 			// They just happen to share the name m_window.
-			while (m_running && !m_window->shouldClose()) {
+			while (m_running && !m_window->shouldClose())
+			{
 
+				m_audio->load("ui_move", {"assets/audio/ui_move.wav", false, false, false});
+				m_audio->load("ui_select", {"assets/audio/ui_select.wav", false, false, false});
 
-				//PROFILE_SCOPE("Frame");
+				// BGM Test but it's just random royalty-free music atm
+				m_audio->load("menu_bgm", {"assets/audio/menu_bgm.mp3", true, true, false});
 
+				m_running = true;
+				return true;
+			}
+
+			void Engine::shutdown()
+			{
+				if (m_logger)
+					m_logger->info("Engine shutdown.");
+
+				// ADD THIS: Clean up game state manager (which will unload scenes)
+				if (m_gsm)
 				{
-					PROFILE_SCOPE("FrameSetup");
-					m_time->beginFrame();
-					m_window->poll();
+					// Pop all states, which triggers their onExit() methods
+					while (m_gsm->top())
+					{
+						m_gsm->pop();
+					}
+					m_gsm.reset();
 				}
 
+				if (m_imgui)
 				{
-					PROFILE_SCOPE("Update");
-					update(m_time->delta());
+					m_imgui->shutdown();
+					m_imgui.reset();
 				}
 
-	/*
-				m_renderer->beginFrame(*m_camera);
-				m_imgui->beginFrame();*/
+				m_renderer.reset();
+				m_gfx.reset();
+				m_input.reset();
+				m_window.reset();
+				m_time.reset();
+				m_logger.reset();
+				m_config.reset();
+				m_camera.reset();
+				m_audio.reset();
+
+				Assets::TextureManager::Clear();
+			}
+
+			/** Function header comment
+			 * @brief Engine::update(double dt) is called once per frame in the game loop.
+			 *
+			 * It updates all the engine systems and ensures the initial game state is set up.
+			 *
+			 * @param XXX
+			 *
+			 * @return XXX
+			 */
+			void Engine::update(double dt)
+			{
+				if (!m_booted)
 				{
-					PROFILE_SCOPE("Full Render");
-					m_renderer->beginFrame();
-					render();
-					m_renderer->endFrame();
+					// Initial State when Run Game, start off from Menu State
+					// Push MenuState once
+					m_gsm->push(std::make_shared<Runtime::MenuState>(
+							*m_gsm,
+							*m_input,
+							*m_window,
+							this->audio(),
+							[this]()
+							{ m_running = false; }));
+					m_booted = true;
 				}
-	/*			m_imgui->endFrame();
-				m_renderer->endFrame();*/
-				
+				m_audio->update(); // Update the audio manager class
+				m_gsm->update(dt); // Update the game state manager class
+				m_input->update(); // Update the input manager class
+			}
 
+			/** Function header comment
+			 * @brief
+			 *
+			 * XXX
+			 *
+			 * @param XXX
+			 *
+			 * @return XXX
+			 */
+			void Engine::render()
+			{
+				// clear & present
+				// (Clear happens inside RenderingManager::beginFrame)
+				m_gsm->render(m_time.get());
+
+				if (m_renderer && m_camera)
 				{
-					PROFILE_SCOPE("SwapBuffers");
-					m_window->swap();
-				}
+					/*
+					m_renderer->drawCircle(400.0f, 300.0f, 100.0f, 0.0f, 0.0f, 1.0f, 64);
 
-				m_time->endFrame();
-
-				m_accuml += m_time->delta();
-				if (m_accuml >= 0.5)
-				{
-					m_accuml = 0.0;
-					double fps = m_time->fps();
-					double frameTime = m_time->frameTimeMs();
-
-					std::string title = "Lights Out  |  FPS: " + std::to_string((int)fps) +
-						"  (" + std::to_string(frameTime).substr(0, 5) + " ms)";
-					m_window->setTitle(title);
+					// Draw a red rectangle at (200, 150) with width 300 and height 200
+					m_renderer->drawRect(200.0f, -300.0f, 300.0f, 200.0f, 1.0f, 0.0f, 0.0f);
+					*/
 				}
 			}
-			shutdown();
-			return 0;
+
+			/** Function header comment
+			 * @brief Engine class public function
+			 *
+			 * XXX
+			 *
+			 * @param XXX
+			 *
+			 * @return XXX
+			 */
+			int Engine::Run()
+			{
+
+				// Call the engine private function `init()`
+				try
+				{
+					if (!init())
+						return -1;
+
+					// `m_running` is a private data member of type bool, and was set to true by `init()`.
+
+					// `m_window` is a WindowManager class, and `shouldClose()` seems to be a wrapper? not sure if it is the right term, i dont really understand
+					// wrapper. [Done]
+					// Q: What is a wrapper?
+					// A: A wrapper is a function or class that “wraps around” another function, library, or system to make it easier, safer, or cleaner to use. It
+					// hides complexity of the underlying system. It can change the interface to be more convenient or type - safe. The rest of your code doesn’t
+					// need to know about the internal details.
+
+					// `m_` seems to be a prefix for manager, not sure what it is suppose to mean? [Done]
+					// Q: What does the m_ prefix mean ?
+					// A : In C++, m_ is a convention for member variables. m_ stands for member. It tells you the variable belongs to the class instance, not a
+					// local variable or parameter. It has nothing to do with “manager”, even if it looks like that.
+
+					// Q: Is m_window->shouldClose() calling itself recursively?
+					// A: No.Engine::m_window is a WindowManager*, and WindowManager::shouldClose() calls glfwWindowShouldClose() on its GLFW window member.
+					// They just happen to share the name m_window.
+					while (m_running && !m_window->shouldClose())
+					{
+
+						// PROFILE_SCOPE("Frame");
+
+						{
+							PROFILE_SCOPE("FrameSetup");
+							m_time->beginFrame();
+							m_window->poll();
+						}
+
+						{
+							PROFILE_SCOPE("Update");
+							update(m_time->delta());
+						}
+
+						/*
+									m_renderer->beginFrame(*m_camera);
+									m_imgui->beginFrame();*/
+						{
+							PROFILE_SCOPE("Full Render");
+							m_renderer->beginFrame();
+							render();
+							m_renderer->endFrame();
+						}
+						/*			m_imgui->endFrame();
+									m_renderer->endFrame();*/
+
+						{
+							PROFILE_SCOPE("SwapBuffers");
+							m_window->swap();
+						}
+
+						m_time->endFrame();
+
+						m_accuml += m_time->delta();
+						if (m_accuml >= 0.5)
+						{
+							m_accuml = 0.0;
+							double fps = m_time->fps();
+							double frameTime = m_time->frameTimeMs();
+
+							std::string title = "Lights Out  |  FPS: " + std::to_string((int)fps) +
+																	"  (" + std::to_string(frameTime).substr(0, 5) + " ms)";
+							m_window->setTitle(title);
+						}
+					}
+					shutdown();
+					return 0;
+				}
+				catch (const std::exception &e)
+				{
+					// Log fatal exceptions with crash report
+					if (m_logger)
+					{
+						m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
+					}
+					else
+					{
+						std::cerr << "[FATAL] Exception before logger initialized: " << e.what() << std::endl;
+					}
+
+					shutdown();
+					return -1;
+				}
+				catch (...)
+				{
+					// Log unknown fatal exceptions
+					if (m_logger)
+					{
+						m_logger->fatal("Unknown fatal exception caught");
+					}
+					else
+					{
+						std::cerr << "[FATAL] Unknown exception before logger initialized" << std::endl;
+					}
+
+					shutdown();
+					return -1;
+				}
+			}
 		}
-		catch (const std::exception& e)
-		{
-			// Log fatal exceptions with crash report
-			if (m_logger) {
-				m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
-			}
-			else {
-				std::cerr << "[FATAL] Exception before logger initialized: " << e.what() << std::endl;
-			}
-
-			shutdown();
-			return -1;
-		}
-		catch (...) {
-			// Log unknown fatal exceptions
-			if (m_logger) {
-				m_logger->fatal("Unknown fatal exception caught");
-			}
-			else {
-				std::cerr << "[FATAL] Unknown exception before logger initialized" << std::endl;
-			}
-
-			shutdown();
-			return -1;
-		}
-	}
-}

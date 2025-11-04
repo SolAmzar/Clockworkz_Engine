@@ -1,0 +1,117 @@
+{
+    "prefabs": [
+        {
+            "prefabName": "Player",
+            "components": {
+                "transform": {
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "collider": {
+                    "width": 0.8,
+                    "height": 0.8,
+                    "isSolid": true,
+                    "layer": 2,
+                    "collisionMask": 7
+                },
+                "health": {
+                    "hp": 10
+                },
+                "spriteRenderer": {
+                    "textureId": "player_texture"
+                }
+            }
+        },
+        {
+            "prefabName": "Enemy",
+            "components": {
+                "transform": {
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "collider": {
+                    "width": 0.9,
+                    "height": 0.9,
+                    "isSolid": true,
+                    "layer": 2,
+                    "collisionMask": 7
+                },
+                "health": {
+                    "hp": 3
+                },
+                "damage": {
+                    "damage": 2
+                },
+                "spriteRenderer": {
+                    "textureId": "enemy_texture"
+                }
+            }
+        },
+        {
+            "prefabName": "Wall",
+            "components": {
+                "transform": {
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "collider": {
+                    "width": 1.0,
+                    "height": 1.0,
+                    "isSolid": true,
+                    "layer": 1,
+                    "collisionMask": 4294967295
+                },
+                "spriteRenderer": {
+                    "textureId": "wall_texture"
+                }
+            }
+        },
+        {
+            "prefabName": "Floor",
+            "components": {
+                "transform": {
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "collider": {
+                    "width": 1.0,
+                    "height": 1.0,
+                    "isSolid": false,
+                    "layer": 0,
+                    "collisionMask": 0
+                },
+                "spriteRenderer": {
+                    "textureId": "floor_texture"
+                }
+            }
+        }
+    ]
+}

@@ -25,14 +25,17 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 using namespace Runtime;
 
-void GameStateManager::push(std::shared_ptr<GameState> s) {
-	if (!s) return;
+void GameStateManager::push(std::shared_ptr<GameState> s)
+{
+	if (!s)
+		return;
 	m_states.push(std::move(s));
 	m_states.top()->onEnter();
 }
 
-void GameStateManager::pop() {
-	if (m_states.empty()) 
+void GameStateManager::pop()
+{
+	if (m_states.empty())
 	{
 		return;
 	}
@@ -40,9 +43,12 @@ void GameStateManager::pop() {
 	m_states.pop();
 }
 
-void GameStateManager::switchTo(std::shared_ptr<GameState> s) {
-	if (!s) return;
-	if (!m_states.empty()) {
+void GameStateManager::switchTo(std::shared_ptr<GameState> s)
+{
+	if (!s)
+		return;
+	if (!m_states.empty())
+	{
 		m_states.top()->onExit();
 		m_states.pop();
 	}
@@ -50,26 +56,29 @@ void GameStateManager::switchTo(std::shared_ptr<GameState> s) {
 	m_states.top()->onEnter();
 }
 
-void GameStateManager::update(double dt) {
-	if (!m_states.empty()) m_states.top()->update(dt);
+void GameStateManager::update(double dt)
+{
+	if (!m_states.empty())
+		m_states.top()->update(dt);
 }
 
-void GameStateManager::render(Core::Time* timer) {
-	if (!m_states.empty()) {
-		
+void GameStateManager::render(Core::Time *timer)
+{
+	if (!m_states.empty())
+	{
+
 		{
 			PROFILE_SCOPE("Render Game State");
 			m_states.top()->render(timer);
 		}
-		
+
 		{
 			PROFILE_SCOPE("Render IMGUI");
-			Core::Engine& engine = Core::Engine::Get();
-			Graphics::ImGuiManager& imgui = engine.imguiManager();
+			Core::Engine &engine = Core::Engine::Get();
+			Graphics::ImGuiManager &imgui = engine.imguiManager();
 			imgui.beginFrame();
 			m_states.top()->renderImGui(timer);
 			imgui.endFrame();
 		}
-		
 	}
 }

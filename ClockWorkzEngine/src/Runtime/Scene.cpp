@@ -21,8 +21,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Physics2D.hpp"
-#include "Gameplay/Serializer.hpp"        // ADD THIS
-#include "Gameplay/Prefab.hpp" // ADD THIS
+#include "Gameplay/Serializer.hpp" // ADD THIS
+#include "Gameplay/Prefab.hpp"     // ADD THIS
 #include <iostream>
 #include <exception>
 #include "Assets/ResourceManager.hpp"
@@ -47,24 +47,8 @@ std::vector<std::unique_ptr<Gameplay::GameObject>> &Scene::objects() { return m_
 
 bool Scene::load()
 {
-    try {
-        std::cout << "[Scene] load: " << m_name << "\n";
-
-        // try {
-        //     ResourceManager<Graphics::Texture>::Load(
-        //         "background",
-        //         "assets/images/background.jpg"
-        //     );
-        //     std::cout << "[Scene] Background texture loaded successfully\n";
-        // }
-        // catch (const std::exception& e) {
-        //     std::cerr << "[Scene] Failed to load background: " << e.what() << "\n";
-        // }
-        std::cout << "[Scene] load: " << m_name << "\n";
-
-        std::string filepath = "assets/scenes/" + m_name + ".json";
-        SerializedScene sceneData;
-
+    try
+    {
         // Preload common textures
         std::cout << "[Scene] Loading textures...\n";
 
@@ -72,113 +56,75 @@ bool Scene::load()
         auto wallTex = Assets::TextureManager::Get("wall_texture");
         auto enemyTex = Assets::TextureManager::Get("enemy_texture");
         auto playerTex = Assets::TextureManager::Get("player_texture");
-		auto ballTex = Assets::TextureManager::Get("ball_texture");
+        auto ballTex = Assets::TextureManager::Get("ball_texture");
 
-        if (!playerTex) {
+        if (!playerTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get player_texture");
         }
-        if (!enemyTex) {
+        if (!enemyTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get enemyTex_texture");
         }
-        if (!floorTex) {
+        if (!floorTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get floor_texture");
         }
 
-        if (!wallTex) {
+        if (!wallTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get wall_texture");
         }
-        if (!ballTex) {
+        if (!ballTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get ball_texture");
-		}
+        }
 
-        if (!std::filesystem::exists(filepath)) {
+        std::cout << "[Scene] load: " << m_name << "\n";
+
+        std::string filepath = "assets/scenes/" + m_name + ".json";
+
+        if (!std::filesystem::exists(filepath))
+        {
             std::cerr << "Scene file does not exist: " << filepath << "\n";
 
-            if (Core::Engine::IsInitialized()) {
+            if (Core::Engine::IsInitialized())
+            {
                 Core::Engine::Get().logger().warn("Scene file not found: " + filepath);
             }
 
             return false;
         }
 
-        if (GameObjectSerializer::loadSceneFromFile(filepath, sceneData))
+        std::string loadedSceneName;
+        if (GameObjectSerializer::loadSceneFromFile(filepath, loadedSceneName, m_objects))
         {
-            std::cout << "[Scene] Loading from file: " << filepath << "\n";
-            for (const auto& objData : sceneData.objects)
-            {
-                auto obj = GameObjectSerializer::deserialize(objData);
-                if (obj)
-                {
-                    m_objects.push_back(std::move(obj));
-                }
-            }
-            std::cout << "[Scene] Loaded " << m_objects.size() << " objects from file\n";
+            std::cout << "[Scene] Loaded scene '" << loadedSceneName << "' from file: " << filepath << "\n";
+            std::cout << "[Scene] Loaded " << m_objects.size() << " objects\n";
             return true;
         }
 
-        // FALLBACK: Create default test room if file doesn't exist
-        std::cout << "[Scene] No scene file found, creating default test room\n";
-
-        // creates a default json if file is not found uncomment once everything is ready
-
-        // auto& factory = PrefabFactory::get();
-
-        //// Create floor
-        // auto floor = factory.createAt("Floor", glm::vec2(0, 0));
-        // if (floor) {
-        //     floor->setSize(glm::vec2(20, 12));
-        //     objects().push_back(std::move(floor));
-        // }
-
-        //// Create walls
-        // auto wall1 = factory.createAt("Wall", glm::vec2(-10, 0));
-        // if (wall1) {
-        //     wall1->setSize(glm::vec2(1, 12));
-        //     objects().push_back(std::move(wall1));
-        // }
-
-        // auto wall2 = factory.createAt("Wall", glm::vec2(10, 0));
-        // if (wall2) {
-        //     wall2->setSize(glm::vec2(1, 12));
-        //     objects().push_back(std::move(wall2));
-        // }
-
-        // auto wall3 = factory.createAt("Wall", glm::vec2(0, -6));
-        // if (wall3) {
-        //     wall3->setSize(glm::vec2(20, 1));
-        //     objects().push_back(std::move(wall3));
-        // }
-
-        // auto wall4 = factory.createAt("Wall", glm::vec2(0, 6));
-        // if (wall4) {
-        //     wall4->setSize(glm::vec2(20, 1));
-        //     objects().push_back(std::move(wall4));
-        // }
-
-        //// Create player
-        // objects().push_back(factory.createAt("Player", glm::vec2(-6, -2)));
-
-        //// Create enemies
-        // objects().push_back(factory.createAt("Enemy", glm::vec2(3, 0)));
-        // objects().push_back(factory.createAt("FastEnemy", glm::vec2(5, 2)));
-
         return true;
     }
-    catch (const std::exception& e) {
+    catch (const std::exception &e)
+    {
         std::string errorMsg = std::string("[Scene] CRITICAL ERROR loading '") + m_name + "': " + e.what();
         std::cerr << errorMsg << "\n";
 
-        if (Core::Engine::IsInitialized()) {
+        if (Core::Engine::IsInitialized())
+        {
             Core::Engine::Get().logger().error(errorMsg);
         }
 
         return false;
     }
-    catch (...) {
+    catch (...)
+    {
         std::string errorMsg = std::string("[Scene] UNKNOWN ERROR loading scene: ") + m_name;
         std::cerr << errorMsg << "\n";
 
-        if (Core::Engine::IsInitialized()) {
+        if (Core::Engine::IsInitialized())
+        {
             Core::Engine::Get().logger().error(errorMsg);
         }
 
@@ -202,26 +148,17 @@ void Scene::unload()
 
 bool Scene::saveToFile(const std::string &filepath)
 {
-    SerializedScene sceneData;
-    sceneData.sceneName = m_name;
-
-    // Serialize all active objects
-    for (const auto &obj : objects())
-    {
-        if (obj)
-        {
-            sceneData.objects.push_back(GameObjectSerializer::serialize(*obj));
-        }
-    }
-
-    return GameObjectSerializer::saveSceneToFile(sceneData, filepath);
+    // ⭐ NEW API: Save using the new serializer
+    return GameObjectSerializer::saveSceneToFile(m_name, m_objects, filepath);
 }
 
-Gameplay::Physics2D* Scene::getPhysics() {
+Gameplay::Physics2D *Scene::getPhysics()
+{
     return m_physics.get();
 }
 
-const Gameplay::Physics2D* Scene::getPhysics() const {
+const Gameplay::Physics2D *Scene::getPhysics() const
+{
     return m_physics.get();
 }
 
@@ -237,26 +174,9 @@ const Gameplay::Physics2D* Scene::getPhysics() const {
 
 void Scene::update(double dt)
 {
-    static double timer = 0.0;
-    timer += dt;
-
-    // Print positions every 2 seconds
-    //if (timer >= 2.0)
-    //{
-    //    std::cout << "\n=== Object Positions ===\n";
-    //    for (auto &o : objects())
-    //    {
-    //        if (o->active())
-    //        {
-    //            auto pos = o->transform().position;
-    //            std::cout << o->name() << " at (" << pos.x << ", " << pos.y << ")\n";
-    //        }
-    //    }
-    //    timer = 0.0;
-    //}
     {
         PROFILE_SCOPE("GameObjectUpdates");
-        for (auto& o : objects())
+        for (auto &o : objects())
         {
             if (o->active())
                 o->update(dt);
@@ -271,7 +191,7 @@ void Scene::update(double dt)
     }
 }
 
-void Scene::render(Graphics::RenderingManager& renderer)
+void Scene::render(Graphics::RenderingManager &renderer)
 {
     PROFILE_SCOPE("GameObjectRender");
     for (auto &o : objects())
