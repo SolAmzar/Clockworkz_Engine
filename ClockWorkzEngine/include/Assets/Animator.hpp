@@ -1,4 +1,26 @@
-// Lebon - This is incomplete, intention is to do the spritesheet frame change
+/******************************************************************************/
+/*!
+\file           Animator.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares the Animator struct responsible for controlling
+                frame-based sprite animations using data from a Spritesheet.
+
+                Responsibilities:
+                - Tracks current frame, elapsed time, and looping behavior.
+                - Updates animation state based on frame duration timing.
+                - Provides currentRectPx() to fetch the active frame’s pixel
+                  rectangle for rendering.
+                - Integrates with SpriteRenderer and Spritesheet to enable
+                  animated textures in-game.
+
+                The Animator operates on non-owned Spritesheet data, allowing
+                multiple entities to share the same spritesheet efficiently.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include "Assets/Spritesheet.hpp"
 namespace  ClockWorkz::Assets {

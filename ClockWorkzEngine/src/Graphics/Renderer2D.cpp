@@ -1,4 +1,30 @@
-//// Lebon
+/******************************************************************************/
+/*!
+\file           Renderer2D.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Implements a batched 2D renderer for efficient sprite drawing
+                using OpenGL.
+
+                Responsibilities:
+                - Initializes and manages GPU buffers (VAO, VBO, EBO)
+                - Supports dynamic batching of quads (sprites) to minimize draw calls
+                - Handles texture slot management and automatic batching flush
+                - Provides submitQuad() for drawing textured or colored quads
+                - Offers a simple white fallback texture for untextured rendering
+                - Integrates with Shader and ResourceManager systems
+
+                Key methods:
+                - init(): Setup OpenGL buffers and fallback texture
+                - beginBatch(): Start a new draw batch
+                - submitQuad(): Queue a quad for rendering
+                - flush(): Upload vertex data and issue draw calls
+                - shutdown(): Clean up GPU resources
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Graphics/Renderer2D.hpp"
 #include "Graphics/Shader.hpp"
 #include <GL/glew.h>

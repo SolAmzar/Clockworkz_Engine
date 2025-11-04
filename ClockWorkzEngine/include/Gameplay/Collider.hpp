@@ -1,8 +1,27 @@
-// Lebon refactor game object to have multiple colliders.
-// glm need to replace later with own Math library in game version.
-// also used to support light blockage based on shape of collider when doing ray casting
+/******************************************************************************/
+/*!
+\file           Collider.hpp
+\project        Lights Out
+\author(s)      [Lebon], 50%
+\brief          Declares collider shapes for 2D physics and lighting systems.
 
-// Give credits to physics guy
+                Responsibilities:
+                - Defines base Collider class with shared properties such as
+                  position offset, solidity, and light-blocking behavior.
+                - Implements AABBCollider and CircleCollider subclasses with
+                  shape-specific world-space computations.
+                - Used by Physics2D for collision detection and raycasting
+                  (e.g., light occlusion).
+
+                Notes (REMOVE AFTER EDIT):
+                - glm::vec2 currently used for vector math; replace with
+                  custom Math library in final engine version.
+                - Credit to Physics developer for foundational collision logic.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <glm/glm.hpp>
 

@@ -1,5 +1,28 @@
-// Steps - Modify to support AABB and Circle collision detection
-// Raycast- Lebon
+/******************************************************************************/
+/*!
+\file           Physics2D.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares the 2D physics system responsible for collision
+                detection and light raycasting.
+
+                Responsibilities:
+                - step(): Performs broad and narrow-phase collision checks
+                  between active GameObjects using AABB and Circle colliders.
+                  Invokes collision callbacks when overlaps are detected.
+                - raycastLight(): Casts a ray through the scene to find the
+                  nearest intersection point against colliders that block light,
+                  supporting dynamic lighting and shadow behavior.
+                - Contact struct: Represents a collision pair between two
+                  GameObjects for potential event handling.
+
+                Designed to be extended with future features such as spatial
+                partitioning (grids or quadtrees) and physics responses.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <vector>
 #include <memory>

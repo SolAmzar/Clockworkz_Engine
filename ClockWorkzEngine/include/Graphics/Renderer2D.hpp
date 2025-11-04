@@ -1,4 +1,33 @@
-//// Lebon
+/******************************************************************************/
+/*!
+\file           Renderer2D.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares the Renderer2D class responsible for batched 2D sprite
+                rendering using OpenGL.
+
+                Responsibilities:
+                - Initializes and manages OpenGL vertex/index buffers for
+                  efficient quad batching.
+                - Supports textured and colored quads with rotation, anchor,
+                  and UV sub-rectangle control.
+                - Handles texture slot management to reduce draw calls.
+                - Provides functions to begin, submit, flush, and end batches.
+                - Integrates with Shader and ResourceManager systems for
+                  GPU rendering setup.
+
+                Constants:
+                - MAX_SPRITES: Defines the upper limit for quads in a single batch.
+                - MAX_TEXTURE_SLOTS: Determines how many unique textures can be
+                  bound per draw call.
+
+                Designed as the core 2D renderer used by gameplay systems such as
+                SpriteRenderer, UI components, and visual effects.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <glm/glm.hpp>
 #include <vector>

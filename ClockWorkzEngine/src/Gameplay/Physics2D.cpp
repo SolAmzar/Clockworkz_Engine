@@ -1,4 +1,25 @@
-// Lebon 50%
+/******************************************************************************/
+/*!
+\file           Physics2D.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Implements the 2D physics system responsible for collision and
+                raycasting logic.
+
+                - step(): Performs pairwise collision checks between active
+                  GameObjects using AABB and Circle colliders, invoking
+                  onCollision() callbacks when overlaps occur.
+                - raycastLight(): Casts a ray from a given origin and direction,
+                  detecting the nearest hit against colliders that block light.
+                  Used for dynamic light and shadow calculations.
+                - Supports multiple collider types and flexible collision masks
+                  for selective interaction between objects.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
 #include "Gameplay/Physics2D.hpp"
 #include "Gameplay/GameObject.hpp"
 
