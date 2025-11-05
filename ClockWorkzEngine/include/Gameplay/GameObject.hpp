@@ -37,15 +37,13 @@ namespace Graphics {
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball
-    };
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball};
+
 	// To disguish between different collision shapes
-    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown
-	};
+    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown};
+
 	// To disguish between different game object shapes
-    enum class GameObjectShape : uint8_t {
-        Square ,Rectangle, Circle, Polygon, Unknown
-    };
+    enum class GameObjectShape : uint8_t { Square ,Rectangle, Circle, Polygon, Unknown};
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {
@@ -141,12 +139,7 @@ namespace Gameplay {
 		static std::unique_ptr<GameObject> MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex = "");
 
         template <typename T, typename... Args>
-        T* addCollider(Args&&... args) {
-            auto col = std::make_unique<T>(std::forward<Args>(args)...);
-            T* ptr = col.get();
-            m_colliders.push_back(std::move(col));
-            return ptr;
-        }
+        T* addCollider(Args&&... args);
 
         const std::vector<std::unique_ptr<Collider>>& colliders() const { return m_colliders; }
         std::vector<std::unique_ptr<Collider>>& colliders() { return m_colliders; }
@@ -202,7 +195,7 @@ namespace Gameplay {
     }
 
     template <typename T, typename... Args>
-    T* addCollider(Args&&... args) {
+    T* GameObject::addCollider(Args&&... args) {
         auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
         T* raw = ptr.get();
         m_colliders.emplace_back(std::move(ptr));
