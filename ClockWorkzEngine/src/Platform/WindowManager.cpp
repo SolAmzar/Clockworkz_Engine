@@ -17,7 +17,7 @@ References:
 - GLEW (OpenGL Extension Wrangler): http://glew.sourceforge.net/basic.html
 - OpenGL Context Basics: https://www.khronos.org/opengl/wiki/OpenGL_Context
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -60,6 +60,10 @@ bool WindowManager::create(const Core::Config& cfg) {
 	}
 	glfwSwapInterval(cfg.vsync ? 1 : 0);
 	return true;
+}
+
+void WindowManager::setTitle(const std::string& title) {
+	if (m_window) glfwSetWindowTitle(m_window, title.c_str());
 }
 
 void WindowManager::poll() { glfwPollEvents(); }

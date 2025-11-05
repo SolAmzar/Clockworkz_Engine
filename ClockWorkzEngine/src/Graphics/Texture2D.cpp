@@ -1,3 +1,26 @@
+/******************************************************************************/
+/*!
+\file           Texture2D.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Implements the Texture2D class responsible for loading and
+                managing 2D textures using the stb_image library and OpenGL.
+
+                Responsibilities:
+                - LoadFromFile(): Reads image data from disk via stb_image
+                  and uploads it as an OpenGL texture.
+                - Supports various channel formats (RGB, RGBA, Grayscale).
+                - Configures filtering and wrapping modes for 2D textures.
+                - Provides bind() to activate textures on specific slots.
+                - Ensures proper cleanup of GPU texture resources in Unload().
+
+                This class serves as the foundational texture loader used by
+                SpriteRenderer, FontManager, and other graphics subsystems.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Graphics/Texture2D.hpp"
 #include <GL/glew.h>
 

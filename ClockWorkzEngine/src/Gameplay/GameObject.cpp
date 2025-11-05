@@ -2,7 +2,7 @@
 /*!
 \file           GameObject.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100% - Will be shared later once other features combine in.
+\author(s)      [Lebon], 10% - Will be shared later once other features combine in.
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
@@ -29,26 +29,31 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Components/DamageDealer.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Physics/Collision.hpp"
-#include "Gameplay/Collider.hpp" 
-namespace Gameplay {
+#include "Gameplay/Collider.hpp"
+namespace Gameplay
+{
 
     uint32_t GameObject::s_nextId = 1;
 
     GameObject::GameObject(GameObjectType type, std::string name, GameObjectShape shape)
-        : m_id(s_nextId++), m_type(type), m_name(std::move(name)), m_shapeid(shape) {
+        : m_id(s_nextId++), m_type(type), m_name(std::move(name)), m_shapeid(shape)
+    {
     }
 
-    void GameObject::update(double dt) {
+    void GameObject::update(double dt)
+    {
         // basic top-down integration
         m_transform.position += m_velocity * static_cast<float>(dt);
-        for (auto& c : m_components) c->onUpdate(*this, dt);
+        for (auto &c : m_components)
+            c->onUpdate(*this, dt);
     }
 
-    //Syafiq - Create game object using rect
-    void GameObject::render(Graphics::RenderingManager& renderer) {
-        glm::vec3 color(1.0f,1.0f,1.0f);
+    void GameObject::debugRender(Graphics::RenderingManager& renderer) {
+        // Need to segment out this rendering of debug draw somewhere else, cannot do it here. too expensive.
+        glm::vec3 color(1.0f, 1.0f, 1.0f);
 
-        switch (m_type) {
+        switch (m_type)
+        {
         case GameObjectType::Player:
             color = glm::vec3(0.0f, 1.0f, 0.0f);
             break;
@@ -66,21 +71,20 @@ namespace Gameplay {
             break;
         case GameObjectType::Ball:
             color = glm::vec3(1.0f, 0.0f, 1.0f);
-			break;
+            break;
         case GameObjectType::Unknown:
             color = glm::vec3(0.6f, 0.6f, 0.6f);
             break;
         }
-        
 
-        switch (m_shapeid) {
+        switch (m_shapeid)
+        {
         case GameObjectShape::Circle:
             renderer.drawCircle(
-                m_transform.position.x, 
+                m_transform.position.x,
                 m_transform.position.y,
                 (m_size.x * 0.5f) * m_transform.scale.x,
-                color.r, color.g, color.b
-            );
+                color.r, color.g, color.b);
             break;
         case GameObjectShape::Rectangle:
             // Collision draw
@@ -89,8 +93,7 @@ namespace Gameplay {
                 m_transform.position.y,
                 m_size.x * m_transform.scale.x,
                 m_size.y * m_transform.scale.y,
-                color.r, color.g, color.b
-            );
+                color.r, color.g, color.b);
             break;
         default:
             // Collision draw
@@ -99,23 +102,29 @@ namespace Gameplay {
                 m_transform.position.y,
                 m_size.x * m_transform.scale.x,
                 m_size.y * m_transform.scale.y,
-                color.r, color.g, color.b
-            );
+                color.r, color.g, color.b);
             break;
         }
-
-        // later: call RenderingManager with textureId/transform/size
-        for (auto& c : m_components) c->onRender(*this);
     }
 
-    void GameObject::onCollision(GameObject& other) {
+    // Syafiq - Create game object using rect
+    void GameObject::render(Graphics::RenderingManager &renderer)
+    {
+        // later: call RenderingManager with textureId/transform/size
+        for (auto &c : m_components)
+            c->onRender(*this);
+    }
+
+    void GameObject::onCollision(GameObject &other)
+    {
         // This is not with reference to the intended gameplay
         // have to modify along the way.
         // Generic contact damage: if THIS has DamageDealer and OTHER has Health, apply
         // Current object damage other object with health on collide
 
-        auto resolvePlayerVsWall = [](GameObject& player, GameObject& wall) {
-            // Compute world-space AABBs 
+        auto resolvePlayerVsWall = [](GameObject &player, GameObject &wall)
+        {
+            // Compute world-space AABBs
             AABB pa = player.aabbWorld();
             AABB wa = wall.aabbWorld();
 
@@ -126,19 +135,22 @@ namespace Gameplay {
             glm::vec2 wh = 0.5f * (wa.max - wa.min);
 
             // overlap along each axis
-            glm::vec2 d = pc - wc;                        
-            glm::vec2 o = (ph + wh) - glm::abs(d);          
+            glm::vec2 d = pc - wc;
+            glm::vec2 o = (ph + wh) - glm::abs(d);
 
             // if both overlaps are positive, we are intersecting
-            if (o.x > 0.f && o.y > 0.f) {
-                if (o.x < o.y) {
+            if (o.x > 0.f && o.y > 0.f)
+            {
+                if (o.x < o.y)
+                {
                     // resolve on X
                     float push = (d.x < 0.f) ? -o.x : o.x;
                     player.transform().position.x += push;
                     // kill X velocity so we don't slide back in
                     player.velocity().x = 0.f;
                 }
-                else {
+                else
+                {
                     // resolve on Y
                     float push = (d.y < 0.f) ? -o.y : o.y;
                     player.transform().position.y += push;
@@ -146,25 +158,31 @@ namespace Gameplay {
                     player.velocity().y = 0.f;
                 }
             }
-            };
+        };
 
         // Run resolution if the pair is (Player, Wall) in either order
-        if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall)) {
+        if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall))
+        {
             resolvePlayerVsWall(*this, other);
         }
-        else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player)) {
+        else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player))
+        {
             resolvePlayerVsWall(other, *this);
         }
 
-        if (auto* dealer = this->getComponent<DamageDealerComponent>()) {
-            if (auto* hp = other.getComponent<HealthComponent>()) {
+        if (auto *dealer = this->getComponent<DamageDealerComponent>())
+        {
+            if (auto *hp = other.getComponent<HealthComponent>())
+            {
                 hp->damage(other, dealer->damage());
             }
         }
         // If OTHER is a dealer and THIS has health, you could also apply:
         // other object damage currend object with health on collide
-        if (auto* dealer2 = other.getComponent<DamageDealerComponent>()) {
-            if (auto* hp2 = this->getComponent<HealthComponent>()) {
+        if (auto *dealer2 = other.getComponent<DamageDealerComponent>())
+        {
+            if (auto *hp2 = this->getComponent<HealthComponent>())
+            {
                 hp2->damage(*this, dealer2->damage());
             }
         }
@@ -172,40 +190,49 @@ namespace Gameplay {
         other.getComponent<HealthComponent>();
     }
 
-    void GameObject::setName(const std::string& newName)
+    void GameObject::setName(const std::string &newName)
     {
         m_name = newName;
     }
 
-    void GameObject::autoUpdateCollisionBaseOnScale() {
+    void GameObject::autoUpdateCollisionBaseOnScale()
+    {
         glm::vec2 objScale = m_transform.scale;
         glm::vec2 objSize = m_size; // assuming you have a size field
 
-        for (auto& col : m_colliders) {
-            if (col->type == ColliderType::AABB) {
-                auto* aabb = static_cast<AABBCollider*>(col.get());
+        for (auto &col : m_colliders)
+        {
+            if (col->type == ColliderType::AABB)
+            {
+                auto *aabb = static_cast<AABBCollider *>(col.get());
                 aabb->halfExtents = (objSize * 0.5f) * objScale; // update half size
             }
-            else if (col->type == ColliderType::Circle) {
-                auto* circ = static_cast<CircleCollider*>(col.get());
+            else if (col->type == ColliderType::Circle)
+            {
+                auto *circ = static_cast<CircleCollider *>(col.get());
                 float avgScale = (objScale.x + objScale.y) * 0.5f;
                 circ->r = std::max(objSize.x, objSize.y) * 0.5f * avgScale;
             }
         }
     }
 
-    void GameObject::respawnAt(glm::vec2 spawn, bool resetVelocity, bool resetHealth) {
+    void GameObject::respawnAt(glm::vec2 spawn, bool resetVelocity, bool resetHealth)
+    {
         // Only meaningful for the Player type
-        if (m_type != GameObjectType::Player) return;
+        if (m_type != GameObjectType::Player)
+            return;
 
         // Place at spawn and reactivate
         m_transform.position = spawn;
-        if (resetVelocity)   m_velocity = { 0.f, 0.f };
+        if (resetVelocity)
+            m_velocity = {0.f, 0.f};
         setActive(true);
 
         // Restore health if the component exists
-        if (resetHealth) {
-            if (auto* hp = getComponent<HealthComponent>()) {
+        if (resetHealth)
+        {
+            if (auto *hp = getComponent<HealthComponent>())
+            {
                 // Prefer a 'reset' or 'restore-to-max' API if your HealthComponent exposes it:
                 // hp->reset();   // (common pattern)
                 // Otherwise, set to max explicitly (uncomment if you have these accessors):
@@ -221,9 +248,10 @@ namespace Gameplay {
         // m_animation.play("idle");
     }
 
-    AABB GameObject::aabbWorld() const {
+    AABB GameObject::aabbWorld() const
+    {
         glm::vec2 half = 0.5f * m_size * m_transform.scale;
-        return { m_transform.position - half, m_transform.position + half };
+        return {m_transform.position - half, m_transform.position + half};
     }
 
     // ----------------- Prefabs ----------------- (Temp)

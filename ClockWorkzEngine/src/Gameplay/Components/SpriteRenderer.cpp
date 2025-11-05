@@ -37,7 +37,7 @@ namespace Gameplay {
         }
 
         // Bind texture
-        texture->bind(0);
+        //texture->bind(0);
 
         // Access central RenderingManager (from Engine)
         Graphics::RenderingManager& renderer = Core::Engine::Get().rendering();

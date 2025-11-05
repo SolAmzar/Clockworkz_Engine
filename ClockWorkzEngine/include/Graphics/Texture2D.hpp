@@ -1,3 +1,26 @@
+/******************************************************************************/
+/*!
+\file           Texture2D.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares the Texture2D class responsible for loading, managing,
+                and binding 2D textures in OpenGL using the stb_image library.
+
+                Responsibilities:
+                - LoadFromFile(): Reads image files (RGB, RGBA, grayscale) and
+                  uploads data to the GPU as a 2D texture.
+                - Provides bind() to activate textures in a specific texture slot.
+                - Supports flipping and single-channel (alpha-only) textures.
+                - Handles proper cleanup of GPU resources through RAII semantics.
+                - Non-copyable but fully movable for safe resource transfer.
+
+                Used by Renderer2D, FontManager, and other graphics subsystems
+                that require texture management.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <string>
 #include <cstdint>
