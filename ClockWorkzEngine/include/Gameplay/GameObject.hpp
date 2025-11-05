@@ -120,6 +120,19 @@ namespace Gameplay {
         AABB aabbWorld() const;
         void respawnAt(glm::vec2 spawn, bool resetVelocity = true, bool resetHealth = true);
 
+        inline AABB worldAABB() const; 
+
+        void markDirty() { m_boundsDirty = true; }
+
+        void setSize(glm::vec2 s) { m_size = s; m_boundsDirty = true; }
+
+        // ensure any setter that changes pos/size/scale calls markDirty()
+        Transform2D& transform() { m_boundsDirty = true; return m_transform; }
+        Transform2D const& transform() const { return m_transform; }
+
+        inline std::vector<std::unique_ptr<Collider>> const& colliders() const { return m_colliders; }
+
+
         // Very light component hook (safe to ignore at start)
         template<typename T, typename... Args>
         T* addComponent(Args&&... args);
@@ -164,6 +177,9 @@ namespace Gameplay {
         bool           m_isSolid{ false };
         bool           m_isHazard{ false };
         bool           m_blocksLight{ true };
+
+        mutable bool   m_boundsDirty{ true };
+        mutable AABB   m_cachedAABB{};
 
         std::string    m_textureId{};
 

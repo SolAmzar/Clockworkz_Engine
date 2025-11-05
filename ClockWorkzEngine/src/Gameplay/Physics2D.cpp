@@ -1,5 +1,6 @@
 #include "Gameplay/Physics2D.hpp"
 #include "Gameplay/GameObject.hpp"
+#include "Gameplay/Collider.hpp"
 
 
 namespace Gameplay {
@@ -145,6 +146,88 @@ namespace Gameplay {
             return closestHit;
         return std::nullopt;
     }
+
+    struct MTV { glm::vec2 n; float d; }; // normal (from a -> b), penetration depth
+
+    bool AABB_AABB(Gameplay::AABB const& a, Gameplay::AABB const& b, MTV& mtv) {
+        glm::vec2 aCenter = 0.5f * (a.min + a.max);
+        glm::vec2 bCenter = 0.5f * (b.min + b.max);
+        glm::vec2 aHalf = 0.5f * (a.max - a.min);
+        glm::vec2 bHalf = 0.5f * (b.max - b.min);
+
+        glm::vec2 delta = bCenter - aCenter;
+        float px = (aHalf.x + bHalf.x) - std::abs(delta.x);
+        if (px <= 0) return false;
+        float py = (aHalf.y + bHalf.y) - std::abs(delta.y);
+        if (py <= 0) return false;
+
+        if (px < py) {
+            mtv.n = { (delta.x < 0 ? -1.f : 1.f), 0.f };
+            mtv.d = px;
+        }
+        else {
+            mtv.n = { 0.f, (delta.y < 0 ? -1.f : 1.f) };
+            mtv.d = py;
+        }
+        return true;
+    }
+
+    bool Circle_Circle(glm::vec2 ca, float ra, glm::vec2 cb, float rb, MTV& mtv) {
+        glm::vec2 d = cb - ca;
+        float dist2 = glm::dot(d, d);
+        float r = ra + rb;
+        if (dist2 >= r * r) return false;
+        float dist = std::max(std::sqrt(dist2), 1e-6f);
+        mtv.n = d / dist;
+        mtv.d = r - dist;
+        return true;
+    }
+
+    // AABB (as box center/half) vs Circle
+    bool AABB_Circle(Gameplay::AABB const& box, glm::vec2 cc, float r, MTV& mtv) {
+        glm::vec2 center = 0.5f * (box.min + box.max);
+        glm::vec2 half = 0.5f * (box.max - box.min);
+        glm::vec2 rel = cc - center;
+        glm::vec2 clamped = glm::clamp(rel, -half, half);
+        glm::vec2 closest = center + clamped;
+        glm::vec2 diff = cc - closest;
+        float d2 = glm::dot(diff, diff);
+        if (d2 >= r * r) return false;
+
+        float d = std::max(std::sqrt(d2), 1e-6f);
+        mtv.n = diff / d;          // outward from box to circle
+        mtv.d = r - d;
+        // Edge case: circle center inside box -> choose axis of least penetration
+        if (d < 1e-3f) {
+            float px = half.x - std::abs(rel.x);
+            float py = half.y - std::abs(rel.y);
+            if (px < py) mtv.n = { (rel.x < 0 ? -1.f : 1.f), 0.f }, mtv.d = px;
+            else         mtv.n = { 0.f, (rel.y < 0 ? -1.f : 1.f) }, mtv.d = py;
+        }
+        return true;
+    }
+
+    // Conservative positional correction (prevents sinking/jitter)
+    inline void positionalCorrection(Gameplay::GameObject& a, Gameplay::GameObject& b,
+        MTV const& mtv, bool aMovable, bool bMovable) {
+        static constexpr float percent = 0.8f; // 80% of penetration
+        static constexpr float slop = 0.01f;
+        float corr = std::max(mtv.d - slop, 0.f) * percent;
+
+        if (aMovable && bMovable) {
+            a.transform().position -= 0.5f * corr * mtv.n;
+            b.transform().position += 0.5f * corr * mtv.n;
+        }
+        else if (aMovable) {
+            a.transform().position -= corr * mtv.n;
+        }
+        else if (bMovable) {
+            b.transform().position += corr * mtv.n;
+        }
+        // mark bounds dirty
+        a.markDirty(); b.markDirty();
+    }
+
 
 
     //std::optional<glm::vec2> Physics2D::raycastLight(

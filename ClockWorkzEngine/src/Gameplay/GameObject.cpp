@@ -172,6 +172,32 @@ namespace Gameplay {
         other.getComponent<HealthComponent>();
     }
 
+    AABB GameObject::worldAABB() const {
+        if (!m_boundsDirty) return m_cachedAABB;
+
+        const glm::vec2 center = m_transform.position;
+        AABB out;
+
+        // Default to box from size*scale
+        const glm::vec2 half = 0.5f * (m_size * m_transform.scale);
+        out.min = center - half;
+        out.max = center + half;
+
+        // If any Circle collider exists, override with circle bounds
+        for (auto const& c : m_colliders) {
+            if (c->type == ColliderType::Circle) {
+                float r = static_cast<CircleCollider const*>(c.get())->radius();
+                out.min = center + glm::vec2(-r, -r);
+                out.max = center + glm::vec2(r, r);
+                break;
+            }
+        }
+
+        m_cachedAABB = out;
+        m_boundsDirty = false;
+        return m_cachedAABB;
+    }
+
     void GameObject::setName(const std::string& newName)
     {
         m_name = newName;
