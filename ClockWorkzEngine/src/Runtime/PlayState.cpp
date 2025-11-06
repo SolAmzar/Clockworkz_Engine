@@ -362,6 +362,7 @@ namespace Runtime
 
 		if (m_input.isKeyDown(GLFW_KEY_Q))
 		{
+			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
 			cam.setZoom(cam.zoom() * 1.02f);
 		}
 		if (m_input.isKeyDown(GLFW_KEY_E))

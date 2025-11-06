@@ -36,7 +36,7 @@ static std::string loadFile(const std::string &path)
 }
 
 void Shader::use() const { 
-    std::cout << "Use Shader: " << ID << std::endl;
+    //std::cout << "Use Shader: " << ID << std::endl;
     glUseProgram(ID); 
 }
 
