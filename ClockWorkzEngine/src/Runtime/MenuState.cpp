@@ -54,6 +54,7 @@ namespace Runtime {
     }
 
     void MenuState::onEnter() {
+
         m_selected = 0;
         m_dirty = true;
 
@@ -132,6 +133,40 @@ namespace Runtime {
 
     void MenuState::update(double /*dt*/) {
 		
+        double mouseX, mouseY;
+        glfwGetCursorPos(m_window.getWindow(), &mouseX, &mouseY);
+
+        int w = m_window.width();
+        int h = m_window.height();
+        float glMouseY = h - static_cast<float>(mouseY);
+
+        // Hovering
+        bool isHover = false;
+        for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
+            float yPos = (h - 550.0f) - (i * 80.0f);
+            float textWidth = m_items[i].length() * 25.0f;
+            float xPos = (w / 2.0f) - (textWidth / 2.0f);
+
+            float textHeight = 60.0f;
+
+            if (mouseX >= xPos && mouseX <= (xPos + textWidth) &&
+                glMouseY >= yPos && glMouseY <= (yPos + textHeight)) {
+                isHover = true;
+                if (m_selected != i) {
+                    m_selected = i;
+                    m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+                    m_dirty = true;
+                }
+                break;
+            }
+        }
+
+        if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+            m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+            std::this_thread::sleep_for(std::chrono::milliseconds(120));
+            select();
+        }
+
         // Keys: arrows or WASD
         if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
             m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
@@ -175,6 +210,7 @@ namespace Runtime {
     }
 
     void MenuState::render(Core::Time* timer) {
+
         // Later, retrieve them anywhere:
         auto shader = ResourceManager<Shader>::Get("text");
         shader->use();
