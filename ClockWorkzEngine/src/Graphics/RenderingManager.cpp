@@ -179,7 +179,7 @@ namespace Graphics {
 		//unused variable
 		//float radius = 300.0f;
 		for (auto& p : polygon) {
-			float dist = glm::length(p - origin);
+			//float dist = glm::length(p - origin);
 			//float alpha = glm::clamp(1.0f - dist / radius, 0.0f, 1.0f) * 0.8f;
 			verts.push_back(p.x);
 			verts.push_back(p.y);

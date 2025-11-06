@@ -219,8 +219,7 @@ namespace Gameplay {
 			case GT::Box:	  return g->isSolid();            // boxes are movable
             case GT::Player:  return g->isSolid();
             case GT::Enemy:   return g->isSolid();
-            case GT::Ball:    return g->isSolid();
-                return true;                            // dynamic bodies move
+            case GT::Ball:    return g->isSolid();                         // dynamic bodies move
             default:
                 return true;
             }

@@ -198,7 +198,7 @@ namespace Runtime
 
 		if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick)
 		{
-			vec2 mouseWorld = m_input.getMouseWorldPos(cam,
+			mouseWorld = m_input.getMouseWorldPos(cam,
 				static_cast<float>(window.width()),
 				static_cast<float>(window.height()));
 
@@ -274,7 +274,7 @@ namespace Runtime
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
 					float moveSpeed = 100.0f;
-					float moveAmount = moveSpeed * static_cast<float>(dt);
+					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
 					{
@@ -304,12 +304,12 @@ namespace Runtime
 
 					if (m_input.isKeyDown(GLFW_KEY_G))
 					{
-						obj->transform().scale.x += 10 * dt;
-						obj->transform().scale.y += 10 * dt;
+						obj->transform().scale.x += static_cast<f32>(10 * dt);
+						obj->transform().scale.y += static_cast <f32>(10 * dt);
 					}
 
 					if (m_flashlightOn) {
-						vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
+						mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
 						// Player world position
 					    vec2 playerPos = obj->transform().position;
@@ -547,6 +547,7 @@ namespace Runtime
 						obj->setPosition(vec2(pos[0], pos[1]));
 						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
+						obj->setTextureId(texToUse);
 						auto scene = m_scenes.current();
 						if (scene) {
 							scene->objects().push_back(std::move(obj));
