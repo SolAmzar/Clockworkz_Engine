@@ -132,67 +132,115 @@ void Renderer2D::beginBatch() {
 }
 
 // returns texture slot index (0..N-1) for given GL texture ID
-int Renderer2D::findOrBindTexture(unsigned texId) {
-    if (texId == 0) return 0; // slot 0 = white fallback
-
-    for (int i = 0; i < m_numTextures; ++i)
-        if (m_textures[i] == texId) return i;
-
-    if (m_numTextures >= MAX_TEXTURE_SLOTS) {
-        flush();
-        beginBatch();
-    }
-
-    int slot = m_numTextures++;
-    if (slot < MAX_TEXTURE_SLOTS) {
-        m_textures[slot] = texId;
-    }
-    return slot;
-}
+//int Renderer2D::findOrBindTexture(unsigned texId) {
+//    if (texId == 0) return 0; // slot 0 = white fallback
+//
+//    for (int i = 0; i < m_numTextures; ++i)
+//        if (m_textures[i] == texId) return i;
+//
+//    if (m_numTextures >= MAX_TEXTURE_SLOTS) {
+//        flush();
+//        beginBatch();
+//    }
+//
+//    int slot = m_numTextures++;
+//    if (slot < MAX_TEXTURE_SLOTS) {
+//        m_textures[slot] = texId;
+//    }
+//    return slot;
+//}
 
 void Renderer2D::submitQuad(
     const glm::vec2& pos, const glm::vec2& size, unsigned texId,
     const glm::vec4& color, float angleRad, const glm::vec4& uvRect, Anchor anchor)
 {
-    //std::cout << "Renderer2D submitQuad" << std::endl;
-    if (m_spriteCount >= MAX_SPRITES) {
-        flush();
-        beginBatch();
-    }
-
-    // figure anchor
+    // --- Compute quad corners like before ---
     glm::vec2 half = (anchor == Anchor::Center) ? size * 0.5f : glm::vec2(0.0f);
-    // local quad corners (centered)
     glm::vec2 p0 = { -half.x, -half.y };
     glm::vec2 p1 = { size.x - half.x, -half.y };
     glm::vec2 p2 = { size.x - half.x,  size.y - half.y };
     glm::vec2 p3 = { -half.x,  size.y - half.y };
 
-    // rotate if needed
     auto rot = [angleRad](glm::vec2 v) {
         if (angleRad == 0.0f) return v;
         float c = std::cos(angleRad), s = std::sin(angleRad);
         return glm::vec2(c * v.x - s * v.y, s * v.x + c * v.y);
         };
-
     p0 = rot(p0) + pos;
     p1 = rot(p1) + pos;
     p2 = rot(p2) + pos;
     p3 = rot(p3) + pos;
 
-    int texIndex = findOrBindTexture(texId);
-
-    // uvRect = {u0, v0, du, dv} (as you used)
     float u0 = uvRect.x, v0 = uvRect.y, du = uvRect.z, dv = uvRect.w;
 
-    // push 4 vertices
-    m_vertices.push_back({ {p0.x, p0.y, 0.0f}, {u0,      v0     }, color, (float)texIndex });
-    m_vertices.push_back({ {p1.x, p1.y, 0.0f}, {u0 + du, v0     }, color, (float)texIndex });
-    m_vertices.push_back({ {p2.x, p2.y, 0.0f}, {u0 + du, v0 + dv}, color, (float)texIndex });
-    m_vertices.push_back({ {p3.x, p3.y, 0.0f}, {u0,      v0 + dv}, color, (float)texIndex });
+    Vertex verts[4] = {
+        { {p0.x, p0.y, 0.f}, {u0,      v0     }, color, 0.f },
+        { {p1.x, p1.y, 0.f}, {u0 + du, v0     }, color, 0.f },
+        { {p2.x, p2.y, 0.f}, {u0 + du, v0 + dv}, color, 0.f },
+        { {p3.x, p3.y, 0.f}, {u0,      v0 + dv}, color, 0.f },
+    };
 
-    m_spriteCount++;
+    unsigned idx[6] = { 0, 1, 2, 2, 3, 0 };
+
+    // --- Draw immediately ---
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_DYNAMIC_DRAW);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texId ? texId : m_whiteTex);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
+
+// Do not remove
+//void Renderer2D::submitQuad(
+//    const glm::vec2& pos, const glm::vec2& size, unsigned texId,
+//    const glm::vec4& color, float angleRad, const glm::vec4& uvRect, Anchor anchor)
+//{
+//    //std::cout << "Renderer2D submitQuad" << std::endl;
+//    if (m_spriteCount >= MAX_SPRITES) {
+//        flush();
+//        beginBatch();
+//    }
+//
+//    // figure anchor
+//    glm::vec2 half = (anchor == Anchor::Center) ? size * 0.5f : glm::vec2(0.0f);
+//    // local quad corners (centered)
+//    glm::vec2 p0 = { -half.x, -half.y };
+//    glm::vec2 p1 = { size.x - half.x, -half.y };
+//    glm::vec2 p2 = { size.x - half.x,  size.y - half.y };
+//    glm::vec2 p3 = { -half.x,  size.y - half.y };
+//
+//    // rotate if needed
+//    auto rot = [angleRad](glm::vec2 v) {
+//        if (angleRad == 0.0f) return v;
+//        float c = std::cos(angleRad), s = std::sin(angleRad);
+//        return glm::vec2(c * v.x - s * v.y, s * v.x + c * v.y);
+//        };
+//
+//    p0 = rot(p0) + pos;
+//    p1 = rot(p1) + pos;
+//    p2 = rot(p2) + pos;
+//    p3 = rot(p3) + pos;
+//
+//    int texIndex = findOrBindTexture(texId);
+//
+//    // uvRect = {u0, v0, du, dv} (as you used)
+//    float u0 = uvRect.x, v0 = uvRect.y, du = uvRect.z, dv = uvRect.w;
+//
+//    // push 4 vertices
+//    m_vertices.push_back({ {p0.x, p0.y, 0.0f}, {u0,      v0     }, color, (float)texIndex });
+//    m_vertices.push_back({ {p1.x, p1.y, 0.0f}, {u0 + du, v0     }, color, (float)texIndex });
+//    m_vertices.push_back({ {p2.x, p2.y, 0.0f}, {u0 + du, v0 + dv}, color, (float)texIndex });
+//    m_vertices.push_back({ {p3.x, p3.y, 0.0f}, {u0,      v0 + dv}, color, (float)texIndex });
+//
+//    m_spriteCount++;
+//}
 
 void Renderer2D::flush() {
     if (m_spriteCount == 0) return;

@@ -30,7 +30,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 namespace Assets
 {
 
-    FontManager::FontManager() : face(nullptr), VAO(0), VBO(0)
+    FontManager::FontManager() : face(nullptr), VAO(3), VBO(3)
     {
         if (FT_Init_FreeType(&ft))
         {
@@ -40,8 +40,8 @@ namespace Assets
 
     FontManager::~FontManager()
     {
-        Unload();               // free GPU + FreeType resources
-        FT_Done_FreeType(ft);   // finally shut down FreeType library
+        Unload();             // free GPU + FreeType resources
+        FT_Done_FreeType(ft); // finally shut down FreeType library
     }
 
     bool FontManager::Load(const std::string &filePath, unsigned int fontSize)
@@ -105,26 +105,30 @@ namespace Assets
         return true;
     }
 
-    void FontManager::Unload() {
+    void FontManager::Unload()
+    {
         // Delete glyph textures
-        for (auto& kv : characters) {
+        for (auto &kv : characters)
+        {
             glDeleteTextures(1, &kv.second.TextureID);
         }
         characters.clear();
 
         // Delete buffers
-        if (VBO) glDeleteBuffers(1, &VBO);
-        if (VAO) glDeleteVertexArrays(1, &VAO);
+        if (VBO)
+            glDeleteBuffers(1, &VBO);
+        if (VAO)
+            glDeleteVertexArrays(1, &VAO);
 
         VBO = VAO = 0;
 
         // Delete FreeType face
-        if (face) {
+        if (face)
+        {
             FT_Done_Face(face);
             face = nullptr;
         }
     }
-
 
     void FontManager::SetupRenderData()
     {
@@ -141,13 +145,13 @@ namespace Assets
         glBindVertexArray(0);
     }
 
-    void FontManager::RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color)
+    void FontManager::RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color, Graphics::Shader &shader)
     {
-        //color not being referenced
-
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(VAO);
-
+        shader.setVec3("textColor", color);
         for (auto c : text)
         {
             Character ch = characters[c];
@@ -181,6 +185,7 @@ namespace Assets
 
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_BLEND);
     }
 
 } // namespace ClockWorkz::Assets

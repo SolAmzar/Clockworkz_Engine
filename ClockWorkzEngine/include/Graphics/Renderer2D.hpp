@@ -104,7 +104,7 @@ namespace Graphics {
         unsigned m_textures[MAX_TEXTURE_SLOTS] = {};
         int m_numTextures = 0;
         unsigned m_whiteTex = 0;
-        int findOrBindTexture(unsigned texId);
+        //int findOrBindTexture(unsigned texId);
     };
 
 } // namespace Graphics

@@ -48,6 +48,7 @@ namespace Gameplay {
         renderer.drawSprite(texture->id(),
             pos,
             size * scale, owner.transform().rotationRad,
+            m_uv,
             m_tint);
     }
 

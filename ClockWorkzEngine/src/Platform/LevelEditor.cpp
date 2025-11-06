@@ -32,6 +32,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <filesystem>
 #include <iostream>
 #include <Core/Engine.hpp>
+#include <Runtime/PlayState.hpp>
 
 namespace fs = std::filesystem;
 
@@ -130,12 +131,20 @@ namespace Platform {
 
     void LevelEditor::shutdown() {
         if (m_levelDirty) {
-            // In a real implementation, prompt user to save
-            // Core::Engine::Get().logger().warn("Shutting down editor with unsaved changes");
+            //// Prompt user: Save / Discard / Cancel
+            //int choice = promptSaveDiscardCancel(); // Implement a modal dialog
+            //if (choice == 0) { // Save
+            //    saveLevel(); // your existing save logic
+            //    // then proceed to leave
+            //}
+            //else if (choice == 1) { // Discard
+            //    // proceed without saving
+            //}
+            //else { // Cancel
+            //    return; // abort leaving
+            //}
         }
-
         m_currentScene.reset();
-        m_playModeSceneBackup.reset();
     }
 
     /******************************************************************************/
@@ -149,27 +158,139 @@ namespace Platform {
 
         // Update scene based on mode
         if (m_mode == EditorMode::Play) {
-            // In play mode, update scene normally
-            if (m_currentScene) {
-                m_currentScene->update(dt);
-            }
-        }
-        else {
-            // In edit mode, handle editor input
-            handleEditorInput(dt);
-            handleCameraInput(dt);
-            handleKeyboardShortcuts();
-        }
+            if (!m_currentScene) return;
 
-        // Update object count for UI
-        if (m_currentScene) {
-            m_objectCount = static_cast<int>(m_currentScene->objects().size());
+            // Exit play mode
+            if (m_input->wasKeyPressed(GLFW_KEY_ESCAPE)) {
+                EditorMode::Edit;
+                return;
+            }
+
+            // Pause/Resume
+            if (m_input->wasKeyPressed(GLFW_KEY_SPACE)) {
+                m_isPaused = !m_isPaused;
+                return;
+            }
+
+            if (m_isPaused) return;
+
+            m_playTime += dt;
+
+            Core::Engine& engine = Core::Engine::Get();
+            Graphics::Camera2D& cam = engine.camera();
+            Platform::WindowManager& window = engine.window();
+
+            // ✓ FIXED: Get mouse position in world space
+            vec2 mouseWorld = m_input->getMouseWorldPos(
+                cam,
+                static_cast<float>(window.width()),
+                static_cast<float>(window.height())
+            );
+
+            // Player movement and input handling
+            for (auto& obj : m_currentScene->objects()) {
+
+                if (obj->type() == Gameplay::GameObjectType::Player) {
+                    float moveSpeed = 100.0f;
+
+                    // ===== WASD Movement =====
+                    if (m_input->isKeyDown(GLFW_KEY_W)) {
+                        obj->velocity().y = moveSpeed;
+                    }
+                    else if (m_input->isKeyDown(GLFW_KEY_S)) {
+                        obj->velocity().y = -moveSpeed;
+                    }
+                    else {
+                        obj->velocity().y = 0;
+                    }
+
+                    if (m_input->isKeyDown(GLFW_KEY_A)) {
+                        obj->velocity().x = -moveSpeed;
+                    }
+                    else if (m_input->isKeyDown(GLFW_KEY_D)) {
+                        obj->velocity().x = moveSpeed;
+                    }
+                    else {
+                        obj->velocity().x = 0;
+                    }
+
+                    // ===== Scale with G =====
+                    if (m_input->isKeyDown(GLFW_KEY_G)) {
+                        obj->transform().scale.x += static_cast<float>(10 * dt);
+                        obj->transform().scale.y += static_cast<float>(10 * dt);
+                    }
+
+                        vec2 playerPos = obj->transform().position;
+
+                        // Direction from player to mouse
+                        vec2 dir = mouseWorld - playerPos;
+
+                        // Get distance (only rotate if mouse is far enough)
+                        float distance = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+
+                        if (distance > 10.0f) {
+                            // Normalize direction
+                            dir.x /= distance;
+                            dir.y /= distance;
+
+                            // Calculate angle in radians
+                            // atan2(y, x) gives angle from -π to π
+                            float angleRad = std::atan2(dir.y, dir.x);
+
+                            // Set player rotation
+                            obj->transform().rotationRad = angleRad;
+
+                            std::cout << "Player rotation: " << glm::degrees(angleRad) << " degrees\n";
+                        }
+
+                    // Respawn if inactive
+                    if (!obj->active()) {
+                        obj->respawnAt(vec2(0.0f, 0.0f), true, true);
+                    }
+                }
+            }
+
+            // Update scene (physics, collisions, etc.)
+            m_currentScene->update(dt);
         }
     }
 
 // ============================================================================
 // Save Dialog Implementation
 // ============================================================================
+
+    int promptSaveDiscardCancel() {
+        static bool showDialog = true;
+        static int choice = -1; // 0=save, 1=discard, 2=cancel
+
+        if (showDialog) {
+            ImGui::OpenPopup("Save Changes?");
+            showDialog = false;
+        }
+        if (ImGui::BeginPopupModal("Save Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("You have unsaved changes. Do you want to save before leaving?");
+            if (ImGui::Button("Save")) {
+                choice = 0;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Discard")) {
+                choice = 1;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                choice = 2;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+            if (choice != -1) {
+                return choice;
+            }
+        }
+        return -1; // no user choice yet
+    }
+
     void LevelEditor::renderSaveDialog() {
         if (!m_showSaveDialog) return;
 
@@ -365,14 +486,55 @@ namespace Platform {
         m_currentScene->render(*m_renderer);
 
         m_renderer->endScenePass();
+
+        //if (m_mode == EditorMode::Play && m_currentScene) {
+        //    for (auto& obj : m_currentScene->objects()) {
+        //        if (obj->type() == Gameplay::GameObjectType::Player) {
+        //            vec2 playerPos = obj->transform().position;
+        //            float playerRotation = obj->transform().rotationRad;
+
+        //            auto* physics = m_currentScene->getPhysics();
+        //            if (!physics) break;
+
+        //            // Get visibility polygon as vec2
+        //            std::vector<vec2> lightPoly =
+        //                m_renderer->computeVisibilityPolygon(
+        //                    playerPos,
+        //                    playerRotation,
+        //                    glm::radians(60.0f),
+        //                    300.0f,
+        //                    *physics,
+        //                    m_currentScene->objects()
+        //                );
+
+        //            // Pass vec2 directly if methods accept it
+        //            m_renderer->beginLightPass(
+        //                viewProj,
+        //                playerPos,
+        //                vec3(1.0f, 0.9f, 0.6f),
+        //                300.0f,
+        //                playerRotation,
+        //                glm::radians(60.0f)
+        //            );
+
+        //            // Pass vec2 vector directly
+        //            m_renderer->drawLightCone(
+        //                playerPos,
+        //                lightPoly,      
+        //                vec3(1.0f, 0.9f, 0.6f)
+        //            );
+
+        //            m_renderer->endLightPass();
+        //            break;
+        //        }
+        //    }
+        //}
     }
 
     void LevelEditor::renderUI() {
         renderMenuBar();
 
-        if (m_mode == EditorMode::Edit) {
-            renderToolbar();
-        }
+        renderToolbar();
 
         if (m_showHierarchy) renderHierarchy();
         if (m_showProperties) renderProperties();
@@ -855,7 +1017,7 @@ namespace Platform {
                 ImGui::Separator();
 
                 if (ImGui::MenuItem("Exit", "Alt+F4")) {
-                    // In a real implementation, this would properly close the editor
+                    shutdown();
                 }
 
                 ImGui::EndMenu();
@@ -1450,30 +1612,38 @@ namespace Platform {
         bool shift = m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
             m_input->isKeyDown(GLFW_KEY_RIGHT_SHIFT);
 
-        // Ctrl+N - New Level
         if (ctrl && m_input->wasKeyPressed(GLFW_KEY_N)) {
             newLevel("Untitled");
         }
 
-        // Ctrl+S - Save Level
         if (ctrl && !shift && m_input->wasKeyPressed(GLFW_KEY_S)) {
-            saveLevel();
+            if (m_currentLevelMetadata.filepath.empty()) {
+                // Show save dialog if no filepath
+                strncpy(m_fileDialogBuffer,
+                    m_currentLevelMetadata.name.c_str(),
+                    sizeof(m_fileDialogBuffer));
+                m_showSaveDialog = true;
+            }
+            else {
+                saveLevel();
+            }
         }
 
-        // Ctrl+Shift+S - Save As
         if (ctrl && shift && m_input->wasKeyPressed(GLFW_KEY_S)) {
+            strncpy(m_fileDialogBuffer,
+                m_currentLevelMetadata.name.c_str(),
+                sizeof(m_fileDialogBuffer));
             m_showSaveDialog = true;
         }
 
-        // Ctrl+O - Open Level
         if (ctrl && m_input->wasKeyPressed(GLFW_KEY_O)) {
             m_showLoadDialog = true;
         }
 
         // Ctrl+D - Duplicate
-        if (ctrl && m_input->wasKeyPressed(GLFW_KEY_D)) {
-            //duplicateSelectedObject();
-        }
+        //if (ctrl && m_input->wasKeyPressed(GLFW_KEY_D)) {
+        //    duplicateSelectedObject();
+        //}
 
         // Delete - Delete selected
         if (m_input->wasKeyPressed(GLFW_KEY_DELETE)) {
@@ -1485,13 +1655,14 @@ namespace Platform {
             togglePlayMode();
         }
 
-        // Tool shortcuts
         if (m_input->wasKeyPressed(GLFW_KEY_Q)) {
             m_currentTool = EditorTool::Select;
         }
+
         if (m_input->wasKeyPressed(GLFW_KEY_W)) {
             m_currentTool = EditorTool::Place;
         }
+
         if (m_input->wasKeyPressed(GLFW_KEY_E)) {
             m_currentTool = EditorTool::Erase;
         }
@@ -1572,7 +1743,7 @@ namespace Platform {
         if (Gameplay::GameObjectSerializer::loadSceneFromFile(tempFile, sceneName, objects)) {
             m_currentScene = std::make_unique<Runtime::Scene>(sceneName);
             m_currentScene->load();
-
+            m_currentScene->objects().clear();
             for (auto& obj : objects) {
                 m_currentScene->objects().push_back(std::move(obj));
             }

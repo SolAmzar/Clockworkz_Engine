@@ -43,12 +43,68 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Core/Profiler.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include <Platform/LevelEditorState.hpp>
+#include <Gameplay/Components/SpriteRenderer.hpp>
+#include <unordered_map>
+#include <vector>
+#include <string>
 
 using namespace Graphics;
 using namespace Assets;
 
 namespace Runtime
 {
+
+	std::unordered_map<std::string, std::vector<glm::vec4>> playerSprite;
+	const float changeFrameTime = 0.3;
+	float frameTimer = 0.f;
+	size_t frameCount = 0;
+
+	void ResetFrame()
+	{
+		float frameTimer = 0.f;
+		size_t frameCount = 0;
+	}
+
+	void InitPlayerSpriteUVs()
+	{
+		const float frameW = 1.0f / 8.0f; // 0.125
+		const float frameH = 1.0f / 8.0f; // 0.125
+
+		for (int i = 1; i <= 8; ++i)
+		{
+			glm::vec4 uv = {frameW * 3.f, 1.0 - (i * frameH), frameW, frameH};
+			// for example group rows by animation name
+			playerSprite["walk"].push_back(uv);
+		}
+
+		for (int i = 1; i <= 4; ++i)
+		{
+			glm::vec4 uv = {frameW * 4.f, 1.0 - (i * frameH), frameW, frameH};
+			// for example group rows by animation name
+			playerSprite["idle"].push_back(uv);
+		}
+
+		for (int i = 1; i <= 6; ++i)
+		{
+			glm::vec4 uv = {frameW * 5.f, 1.0 - (i * frameH), frameW, frameH};
+			// for example group rows by animation name
+			playerSprite["run_torch"].push_back(uv);
+		}
+
+		for (int i = 1; i <= 8; ++i)
+		{
+			glm::vec4 uv = {frameW * 6.f, 1.0 - (i * frameH), frameW, frameH};
+			// for example group rows by animation name
+			playerSprite["walk_torch"].push_back(uv);
+		}
+
+		for (int i = 1; i <= 6; ++i)
+		{
+			glm::vec4 uv = {frameW * 7.f, 1.0 - (i * frameH), frameW, frameH};
+			// for example group rows by animation name
+			playerSprite["run"].push_back(uv);
+		}
+	}
 	PlayState::PlayState(std::string initialSceneId, Platform::InputManager &input, GameStateManager &gsm)
 			: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm)
 	{
@@ -85,7 +141,7 @@ namespace Runtime
 		// Syafiq -
 		Core::Engine &engine = Core::Engine::Get();
 		m_renderer = &engine.rendering();
-
+		InitPlayerSpriteUVs();
 		auto textureShader = ResourceManager<Shader>::Load(
 				"texture",
 				"assets/shaders/texture.vert",
@@ -104,7 +160,7 @@ namespace Runtime
 			{
 				auto &objs = scene->objects();
 				std::cout << "GameObjects created (" << objs.size() << "):\n";
-				for (auto const &u : objs)
+				for (auto &u : objs)
 				{
 					auto const &o = *u;
 					auto p = o.transform().position;
@@ -115,6 +171,17 @@ namespace Runtime
 										<< " pos=(" << p.x << "," << p.y << ")"
 										<< " size=(" << s.x << "," << s.y << ")"
 										<< (o.active() ? "" : " [inactive]") << "\n";
+
+					if (u->type() == Gameplay::GameObjectType::Player)
+					{
+						m_player = &(*u);
+						Gameplay::SpriteRendererComponent *playerSprite = u->getComponent<Gameplay::SpriteRendererComponent>();
+						if (playerSprite)
+						{
+
+							playerSprite->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+						}
+					}
 				}
 				std::cout.flush();
 			}
@@ -132,7 +199,6 @@ namespace Runtime
 		// Only unload if a scene was actually loaded successfully
 		if (m_loaded)
 		{
-			m_scenes.unloadCurrent();
 			m_scenes.unloadCurrent();
 		}
 		m_loaded = false;
@@ -199,38 +265,45 @@ namespace Runtime
 		if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick)
 		{
 			mouseWorld = m_input.getMouseWorldPos(cam,
-				static_cast<float>(window.width()),
-				static_cast<float>(window.height()));
+																						static_cast<float>(window.width()),
+																						static_cast<float>(window.height()));
 
 			bool wallFound = false; // flag
 
 			// Check for an existing wall
-			for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
-				auto& obj = *it;
-				if (obj->type() == Gameplay::GameObjectType::Wall) {
+			for (auto it = gameObjects.begin(); it != gameObjects.end();)
+			{
+				auto &obj = *it;
+				if (obj->type() == Gameplay::GameObjectType::Wall)
+				{
 					vec2 pos = obj->transform().position;
 					vec2 size = obj->size();
 					if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
+							mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
+					{
 						// Found wall, delete it
 						std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
 						it = gameObjects.erase(it);
 						wallFound = true;
 						break; // Only delete one wall per click
 					}
-					else {
+					else
+					{
 						++it;
 					}
 				}
-				else {
+				else
+				{
 					++it;
 				}
 
-				if (!wallFound) {
+				if (!wallFound)
+				{
 					// If no wall was found, spawn one
-					vec2 wallSize{ 100.f, 100.f };
+					vec2 wallSize{100.f, 100.f};
 					auto wall = Gameplay::PrefabFactory::get().create("Wall");
-					if (wall) {
+					if (wall)
+					{
 						wall->setPosition(mouseWorld);
 						wall->setSize(wallSize);
 						gameObjects.push_back(std::move(wall));
@@ -245,12 +318,12 @@ namespace Runtime
 		{
 			for (auto it = gameObjects.begin(); it != gameObjects.end();)
 			{
-				auto& obj = *it;
+				auto &obj = *it;
 				// Simple AABB check
 				vec2 pos = obj->transform().position;
 				vec2 size = obj->size();
 				if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-					mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
+						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
 				{
 					std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
 					it = gameObjects.erase(it); // Remove object and get new iterator
@@ -276,14 +349,19 @@ namespace Runtime
 					float moveSpeed = 100.0f;
 					//not used
 					float moveAmount = moveSpeed * static_cast<float>(dt);
+					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+					{
+						moveAmount *= 2;
+					}
+					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
 					{
-						obj->velocity().y = moveSpeed;
+						obj->velocity().y = moveAmount;
 					}
 					else if (m_input.isKeyDown(GLFW_KEY_S))
 					{
-						obj->velocity().y = -moveSpeed;
+						obj->velocity().y = -moveAmount;
 					}
 					else
 					{
@@ -292,11 +370,11 @@ namespace Runtime
 
 					if (m_input.isKeyDown(GLFW_KEY_A))
 					{
-						obj->velocity().x = -moveSpeed;
+						obj->velocity().x = -moveAmount;
 					}
 					else if (m_input.isKeyDown(GLFW_KEY_D))
 					{
-						obj->velocity().x = moveSpeed;
+						obj->velocity().x = moveAmount;
 					}
 					else
 					{
@@ -306,34 +384,77 @@ namespace Runtime
 					if (m_input.isKeyDown(GLFW_KEY_G))
 					{
 						obj->transform().scale.x += static_cast<f32>(10 * dt);
-						obj->transform().scale.y += static_cast <f32>(10 * dt);
+						obj->transform().scale.y += static_cast<f32>(10 * dt);
 					}
 
-					if (m_flashlightOn) {
-						mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
+					vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
-						// Player world position
-					    vec2 playerPos = obj->transform().position;
+					// Player world position
+					vec2 playerPos = obj->transform().position;
 
-						// Direction vector from player to mouse
-						vec2 dir = mouseWorld - playerPos;
+					// Direction vector from player to mouse
+					vec2 dir = mouseWorld - playerPos;
 
-						// Distance check to prevent jitter
-						float dist = magnitude(dir);
-						if (dist > 10.0f)
-						{ // 10 units = threshold distance
-							// Normalize direction
-							dir = normalize(dir);
+					// Distance check to prevent jitter
+					float dist = magnitude(dir);
+					if (dist > 10.0f)
+					{ // 10 units = threshold distance
+						// Normalize direction
+						dir = normalize(dir);
 
-							// Compute angle in radians — atan2(y, x)
-							float angleRad = std::atan2(dir.y, dir.x);
+						// Compute angle in radians — atan2(y, x)
+						float angleRad = std::atan2(dir.y, dir.x);
 
-							// Convert to degrees if your transform uses degrees
-							obj->transform().rotationRad = angleRad;
-						}
-						if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
+						// Convert to degrees if your transform uses degrees
+						obj->transform().rotationRad = angleRad;
+					}
+					if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
+					{
+						obj->respawnAt(vec2(0.0f, 0.0f), true, true);
+					}
+
+					// --- Player Animation Control ---
+					Gameplay::SpriteRendererComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteRendererComponent>();
+					if (playerSpriteComp)
+					{
+						// Determine animation state
+						std::string animState = "idle";
+
+						bool isMoving = (obj->velocity().x != 0 || obj->velocity().y != 0);
+
+						if (isMoving)
 						{
-							obj->respawnAt(vec2(0.0f, 0.0f), true, true);
+							if (m_flashlightOn)
+							{
+								animState = "walk_torch";
+							}
+							else
+							{
+								animState = "walk";
+							}
+
+							// You can decide if shift key means run
+							if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+							{
+								animState = m_flashlightOn ? "run_torch" : "run";
+							}
+						}
+
+						// Update animation frame timer
+						frameTimer += static_cast<float>(dt);
+						if (frameTimer >= changeFrameTime)
+						{
+							frameTimer = 0.0f;
+							frameCount++;
+						}
+
+						// Get current animation frames safely
+						auto it = playerSprite.find(animState);
+						if (it != playerSprite.end() && !it->second.empty())
+						{
+							const auto &frames = it->second;
+							frameCount %= frames.size(); // wrap around
+							playerSpriteComp->setUV(frames[frameCount]);
 						}
 					}
 				}
@@ -361,9 +482,12 @@ namespace Runtime
 			}
 		}
 
-		if (m_input.isKeyDown(GLFW_KEY_Q))
+		if (m_input.isKeyDown(GLFW_KEY_Z))
 		{
 			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
+		}
+		if (m_input.isKeyDown(GLFW_KEY_Q))
+		{
 			cam.setZoom(cam.zoom() * 1.02f);
 		}
 		if (m_input.isKeyDown(GLFW_KEY_E))
@@ -411,9 +535,10 @@ namespace Runtime
 
 	void PlayState::render(Core::Time *timer)
 	{
-		if (!m_loaded || !m_renderer) return;
+		if (!m_loaded || !m_renderer)
+			return;
 
-		Core::Engine& engine = Core::Engine::Get();
+		Core::Engine &engine = Core::Engine::Get();
 
 		// Use SceneManager's render to render the current scene
 		// --- Pass: Scene ---
@@ -423,49 +548,37 @@ namespace Runtime
 		m_renderer->endScenePass();
 
 		// ==================== Torch Light Rendering ====================
-		auto* scene = m_scenes.current();
-		if (!scene) return;
+		auto *scene = m_scenes.current();
+		if (!scene)
+			return;
 
-		auto* physics = scene->getPhysics();
-		if (physics) {
-			std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-	
-			/*
-			// Find the player (you can cache this later)
-			Gameplay::GameObject* player = nullptr;
-			for (auto& o : objs) {
-				if (o->type() == Gameplay::GameObjectType::Player) {
-					player = o.get();
-					break;
-				}
-			}
-			if (!player) return;
+		auto *physics = scene->getPhysics();
+		if (m_flashlightOn && physics && m_player && m_player->active())
+		{
 
-			glm::vec2 origin = player->transform().position;
-			float angle = player->transform().rotationRad;
-
-			// Compute visibility polygon
-			std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-				origin,
-				angle,
-				glm::radians(60.0f), // FOV in radians (torch cone width)
-				300.0f,              // radius
-				*physics,
-				objs
-			);
-
-			// --- Pass: Light ---
-			// Draw the light cone (via RenderingManager)
-			if (m_flashlightOn)
+			vec2 origin = m_player->transform().position;
+			float angle = m_player->transform().rotationRad;
+			std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+			std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+					origin, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+			glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
+			std::vector<glm::vec2> lightPolyGLM;
+			for (const auto &point : lightPoly)
 			{
-				m_renderer->beginLightPass(engine.camera().viewProj(), origin, { 1.0f, 0.9f, 0.6f }, 300.0f, angle, glm::radians(60.0f));
-				m_renderer->drawLightCone(origin, lightPoly, { 1.0f, 0.9f, 0.6f });
-				m_renderer->endLightPass();
-			}*/
-			for (auto& o : objs)
+				lightPolyGLM.emplace_back(point.x, point.y);
+			}
+
+			m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+			m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
+			m_renderer->endLightPass();
+
+			// need refactor, something like EntityManager.GetAll<PlayerComponent>();
+			// Another way is to cache the player gameobject when LoadScene from file.
+			/*for (auto& o : objs)
 			{
 				if (o->type() == Gameplay::GameObjectType::Player)
 				{
+
 					vec2 origin = o->transform().position;
 					float angle = o->transform().rotationRad;
 					std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
@@ -475,25 +588,24 @@ namespace Runtime
 						for (const auto& point : lightPoly) {
 							lightPolyGLM.emplace_back(point.x, point.y);
 						}
-						
+
 
 						m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
 						m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
 						m_renderer->endLightPass();
+						break;
 				}
-			}
-
+			}*/
 		}
 
-		//std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-		//m_renderer->beginDebugPass(engine.camera().viewProj());
-		//for (auto& o : objs)
+		// std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+		// m_renderer->beginDebugPass(engine.camera().viewProj());
+		// for (auto& o : objs)
 		//{
 		//	if (o->active())
 		//		o->debugRender(*m_renderer);
-		//}
-		//m_renderer->endDebugPass();
-		
+		// }
+		// m_renderer->endDebugPass();
 	}
 
 	// test for IMGUI (still broken)
@@ -516,11 +628,11 @@ namespace Runtime
 
 			// ******* Object Creation **********
 			static int selectedType = 0;
-			const char* types[] = { "Player", "Enemy", "Wall", "Floor", "Trap" };
+			const char *types[] = {"Player", "Enemy", "Wall", "Floor", "Trap"};
 			ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
 
-			static float pos[2] = { 0, 0 };
-			static float size[2] = { 100, 100 };
+			static float pos[2] = {0, 0};
+			static float size[2] = {100, 100};
 			ImGui::InputFloat2("Position", pos);
 			ImGui::InputFloat2("Size", size);
 
@@ -537,67 +649,81 @@ namespace Runtime
 			if (ImGui::Button("Create Object"))
 			{
 
-				const char* texToUse = texture[0] ? texture : defaultTextures[selectedType];
+				const char *texToUse = texture[0] ? texture : defaultTextures[selectedType];
 				std::unique_ptr<Gameplay::GameObject> obj = nullptr;
 
 				// Supposedly spawn the corresponding gameobject (texture and logic not fixed)
-				if (selectedType == 0) {
+				if (selectedType == 0)
+				{
 					obj = Gameplay::PrefabFactory::get().create("Player");
-					if (obj) {
+					if (obj)
+					{
 						obj->setMoveSpeed(ms);
 						obj->setPosition(vec2(pos[0], pos[1]));
 						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
 						obj->setTextureId(texToUse);
 						auto scene = m_scenes.current();
-						if (scene) {
+						if (scene)
+						{
 							scene->objects().push_back(std::move(obj));
 						}
-						std::cout << "Player created\n"; 
+						std::cout << "Player created\n";
 					}
 				}
-				else if (selectedType == 1) {
+				else if (selectedType == 1)
+				{
 					obj = Gameplay::PrefabFactory::get().create("Enemy");
-					if (obj) {
+					if (obj)
+					{
 						obj->setMoveSpeed(ms);
 						obj->setPosition(vec2(pos[0], pos[1]));
 						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
 						auto scene = m_scenes.current();
-						if (scene) {
+						if (scene)
+						{
 							scene->objects().push_back(std::move(obj));
 						}
-						std::cout << "Enemy created\n"; 
+						std::cout << "Enemy created\n";
 					}
 				}
-				else if (selectedType == 2) {
+				else if (selectedType == 2)
+				{
 					obj = Gameplay::PrefabFactory::get().create("Wall");
-					if (obj) {
+					if (obj)
+					{
 						obj->setPosition(vec2(pos[0], pos[1]));
 						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
 						auto scene = m_scenes.current();
-						if (scene) {
+						if (scene)
+						{
 							scene->objects().push_back(std::move(obj));
 						}
 						std::cout << "Wall created\n";
 					}
 				}
-				else if (selectedType == 3) {
+				else if (selectedType == 3)
+				{
 					obj = Gameplay::PrefabFactory::get().create("Floor");
-					if (obj) {
+					if (obj)
+					{
 						obj->setPosition(vec2(pos[0], pos[1]));
 						obj->setSize(vec2(size[0], size[1]));
 						auto scene = m_scenes.current();
-						if (scene) {
+						if (scene)
+						{
 							scene->objects().push_back(std::move(obj));
 						}
 						std::cout << "Floor created\n";
 					}
 				}
-				else if (selectedType == 4) {
+				else if (selectedType == 4)
+				{
 					obj = Gameplay::PrefabFactory::get().create("Trap");
-					if (obj) {
+					if (obj)
+					{
 						obj->setPosition(vec2(pos[0], pos[1]));
 						obj->setSize(vec2(size[0], size[1]));
 						gameObjects.push_back(std::move(obj));
@@ -608,10 +734,10 @@ namespace Runtime
 			if (ImGui::Button("Delete Object"))
 			{
 				auto scene = m_scenes.current();
-				if (!scene->objects().empty()) {
+				if (!scene->objects().empty())
+				{
 					scene->objects().pop_back();
 				}
-
 			}
 			ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
 
@@ -634,31 +760,36 @@ namespace Runtime
 			ImGui::Text("Performance Profiler (Live)");
 			ImGui::Spacing();
 
-			auto& profiler = Core::Profiler::Get();
-			const auto& data = profiler.data();
+			auto &profiler = Core::Profiler::Get();
+			const auto &data = profiler.data();
 
-			if (data.empty()) {
+			if (data.empty())
+			{
 				ImGui::TextDisabled("No profiling data recorded yet...");
 			}
-			else {
-				for (const auto& [scope, info] : data) {
+			else
+			{
+				for (const auto &[scope, info] : data)
+				{
 					double avg = info.avgTime();
 					double total = info.totalTime;
 					int count = info.callCount;
 
 					// Color code performance (green=fast, red=slow)
 					ImVec4 color;
-					if (avg < 1.0)       color = ImVec4(0.3f, 1.0f, 0.3f, 1.0f);   // fast (<1ms)
-					else if (avg < 8.0)  color = ImVec4(1.0f, 1.0f, 0.3f, 1.0f);   // moderate
-					else                 color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);   // slow
+					if (avg < 1.0)
+						color = ImVec4(0.3f, 1.0f, 0.3f, 1.0f); // fast (<1ms)
+					else if (avg < 8.0)
+						color = ImVec4(1.0f, 1.0f, 0.3f, 1.0f); // moderate
+					else
+						color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // slow
 
 					ImGui::TextColored(color, "%-18s | Avg: %.3f ms | Calls: %d | Total: %.2f ms",
-						scope.c_str(), avg, count, total);
+														 scope.c_str(), avg, count, total);
 				}
 			}
 
 			ImGui::Spacing();
-
 
 			/*if (ImGui::Button("Show Performance Profile"))
 			{

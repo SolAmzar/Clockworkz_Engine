@@ -83,7 +83,6 @@ bool Scene::load()
 
         std::cout << "[Scene] load: " << m_name << "\n";
         std::string filepath = "assets/scenes/" + m_name + ".json";
-
 #ifndef _DEBUG
         filepath = "assets/scenes/" + m_name + ".json";
 #endif
@@ -180,8 +179,9 @@ void Scene::update(double dt)
 {
     {
         PROFILE_SCOPE("GameObjectUpdates");
-        std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
-        for (auto& o : objs){
+        std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = objects();
+        for (auto &o : objs)
+        {
             if (o->active())
                 o->update(dt);
         }
@@ -198,7 +198,7 @@ void Scene::update(double dt)
 void Scene::render(Graphics::RenderingManager &renderer)
 {
     PROFILE_SCOPE("GameObjectRender");
-    std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+    std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = objects();
     for (auto &o : objs)
     {
         if (o->active())

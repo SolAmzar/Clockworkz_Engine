@@ -15,6 +15,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 #pragma once
 #include "Runtime/GameState.hpp"
+#include "Gameplay/GameObject.hpp"
 #include <vector>
 #include <string>
 #include <functional>
@@ -26,6 +27,11 @@ namespace Platform { class InputManager; class WindowManager; }
 namespace Runtime { class GameStateManager; }
 namespace Audio { class AudioManager; }
 namespace Core { class Time; }  // forward declare
+namespace Graphics {
+    class RenderingManager;
+    class Camera2D;
+}
+
 
 namespace Runtime {
 
@@ -53,7 +59,12 @@ namespace Runtime {
         Platform::InputManager& m_input;
         Platform::WindowManager& m_window;
         Audio::AudioManager& m_audio;
+        //SceneManager m_scenes;
+        Graphics::RenderingManager* m_renderer{ nullptr };
+        Graphics::Camera2D* m_cam{ nullptr };
         std::function<void()>   m_quitFn;
+
+        Gameplay::GameObject m_background;
 
         std::vector<std::string> m_items{
           "Start Game",
@@ -69,6 +80,7 @@ namespace Runtime {
         int m_bgmChannel = 0;
         bool m_bgmPaused = false;
         float m_bgmVol = 0.7f;
+        bool m_loaded = false;
     };
 
 } // namespace Runtime

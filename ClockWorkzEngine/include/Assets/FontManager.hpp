@@ -28,6 +28,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <map>
 #include <glm/glm.hpp>
 #include <ft2build.h> // Free Type Library
+#include "Graphics/Shader.hpp"
 #include FT_FREETYPE_H
 
 namespace Assets
@@ -51,7 +52,7 @@ namespace Assets
     bool Load(const std::string &filePath, unsigned int fontSize);
     void Unload();
     // Render text with this font
-    void RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color);
+    void RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color, Graphics::Shader& s);
 
     inline const std::map<char, Character> &GetCharacters() const { return characters; }
 

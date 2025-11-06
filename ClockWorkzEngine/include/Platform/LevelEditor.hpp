@@ -262,6 +262,9 @@ namespace Platform {
         double m_frameTime;
         int m_objectCount;
 
+        double m_playTime = 0.0;
+        bool m_isPaused = false;
+
         // File dialog state
         bool m_showSaveDialog;
         bool m_showLoadDialog;
