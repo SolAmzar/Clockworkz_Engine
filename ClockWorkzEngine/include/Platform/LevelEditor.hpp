@@ -27,6 +27,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <vector>
 #include <memory>
 #include <glm/vec2.hpp>
+#include "math/Vec2.hpp"
+#include "Math/Vec3.hpp"
+#include "Math/Vec4.hpp"
 #include <glm/vec4.hpp>
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Prefab.hpp"
@@ -69,8 +72,8 @@ namespace Platform {
     struct GridSettings {
         bool enabled = true;
         float cellSize = 32.0f;
-        glm::vec4 gridColor = glm::vec4(0.3f, 0.3f, 0.3f, 0.5f);
-        glm::vec4 originColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.8f);
+        vec4 gridColor = vec4(0.3f, 0.3f, 0.3f, 0.5f);
+        vec4 originColor = vec4(1.0f, 0.0f, 0.0f, 0.8f);
         bool snapToGrid = true;
     };
 
@@ -88,7 +91,7 @@ namespace Platform {
         std::string name;
         std::string filepath;
         std::string description;
-        glm::vec2 spawnPoint = glm::vec2(0.0f, 0.0f);
+        vec2 spawnPoint = vec2(0.0f, 0.0f);
         int lastModified = 0;
     };
 
@@ -138,7 +141,7 @@ namespace Platform {
 
         // Prefab/Archetype system (Rubric 1206 - Advanced)
         void loadPrefabs();
-        void createObjectFromPrefab(const std::string& prefabName, glm::vec2 position);
+        void createObjectFromPrefab(const std::string& prefabName, vec2 position);
         bool savePrefab(const std::string& name);
         bool loadPrefab(const std::string& filepath);
         const std::vector<PrefabEntry>& getPrefabPalette() const { return m_prefabPalette; }
@@ -146,7 +149,7 @@ namespace Platform {
         // Grid settings
         const GridSettings& getGridSettings() const { return m_gridSettings; }
         void setGridSettings(const GridSettings& settings) { m_gridSettings = settings; }
-        glm::vec2 snapToGrid(glm::vec2 position) const;
+        vec2 snapToGrid(vec2 position) const;
 
         // Tool selection
         EditorTool getCurrentTool() const { return m_currentTool; }
@@ -180,7 +183,7 @@ namespace Platform {
         void handleObjectPlacement();
         void handleObjectDeletion();
         void handleObjectDragging();
-        void moveSelectedObject(glm::vec2 delta);
+        void moveSelectedObject(vec2 delta);
 
         // Grid rendering
         void renderGrid();
@@ -198,9 +201,9 @@ namespace Platform {
         bool isLevelDirty() const { return m_levelDirty; }
 
         // Utility functions
-        Gameplay::GameObject* getObjectAtPosition(glm::vec2 worldPos);
-        glm::vec2 screenToWorld(glm::vec2 screenPos) const;
-        glm::vec2 worldToScreen(glm::vec2 worldPos) const;
+        Gameplay::GameObject* getObjectAtPosition(vec2 worldPos);
+        vec2 screenToWorld(vec2 screenPos) const;
+        vec2 worldToScreen(vec2 worldPos) const;
         bool isMouseOverUI() const;
 
         // Prefab management helpers
@@ -226,12 +229,12 @@ namespace Platform {
 
         // Selection and manipulation
         Gameplay::GameObject* m_selectedObject;
-        glm::vec2 m_dragStartPos;
+        vec2 m_dragStartPos;
         bool m_isDraggingObject;
 
         // Camera
         Graphics::Camera2D m_editorCamera;
-        glm::vec2 m_cameraPanStart;
+        vec2 m_cameraPanStart;
         bool m_isPanningCamera;
         float m_cameraSpeed;
         float m_cameraZoomSpeed;

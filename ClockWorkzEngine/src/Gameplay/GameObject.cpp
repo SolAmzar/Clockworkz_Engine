@@ -29,9 +29,10 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Components/DamageDealer.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Physics/Collision.hpp"
-#include "Gameplay/Collider.hpp"
-namespace Gameplay
-{
+#include "Gameplay/Collider.hpp" 
+#include "Math/Vec3.hpp"
+
+namespace Gameplay {
 
     uint32_t GameObject::s_nextId = 1;
 
@@ -44,8 +45,10 @@ namespace Gameplay
     {
         // basic top-down integration
         m_transform.position += m_velocity * static_cast<float>(dt);
+        markDirty();
         for (auto &c : m_components)
             c->onUpdate(*this, dt);
+       
     }
 
     void GameObject::debugRender(Graphics::RenderingManager& renderer) {
@@ -105,89 +108,44 @@ namespace Gameplay
                 color.r, color.g, color.b);
             break;
         }
+
+        for (auto& c : m_components) c->onRender(*this);
     }
 
-    // Syafiq - Create game object using rect
-    void GameObject::render(Graphics::RenderingManager &renderer)
-    {
-        // later: call RenderingManager with textureId/transform/size
+    void GameObject::render(Graphics::RenderingManager& renderer) {
+        // Placeholder: actual rendering handled by Graphics system using textureId
         for (auto &c : m_components)
-            c->onRender(*this);
-    }
+			c->onRender(*this);
+	}
 
-    void GameObject::onCollision(GameObject &other)
-    {
-        // This is not with reference to the intended gameplay
-        // have to modify along the way.
-        // Generic contact damage: if THIS has DamageDealer and OTHER has Health, apply
-        // Current object damage other object with health on collide
 
-        auto resolvePlayerVsWall = [](GameObject &player, GameObject &wall)
-        {
-            // Compute world-space AABBs
-            AABB pa = player.aabbWorld();
-            AABB wa = wall.aabbWorld();
 
-            // centers and half-sizes
-            glm::vec2 pc = 0.5f * (pa.min + pa.max);
-            glm::vec2 wc = 0.5f * (wa.min + wa.max);
-            glm::vec2 ph = 0.5f * (pa.max - pa.min);
-            glm::vec2 wh = 0.5f * (wa.max - wa.min);
 
-            // overlap along each axis
-            glm::vec2 d = pc - wc;
-            glm::vec2 o = (ph + wh) - glm::abs(d);
 
-            // if both overlaps are positive, we are intersecting
-            if (o.x > 0.f && o.y > 0.f)
-            {
-                if (o.x < o.y)
-                {
-                    // resolve on X
-                    float push = (d.x < 0.f) ? -o.x : o.x;
-                    player.transform().position.x += push;
-                    // kill X velocity so we don't slide back in
-                    player.velocity().x = 0.f;
-                }
-                else
-                {
-                    // resolve on Y
-                    float push = (d.y < 0.f) ? -o.y : o.y;
-                    player.transform().position.y += push;
-                    // kill Y velocity
-                    player.velocity().y = 0.f;
-                }
-            }
-        };
+    Gameplay::AABB GameObject::worldAABB() const {
+        if (!m_boundsDirty) return m_cachedAABB;
 
-        // Run resolution if the pair is (Player, Wall) in either order
-        if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall))
-        {
-            resolvePlayerVsWall(*this, other);
-        }
-        else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player))
-        {
-            resolvePlayerVsWall(other, *this);
-        }
+        const vec2 center = m_transform.position;
+        AABB out;
 
-        if (auto *dealer = this->getComponent<DamageDealerComponent>())
-        {
-            if (auto *hp = other.getComponent<HealthComponent>())
-            {
-                hp->damage(other, dealer->damage());
-            }
-        }
-        // If OTHER is a dealer and THIS has health, you could also apply:
-        // other object damage currend object with health on collide
-        if (auto *dealer2 = other.getComponent<DamageDealerComponent>())
-        {
-            if (auto *hp2 = this->getComponent<HealthComponent>())
-            {
-                hp2->damage(*this, dealer2->damage());
+        // Default to box from size*scale
+        const vec2 half = 0.5f * (m_size * m_transform.scale);
+        out.min = center - half;
+        out.max = center + half;
+
+        // If any Circle collider exists, override with circle bounds
+        for (auto const& c : m_colliders) {
+            if (c->type == ColliderType::Circle) {
+                float r = static_cast<CircleCollider const*>(c.get())->radius();
+                out.min = center + vec2(-r, -r);
+                out.max = center + vec2(r, r);
+                break;
             }
         }
 
-        other.getComponent<HealthComponent>();
+        m_cachedAABB = out;
+        m_boundsDirty = false;
+        return m_cachedAABB;
     }
 
     void GameObject::setName(const std::string &newName)
@@ -195,10 +153,9 @@ namespace Gameplay
         m_name = newName;
     }
 
-    void GameObject::autoUpdateCollisionBaseOnScale()
-    {
-        glm::vec2 objScale = m_transform.scale;
-        glm::vec2 objSize = m_size; // assuming you have a size field
+    void GameObject::autoUpdateCollisionBaseOnScale() {
+        vec2 objScale = m_transform.scale;
+        vec2 objSize = m_size; // assuming you have a size field
 
         for (auto &col : m_colliders)
         {
@@ -216,8 +173,7 @@ namespace Gameplay
         }
     }
 
-    void GameObject::respawnAt(glm::vec2 spawn, bool resetVelocity, bool resetHealth)
-    {
+    void GameObject::respawnAt(vec2 spawn, bool resetVelocity, bool resetHealth) {
         // Only meaningful for the Player type
         if (m_type != GameObjectType::Player)
             return;
@@ -248,15 +204,14 @@ namespace Gameplay
         // m_animation.play("idle");
     }
 
-    AABB GameObject::aabbWorld() const
-    {
-        glm::vec2 half = 0.5f * m_size * m_transform.scale;
-        return {m_transform.position - half, m_transform.position + half};
+    Gameplay::AABB GameObject::aabbWorld() const {
+        vec2 half = 0.5f * m_size * m_transform.scale;
+        return { m_transform.position - half, m_transform.position + half };
     }
 
     // ----------------- Prefabs ----------------- (Temp)
 
-    std::unique_ptr<GameObject> GameObject::MakeFloor(glm::vec2 pos, glm::vec2 size, std::string tex) {
+    std::unique_ptr<GameObject> GameObject::MakeFloor(vec2 pos, vec2 size, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Floor, "Floor", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(false); go->setHazard(false); go->setBlocksLight(false);
@@ -267,7 +222,7 @@ namespace Gameplay
         return go;
     }
 
-    std::unique_ptr<GameObject> GameObject::MakeWall(glm::vec2 pos, glm::vec2 size, std::string tex) {
+    std::unique_ptr<GameObject> GameObject::MakeWall(vec2 pos, vec2 size, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Wall, "Wall", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(true); go->setBlocksLight(true); go->setHazard(false);
@@ -284,7 +239,7 @@ namespace Gameplay
         return go;
     }
 
-    std::unique_ptr<GameObject> GameObject::MakePlayer(glm::vec2 pos, glm::vec2 size, std::string tex) {
+    std::unique_ptr<GameObject> GameObject::MakePlayer(vec2 pos, vec2 size, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Player, "Player", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
@@ -303,7 +258,7 @@ namespace Gameplay
         return go;
     }
 
-    std::unique_ptr<GameObject> GameObject::MakeEnemy(glm::vec2 pos, glm::vec2 size, int hp, std::string tex) {
+    std::unique_ptr<GameObject> GameObject::MakeEnemy(vec2 pos, vec2 size, int hp, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Enemy, "Enemy", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(true); go->setBlocksLight(false); go->setHazard(true);
@@ -323,7 +278,7 @@ namespace Gameplay
         return go;
     }
 
-    std::unique_ptr<GameObject> GameObject::MakeTrap(glm::vec2 pos, glm::vec2 size, int damage, std::string tex) {
+    std::unique_ptr<GameObject> GameObject::MakeTrap(vec2 pos, vec2 size, int damage, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Trap, "Trap", GameObjectShape::Rectangle);
         go->transform().position = pos; go->setSize(size);
         go->setSolid(false); go->setBlocksLight(false); go->setHazard(true);
@@ -342,7 +297,7 @@ namespace Gameplay
         return go;
     }
 
-    std::unique_ptr<GameObject> GameObject::MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex) {
+    std::unique_ptr<GameObject> GameObject::MakeBall(vec2 pos, float radius, vec2 size, std::string tex) {
         auto go = std::make_unique<GameObject>(GameObjectType::Ball, "Ball", GameObjectShape::Circle);
         go->transform().position = pos; go->setSize({ radius * 2.f, radius * 2.f });
         go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
@@ -360,3 +315,69 @@ namespace Gameplay
     }
 
 } // namespace Gameplay
+
+
+
+//void GameObject::onCollision(GameObject& other) {
+//    // This is not with reference to the intended gameplay
+//    // have to modify along the way.
+//    // Generic contact damage: if THIS has DamageDealer and OTHER has Health, apply
+//    // Current object damage other object with health on collide
+//
+//    auto resolvePlayerVsWall = [](GameObject& player, GameObject& wall) {
+//        // Compute world-space AABBs 
+//        AABB pa = player.aabbWorld();
+//        AABB wa = wall.aabbWorld();
+//
+//        // centers and half-sizes
+//        vec2 pc = 0.5f * (pa.min + pa.max);
+//        vec2 wc = 0.5f * (wa.min + wa.max);
+//        vec2 ph = 0.5f * (pa.max - pa.min);
+//        vec2 wh = 0.5f * (wa.max - wa.min);
+//
+//        // overlap along each axis
+//        vec2 d = pc - wc;
+//        vec2 o = (ph + wh) - abs_vec2(d);
+//
+//        // if both overlaps are positive, we are intersecting
+//        if (o.x > 0.f && o.y > 0.f) {
+//            if (o.x < o.y) {
+//                // resolve on X
+//                float push = (d.x < 0.f) ? -o.x : o.x;
+//                player.transform().position.x += push;
+//                // kill X velocity so we don't slide back in
+//                player.velocity().x = 0.f;
+//            }
+//            else {
+//                // resolve on Y
+//                float push = (d.y < 0.f) ? -o.y : o.y;
+//                player.transform().position.y += push;
+//                // kill Y velocity
+//                player.velocity().y = 0.f;
+//            }
+//        }
+//        };
+//
+//    // Run resolution if the pair is (Player, Wall) in either order
+//    if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall)) {
+//        resolvePlayerVsWall(*this, other);
+//    }
+//    else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player)) {
+//        resolvePlayerVsWall(other, *this);
+//    }
+//
+//    if (auto* dealer = this->getComponent<DamageDealerComponent>()) {
+//        if (auto* hp = other.getComponent<HealthComponent>()) {
+//            hp->damage(other, dealer->damage());
+//        }
+//    }
+//    // If OTHER is a dealer and THIS has health, you could also apply:
+//    // other object damage currend object with health on collide
+//    if (auto* dealer2 = other.getComponent<DamageDealerComponent>()) {
+//        if (auto* hp2 = this->getComponent<HealthComponent>()) {
+//            hp2->damage(*this, dealer2->damage());
+//        }
+//    }
+//
+//    other.getComponent<HealthComponent>();
+//}

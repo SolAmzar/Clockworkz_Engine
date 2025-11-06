@@ -32,10 +32,15 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
     struct vec3 {
         f32 x, y, z;
+        #ifdef CWZ_ENABLE_GLM_BRIDGE
+        #include <glm/glm.hpp>
+        explicit vec3(glm::vec3 v) : x{ v.x }, y{ v.y }, z{ v.z } {}
+        explicit operator glm::vec3() const { return glm::vec3{ x,y,Z }; }
+        #endif
 
         // ctors
         constexpr vec3() : x(0), y(0), z(0) {}
-        constexpr vec3(f32 X, f32 Y, f32 Z) : x(X), y(Y), z(Z) {}
+        constexpr vec3(f32 X, f32 Y = 0.f, f32 Z = 0.f) : x(X), y(Y), z(Z) {}
         constexpr explicit vec3(vec2 v, f32 Z = 0.f) : x(v.x), y(v.y), z(Z) {}
 
         // unary

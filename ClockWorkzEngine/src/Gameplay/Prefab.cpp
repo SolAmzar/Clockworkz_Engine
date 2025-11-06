@@ -229,7 +229,7 @@ namespace Gameplay
         return GameObjectSerializer::deserializeGameObject(objJson);
     }
 
-    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string &prefabName, glm::vec2 position)
+    std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& prefabName, vec2 position)
     {
         auto obj = create(prefabName);
         if (obj)

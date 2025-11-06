@@ -26,6 +26,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Graphics/Shader.hpp>
 #include "Gameplay/Physics2D.hpp"
 #include "Gameplay/GameObject.hpp"
+#include <Math/VecCompatGLM.hpp>
 
 namespace Graphics {
 	// Call Stack: engine run -> engine init -> rendering manager init
@@ -131,8 +132,7 @@ namespace Graphics {
 		drawLine(pos.x, pos.y, pos.x + vel.x, pos.y + vel.y, color.r, color.g, color.b);
 	}
 
-	void RenderingManager::drawSprite(
-		unsigned texId, const glm::vec2& pos,
+	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
 		const glm::vec2& size, float angleRad, const glm::vec4& color)
 	{
 		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, { 0,0,1,1 }, Graphics::Anchor::Center);
@@ -140,21 +140,21 @@ namespace Graphics {
 
 
 
-	std::vector<glm::vec2> RenderingManager::computeVisibilityPolygon(
-		const glm::vec2& origin,
+	std::vector<vec2> RenderingManager::computeVisibilityPolygon(
+		const vec2& origin,
 		float angleCenter,
 		float fov,
 		float radius,
 		Gameplay::Physics2D& physics,
 		const std::vector<std::unique_ptr<Gameplay::GameObject>>& objs)
 	{
-		std::vector<glm::vec2> points;
+		std::vector<vec2> points;
 		const int numRays = 200;
 		float halfFov = fov * 0.5f;
 
 		for (int i = 0; i < numRays; ++i) {
 			float angle = angleCenter - halfFov + fov * (i / (float)(numRays - 1));
-			glm::vec2 dir = { cos(angle), sin(angle) };
+			vec2 dir = { cos(angle), sin(angle) };
 			auto hit = physics.raycastLight(origin, dir, radius, objs);
 			points.push_back(hit.value_or(origin + dir * radius));
 		}

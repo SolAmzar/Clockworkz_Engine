@@ -5,6 +5,7 @@
 #include "Gameplay\Components\DamageDealer.hpp"
 #include "Gameplay\Collider.hpp"
 #include "Gameplay\Prefab.hpp"
+#include "Math/Vec2.hpp"
 #include <fstream>
 #include <iostream>
 #include <Gameplay/Components/SpriteRenderer.hpp>
@@ -79,7 +80,7 @@ namespace Gameplay {
 
     void GameObjectSerializer::deserializeCollider(GameObject& obj, const json& j) {
         if (j.contains("width") && j.contains("height")) {
-            obj.setSize(glm::vec2(j["width"].get<float>(), j["height"].get<float>()));
+            obj.setSize(vec2(j["width"].get<float>(), j["height"].get<float>()));
         }
         if (j.contains("isSolid")) {
             obj.setSolid(j["isSolid"].get<bool>());
@@ -196,7 +197,7 @@ namespace Gameplay {
             std::cout << "[Serializer] Loading prefab: " << prefabName << "\n";
 
             // Extract some basic overrides early (position, scale, texture, hp, dmg)
-            glm::vec2 pos{ 0.f }, scale{ 100.f, 100.f };
+            vec2 pos{ 0.f }, scale{ 100.f, 100.f };
             std::string tex = "";
             int hp = 3, dmg = 1;
 
