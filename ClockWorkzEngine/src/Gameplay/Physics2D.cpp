@@ -4,82 +4,6 @@
 #include <algorithm>
 
 namespace Gameplay {
-    //void Physics2D::step(std::vector<std::unique_ptr<GameObject>>& objs, double dt) {
-    //    (void)dt;
-    //    // Naive AABB pair check for now; move to spatial grid later
-    //    /*for (size_t i = 0; i < objs.size(); ++i) {
-    //        for (size_t j = i + 1; j < objs.size(); ++j) {
-    //            auto& A = *objs[i]; auto& B = *objs[j];
-    //            if (!A.active() || !B.active()) continue;
-    //            if ((A.collisionMask() & (1u << B.layer())) == 0 &&
-    //                (B.collisionMask() & (1u << A.layer())) == 0) continue;
-    //            if (A.aabbWorld().intersects(B.aabbWorld())) {
-    //                A.onCollision(B); B.onCollision(A);
-    //            }
-    //        }
-    //    }*/
-
-    //    // Multiple colliders - AABB and Circle, can consider spatial grid later
-    //    for (size_t i = 0; i < objs.size(); ++i) {
-    //        for (size_t j = i + 1; j < objs.size(); ++j) {
-    //            auto& A = *objs[i];
-    //            auto& B = *objs[j];
-
-    //            if (!A.active() || !B.active()) continue;
-
-    //            const bool aHitsB = (A.collisionMask() & B.layer()) != 0;
-    //            const bool bHitsA = (B.collisionMask() & A.layer()) != 0;
-    //            if (!aHitsB && !bHitsA) continue;
-				//if ((A.type() == GameObjectType::Wall) && (B.type() == GameObjectType::Wall)) continue;
-
-    //            for (auto& colA : A.colliders()) {
-    //                for (auto& colB : B.colliders()) {
-    //                    if (!colA->solid || !colB->solid) continue;
-
-    //                    bool collided = false;
-    //                    vec2 posA = A.transform().position;
-    //                    vec2 posB = B.transform().position;
-
-    //                    if (colA->type == ColliderType::AABB && colB->type == ColliderType::AABB) {
-    //                        vec2 amin = colA->worldMin(posA);
-    //                        vec2 amax = colA->worldMax(posA);
-    //                        vec2 bmin = colB->worldMin(posB);
-    //                        vec2 bmax = colB->worldMax(posB);
-    //                        collided = !(amax.x < bmin.x || amin.x > bmax.x ||
-    //                            amax.y < bmin.y || amin.y > bmax.y);
-    //                    }
-    //                    else if (colA->type == ColliderType::Circle && colB->type == ColliderType::Circle) {
-    //                        vec2 diff = (posA + colA->offset) - (posB + colB->offset);
-    //                        float dist2 = dot(diff, diff);
-    //                        float r = colA->radius() + colB->radius();
-    //                        collided = dist2 <= r * r;
-    //                    }
-    //                    else {
-    //                        // AABB vs Circle
-    //                        const Collider* aabbCol = colA->type == ColliderType::AABB ? colA.get() : colB.get();
-    //                        const Collider* circCol = colA->type == ColliderType::Circle ? colA.get() : colB.get();
-    //                        vec2 boxMin = aabbCol->worldMin(aabbCol == colA.get() ? posA : posB);
-    //                        vec2 boxMax = aabbCol->worldMax(aabbCol == colA.get() ? posA : posB);
-    //                        vec2 circlePos = (circCol == colA.get() ? posA : posB) + circCol->offset;
-    //                        float r = circCol->radius();
-
-    //                        vec2 closest = glm::clamp(circlePos, boxMin, boxMax);
-    //                        vec2 diff = circlePos - closest;
-    //                        float dist2 = dot(diff, diff);
-    //                        collided = dist2 <= r * r;
-    //                    }
-
-    //                    if (collided) {
-    //                        A.onCollision(B);
-    //                        B.onCollision(A);
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //}
-
     std::optional<vec2> Physics2D::raycastLight(
         const vec2& origin,
         const vec2& dir,
@@ -264,7 +188,20 @@ namespace Gameplay {
         }
 
         inline bool canCollide(GameObject* a, GameObject* b);
-        inline bool movable(GameObject* g) { return true; } // hook to your solid/static flags
+        inline bool movable(GameObject* g) {
+        using GT = Gameplay::GameObjectType;
+            switch (g->type()) {
+            case GT::Wall:    return false;           // <-- walls are static
+            case GT::Floor:   return false;           // optional: floors static too
+            case GT::Trap:    return false;           // traps as triggers (no push)
+            case GT::Player:
+            case GT::Enemy:
+            case GT::Ball:
+                return true;                            // dynamic bodies move
+            default:
+                return true;
+            }
+        } // hook to your solid/static flags
 
     } // anonymous
 
@@ -279,6 +216,68 @@ namespace Gameplay {
         }
 
     }
+	// helpers to identify object types and apply gameplay effects
+    namespace {
+
+        // Simple “who is player” utility
+        inline bool isPlayer(Gameplay::GameObject* g) {
+            return g->type() == Gameplay::GameObjectType::Player;
+        }
+        inline bool isEnemy(Gameplay::GameObject* g) {
+            return g->type() == Gameplay::GameObjectType::Enemy;
+        }
+        inline bool isWall(Gameplay::GameObject* g) {
+            return g->type() == Gameplay::GameObjectType::Wall;
+        }
+        inline bool isTrap(Gameplay::GameObject* g) {
+            return g->type() == Gameplay::GameObjectType::Trap;
+        }
+        inline bool isBall(Gameplay::GameObject* g) {
+            return g->type() == Gameplay::GameObjectType::Ball;
+        }
+
+        // Decide if physics should resolve overlap (non-passable) or not.
+        // Typically walls are non-passable; traps might be pass-through (trigger).
+        inline bool shouldResolveAsSolid(Gameplay::GameObject* a, Gameplay::GameObject* b) {
+            // You already track "solid" on GameObject; prefer the data over type.
+            // But if you want hard rules, keep walls solid regardless:
+            return (a->isSolid() && b->isSolid()) || isWall(a) || isWall(b);
+        }
+
+        // Apply gameplay effects AFTER (or instead of) resolution.
+        inline void applyInteraction(Gameplay::GameObject& a, Gameplay::GameObject& b) {
+            using GT = Gameplay::GameObjectType;
+
+            GT at = a.type();
+            GT bt = b.type();
+
+            // PLAYER ? ENEMY: player “dies” (respawn / health to 0 / deactivate)
+            if ((at == GT::Player && bt == GT::Enemy) ||
+                (bt == GT::Player && at == GT::Enemy))
+            {
+                Gameplay::GameObject* player = at == GT::Player ? &a : &b;
+                // Your API has respawnAt(spawn, resetVel, resetHealth).
+                // You can store a player spawn point somewhere central; here, just reset & deactivate:
+                // player->setActive(false); // or:
+                player->respawnAt(/*spawn=*/{ 0.f,0.f }, /*resetVel=*/true, /*resetHealth=*/true);
+                return;
+            }
+
+            // PLAYER ? TRAP: apply damage to player (if you wire HealthComponent)
+            if ((at == GT::Player && bt == GT::Trap) ||
+                (bt == GT::Player && at == GT::Trap))
+            {
+                // If you use your DamageDealer/Health components, you could call them here.
+                // Example:
+                // if (auto* hp = player->getComponent<HealthComponent>()) hp->damage(*player, amount);
+                return;
+            }
+
+            // PLAYER ? BALL or ENEMY ? BALL: you decide (bounce, knockback, etc.)
+            // For now do nothing special; physics already separated them.
+        }
+
+    } // namespace
 
     // ---------- Physics2D::step ----------
     void Physics2D::step(std::vector<std::unique_ptr<GameObject>>& objs, double dt) {
@@ -343,11 +342,17 @@ namespace Gameplay {
                     // AABB–AABB MTV already computed
                 }
 
-                if (!hit) return;
+                // 1) Decide if this pair should be *physically* non-passable
+                bool resolveSolid = shouldResolveAsSolid(a, b);
+                if (resolveSolid) {
+                    bool aMov = movable(a);
+                    bool bMov = movable(b);
+                    positionalCorrection(*a, *b, best, aMov, bMov);
+                    // (Optional) basic velocity response could go here
+                }
 
-                bool aMov = movable(a);
-                bool bMov = movable(b);
-                positionalCorrection(*a, *b, best, aMov, bMov);
+                // 2) Gameplay interaction (death, damage, etc.)
+                applyInteraction(*a, *b);
 
                 // TODO: add bounce/slide with your velocity fields if needed
                 });
@@ -390,6 +395,82 @@ namespace Gameplay {
     //    if (closestDist < maxDist)
     //        return closestHit;
     //    return std::nullopt;
+    //}
+
+        //void Physics2D::step(std::vector<std::unique_ptr<GameObject>>& objs, double dt) {
+    //    (void)dt;
+    //    // Naive AABB pair check for now; move to spatial grid later
+    //    /*for (size_t i = 0; i < objs.size(); ++i) {
+    //        for (size_t j = i + 1; j < objs.size(); ++j) {
+    //            auto& A = *objs[i]; auto& B = *objs[j];
+    //            if (!A.active() || !B.active()) continue;
+    //            if ((A.collisionMask() & (1u << B.layer())) == 0 &&
+    //                (B.collisionMask() & (1u << A.layer())) == 0) continue;
+    //            if (A.aabbWorld().intersects(B.aabbWorld())) {
+    //                A.onCollision(B); B.onCollision(A);
+    //            }
+    //        }
+    //    }*/
+
+    //    // Multiple colliders - AABB and Circle, can consider spatial grid later
+    //    for (size_t i = 0; i < objs.size(); ++i) {
+    //        for (size_t j = i + 1; j < objs.size(); ++j) {
+    //            auto& A = *objs[i];
+    //            auto& B = *objs[j];
+
+    //            if (!A.active() || !B.active()) continue;
+
+    //            const bool aHitsB = (A.collisionMask() & B.layer()) != 0;
+    //            const bool bHitsA = (B.collisionMask() & A.layer()) != 0;
+    //            if (!aHitsB && !bHitsA) continue;
+                //if ((A.type() == GameObjectType::Wall) && (B.type() == GameObjectType::Wall)) continue;
+
+    //            for (auto& colA : A.colliders()) {
+    //                for (auto& colB : B.colliders()) {
+    //                    if (!colA->solid || !colB->solid) continue;
+
+    //                    bool collided = false;
+    //                    vec2 posA = A.transform().position;
+    //                    vec2 posB = B.transform().position;
+
+    //                    if (colA->type == ColliderType::AABB && colB->type == ColliderType::AABB) {
+    //                        vec2 amin = colA->worldMin(posA);
+    //                        vec2 amax = colA->worldMax(posA);
+    //                        vec2 bmin = colB->worldMin(posB);
+    //                        vec2 bmax = colB->worldMax(posB);
+    //                        collided = !(amax.x < bmin.x || amin.x > bmax.x ||
+    //                            amax.y < bmin.y || amin.y > bmax.y);
+    //                    }
+    //                    else if (colA->type == ColliderType::Circle && colB->type == ColliderType::Circle) {
+    //                        vec2 diff = (posA + colA->offset) - (posB + colB->offset);
+    //                        float dist2 = dot(diff, diff);
+    //                        float r = colA->radius() + colB->radius();
+    //                        collided = dist2 <= r * r;
+    //                    }
+    //                    else {
+    //                        // AABB vs Circle
+    //                        const Collider* aabbCol = colA->type == ColliderType::AABB ? colA.get() : colB.get();
+    //                        const Collider* circCol = colA->type == ColliderType::Circle ? colA.get() : colB.get();
+    //                        vec2 boxMin = aabbCol->worldMin(aabbCol == colA.get() ? posA : posB);
+    //                        vec2 boxMax = aabbCol->worldMax(aabbCol == colA.get() ? posA : posB);
+    //                        vec2 circlePos = (circCol == colA.get() ? posA : posB) + circCol->offset;
+    //                        float r = circCol->radius();
+
+    //                        vec2 closest = glm::clamp(circlePos, boxMin, boxMax);
+    //                        vec2 diff = circlePos - closest;
+    //                        float dist2 = dot(diff, diff);
+    //                        collided = dist2 <= r * r;
+    //                    }
+
+    //                    if (collided) {
+    //                        A.onCollision(B);
+    //                        B.onCollision(A);
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
+
     //}
 
 }
