@@ -65,6 +65,7 @@ namespace Runtime {
 		float m_ballSpeed{ 220.f };
 		int   m_ballDir{ +1 };
 		void resetScene();
+		Gameplay::GameObject* m_player;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
 
 	};

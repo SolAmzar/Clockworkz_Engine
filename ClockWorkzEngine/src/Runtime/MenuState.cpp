@@ -33,106 +33,136 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <memory>
 #include <sstream>
 #include "Core/Time.hpp"
+#include <Core/Engine.hpp>
+#include <Graphics/Renderer2D.hpp>
+#include <Graphics/Camera2D.hpp>
+#include <Graphics/GraphicsManager.hpp>
+#include "Graphics/RenderingManager.hpp"
+
+#include <Gameplay/Components/SpriteRenderer.hpp>
 
 using Assets::ResourceManager;
 using Graphics::Shader;
+using namespace Gameplay;
 
+namespace Runtime
+{
 
-
-namespace Runtime {
-
-    static void ClearConsole() {
+    static void ClearConsole()
+    {
         std::cout << "\x1B[2J\x1B[H"; // ANSI clear + home
     }
 
-
-
-
-    MenuState::MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn)
-        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn))
+    MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input, Platform::WindowManager &window, Audio::AudioManager &audio, std::function<void()> quitFn)
+        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn)), m_background(GameObjectType::Unknown, "MenuBG", GameObjectShape::Rectangle)
     {
     }
 
-    void MenuState::onEnter() {
+    void MenuState::onEnter()
+    {
 
         m_selected = 0;
         m_dirty = true;
 
-        if (m_items.empty()) {
-            m_items = { "Start Game",
-                        "Load Game",
-                        "Option",
-                        "Credits",
-                        "Exit Game" };
+        Core::Engine &engine = Core::Engine::Get();
+        m_renderer = &engine.rendering();
+        m_cam = &engine.camera();
+        if (m_items.empty())
+        {
+            m_items = {"Start Game",
+                       "Load Game",
+                       "Option",
+                       "Credits",
+                       "Exit Game"};
         }
 
         // m_audio.stopGroup(Audio::Group::Music);
-        //printMenu();
+        // printMenu();
 
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Title", "assets/fonts/ANUNE___.TTF", 48
-        );
+            "Title", "assets/fonts/ANUNE___.TTF", 48);
 
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72
-        );
+            "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72);
 
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Debug", "assets/fonts/ANUNEDW_.TTF", 24
-        );
+            "Debug", "assets/fonts/ANUNEDW_.TTF", 24);
 
         /* Syafiq*/
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Selection", "assets/fonts/ANUNEDW_.TTF", 50
-        );
+            "Selection", "assets/fonts/ANUNEDW_.TTF", 50);
 
         auto textShader = ResourceManager<Shader>::Load(
             "text",
             "assets/shaders/text.vert",
-            "assets/shaders/text.frag"
-        );
-       // Amzar
+            "assets/shaders/text.frag");
+
+        auto textureShader = ResourceManager<Shader>::Load(
+            "texture",
+            "assets/shaders/texture.vert",
+            "assets/shaders/texture.frag");
+        // Amzar
         m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
+        m_background.addComponent<SpriteRendererComponent>("menu_bg_texture");
+        m_background.setSize({1.f, 1.f});                    // Proper dimensions
+        m_background.transform().scale = {1920.0f, 1080.0f}; // Keep scale neutral
     }
 
-    void MenuState::printMenu() {
+    void MenuState::printMenu()
+    {
         ClearConsole();
         std::cout << "Menu:\n";
-        for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
+        for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
+        {
             std::cout << (i == m_selected ? "> " : "  ") << m_items[i] << "\n";
         }
         std::cout.flush();
         m_dirty = false;
     }
 
-    void MenuState::moveUp() { if (--m_selected < 0) m_selected = static_cast<int>(m_items.size()) - 1; m_dirty = true; }
-    void MenuState::moveDown() { if (++m_selected >= static_cast<int>(m_items.size())) m_selected = 0;   m_dirty = true; }
+    void MenuState::moveUp()
+    {
+        if (--m_selected < 0)
+            m_selected = static_cast<int>(m_items.size()) - 1;
+        m_dirty = true;
+    }
+    void MenuState::moveDown()
+    {
+        if (++m_selected >= static_cast<int>(m_items.size()))
+            m_selected = 0;
+        m_dirty = true;
+    }
 
-    void MenuState::select() {
-        const std::string& choice = m_items[m_selected];
+    void MenuState::select()
+    {
+        const std::string &choice = m_items[m_selected];
 
-        if (choice == "Start Game") {
-            m_gsm.push(std::make_shared<PlayState>("Level_01" , m_input, m_gsm));
+        if (choice == "Start Game")
+        {
+            m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
             return;
         }
-        if (choice == "Exit Game") {
+        if (choice == "Exit Game")
+        {
             std::cout << "Exiting game...\n";
-            if (m_quitFn) m_quitFn();
+            if (m_quitFn)
+                m_quitFn();
             return;
         }
-        //yusuf
+        // yusuf
         if (choice == "Load Game")
         {
             m_gsm.push(std::make_shared<PlayState>("Level_01_autosave", m_input, m_gsm));
-            //might want to create a text to say that there is no autosavefile
+            // might want to create a text to say that there is no autosavefile
             return;
         }
 
         std::cout << "[" << choice << "] selected (no state change).\n";
     }
 
-    void MenuState::update(double /*dt*/) {
-		
+    void MenuState::update(double /*dt*/)
+    {
+
         double mouseX, mouseY;
         glfwGetCursorPos(m_window.getWindow(), &mouseX, &mouseY);
 
@@ -142,7 +172,8 @@ namespace Runtime {
 
         // Hovering
         bool isHover = false;
-        for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
+        for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
+        {
             float yPos = (h - 550.0f) - (i * 80.0f);
             float textWidth = m_items[i].length() * 25.0f;
             float xPos = (w / 2.0f) - (textWidth / 2.0f);
@@ -150,9 +181,11 @@ namespace Runtime {
             float textHeight = 60.0f;
 
             if (mouseX >= xPos && mouseX <= (xPos + textWidth) &&
-                glMouseY >= yPos && glMouseY <= (yPos + textHeight)) {
+                glMouseY >= yPos && glMouseY <= (yPos + textHeight))
+            {
                 isHover = true;
-                if (m_selected != i) {
+                if (m_selected != i)
+                {
                     m_selected = i;
                     m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
                     m_dirty = true;
@@ -161,34 +194,37 @@ namespace Runtime {
             }
         }
 
-        if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
+        {
             m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
             std::this_thread::sleep_for(std::chrono::milliseconds(120));
             select();
         }
 
         // Keys: arrows or WASD
-        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W))
+        {
             m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
             moveUp();
-            
         }
-        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S))
+        {
             m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
             moveDown();
-            
         }
 
         // Enter / KP_Enter to select
-        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER))
+        {
             m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120));
             select();
-            
         }
 
-        if (m_input.wasKeyPressed(GLFW_KEY_P)) {
+        if (m_input.wasKeyPressed(GLFW_KEY_P))
+        {
             m_debug = !m_debug;
-            if (m_debug) {
+            if (m_debug)
+            {
                 std::cout << "Debug is pressed\n";
             }
             return;
@@ -196,90 +232,98 @@ namespace Runtime {
 
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
-        if (m_input.wasKeyTriggered(GLFW_KEY_P)) {
+        if (m_input.wasKeyTriggered(GLFW_KEY_P))
+        {
             std::cout << "P pressed -> toggling BGM\n";
-			m_bgmPaused = !m_bgmPaused;
-            if (m_bgmChannel) m_audio.setPaused(m_bgmChannel, m_bgmPaused);
+            m_bgmPaused = !m_bgmPaused;
+            if (m_bgmChannel)
+                m_audio.setPaused(m_bgmChannel, m_bgmPaused);
         }
-        if (m_input.wasKeyPressed(GLFW_KEY_M)) m_audio.setGroupVolume(Audio::Group::BGM, 0.0f);
-        if (m_input.wasKeyPressed(GLFW_KEY_U)) m_audio.setGroupVolume(Audio::Group::BGM, 0.7f);
+        if (m_input.wasKeyPressed(GLFW_KEY_M))
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.0f);
+        if (m_input.wasKeyPressed(GLFW_KEY_U))
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.7f);
 
-       /* if (m_dirty) {
-            printMenu();
-        }*/
+        /* if (m_dirty) {
+             printMenu();
+         }*/
     }
 
-    void MenuState::render(Core::Time* timer) {
+    void MenuState::render(Core::Time *timer)
+    {
+
+        m_renderer->beginScenePass(m_cam->viewProj());
+        m_background.render(*m_renderer);
+        m_renderer->endScenePass();
 
         // Later, retrieve them anywhere:
-        auto shader = ResourceManager<Shader>::Get("text");
-        shader->use();
-        shader->setVec3("textColor", glm::vec3(1.0f, 1.0f, 1.0f));
-
-        // projection setup (window width/height)
         int w = m_window.width();
         int h = m_window.height();
-
         glm::mat4 projection = glm::ortho(
             0.0f, (float)w,
-            0.0f, (float)h
-        );
+            0.0f, (float)h);
+        m_renderer->beginFontPass(projection);
 
-        shader->setMat4("projection", projection);
-
+        auto shader = Assets::ResourceManager<Shader>::Get("text");
         auto titleFont = Assets::ResourceManager<Assets::FontManager>::Get("Title");
         auto subFont = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
         auto debugFont = Assets::ResourceManager<Assets::FontManager>::Get("Debug");
-        
+
         auto selectFont = Assets::ResourceManager<Assets::FontManager>::Get("Selection");
 
-        if (titleFont) {
-            titleFont->RenderText("Lights Out", w / 2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        if (titleFont)
+        {
+            titleFont->RenderText("Lights Out", w / 2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f), *shader);
         }
 
-        if (subFont) {
-            subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+        if (subFont)
+        {
+            subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
         }
 
-        if (debugFont) {
-            if (timer) {
-                std::stringstream ss{ };
+        if (debugFont)
+        {
+            if (timer)
+            {
+                std::stringstream ss{};
                 ss << "FPS: " << timer->fps();
-                debugFont->RenderText(ss.str(), 10.f, h-40.f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f));
+                debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
             }
-           
         }
 
-        //Start: Syafiq
-        if (selectFont) {
+        // Start: Syafiq
+        if (selectFont)
+        {
 
             glm::vec3 normalCol(0.5f, 0.5f, 0.5f);
             glm::vec3 selectedCol(1.0f, 1.0f, 1.0f);
 
-            for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
-                const std::string& item = m_items[i];
-
+            for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
+            {
+                const std::string &item = m_items[i];
 
                 glm::vec3 selCol = (i == m_selected) ? selectedCol : normalCol;
 
-                shader->setVec3("textColor", selCol);
-
+                // shader->setVec3("textColor", selCol);
 
                 float yPos = (h - 550.0f) - (i * 80.0f);
                 float textWidth = item.length() * 25.0f;
                 float xPos = (w / 2.0f) - (textWidth / 2.0f);
 
-                selectFont->RenderText(item, xPos, yPos, 0.8f, selCol);
-
+                selectFont->RenderText(item, xPos, yPos, 0.8f, selCol, *shader);
             }
         }
+        m_renderer->endFontPass();
     }
 
-    //Implementation of ImGui
-    void Runtime::MenuState::renderImGui(Core::Time* timer) {
-        if (!m_debug) return;
+    // Implementation of ImGui
+    void Runtime::MenuState::renderImGui(Core::Time *timer)
+    {
+        if (!m_debug)
+            return;
 
-        if (m_debug) {
+        if (m_debug)
+        {
             /*Implement the IMGUI*/
             ImGui::Begin("Welcome to Lights Out");
             ImGui::Text("Press [Down] & [UP] to select");
@@ -288,12 +332,18 @@ namespace Runtime {
         }
     }
 
-    void MenuState::onExit() {
-        if (m_bgmChannel != 0) {
+    void MenuState::onExit()
+    {
+        /*if (m_loaded)
+        {
+            m_scenes.unloadCurrent();
+        }
+        m_loaded = false;*/
+        if (m_bgmChannel != 0)
+        {
             m_audio.stop(m_bgmChannel);
             m_bgmChannel = 0;
         }
     }
-
 
 } // namespace Runtime
