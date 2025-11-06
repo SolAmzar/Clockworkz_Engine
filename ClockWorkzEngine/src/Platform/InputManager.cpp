@@ -59,6 +59,9 @@ namespace Platform {
         trackKey(GLFW_KEY_SPACE);
         trackKey(GLFW_KEY_L);
 
+
+        trackKey(GLFW_KEY_R); //For Flashlight
+        trackKey(GLFW_KEY_Z); //
         trackKey(GLFW_KEY_P); //For debugging
 		trackKey(GLFW_KEY_M); //Mute BGM
 		trackKey(GLFW_KEY_U); //Unmute BGM

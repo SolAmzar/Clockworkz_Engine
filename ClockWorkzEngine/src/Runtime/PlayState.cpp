@@ -184,32 +184,60 @@ namespace Runtime
 			return;
 		}
 
-		if (m_input.wasKeyPressed(GLFW_KEY_Q))
+		// Havign issue with the camera
+		if (m_input.wasKeyPressed(GLFW_KEY_R))
 		{
-			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
 			m_flashlightOn = !m_flashlightOn;
 			std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
 		}
 
+		if (m_input.wasKeyPressed(GLFW_KEY_Z))
+		{
+			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
+		}
+
 		if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick)
 		{
-			// Convert from screen to world coordinates
-			glm::vec2 mouseWorld = m_input.getMouseWorldPos(
-					cam,
-					static_cast<float>(window.width()),
-					static_cast<float>(window.height()));
+			glm::vec2 mouseWorld = m_input.getMouseWorldPos(cam,
+				static_cast<float>(window.width()),
+				static_cast<float>(window.height()));
 
-			// 2) Choose wall size/texture (tweak as you like)
-			glm::vec2 wallSize{64.f, 64.f};
-			std::string texture = "wall.png"; // or "" if you’re not texturing yet
-			// 3) Make the wall and add it to the current scene
-			// Optional: snap to grid
-			/*float grid = 32.f;
-			mouseWorld = glm::floor(mouseWorld / grid) * grid;*/
-			auto wall = Gameplay::GameObject::MakeWall(mouseWorld, wallSize, texture);
+			bool wallFound = false; // flag
 
-			gameObjects.push_back(std::move(wall));
-			std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+			// Check for an existing wall
+			for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
+				auto& obj = *it;
+				if (obj->type() == Gameplay::GameObjectType::Wall) {
+					glm::vec2 pos = obj->transform().position;
+					glm::vec2 size = obj->size();
+					if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
+						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
+						// Found wall, delete it
+						std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
+						it = gameObjects.erase(it);
+						wallFound = true;
+						break; // Only delete one wall per click
+					}
+					else {
+						++it;
+					}
+				}
+				else {
+					++it;
+				}
+
+				if (!wallFound) {
+					// If no wall was found, spawn one
+					glm::vec2 wallSize{ 100.f, 100.f };
+					auto wall = Gameplay::PrefabFactory::get().create("Wall");
+					if (wall) {
+						wall->setPosition(mouseWorld);
+						wall->setSize(wallSize);
+						gameObjects.push_back(std::move(wall));
+						std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+					}
+				}
+			}
 		}
 
 		// function to delete objects on right click
@@ -217,12 +245,12 @@ namespace Runtime
 		{
 			for (auto it = gameObjects.begin(); it != gameObjects.end();)
 			{
-				auto &obj = *it;
+				auto& obj = *it;
 				// Simple AABB check
 				glm::vec2 pos = obj->transform().position;
 				glm::vec2 size = obj->size();
 				if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
+					mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
 				{
 					std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
 					it = gameObjects.erase(it); // Remove object and get new iterator
@@ -280,32 +308,35 @@ namespace Runtime
 						obj->transform().scale.y += 10 * dt;
 					}
 
-					glm::vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
+					if (m_flashlightOn) {
+						glm::vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
-					// Player world position
-					glm::vec2 playerPos = obj->transform().position;
+						// Player world position
+						glm::vec2 playerPos = obj->transform().position;
 
-					// Direction vector from player to mouse
-					glm::vec2 dir = mouseWorld - playerPos;
+						// Direction vector from player to mouse
+						glm::vec2 dir = mouseWorld - playerPos;
 
-					// Distance check to prevent jitter
-					float dist = glm::length(dir);
-					if (dist > 10.0f)
-					{ // 10 units = threshold distance
-						// Normalize direction
-						dir = glm::normalize(dir);
+						// Distance check to prevent jitter
+						float dist = glm::length(dir);
+						if (dist > 10.0f)
+						{ // 10 units = threshold distance
+							// Normalize direction
+							dir = glm::normalize(dir);
 
-						// Compute angle in radians — atan2(y, x)
-						float angleRad = std::atan2(dir.y, dir.x);
+							// Compute angle in radians — atan2(y, x)
+							float angleRad = std::atan2(dir.y, dir.x);
 
-						// Convert to degrees if your transform uses degrees
-						obj->transform().rotationRad = angleRad;
-					}
-					if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
-					{
-						obj->respawnAt(glm::vec2(0.0f, 0.0f), true, true);
+							// Convert to degrees if your transform uses degrees
+							obj->transform().rotationRad = angleRad;
+						}
+						if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
+						{
+							obj->respawnAt(glm::vec2(0.0f, 0.0f), true, true);
+						}
 					}
 				}
+
 				if (obj->type() == Gameplay::GameObjectType::Ball)
 				{
 					obj->velocity().y = 0.0f;
@@ -396,7 +427,8 @@ namespace Runtime
 		auto* physics = scene->getPhysics();
 		if (physics) {
 			std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-
+	
+			/*
 			// Find the player (you can cache this later)
 			Gameplay::GameObject* player = nullptr;
 			for (auto& o : objs) {
@@ -427,18 +459,32 @@ namespace Runtime
 				m_renderer->beginLightPass(engine.camera().viewProj(), origin, { 1.0f, 0.9f, 0.6f }, 300.0f, angle, glm::radians(60.0f));
 				m_renderer->drawLightCone(origin, lightPoly, { 1.0f, 0.9f, 0.6f });
 				m_renderer->endLightPass();
+			}*/
+			for (auto& o : objs)
+			{
+				if (o->type() == Gameplay::GameObjectType::Player)
+				{
+					glm::vec2 origin = o->transform().position;
+					float angle = o->transform().rotationRad;
+					std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+						origin, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+
+						m_renderer->beginLightPass(engine.camera().viewProj(), origin, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+						m_renderer->drawLightCone(origin, lightPoly, { 1.0f, 0.9f, 0.6f });
+						m_renderer->endLightPass();
+				}
 			}
 
 		}
 
-		std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-		m_renderer->beginDebugPass(engine.camera().viewProj());
-		for (auto& o : objs)
-		{
-			if (o->active())
-				o->debugRender(*m_renderer);
-		}
-		m_renderer->endDebugPass();
+		//std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+		//m_renderer->beginDebugPass(engine.camera().viewProj());
+		//for (auto& o : objs)
+		//{
+		//	if (o->active())
+		//		o->debugRender(*m_renderer);
+		//}
+		//m_renderer->endDebugPass();
 		
 	}
 
@@ -449,7 +495,6 @@ namespace Runtime
 			"assets/textures/wall.png",
 			"assets/textures/floor.png",
 			"assets/textures/trap.png"};
-	static int objCounter = 0;
 
 	void PlayState::renderImGui(Core::Time *timer)
 	{
@@ -463,15 +508,16 @@ namespace Runtime
 
 			// ******* Object Creation **********
 			static int selectedType = 0;
-			const char *types[] = {"Player", "Enemy", "Wall", "Floor", "Trap"};
+			const char* types[] = { "Player", "Enemy", "Wall", "Floor", "Trap" };
 			ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
 
-			static float pos[2] = {0, 0};
-			static float size[2] = {100, 100};
+			static float pos[2] = { 0, 0 };
+			static float size[2] = { 100, 100 };
 			ImGui::InputFloat2("Position", pos);
 			ImGui::InputFloat2("Size", size);
 
 			static int hp = 10, damage = 1;
+			static float ms = 100.0f;
 			if (selectedType == 0 || selectedType == 1) // if its enemy or player, set health
 				ImGui::InputInt("HP", &hp);
 			if (selectedType == 1 || selectedType == 4) // if its enemy or trap, set damage
@@ -483,34 +529,82 @@ namespace Runtime
 			if (ImGui::Button("Create Object"))
 			{
 
-				++objCounter;
-				const char *texToUse = texture[0] ? texture : defaultTextures[selectedType];
+				const char* texToUse = texture[0] ? texture : defaultTextures[selectedType];
+				std::unique_ptr<Gameplay::GameObject> obj = nullptr;
 
 				// Supposedly spawn the corresponding gameobject (texture and logic not fixed)
-				if (selectedType == 0)
-					gameObjects.push_back(Gameplay::GameObject::MakePlayer({pos[0], pos[1]}, {size[0], size[1]}, texture));
-				else if (selectedType == 1)
-					gameObjects.push_back(Gameplay::GameObject::MakeEnemy({pos[0], pos[1]}, {size[0], size[1]}, hp, texture));
-				else if (selectedType == 2)
-					gameObjects.push_back(Gameplay::GameObject::MakeWall({pos[0], pos[1]}, {size[0], size[1]}, texture));
-				else if (selectedType == 3)
-					gameObjects.push_back(Gameplay::GameObject::MakeFloor({pos[0], pos[1]}, {size[0], size[1]}, texture));
-				else if (selectedType == 4)
-					gameObjects.push_back(Gameplay::GameObject::MakeTrap({pos[0], pos[1]}, {size[0], size[1]}, damage, texture));
+				if (selectedType == 0) {
+					obj = Gameplay::PrefabFactory::get().create("Player");
+					if (obj) {
+						obj->setMoveSpeed(ms);
+						obj->setPosition(glm::vec2(pos[0], pos[1]));
+						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->autoUpdateCollisionBaseOnScale();
+						auto scene = m_scenes.current();
+						if (scene) {
+							scene->objects().push_back(std::move(obj));
+						}
+						std::cout << "Player created\n"; 
+					}
+				}
+				else if (selectedType == 1) {
+					obj = Gameplay::PrefabFactory::get().create("Enemy");
+					if (obj) {
+						obj->setMoveSpeed(ms);
+						obj->setPosition(glm::vec2(pos[0], pos[1]));
+						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->autoUpdateCollisionBaseOnScale();
+						auto scene = m_scenes.current();
+						if (scene) {
+							scene->objects().push_back(std::move(obj));
+						}
+						std::cout << "Enemy created\n"; 
+					}
+				}
+				else if (selectedType == 2) {
+					obj = Gameplay::PrefabFactory::get().create("Wall");
+					if (obj) {
+						obj->setPosition(glm::vec2(pos[0], pos[1]));
+						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->autoUpdateCollisionBaseOnScale();
+						auto scene = m_scenes.current();
+						if (scene) {
+							scene->objects().push_back(std::move(obj));
+						}
+						std::cout << "Wall created\n";
+					}
+				}
+				else if (selectedType == 3) {
+					obj = Gameplay::PrefabFactory::get().create("Floor");
+					if (obj) {
+						obj->setPosition(glm::vec2(pos[0], pos[1]));
+						obj->setSize(glm::vec2(size[0], size[1]));
+						auto scene = m_scenes.current();
+						if (scene) {
+							scene->objects().push_back(std::move(obj));
+						}
+						std::cout << "Floor created\n";
+					}
+				}
+				else if (selectedType == 4) {
+					obj = Gameplay::PrefabFactory::get().create("Trap");
+					if (obj) {
+						obj->setPosition(glm::vec2(pos[0], pos[1]));
+						obj->setSize(glm::vec2(size[0], size[1]));
+						gameObjects.push_back(std::move(obj));
+					}
+				}
 			}
 
 			if (ImGui::Button("Delete Object"))
 			{
-				if (objCounter > 0)
-				{
-					--objCounter;
+				auto scene = m_scenes.current();
+				if (!scene->objects().empty()) {
+					scene->objects().pop_back();
 				}
-				if (!gameObjects.empty())
-				{
-					gameObjects.pop_back();
-				}
+
 			}
-			ImGui::Text("Object counter: %d ", objCounter);
+			ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
 
 			ImGui::Separator();
 
@@ -567,14 +661,7 @@ namespace Runtime
 				Core::Profiler::Get().reset();
 			}
 
-			if (ImGui::Button("Activate OnClickSpawn"))
-			{
-				m_spawnonclick = true;
-			}
-			if (ImGui::Button("Activate Object Delete"))
-			{
-				m_spawnonclick = false;
-			}
+			ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
 
 			// Add button to spawn 2500 objects
 			if (ImGui::Button("Spawn 2500 Objects"))
@@ -637,6 +724,7 @@ namespace Runtime
 
 		// dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
 	}
+
 	void PlayState::resetScene()
 	{
 		if (m_scenes.reloadCurrent())
