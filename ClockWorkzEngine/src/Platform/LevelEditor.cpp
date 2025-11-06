@@ -31,6 +31,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <fstream>
 #include <filesystem>
 #include <iostream>
+#include <Core/Engine.hpp>
 
 namespace fs = std::filesystem;
 
@@ -96,21 +97,26 @@ namespace Platform {
         Graphics::RenderingManager& renderer,
         Platform::InputManager& input,
         Platform::WindowManager& windowMgr) {
-
         m_window = window;
         m_renderer = &renderer;
         m_input = &input;
         m_windowManager = &windowMgr;
 
-        // Initialize editor camera
+        // ✓ FIXED: Get actual window size
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        m_windowWidth = static_cast<float>(width);
+        m_windowHeight = static_cast<float>(height);
+
+        // Initialize editor camera with proper viewport
         m_editorCamera.setPosition(glm::vec2(0.0f, 0.0f));
         m_editorCamera.setZoom(1.0f);
+        // If Camera2D has setViewport method:
+        // m_editorCamera.setViewport(m_windowWidth, m_windowHeight);
 
         // Create default scene
         m_currentScene = std::make_unique<Runtime::Scene>("EditorScene");
         if (!m_currentScene->load()) {
-            // Logger would be accessed through Engine in real implementation
-            // Core::Engine::Get().logger().error("Failed to initialize editor scene");
             return false;
         }
 
@@ -120,11 +126,6 @@ namespace Platform {
         // Register built-in prefabs
         registerBuiltInPrefabs();
 
-        // Load recent levels
-        // In a real implementation, this would load from a config file
-
-        // Logger would be accessed through Engine in real implementation  
-        // Core::Engine::Get().logger().info("Level Editor initialized successfully");
         return true;
     }
 
@@ -144,6 +145,8 @@ namespace Platform {
 
     void LevelEditor::update(double dt) {
         m_frameTime = dt;
+
+        // m_editorCamera.update(dt);  // Uncomment if Camera2D has update method
 
         // Update scene based on mode
         if (m_mode == EditorMode::Play) {
@@ -168,18 +171,18 @@ namespace Platform {
     void LevelEditor::render() {
         if (!m_renderer || !m_currentScene) return;
 
+        Core::Engine& engine = Core::Engine::Get();
 
-        // Render grid in edit mode
-        if (m_mode == EditorMode::Edit && m_gridSettings.enabled) {
-            renderGrid();
-        }
+        // Use editor camera's view-projection matrix
+        glm::mat4 viewProj = m_editorCamera.viewProj();
 
-        // Render scene
+        m_renderer->beginScenePass(viewProj);
+
+
+        // Render all objects via batch rendering
         m_currentScene->render(*m_renderer);
 
-        if (m_mode == EditorMode::Edit && m_selectedObject && m_showGizmos) {
-            renderGizmos();
-        }
+        m_renderer->endScenePass();
     }
 
     void LevelEditor::renderUI() {
@@ -203,10 +206,6 @@ namespace Platform {
             if (m_showLevelSettings) {
                 renderLevelSettings();
             }
-
-            if (m_showGridSettings) {
-                renderGridSettings();
-            }
         }
 
         // Always show scene view
@@ -222,7 +221,7 @@ namespace Platform {
     void LevelEditor::setMode(EditorMode mode) {
         if (m_mode == mode) return;
 
-        EditorMode oldMode = m_mode;
+        //EditorMode oldMode = m_mode;
         m_mode = mode;
 
         if (mode == EditorMode::Play) {
@@ -247,7 +246,7 @@ namespace Platform {
     }
 
     /******************************************************************************/
-    // Level Management (Rubric 1205 - Advanced)
+    // Level Management
     /******************************************************************************/
 
     bool LevelEditor::newLevel(const std::string& name) {
@@ -322,7 +321,6 @@ namespace Platform {
     bool LevelEditor::loadLevel(const std::string& filepath) {
         if (m_levelDirty) {
             // In a real implementation, prompt to save
-            // TODO: Core::Engine::Get().logger().warn("Loading level with unsaved changes");
         }
 
         std::string sceneName;
@@ -335,13 +333,22 @@ namespace Platform {
         );
 
         if (success) {
-            // Create new scene and transfer objects
             m_currentScene = std::make_unique<Runtime::Scene>(sceneName);
             m_currentScene->load();
 
             for (auto& obj : objects) {
                 m_currentScene->objects().push_back(std::move(obj));
             }
+            std::cout << "GameObjects loaded (" << m_currentScene->objects().size() << "):\n";
+            for (const auto& obj : m_currentScene->objects()) {
+                auto p = obj->transform().position;
+                auto s = obj->size();
+                std::cout << " - name=\"" << obj->name() << "\""
+                    << " pos=(" << p.x << "," << p.y << ")"
+                    << " size=(" << s.x << "," << s.y << ")"
+                    << " texture=\"" << obj->textureId() << "\"\n";
+            }
+            std::cout.flush();
 
             m_currentLevelMetadata.name = sceneName;
             m_currentLevelMetadata.filepath = filepath;
@@ -357,11 +364,9 @@ namespace Platform {
             if (m_recentLevels.size() > MAX_RECENT_LEVELS) {
                 m_recentLevels.resize(MAX_RECENT_LEVELS);
             }
-
-            // TODO: Core::Engine::Get().logger().info("Level loaded: " + filepath);
         }
         else {
-            // TODO: Core::Engine::Get().logger().error("Failed to load level: " + filepath);
+            std::cout << "[LevelEditor] Failed to load level: " << filepath << "\n";
         }
 
         return success;
@@ -561,35 +566,6 @@ namespace Platform {
             m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
         }
     }
-
-    /******************************************************************************/
-    // Grid System
-    /******************************************************************************/
-
-    vec2 LevelEditor::snapToGrid(vec2 position) const {
-        if (!m_gridSettings.snapToGrid || !m_gridSettings.enabled) {
-            return position;
-        }
-
-        float cellSize = m_gridSettings.cellSize;
-        return vec2(
-            std::round(position.x / cellSize) * cellSize,
-            std::round(position.y / cellSize) * cellSize
-        );
-    }
-
-    void LevelEditor::renderGrid() {
-        // In a real implementation, this would render the grid using the renderer
-        // For now, we'll leave it as a placeholder
-        // The grid would be rendered as lines using the RenderingManager
-    }
-
-    void LevelEditor::renderGizmos() {
-        // In a real implementation, this would render manipulation gizmos
-        // (translate, rotate, scale) for the selected object
-        // This fulfills Rubric 1210 - Advanced (optional)
-    }
-
     /******************************************************************************/
     // Camera Control
     /******************************************************************************/
@@ -697,9 +673,6 @@ namespace Platform {
                 if (ImGui::MenuItem("Level Settings")) {
                     m_showLevelSettings = !m_showLevelSettings;
                 }
-                if (ImGui::MenuItem("Grid Settings")) {
-                    m_showGridSettings = !m_showGridSettings;
-                }
 
                 ImGui::EndMenu();
             }
@@ -709,11 +682,6 @@ namespace Platform {
                 ImGui::MenuItem("Properties", nullptr, &m_showProperties);
                 ImGui::MenuItem("Prefab Palette", nullptr, &m_showPrefabPalette);
                 ImGui::MenuItem("Scene View", nullptr, &m_showSceneView);
-
-                ImGui::Separator();
-
-                ImGui::MenuItem("Show Gizmos", nullptr, &m_showGizmos);
-                ImGui::MenuItem("Show Grid", nullptr, &m_gridSettings.enabled);
 
                 ImGui::Separator();
 
@@ -943,9 +911,6 @@ namespace Platform {
             // Position
             vec2 pos = transform.position;
             if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
-                if (m_gridSettings.snapToGrid) {
-                    pos = snapToGrid(pos);
-                }
                 m_selectedObject->setPosition(pos);
                 markLevelDirty();
             }
@@ -1169,20 +1134,6 @@ namespace Platform {
         ImGui::End();
     }
 
-    void LevelEditor::renderGridSettings() {
-        ImGui::Begin("Grid Settings", &m_showGridSettings);
-
-        ImGui::Checkbox("Enabled", &m_gridSettings.enabled);
-        ImGui::Checkbox("Snap to Grid", &m_gridSettings.snapToGrid);
-
-        ImGui::DragFloat("Cell Size", &m_gridSettings.cellSize, 1.0f, 1.0f, 100.0f);
-
-        ImGui::ColorEdit4("Grid Color", &m_gridSettings.gridColor.x);
-        ImGui::ColorEdit4("Origin Color", &m_gridSettings.originColor.x);
-
-        ImGui::End();
-    }
-
     void LevelEditor::renderCameraControls() {
         // Camera movement hints
         ImGui::Begin("Camera Controls");
@@ -1208,17 +1159,18 @@ namespace Platform {
     // Input Handling
     /******************************************************************************/
 
+    //to be fixed later
     void LevelEditor::handleEditorInput(double dt) {
         if (!m_input) return;
 
-        // Handle object selection
+        //// Handle object selection
         if (m_currentTool == EditorTool::Select) {
             handleObjectSelection();
 
             // Handle object dragging
-            if (m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-                handleObjectDragging();
-            }
+        //    //if (m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        //    //    handleObjectDragging();
+        //    //}
         }
 
         // Handle object placement
@@ -1226,7 +1178,7 @@ namespace Platform {
             handleObjectPlacement();
         }
 
-        // Handle object deletion
+        //// Handle object deletion
         if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
@@ -1348,10 +1300,6 @@ namespace Platform {
 
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
-        if (m_gridSettings.snapToGrid) {
-            mouseWorld = snapToGrid(mouseWorld);
-        }
-
         createObjectFromPrefab(m_selectedPrefab, mouseWorld);
     }
 
@@ -1372,10 +1320,6 @@ namespace Platform {
 
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
-        if (m_gridSettings.snapToGrid) {
-            mouseWorld = snapToGrid(mouseWorld);
-        }
-
         m_selectedObject->setPosition(mouseWorld);
         markLevelDirty();
     }
@@ -1384,10 +1328,6 @@ namespace Platform {
         if (!m_selectedObject) return;
 
         vec2 newPos = m_selectedObject->transform().position + delta;
-
-        if (m_gridSettings.snapToGrid) {
-            newPos = snapToGrid(newPos);
-        }
 
         m_selectedObject->setPosition(newPos);
         markLevelDirty();

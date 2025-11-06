@@ -202,7 +202,7 @@ namespace Graphics {
 		//glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
 		//glEnableVertexAttribArray(2);
 
-		glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.size() + 1);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(polygon.size() + 1));
 	}
 
 	void RenderingManager::beginFrame() {
