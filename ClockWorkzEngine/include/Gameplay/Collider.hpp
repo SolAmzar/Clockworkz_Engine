@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "Math/Vec2.hpp"
 
 namespace Gameplay
 {
@@ -14,7 +15,7 @@ namespace Gameplay
     struct Collider
     {
         ColliderType type = ColliderType::None;
-        glm::vec2 offset{0.0f};
+        vec2 offset{0.0f};
         bool blocksLight = true;
         bool solid = true;
 
@@ -22,22 +23,19 @@ namespace Gameplay
         virtual ~Collider() = default;
 
         // World-space helpers (to be overridden)
-        virtual glm::vec2 worldMin(const glm::vec2 &objPos) const { return objPos; }
-        virtual glm::vec2 worldMax(const glm::vec2 &objPos) const { return objPos; }
+        virtual vec2 worldMin(const vec2 &objPos) const { return objPos; }
+        virtual vec2 worldMax(const vec2 &objPos) const { return objPos; }
         virtual float radius() const { return 0.0f; }
     };
 
     struct AABBCollider : public Collider
     {
-        glm::vec2 halfExtents{0.5f};
+        vec2 halfExtents{0.5f, 0.5f};
 
         AABBCollider() { type = ColliderType::AABB; }
 
-        glm::vec2 worldMin(const glm::vec2 &objPos) const override
-        {
-            return objPos + offset - halfExtents;
-        }
-        glm::vec2 worldMax(const glm::vec2 &objPos) const override
+        vec2 worldMin(vec2 const& objPos) const override { return objPos + offset - halfExtents; }
+        vec2 worldMax(vec2 const& objPos) const override
         {
             return objPos + offset + halfExtents;
         }

@@ -39,7 +39,7 @@ namespace Gameplay
 
         // Create GameObject from prefab
         std::unique_ptr<GameObject> create(const std::string& prefabName);
-        std::unique_ptr<GameObject> createAt(const std::string& prefabName, glm::vec2 position);
+        std::unique_ptr<GameObject> createAt(const std::string& prefabName, vec2 position);
 
         // Create GameObject with component overrides
         std::unique_ptr<GameObject> createWithOverrides(

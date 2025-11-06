@@ -28,6 +28,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <unordered_set>
 #include <utility>
 #include <cstdint>
+#include "Math/Vec2.hpp"
+#include "Math/config.hpp"
 #include <glm/vec2.hpp>
 
 struct GLFWwindow;
@@ -72,7 +74,7 @@ namespace Platform {
         bool wasMouseClicked(int button) const;    // press->release within thresholds
 
         // TODO swap to own math vec2
-        glm::vec2 mousePosition() const { return { static_cast<float>(m_mouseX), static_cast<float>(m_mouseY) }; }
+        vec2 mousePosition() const { return { static_cast<float>(m_mouseX), static_cast<float>(m_mouseY) }; }
         void getMousePosition(double& x, double& y) const { x = m_mouseX; y = m_mouseY; }
 
         // Click detection thresholds (defaults: 0.25s, 6px)
@@ -81,7 +83,7 @@ namespace Platform {
             if (maxPixels >= 0.0) m_clickMoveMax = maxPixels;
         }
 
-        glm::vec2 getMouseWorldPos(const Graphics::Camera2D& camera,
+        vec2 getMouseWorldPos(const Graphics::Camera2D& camera,
             float windowWidth,
             float windowHeight) const;
 

@@ -25,9 +25,19 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 	struct vec4 {
 		f32 x, y, z, w;
 
+		// Vec4.hpp
+		#ifdef CWZ_ENABLE_GLM_BRIDGE
+		#include <glm/glm.hpp>
+		// build from glm::vec4 (explicit = no accidental implicit conversions)
+		explicit vec4(glm::vec4 v) : x{ v.x }, y{ v.y }, z{ v.z }, w{ v.w } {}
+
+		// convert to glm::vec4 (also explicit)
+		explicit operator glm::vec4() const { return glm::vec4{ x, y, z, w }; }
+		#endif
+
 		// ctors
 		constexpr vec4() : x(0), y(0), z(0), w(0) {}
-		constexpr vec4(f32 X, f32 Y, f32 Z, f32 W) : x(X), y(Y), z(Z), w(W) {}
+		constexpr vec4(f32 X, f32 Y = 0.f, f32 Z = 0.f, f32 W = 0.f) : x(X), y(Y), z(Z), w(W) {}
 		constexpr explicit vec4(vec3 v, f32 W = 0.f) : x(v.x), y(v.y), z(v.z), w(W) {}
 
 		// unary

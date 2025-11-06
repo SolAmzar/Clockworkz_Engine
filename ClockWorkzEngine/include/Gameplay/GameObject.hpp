@@ -26,8 +26,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <string>
 #include <vector>
 #include <memory>
+#include "Math/Vec2.hpp"
+#include "Math/config.hpp"
 #include "Gameplay/Collider.hpp"
-#include <glm/vec2.hpp> // if you prefer, swap to your own Vec2
 
 //Syafiq - forward decalre the class to be used alter in cpp, cpp file will include the required class file.
 namespace Graphics {
@@ -49,14 +50,14 @@ namespace Gameplay {
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {
-        glm::vec2 position{ 0.f, 0.f };
-        float     rotationRad{ 0.f };
-        glm::vec2 scale{ 1.f, 1.f };
+        vec2           position{ 0.f, 0.f };
+        float          rotationRad{ 0.f };
+        vec2           scale{ 1.f, 1.f };
     };
 
     struct AABB {
-        glm::vec2 min{ 0.f };
-        glm::vec2 max{ 0.f };
+        vec2 min;
+        vec2 max;
         bool intersects(AABB const& o) const {
             return !(max.x < o.min.x || min.x > o.max.x || max.y < o.min.y || min.y > o.max.y);
         }
@@ -90,11 +91,11 @@ namespace Gameplay {
         Transform2D&          transform() { m_boundsDirty = true; return m_transform; }
         Transform2D const&    transform() const { return m_transform; }
 
-        glm::vec2             size() const { return m_size; }
-        void                  setSize(glm::vec2 s) { m_size = s; m_boundsDirty = true; }
+        vec2                  size() const { return m_size; }
+        void                  setSize(vec2 s) { m_size = s; m_boundsDirty = true; }
 
-        glm::vec2& velocity() { return m_velocity; }
-        glm::vec2 const& velocity() const { return m_velocity; }
+        vec2 &                velocity() { return m_velocity; }
+        vec2 const&           velocity() const { return m_velocity; }
 
         // Collision + rendering layers
         uint32_t              layer() const { return m_layer; }
@@ -118,15 +119,11 @@ namespace Gameplay {
 
         void autoUpdateCollisionBaseOnScale();
         AABB aabbWorld() const;
-        void respawnAt(glm::vec2 spawn, bool resetVelocity = true, bool resetHealth = true);
+        void respawnAt(vec2 spawn, bool resetVelocity = true, bool resetHealth = true);
 
-        inline AABB worldAABB() const; 
+        AABB worldAABB() const;
 
         void markDirty() { m_boundsDirty = true; }
-        
-        
-
-        
 
 
         // Very light component hook (safe to ignore at start)
@@ -137,12 +134,12 @@ namespace Gameplay {
         T* getComponent() const;
 
         // Prefabs for your types
-        static std::unique_ptr<GameObject> MakeFloor(glm::vec2 pos, glm::vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeWall(glm::vec2 pos, glm::vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakePlayer(glm::vec2 pos, glm::vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeEnemy(glm::vec2 pos, glm::vec2 size, int hp = 2, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeTrap(glm::vec2 pos, glm::vec2 size, int damage = 1, std::string tex = "");
-		static std::unique_ptr<GameObject> MakeBall(glm::vec2 pos, float radius, glm::vec2 size, std::string tex = "");
+        static std::unique_ptr<GameObject> MakeFloor(vec2 pos, vec2 size, std::string tex = "");
+        static std::unique_ptr<GameObject> MakeWall(vec2 pos, vec2 size, std::string tex = "");
+        static std::unique_ptr<GameObject> MakePlayer(vec2 pos, vec2 size, std::string tex = "");
+        static std::unique_ptr<GameObject> MakeEnemy(vec2 pos, vec2 size, int hp = 2, std::string tex = "");
+        static std::unique_ptr<GameObject> MakeTrap(vec2 pos, vec2 size, int damage = 1, std::string tex = "");
+		static std::unique_ptr<GameObject> MakeBall(vec2 pos, float radius, vec2 size, std::string tex = "");
 
         template <typename T, typename... Args>
         T* addCollider(Args&&... args) {
@@ -165,17 +162,17 @@ namespace Gameplay {
         bool            m_active{ true };
 
         Transform2D     m_transform{};
-        glm::vec2       m_size{ 1.f, 1.f };
-        glm::vec2       m_velocity{ 0.f, 0.f };
+        vec2       m_size{1.f, 1.f};
+        vec2       m_velocity{ 0.f, 0.f };
 
-        uint32_t       m_layer{ 0 };
-        uint32_t       m_collisionMask{ 0xFFFFFFFFu };
-        bool           m_isSolid{ false };
-        bool           m_isHazard{ false };
-        bool           m_blocksLight{ true };
+        uint32_t        m_layer{ 0 };
+        uint32_t        m_collisionMask{ 0xFFFFFFFFu };
+        bool            m_isSolid{ false };
+        bool            m_isHazard{ false };
+        bool            m_blocksLight{ true };
 
-        mutable bool   m_boundsDirty{ true };
-        mutable AABB   m_cachedAABB{};
+        mutable bool    m_boundsDirty{ true };
+        mutable AABB    m_cachedAABB{};
 
         std::string    m_textureId{};
 

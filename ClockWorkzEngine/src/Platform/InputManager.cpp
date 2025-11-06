@@ -213,7 +213,7 @@ namespace Platform {
     }
 
 
-    glm::vec2 InputManager::getMouseWorldPos(const Graphics::Camera2D& camera,
+    vec2 InputManager::getMouseWorldPos(const Graphics::Camera2D& camera,
         float windowWidth,
         float windowHeight) const {
         // Convert window-space (pixels) to Normalized Device Coordinates (NDC)
@@ -226,7 +226,7 @@ namespace Platform {
         glm::mat4 invVP = glm::inverse(camera.viewProj());
         glm::vec4 world = invVP * clipCoords;
 
-        return glm::vec2(world.x, world.y);
+        return vec2(world.x, world.y);
     }
 
 } // namespace Platform

@@ -129,7 +129,7 @@ namespace Runtime {
         Platform::InputManager& input = engine.input();
         Graphics::Camera2D& cam = engine.camera();
         Platform::WindowManager& window = engine.window();
-        glm::vec2 mouseWorld = m_input.getMouseWorldPos(
+        vec2 mouseWorld = m_input.getMouseWorldPos(
             cam,
             static_cast<float>(window.width()),
             static_cast<float>(window.height())
@@ -171,14 +171,14 @@ namespace Runtime {
 
         if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick) {
             // Convert from screen to world coordinates
-            glm::vec2 mouseWorld = m_input.getMouseWorldPos(
+            vec2 mouseWorld = m_input.getMouseWorldPos(
                 cam,
                 static_cast<float>(window.width()),
                 static_cast<float>(window.height())
             );
 
             // 2) Choose wall size/texture (tweak as you like)
-            glm::vec2 wallSize{ 64.f, 64.f };
+            vec2 wallSize{ 64.f, 64.f };
             std::string texture = "wall.png";  // or "" if you’re not texturing yet
             // 3) Make the wall and add it to the current scene
 			// Optional: snap to grid
@@ -195,8 +195,8 @@ namespace Runtime {
                     for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
                         auto& obj = *it;
                         // Simple AABB check
-                        glm::vec2 pos = obj->transform().position;
-                        glm::vec2 size = obj->size();
+                        vec2 pos = obj->transform().position;
+                        vec2 size = obj->size();
                         if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
                             mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
                             std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
@@ -246,21 +246,21 @@ namespace Runtime {
                         obj->transform().scale.y += 10 * dt;
                     }
 
-                    glm::vec2 mouseWorld = input.getMouseWorldPos(cam,
+                    vec2 mouseWorld = input.getMouseWorldPos(cam,
                         static_cast<float>(window.width()),
                         static_cast<float>(window.height()));
 
                     // Player world position
-                    glm::vec2 playerPos = obj->transform().position;
+                    vec2 playerPos = obj->transform().position;
 
                     // Direction vector from player to mouse
-                    glm::vec2 dir = mouseWorld - playerPos;
+                    vec2 dir = mouseWorld - playerPos;
 
                     // Distance check to prevent jitter
-                    float dist = glm::length(dir);
+                    float dist = magnitude(dir);
                     if (dist > 10.0f) { // 10 units = threshold distance
                         // Normalize direction
-                        dir = glm::normalize(dir);
+                        dir = normalize(dir);
 
                         // Compute angle in radians — atan2(y, x)
                         float angleRad = std::atan2(dir.y, dir.x);
@@ -270,7 +270,7 @@ namespace Runtime {
 
                     }
                     if (obj->type() == Gameplay::GameObjectType::Player && !obj->active()) {
-						obj->respawnAt(glm::vec2(0.0f, 0.0f), true, true);
+						obj->respawnAt(vec2(0.0f, 0.0f), true, true);
                     }
 
                 }
@@ -312,7 +312,7 @@ namespace Runtime {
                     float x = -gridSize * spacing / 2.0f + col * spacing;
                     float y = -gridSize * spacing / 2.0f + row * spacing;
 
-                    auto obj = factory.createAt("Wall", glm::vec2(x, y));
+                    auto obj = factory.createAt("Wall", vec2(x, y));
                     if (obj) {
                         currentScene->objects().push_back(std::move(obj));
                     }
@@ -367,11 +367,11 @@ namespace Runtime {
                     return;
                 }
 
-                glm::vec2 origin = player->transform().position;
+                vec2 origin = player->transform().position;
                 float angle = player->transform().rotationRad;
 
                 // Compute visibility polygon
-                std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+                std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
                     origin,
                     angle,
                     glm::radians(60.0f), // FOV in radians (torch cone width)
@@ -380,16 +380,22 @@ namespace Runtime {
                     objs
                 );
 
+
                 // Draw the light cone (via RenderingManager)
                 auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
                 if (!shader) return;
+				glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
+				std::vector<glm::vec2> lightPolyGLM;
+				for (const auto& point : lightPoly) {
+					lightPolyGLM.emplace_back(point.x, point.y);
+				}
 
                 shader->use();
                 shader->setVec3("uColor", glm::vec3(1.0f, 0.9f, 0.6f)); // optional
-                shader->setVec2("uLightPos", origin);
+                shader->setVec2("uLightPos", originGLM);
                 shader->setFloat("uRadius", 600.0f);
                 shader->setMat4("uProjection", engine.camera().viewProj());
-                m_renderer->drawLightCone(origin, lightPoly, glm::vec3(1.0f, 0.9f, 0.6f));
+                m_renderer->drawLightCone(originGLM, lightPolyGLM, glm::vec3(1.0f, 0.9f, 0.6f));
             }
         }
 
@@ -508,7 +514,7 @@ namespace Runtime {
                             float y = startY + j * spacing;
 
                             // Create an object using your prefab system
-                            auto obj = factory.createAt("Floor", glm::vec2(x, y));
+                            auto obj = factory.createAt("Floor", vec2(x, y));
                             if (obj) {
                                 currentScene->objects().push_back(std::move(obj));
                             }

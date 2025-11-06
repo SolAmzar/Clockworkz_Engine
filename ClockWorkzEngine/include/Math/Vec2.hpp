@@ -28,10 +28,18 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 struct vec2 {
 	f32 x, y;
 
+	// In your Vec2.hpp (guarded by a macro)
+	#ifdef CWZ_ENABLE_GLM_BRIDGE
+	#include <glm/glm.hpp>
+	explicit vec2(glm::vec2 v) : x{ v.x }, y{ v.y } {}
+	explicit operator glm::vec2() const { return glm::vec2{ x,y }; }
+	#endif
+
+
 	// Default Constructor for the vec2
 	constexpr vec2() : x(0), y(0) {};
 	// Copy Const
-	constexpr vec2(f32 x, f32 y) : x(x), y(y) {};
+	constexpr vec2(f32 x, f32 y = 0.f) : x(x), y(y) {};
 
 	// Unary
 	constexpr vec2 operator+() const {
@@ -54,15 +62,30 @@ struct vec2 {
 	constexpr vec2 operator*(const f32& rhs) const {
 		return vec2(x * rhs, y * rhs);
 	}
+	constexpr vec2 operator*(const vec2& rhs) const {
+		return vec2{ x * rhs.x, y * rhs.y };
+	}
 	// Divide
 	constexpr vec2 operator/(const f32& rhs) const {
 		return vec2(x / rhs, y / rhs);
 	}
+	// Divide
+	constexpr vec2 operator/(const vec2& rhs) const {
+		return vec2(x / rhs.x, y / rhs.y);
+	}
 	//+= 
+	vec2& operator+=(f32 rhs) {
+		x += rhs; y += rhs; return *this;
+	}
+
 	vec2& operator+=(vec2 rhs) {
 		x += rhs.x; y += rhs.y; return *this;
 	}
 	// -=
+	vec2& operator-=(f32 rhs) {
+		x -= rhs; y -= rhs; return *this;
+	}
+
 	vec2& operator-=(vec2 rhs) {
 		x -= rhs.x; y -= rhs.y; return *this;
 	}
@@ -70,9 +93,16 @@ struct vec2 {
 	vec2& operator*=(f32 rhs) {
 		x *= rhs; y *= rhs; return *this;
 	}
+
+	vec2& operator*=(vec2 rhs) {
+		x *= rhs.x; y *= rhs.y; return *this;
+	}
 	// /=
 	vec2& operator/=(f32 rhs) {
 		x /= rhs; y /= rhs; return *this;
+	}
+	vec2& operator/=(vec2 rhs) {
+		x /= rhs.x; y /= rhs.y; return *this;
 	}
 
 	//index usage
@@ -86,8 +116,10 @@ struct vec2 {
 	}
 };
 
+inline vec2 abs_vec2(vec2 v) { return { std::fabs(v.x), std::fabs(v.y) }; }
+
 inline vec2 operator*(f32 s, const vec2& v) {
-	return {s * v};
+	return {v * s};
 }
 
 // returns a scalar value (dot
