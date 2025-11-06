@@ -132,8 +132,8 @@ namespace Graphics {
 		drawLine(pos.x, pos.y, pos.x + vel.x, pos.y + vel.y, color.r, color.g, color.b);
 	}
 
-	void RenderingManager::drawSprite(unsigned texId, const vec2& pos,
-		const vec2& size, float angleRad, const glm::vec4& color)
+	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
+		const glm::vec2& size, float angleRad, const glm::vec4& color)
 	{
 		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, { 0,0,1,1 }, Graphics::Anchor::Center);
 	}

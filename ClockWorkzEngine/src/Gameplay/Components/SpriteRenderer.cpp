@@ -41,9 +41,13 @@ namespace Gameplay {
 
         // Access central RenderingManager (from Engine)
         Graphics::RenderingManager& renderer = Core::Engine::Get().rendering();
+		glm::vec2 size = glm::vec2(owner.size().x, owner.size().y);
+		glm::vec2 pos = glm::vec2(owner.transform().position.x, owner.transform().position.y);
+		glm::vec2 scale = glm::vec2(owner.transform().scale.x, owner.transform().scale.y);
+
         renderer.drawSprite(texture->id(),
-            owner.transform().position,
-            owner.size() * owner.transform().scale, owner.transform().rotationRad,
+            pos,
+            size * scale, owner.transform().rotationRad,
             m_tint);
     }
 

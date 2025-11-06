@@ -23,6 +23,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Gameplay/Serializer.hpp"
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
+#include "math/VecCompatGLM.hpp"
 
 #include <IMGUI/imgui.h>
 #include <GLFW/glfw3.h>
@@ -79,7 +80,7 @@ namespace Platform {
         m_currentLevelMetadata.name = "Untitled";
         m_currentLevelMetadata.filepath = "";
         m_currentLevelMetadata.description = "New Level";
-        m_currentLevelMetadata.spawnPoint = glm::vec2(0.0f, 0.0f);
+        m_currentLevelMetadata.spawnPoint =  vec2(0.0f, 0.0f);
     }
 
     LevelEditor::~LevelEditor() {
@@ -262,7 +263,7 @@ namespace Platform {
         m_currentLevelMetadata.name = name;
         m_currentLevelMetadata.filepath = "";
         m_currentLevelMetadata.description = "New Level";
-        m_currentLevelMetadata.spawnPoint = glm::vec2(0.0f, 0.0f);
+        m_currentLevelMetadata.spawnPoint = vec2(0.0f, 0.0f);
 
         m_levelDirty = false;
         m_selectedObject = nullptr;
@@ -404,8 +405,8 @@ namespace Platform {
 
         // In a real implementation, this would properly clone the object
         // For now, we'll create a new object at an offset position
-        glm::vec2 offset(50.0f, 50.0f);
-        glm::vec2 newPos = m_selectedObject->transform().position + offset;
+        vec2 offset(50.0f, 50.0f);
+        vec2 newPos = m_selectedObject->transform().position + offset;
 
         // Create duplicate based on type
         std::unique_ptr<Gameplay::GameObject> duplicate;
@@ -452,7 +453,7 @@ namespace Platform {
         Gameplay::PrefabFactory::get().loadAllPrefabsFromDirectory(prefabDir);
     }
 
-    void LevelEditor::createObjectFromPrefab(const std::string& prefabName, glm::vec2 position) {
+    void LevelEditor::createObjectFromPrefab(const std::string& prefabName, vec2 position) {
         if (!m_currentScene) return;
 
         auto obj = Gameplay::PrefabFactory::get().createAt(prefabName, position);
@@ -564,13 +565,13 @@ namespace Platform {
     // Grid System
     /******************************************************************************/
 
-    glm::vec2 LevelEditor::snapToGrid(glm::vec2 position) const {
+    vec2 LevelEditor::snapToGrid(vec2 position) const {
         if (!m_gridSettings.snapToGrid || !m_gridSettings.enabled) {
             return position;
         }
 
         float cellSize = m_gridSettings.cellSize;
-        return glm::vec2(
+        return vec2(
             std::round(position.x / cellSize) * cellSize,
             std::round(position.y / cellSize) * cellSize
         );
@@ -829,7 +830,9 @@ namespace Platform {
                 "GameObject",
                 Gameplay::GameObjectShape::Square
             );
-            obj->setPosition(m_editorCamera.position());
+			vec2 camPos = compat::to_vec2(m_editorCamera.position());
+
+            obj->setPosition(camPos);
             m_currentScene->objects().push_back(std::move(obj));
             markLevelDirty();
         }
@@ -938,7 +941,7 @@ namespace Platform {
             auto& transform = m_selectedObject->transform();
 
             // Position
-            glm::vec2 pos = transform.position;
+            vec2 pos = transform.position;
             if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
                 if (m_gridSettings.snapToGrid) {
                     pos = snapToGrid(pos);
@@ -955,14 +958,14 @@ namespace Platform {
             }
 
             // Scale
-            glm::vec2 scale = transform.scale;
+            vec2 scale = transform.scale;
             if (ImGui::DragFloat2("Scale", &scale.x, 0.01f, 0.01f, 10.0f)) {
                 transform.scale = scale;
                 markLevelDirty();
             }
 
             // Size
-            glm::vec2 size = m_selectedObject->size();
+            vec2 size = m_selectedObject->size();
             if (ImGui::DragFloat2("Size", &size.x, 1.0f, 1.0f, 1000.0f)) {
                 m_selectedObject->setSize(size);
                 markLevelDirty();
@@ -971,7 +974,7 @@ namespace Platform {
 
         // Physics
         if (ImGui::CollapsingHeader("Physics")) {
-            glm::vec2 vel = m_selectedObject->velocity();
+            vec2 vel = m_selectedObject->velocity();
             if (ImGui::DragFloat2("Velocity", &vel.x, 1.0f)) {
                 m_selectedObject->velocity() = vel;
                 markLevelDirty();
@@ -1123,7 +1126,8 @@ namespace Platform {
 
         if (ImGui::Button("Frame Selected")) {
             if (m_selectedObject) {
-                m_editorCamera.setPosition(m_selectedObject->transform().position);
+				glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
+                m_editorCamera.setPosition(selObjectPos);
             }
         }
 
@@ -1150,7 +1154,7 @@ namespace Platform {
         }
 
         // Spawn point
-        glm::vec2 spawn = m_currentLevelMetadata.spawnPoint;
+        vec2 spawn = m_currentLevelMetadata.spawnPoint;
         if (ImGui::DragFloat2("Spawn Point", &spawn.x, 1.0f)) {
             m_currentLevelMetadata.spawnPoint = spawn;
             markLevelDirty();
@@ -1173,8 +1177,8 @@ namespace Platform {
 
         ImGui::DragFloat("Cell Size", &m_gridSettings.cellSize, 1.0f, 1.0f, 100.0f);
 
-        ImGui::ColorEdit4("Grid Color", &m_gridSettings.gridColor.r);
-        ImGui::ColorEdit4("Origin Color", &m_gridSettings.originColor.r);
+        ImGui::ColorEdit4("Grid Color", &m_gridSettings.gridColor.x);
+        ImGui::ColorEdit4("Origin Color", &m_gridSettings.originColor.x);
 
         ImGui::End();
     }
@@ -1231,7 +1235,7 @@ namespace Platform {
     void LevelEditor::handleCameraInput(double dt) {
         if (!m_input) return;
 
-        glm::vec2 cameraMove(0.0f, 0.0f);
+        vec2 cameraMove(0.0f, 0.0f);
 
         // WASD movement
         if (m_input->isKeyDown(GLFW_KEY_W)) cameraMove.y += 1.0f;
@@ -1246,10 +1250,14 @@ namespace Platform {
         if (m_input->isKeyDown(GLFW_KEY_RIGHT)) cameraMove.x += 1.0f;
 
         // Apply movement
-        if (glm::length(cameraMove) > 0.0f) {
-            cameraMove = glm::normalize(cameraMove);
-            glm::vec2 newPos = m_editorCamera.position() + cameraMove * m_cameraSpeed * static_cast<float>(dt);
-            m_editorCamera.setPosition(newPos);
+        if (magnitude(cameraMove) > 0.0f) {
+            cameraMove = normalize(cameraMove);
+			vec2 cameraPos = compat::to_vec2(m_editorCamera.position());
+
+            vec2 newPos = cameraPos + cameraMove * m_cameraSpeed * static_cast<float>(dt);
+			glm::vec2 Posnew = glm::vec2(newPos.x, newPos.y);
+
+            m_editorCamera.setPosition(Posnew);
         }
 
         // Zoom with mouse wheel (would need scroll callback)
@@ -1328,7 +1336,7 @@ namespace Platform {
         if (!m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) return;
         if (isMouseOverUI()) return;
 
-        glm::vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+        vec2 mouseWorld = screenToWorld(m_input->mousePosition());
         Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
 
         selectObject(obj);
@@ -1338,7 +1346,7 @@ namespace Platform {
         if (isMouseOverUI()) return;
         if (m_selectedPrefab.empty()) return;
 
-        glm::vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+        vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
         if (m_gridSettings.snapToGrid) {
             mouseWorld = snapToGrid(mouseWorld);
@@ -1350,7 +1358,7 @@ namespace Platform {
     void LevelEditor::handleObjectDeletion() {
         if (isMouseOverUI()) return;
 
-        glm::vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+        vec2 mouseWorld = screenToWorld(m_input->mousePosition());
         Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
 
         if (obj && m_currentScene) {
@@ -1362,7 +1370,7 @@ namespace Platform {
     void LevelEditor::handleObjectDragging() {
         if (!m_selectedObject) return;
 
-        glm::vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+        vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
         if (m_gridSettings.snapToGrid) {
             mouseWorld = snapToGrid(mouseWorld);
@@ -1372,10 +1380,10 @@ namespace Platform {
         markLevelDirty();
     }
 
-    void LevelEditor::moveSelectedObject(glm::vec2 delta) {
+    void LevelEditor::moveSelectedObject(vec2 delta) {
         if (!m_selectedObject) return;
 
-        glm::vec2 newPos = m_selectedObject->transform().position + delta;
+        vec2 newPos = m_selectedObject->transform().position + delta;
 
         if (m_gridSettings.snapToGrid) {
             newPos = snapToGrid(newPos);
@@ -1428,7 +1436,7 @@ namespace Platform {
     // Utility Functions
     /******************************************************************************/
 
-    Gameplay::GameObject* LevelEditor::getObjectAtPosition(glm::vec2 worldPos) {
+    Gameplay::GameObject* LevelEditor::getObjectAtPosition(vec2 worldPos) {
         if (!m_currentScene) return nullptr;
 
         // Check objects in reverse order (top to bottom)
@@ -1447,15 +1455,16 @@ namespace Platform {
         return nullptr;
     }
 
-    glm::vec2 LevelEditor::screenToWorld(glm::vec2 screenPos) const {
+    vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
         // In a real implementation, this would use the camera's projection matrix
         // to properly convert screen coordinates to world coordinates
 
         // Simple implementation: adjust for camera position and zoom
-        glm::vec2 worldPos = screenPos;
-        worldPos -= glm::vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        vec2 worldPos = screenPos;
+		vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
+        worldPos -= vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
         worldPos /= m_editorCamera.zoom();
-        worldPos += m_editorCamera.position();
+		worldPos += m_editorCameraPos;
 
         // Flip Y coordinate (screen space is top-down, world space is bottom-up)
         worldPos.y = -worldPos.y;
@@ -1463,12 +1472,13 @@ namespace Platform {
         return worldPos;
     }
 
-    glm::vec2 LevelEditor::worldToScreen(glm::vec2 worldPos) const {
+    vec2 LevelEditor::worldToScreen(vec2 worldPos) const {
         // Inverse of screenToWorld
-        glm::vec2 screenPos = worldPos;
-        screenPos -= m_editorCamera.position();
+        vec2 screenPos = worldPos;
+        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
+        screenPos -= m_editorCameraPos;
         screenPos *= m_editorCamera.zoom();
-        screenPos += glm::vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        screenPos += vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
         screenPos.y = -screenPos.y;
 
         return screenPos;

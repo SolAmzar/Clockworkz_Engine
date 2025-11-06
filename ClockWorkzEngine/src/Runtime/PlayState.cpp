@@ -145,7 +145,7 @@ namespace Runtime
 		Platform::InputManager &input = engine.input();
 		Graphics::Camera2D &cam = engine.camera();
 		Platform::WindowManager &window = engine.window();
-		glm::vec2 mouseWorld = m_input.getMouseWorldPos(
+		vec2 mouseWorld = m_input.getMouseWorldPos(
 				cam,
 				static_cast<float>(window.width()),
 				static_cast<float>(window.height()));
@@ -198,7 +198,7 @@ namespace Runtime
 
 		if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick)
 		{
-			glm::vec2 mouseWorld = m_input.getMouseWorldPos(cam,
+			vec2 mouseWorld = m_input.getMouseWorldPos(cam,
 				static_cast<float>(window.width()),
 				static_cast<float>(window.height()));
 
@@ -208,8 +208,8 @@ namespace Runtime
 			for (auto it = gameObjects.begin(); it != gameObjects.end(); ) {
 				auto& obj = *it;
 				if (obj->type() == Gameplay::GameObjectType::Wall) {
-					glm::vec2 pos = obj->transform().position;
-					glm::vec2 size = obj->size();
+					vec2 pos = obj->transform().position;
+					vec2 size = obj->size();
 					if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
 						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2) {
 						// Found wall, delete it
@@ -228,7 +228,7 @@ namespace Runtime
 
 				if (!wallFound) {
 					// If no wall was found, spawn one
-					glm::vec2 wallSize{ 100.f, 100.f };
+					vec2 wallSize{ 100.f, 100.f };
 					auto wall = Gameplay::PrefabFactory::get().create("Wall");
 					if (wall) {
 						wall->setPosition(mouseWorld);
@@ -247,8 +247,8 @@ namespace Runtime
 			{
 				auto& obj = *it;
 				// Simple AABB check
-				glm::vec2 pos = obj->transform().position;
-				glm::vec2 size = obj->size();
+				vec2 pos = obj->transform().position;
+				vec2 size = obj->size();
 				if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
 					mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
 				{
@@ -309,20 +309,20 @@ namespace Runtime
 					}
 
 					if (m_flashlightOn) {
-						glm::vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
+						vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
 						// Player world position
-						glm::vec2 playerPos = obj->transform().position;
+					    vec2 playerPos = obj->transform().position;
 
 						// Direction vector from player to mouse
-						glm::vec2 dir = mouseWorld - playerPos;
+						vec2 dir = mouseWorld - playerPos;
 
 						// Distance check to prevent jitter
-						float dist = glm::length(dir);
+						float dist = magnitude(dir);
 						if (dist > 10.0f)
 						{ // 10 units = threshold distance
 							// Normalize direction
-							dir = glm::normalize(dir);
+							dir = normalize(dir);
 
 							// Compute angle in radians — atan2(y, x)
 							float angleRad = std::atan2(dir.y, dir.x);
@@ -332,7 +332,7 @@ namespace Runtime
 						}
 						if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
 						{
-							obj->respawnAt(glm::vec2(0.0f, 0.0f), true, true);
+							obj->respawnAt(vec2(0.0f, 0.0f), true, true);
 						}
 					}
 				}
@@ -389,7 +389,7 @@ namespace Runtime
 					float x = -gridSize * spacing / 2.0f + col * spacing;
 					float y = -gridSize * spacing / 2.0f + row * spacing;
 
-					auto obj = factory.createAt("Wall", glm::vec2(x, y));
+					auto obj = factory.createAt("Wall", vec2(x, y));
 					if (obj)
 					{
 						currentScene->objects().push_back(std::move(obj));
@@ -464,13 +464,19 @@ namespace Runtime
 			{
 				if (o->type() == Gameplay::GameObjectType::Player)
 				{
-					glm::vec2 origin = o->transform().position;
+					vec2 origin = o->transform().position;
 					float angle = o->transform().rotationRad;
-					std::vector<glm::vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+					std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
 						origin, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+						glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
+						std::vector<glm::vec2> lightPolyGLM;
+						for (const auto& point : lightPoly) {
+							lightPolyGLM.emplace_back(point.x, point.y);
+						}
+						
 
-						m_renderer->beginLightPass(engine.camera().viewProj(), origin, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
-						m_renderer->drawLightCone(origin, lightPoly, { 1.0f, 0.9f, 0.6f });
+						m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+						m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
 						m_renderer->endLightPass();
 				}
 			}
@@ -537,8 +543,8 @@ namespace Runtime
 					obj = Gameplay::PrefabFactory::get().create("Player");
 					if (obj) {
 						obj->setMoveSpeed(ms);
-						obj->setPosition(glm::vec2(pos[0], pos[1]));
-						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->setPosition(vec2(pos[0], pos[1]));
+						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
 						auto scene = m_scenes.current();
 						if (scene) {
@@ -551,8 +557,8 @@ namespace Runtime
 					obj = Gameplay::PrefabFactory::get().create("Enemy");
 					if (obj) {
 						obj->setMoveSpeed(ms);
-						obj->setPosition(glm::vec2(pos[0], pos[1]));
-						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->setPosition(vec2(pos[0], pos[1]));
+						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
 						auto scene = m_scenes.current();
 						if (scene) {
@@ -564,8 +570,8 @@ namespace Runtime
 				else if (selectedType == 2) {
 					obj = Gameplay::PrefabFactory::get().create("Wall");
 					if (obj) {
-						obj->setPosition(glm::vec2(pos[0], pos[1]));
-						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->setPosition(vec2(pos[0], pos[1]));
+						obj->setSize(vec2(size[0], size[1]));
 						obj->autoUpdateCollisionBaseOnScale();
 						auto scene = m_scenes.current();
 						if (scene) {
@@ -577,8 +583,8 @@ namespace Runtime
 				else if (selectedType == 3) {
 					obj = Gameplay::PrefabFactory::get().create("Floor");
 					if (obj) {
-						obj->setPosition(glm::vec2(pos[0], pos[1]));
-						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->setPosition(vec2(pos[0], pos[1]));
+						obj->setSize(vec2(size[0], size[1]));
 						auto scene = m_scenes.current();
 						if (scene) {
 							scene->objects().push_back(std::move(obj));
@@ -589,8 +595,8 @@ namespace Runtime
 				else if (selectedType == 4) {
 					obj = Gameplay::PrefabFactory::get().create("Trap");
 					if (obj) {
-						obj->setPosition(glm::vec2(pos[0], pos[1]));
-						obj->setSize(glm::vec2(size[0], size[1]));
+						obj->setPosition(vec2(pos[0], pos[1]));
+						obj->setSize(vec2(size[0], size[1]));
 						gameObjects.push_back(std::move(obj));
 					}
 				}
@@ -685,7 +691,7 @@ namespace Runtime
 							float y = startY + j * spacing;
 
 							// Create an object using your prefab system
-							auto obj = factory.createAt("Floor", glm::vec2(x, y));
+							auto obj = factory.createAt("Floor", vec2(x, y));
 							if (obj)
 							{
 								currentScene->objects().push_back(std::move(obj));

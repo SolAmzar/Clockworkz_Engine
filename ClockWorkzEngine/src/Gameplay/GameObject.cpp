@@ -106,7 +106,19 @@ namespace Gameplay {
                 color.r, color.g, color.b);
             break;
         }
+
+        for (auto& c : m_components) c->onRender(*this);
     }
+
+    void GameObject::render(Graphics::RenderingManager& renderer) {
+        // Placeholder: actual rendering handled by Graphics system using textureId
+        for (auto &c : m_components)
+			c->onRender(*this);
+	}
+
+
+
+
 
     Gameplay::AABB GameObject::worldAABB() const {
         if (!m_boundsDirty) return m_cachedAABB;

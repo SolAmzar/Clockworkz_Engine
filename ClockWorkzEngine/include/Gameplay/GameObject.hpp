@@ -90,11 +90,11 @@ namespace Gameplay {
 
         Transform2D&          transform() { return m_transform; }
         Transform2D const&    transform() const { return m_transform; }
-        void                  setPosition(glm::vec2 pos) { m_transform.position.x = pos.x;  m_transform.position.y = pos.y;}
+        void                  setPosition(vec2 pos) { m_transform.position.x = pos.x;  m_transform.position.y = pos.y;}
 
 
         vec2                  size() const { return m_size; }
-        void                  setSize(glm::vec2 s) { m_size = s; }
+        void                  setSize(vec2 s) { m_size = s; }
 
         vec2&                 velocity() { return m_velocity; }
         vec2 const&           velocity() const { return m_velocity; }
