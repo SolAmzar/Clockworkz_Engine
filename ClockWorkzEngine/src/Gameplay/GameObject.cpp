@@ -211,108 +211,108 @@ namespace Gameplay {
 
     // ----------------- Prefabs ----------------- (Temp)
 
-    std::unique_ptr<GameObject> GameObject::MakeFloor(vec2 pos, vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Floor, "Floor", GameObjectShape::Rectangle);
-        go->transform().position = pos; go->setSize(size);
-        go->setSolid(false); go->setHazard(false); go->setBlocksLight(false);
-        go->setLayer(Layer::Wall);
-        go->setCollisionMask(0); // floors are visual only; no collision
-        go->setTextureId(std::move(tex));
-        // No collider on purpose (not collidable)
-        return go;
-    }
+    //std::unique_ptr<GameObject> GameObject::MakeFloor(vec2 pos, vec2 size, std::string tex) {
+    //    auto go = std::make_unique<GameObject>(GameObjectType::Floor, "Floor", GameObjectShape::Rectangle);
+    //    go->transform().position = pos; go->setSize(size);
+    //    go->setSolid(false); go->setHazard(false); go->setBlocksLight(false);
+    //    go->setLayer(Layer::Wall);
+    //    go->setCollisionMask(0); // floors are visual only; no collision
+    //    go->setTextureId(std::move(tex));
+    //    // No collider on purpose (not collidable)
+    //    return go;
+    //}
 
-    std::unique_ptr<GameObject> GameObject::MakeWall(vec2 pos, vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Wall, "Wall", GameObjectShape::Rectangle);
-        go->transform().position = pos; go->setSize(size);
-        go->setSolid(true); go->setBlocksLight(true); go->setHazard(false);
-        go->setLayer(Layer::Wall);
-        // walls collide with players, enemies, and balls
-        go->setCollisionMask(Mask(Layer::Player, Layer::Enemy, Layer::Ball));
-        go->setTextureId(std::move(tex));
-        // AABB collider the size of the object
-        auto* aabb = go->addCollider<AABBCollider>();
-        aabb->type = ColliderType::AABB;
-        aabb->halfExtents = 0.5f * size * go->transform().scale;
-        aabb->offset = { 0.f, 0.f };
-        aabb->blocksLight = true;
-        return go;
-    }
+    //std::unique_ptr<GameObject> GameObject::MakeWall(vec2 pos, vec2 size, std::string tex) {
+    //    auto go = std::make_unique<GameObject>(GameObjectType::Wall, "Wall", GameObjectShape::Rectangle);
+    //    go->transform().position = pos; go->setSize(size);
+    //    go->setSolid(true); go->setBlocksLight(true); go->setHazard(false);
+    //    go->setLayer(Layer::Wall);
+    //    // walls collide with players, enemies, and balls
+    //    go->setCollisionMask(Mask(Layer::Player, Layer::Enemy, Layer::Ball));
+    //    go->setTextureId(std::move(tex));
+    //    // AABB collider the size of the object
+    //    auto* aabb = go->addCollider<AABBCollider>();
+    //    aabb->type = ColliderType::AABB;
+    //    aabb->halfExtents = 0.5f * size * go->transform().scale;
+    //    aabb->offset = { 0.f, 0.f };
+    //    aabb->blocksLight = true;
+    //    return go;
+    //}
 
-    std::unique_ptr<GameObject> GameObject::MakePlayer(vec2 pos, vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Player, "Player", GameObjectShape::Rectangle);
-        go->transform().position = pos; go->setSize(size);
-        go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
-        go->setLayer(Layer::Player);
-        // player hits walls, enemies, traps, balls
-        go->setCollisionMask(Mask(Layer::Wall, Layer::Enemy, Layer::Trap, Layer::Ball));
-        go->setTextureId(std::move(tex));
-        // Collider
-        auto* aabb = go->addCollider<AABBCollider>();
-        aabb->type = ColliderType::AABB;
-        aabb->halfExtents = 0.5f * size * go->transform().scale;
-        aabb->offset = { 0.f, 0.f };
-        aabb->blocksLight = false;
-        // Components
-        go->addComponent<HealthComponent>(3);
-        return go;
-    }
+    //std::unique_ptr<GameObject> GameObject::MakePlayer(vec2 pos, vec2 size, std::string tex) {
+    //    auto go = std::make_unique<GameObject>(GameObjectType::Player, "Player", GameObjectShape::Rectangle);
+    //    go->transform().position = pos; go->setSize(size);
+    //    go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
+    //    go->setLayer(Layer::Player);
+    //    // player hits walls, enemies, traps, balls
+    //    go->setCollisionMask(Mask(Layer::Wall, Layer::Enemy, Layer::Trap, Layer::Ball));
+    //    go->setTextureId(std::move(tex));
+    //    // Collider
+    //    auto* aabb = go->addCollider<AABBCollider>();
+    //    aabb->type = ColliderType::AABB;
+    //    aabb->halfExtents = 0.5f * size * go->transform().scale;
+    //    aabb->offset = { 0.f, 0.f };
+    //    aabb->blocksLight = false;
+    //    // Components
+    //    go->addComponent<HealthComponent>(3);
+    //    return go;
+    //}
 
-    std::unique_ptr<GameObject> GameObject::MakeEnemy(vec2 pos, vec2 size, int hp, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Enemy, "Enemy", GameObjectShape::Rectangle);
-        go->transform().position = pos; go->setSize(size);
-        go->setSolid(true); go->setBlocksLight(false); go->setHazard(true);
-        go->setLayer(Layer::Enemy);
-        // enemy hits walls, player, balls (but not other enemies if you prefer)
-        go->setCollisionMask(Mask(Layer::Wall, Layer::Player, Layer::Ball));
-        go->setTextureId(std::move(tex));
-        // Collider
-        auto* aabb = go->addCollider<AABBCollider>();
-        aabb->type = ColliderType::AABB;
-        aabb->halfExtents = 0.5f * size * go->transform().scale;
-        aabb->offset = { 0.f, 0.f };
-        aabb->blocksLight = false;
-        // Components
-        go->addComponent<HealthComponent>(hp);
-        go->addComponent<DamageDealerComponent>(1); // contact damage
-        return go;
-    }
+    //std::unique_ptr<GameObject> GameObject::MakeEnemy(vec2 pos, vec2 size, int hp, std::string tex) {
+    //    auto go = std::make_unique<GameObject>(GameObjectType::Enemy, "Enemy", GameObjectShape::Rectangle);
+    //    go->transform().position = pos; go->setSize(size);
+    //    go->setSolid(true); go->setBlocksLight(false); go->setHazard(true);
+    //    go->setLayer(Layer::Enemy);
+    //    // enemy hits walls, player, balls (but not other enemies if you prefer)
+    //    go->setCollisionMask(Mask(Layer::Wall, Layer::Player, Layer::Ball));
+    //    go->setTextureId(std::move(tex));
+    //    // Collider
+    //    auto* aabb = go->addCollider<AABBCollider>();
+    //    aabb->type = ColliderType::AABB;
+    //    aabb->halfExtents = 0.5f * size * go->transform().scale;
+    //    aabb->offset = { 0.f, 0.f };
+    //    aabb->blocksLight = false;
+    //    // Components
+    //    go->addComponent<HealthComponent>(hp);
+    //    go->addComponent<DamageDealerComponent>(1); // contact damage
+    //    return go;
+    //}
 
-    std::unique_ptr<GameObject> GameObject::MakeTrap(vec2 pos, vec2 size, int damage, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Trap, "Trap", GameObjectShape::Rectangle);
-        go->transform().position = pos; go->setSize(size);
-        go->setSolid(false); go->setBlocksLight(false); go->setHazard(true);
-        go->setLayer(Layer::Trap);
-        // traps only affect player (and optionally enemy)
-        go->setCollisionMask(Mask(Layer::Player));
-        go->setTextureId(std::move(tex));
-        // Collider (if you want the trap to have a volume)
-        auto* aabb = go->addCollider<AABBCollider>();
-        aabb->type = ColliderType::AABB;
-        aabb->halfExtents = 0.5f * size * go->transform().scale;
-        aabb->offset = { 0.f, 0.f };
-        aabb->blocksLight = false;
-        // Components
-        go->addComponent<DamageDealerComponent>(damage);
-        return go;
-    }
+    //std::unique_ptr<GameObject> GameObject::MakeTrap(vec2 pos, vec2 size, int damage, std::string tex) {
+    //    auto go = std::make_unique<GameObject>(GameObjectType::Trap, "Trap", GameObjectShape::Rectangle);
+    //    go->transform().position = pos; go->setSize(size);
+    //    go->setSolid(false); go->setBlocksLight(false); go->setHazard(true);
+    //    go->setLayer(Layer::Trap);
+    //    // traps only affect player (and optionally enemy)
+    //    go->setCollisionMask(Mask(Layer::Player));
+    //    go->setTextureId(std::move(tex));
+    //    // Collider (if you want the trap to have a volume)
+    //    auto* aabb = go->addCollider<AABBCollider>();
+    //    aabb->type = ColliderType::AABB;
+    //    aabb->halfExtents = 0.5f * size * go->transform().scale;
+    //    aabb->offset = { 0.f, 0.f };
+    //    aabb->blocksLight = false;
+    //    // Components
+    //    go->addComponent<DamageDealerComponent>(damage);
+    //    return go;
+    //}
 
-    std::unique_ptr<GameObject> GameObject::MakeBall(vec2 pos, float radius, vec2 size, std::string tex) {
-        auto go = std::make_unique<GameObject>(GameObjectType::Ball, "Ball", GameObjectShape::Circle);
-        go->transform().position = pos; go->setSize({ radius * 2.f, radius * 2.f });
-        go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
-        go->setLayer(Layer::Ball);
-        // ball collides with walls, player, enemies
-        go->setCollisionMask(Mask(Layer::Wall, Layer::Player, Layer::Enemy));
-        go->setTextureId(std::move(tex));
-        // Circle collider
-        auto* circ = go->addCollider<CircleCollider>();
-        circ->type = ColliderType::Circle;
-        circ->r = radius * 0.5f * (go->transform().scale.x + go->transform().scale.y); // average scale
-        circ->offset = { 0.f, 0.f };
-        circ->blocksLight = false;
-        return go;
-    }
+    //std::unique_ptr<GameObject> GameObject::MakeBall(vec2 pos, float radius, vec2 size, std::string tex) {
+    //    auto go = std::make_unique<GameObject>(GameObjectType::Ball, "Ball", GameObjectShape::Circle);
+    //    go->transform().position = pos; go->setSize({ radius * 2.f, radius * 2.f });
+    //    go->setSolid(true); go->setBlocksLight(false); go->setHazard(false);
+    //    go->setLayer(Layer::Ball);
+    //    // ball collides with walls, player, enemies
+    //    go->setCollisionMask(Mask(Layer::Wall, Layer::Player, Layer::Enemy));
+    //    go->setTextureId(std::move(tex));
+    //    // Circle collider
+    //    auto* circ = go->addCollider<CircleCollider>();
+    //    circ->type = ColliderType::Circle;
+    //    circ->r = radius * 0.5f * (go->transform().scale.x + go->transform().scale.y); // average scale
+    //    circ->offset = { 0.f, 0.f };
+    //    circ->blocksLight = false;
+    //    return go;
+    //}
 
 } // namespace Gameplay
 

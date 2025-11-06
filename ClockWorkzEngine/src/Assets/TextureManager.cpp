@@ -45,8 +45,7 @@ namespace Assets
                 std::cout << "[TextureManager] Loading: " << config.name
                           << " from " << config.path << std::endl;
 
-                auto texture = LoadTexture(config.name, config.path,
-                                           config.flipY, config.alphaOnlyIsRed);
+                auto texture = LoadTexture(config.name, config.path);
 
                 if (!texture)
                 {
@@ -71,9 +70,8 @@ namespace Assets
 
     std::shared_ptr<Graphics::Texture2D> TextureManager::LoadTexture(
         const std::string &name,
-        const std::string &path,
-        bool flipY,
-        bool alphaOnlyIsRed)
+        const std::string &path
+    )
     {
         // Check if already loaded
         auto existing = ResourceManager<Graphics::Texture2D>::Get(name);

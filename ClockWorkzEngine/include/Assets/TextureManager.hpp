@@ -83,9 +83,7 @@ namespace Assets {
          */
         static std::shared_ptr<Graphics::Texture2D> LoadTexture(
             const std::string& name,
-            const std::string& path,
-            bool flipY = true,
-            bool alphaOnlyIsRed = false
+            const std::string& path
         );
 
         /**

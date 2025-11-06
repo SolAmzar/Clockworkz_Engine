@@ -139,12 +139,12 @@ namespace Gameplay {
         T* getComponent() const;
 
         // Prefabs for your types
-        static std::unique_ptr<GameObject> MakeFloor(vec2 pos, vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeWall(vec2 pos, vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakePlayer(vec2 pos, vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeEnemy(vec2 pos, vec2 size, int hp = 2, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeTrap(vec2 pos, vec2 size, int damage = 1, std::string tex = "");
-		static std::unique_ptr<GameObject> MakeBall(vec2 pos, float radius, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeFloor(vec2 pos, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeWall(vec2 pos, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakePlayer(vec2 pos, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeEnemy(vec2 pos, vec2 size, int hp = 2, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeTrap(vec2 pos, vec2 size, int damage = 1, std::string tex = "");
+		//static std::unique_ptr<GameObject> MakeBall(vec2 pos, float radius, vec2 size, std::string tex = "");
 
         template <typename T, typename... Args>
         T* addCollider(Args&&... args);

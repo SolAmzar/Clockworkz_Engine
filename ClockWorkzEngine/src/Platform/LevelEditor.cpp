@@ -401,42 +401,42 @@ namespace Platform {
         }
     }
 
-    void LevelEditor::duplicateSelectedObject() {
-        if (!m_selectedObject || !m_currentScene) return;
+    //void LevelEditor::duplicateSelectedObject() {
+    //    if (!m_selectedObject || !m_currentScene) return;
 
-        // In a real implementation, this would properly clone the object
-        // For now, we'll create a new object at an offset position
-        vec2 offset(50.0f, 50.0f);
-        vec2 newPos = m_selectedObject->transform().position + offset;
+    //    // In a real implementation, this would properly clone the object
+    //    // For now, we'll create a new object at an offset position
+    //    vec2 offset(50.0f, 50.0f);
+    //    vec2 newPos = m_selectedObject->transform().position + offset;
 
-        // Create duplicate based on type
-        std::unique_ptr<Gameplay::GameObject> duplicate;
-        switch (m_selectedObject->type()) {
-        case Gameplay::GameObjectType::Floor:
-            duplicate = Gameplay::GameObject::MakeFloor(newPos, m_selectedObject->size());
-            break;
-        case Gameplay::GameObjectType::Wall:
-            duplicate = Gameplay::GameObject::MakeWall(newPos, m_selectedObject->size());
-            break;
-        case Gameplay::GameObjectType::Player:
-            duplicate = Gameplay::GameObject::MakePlayer(newPos, m_selectedObject->size());
-            break;
-        case Gameplay::GameObjectType::Enemy:
-            duplicate = Gameplay::GameObject::MakeEnemy(newPos, m_selectedObject->size());
-            break;
-        case Gameplay::GameObjectType::Trap:
-            duplicate = Gameplay::GameObject::MakeTrap(newPos, m_selectedObject->size());
-            break;
-        default:
-            break;
-        }
+    //    // Create duplicate based on type
+    //    std::unique_ptr<Gameplay::GameObject> duplicate;
+    //    switch (m_selectedObject->type()) {
+    //    case Gameplay::GameObjectType::Floor:
+    //        duplicate = Gameplay::GameObject::MakeFloor(newPos, m_selectedObject->size());
+    //        break;
+    //    case Gameplay::GameObjectType::Wall:
+    //        duplicate = Gameplay::GameObject::MakeWall(newPos, m_selectedObject->size());
+    //        break;
+    //    case Gameplay::GameObjectType::Player:
+    //        duplicate = Gameplay::GameObject::MakePlayer(newPos, m_selectedObject->size());
+    //        break;
+    //    case Gameplay::GameObjectType::Enemy:
+    //        duplicate = Gameplay::GameObject::MakeEnemy(newPos, m_selectedObject->size());
+    //        break;
+    //    case Gameplay::GameObjectType::Trap:
+    //        duplicate = Gameplay::GameObject::MakeTrap(newPos, m_selectedObject->size());
+    //        break;
+    //    default:
+    //        break;
+    //    }
 
-        if (duplicate) {
-            m_currentScene->objects().push_back(std::move(duplicate));
-            markLevelDirty();
-            // TODO: Core::Engine::Get().logger().info("Duplicated object");
-        }
-    }
+    //    if (duplicate) {
+    //        m_currentScene->objects().push_back(std::move(duplicate));
+    //        markLevelDirty();
+    //        // TODO: Core::Engine::Get().logger().info("Duplicated object");
+    //    }
+    //}
 
     /******************************************************************************/
     // Prefab/Archetype System (Rubric 1206 - Advanced)
@@ -558,7 +558,7 @@ namespace Platform {
             }
         }
         catch (const std::exception& e) {
-            //m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
+            m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
         }
     }
 
@@ -689,7 +689,7 @@ namespace Platform {
                     deleteSelectedObject();
                 }
                 if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, hasSelection)) {
-                    duplicateSelectedObject();
+                    //duplicateSelectedObject();
                 }
 
                 ImGui::Separator();
@@ -884,7 +884,7 @@ namespace Platform {
                     }
                     if (ImGui::MenuItem("Duplicate")) {
                         selectObject(obj.get());
-                        duplicateSelectedObject();
+                        //duplicateSelectedObject();
                     }
                     if (ImGui::MenuItem("Delete")) {
                         selectObject(obj.get());
@@ -1042,7 +1042,7 @@ namespace Platform {
 
         // Actions
         if (ImGui::Button("Duplicate")) {
-            duplicateSelectedObject();
+            //duplicateSelectedObject();
         }
         ImGui::SameLine();
         if (ImGui::Button("Delete")) {
@@ -1307,7 +1307,7 @@ namespace Platform {
 
         // Ctrl+D - Duplicate
         if (ctrl && m_input->wasKeyPressed(GLFW_KEY_D)) {
-            duplicateSelectedObject();
+            //duplicateSelectedObject();
         }
 
         // Delete - Delete selected

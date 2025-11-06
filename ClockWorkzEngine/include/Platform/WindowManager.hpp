@@ -24,7 +24,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #pragma once
 #include <string>
 struct GLFWwindow;
-namespace Core { struct Config; }
+namespace Core { class Config; }
 namespace Platform {
 	class WindowManager {
 	public:

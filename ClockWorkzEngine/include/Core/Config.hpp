@@ -18,7 +18,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #pragma once
 #include <string>
 namespace Core {
-	struct Config {
+	class Config {
+	public:
 		int   width = 1920;
 		int   height = 1080;
 		bool  vsync = true;
