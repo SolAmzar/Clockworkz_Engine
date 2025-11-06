@@ -2,7 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon], 75% [Syafiq] 15%
+\author(s)      [Lebon], 70% [Syafiq] 20%
 \brief          Declares PlayState, the main gameplay loop state.
 				Responsibilities include:
 				- Loading and managing the current Scene and its GameObjects
@@ -105,8 +105,9 @@ namespace Runtime
 			playerSprite["run"].push_back(uv);
 		}
 	}
+
 	PlayState::PlayState(std::string initialSceneId, Platform::InputManager &input, GameStateManager &gsm)
-			: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm)
+		: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm), m_player(nullptr)
 	{
 	}
 
@@ -241,15 +242,6 @@ namespace Runtime
 			return;
 		}
 
-		if (m_input.wasKeyPressed(GLFW_KEY_L))
-		{
-			m_spawnonclick = !m_spawnonclick;
-			std::cout << "Spawn on click is "
-								<< (m_spawnonclick ? "enabled" : "disabled")
-								<< std::endl;
-			return;
-		}
-
 		// Havign issue with the camera
 		if (m_input.wasKeyPressed(GLFW_KEY_R))
 		{
@@ -260,79 +252,6 @@ namespace Runtime
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))
 		{
 			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
-		}
-
-		if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick)
-		{
-			mouseWorld = m_input.getMouseWorldPos(cam,
-																						static_cast<float>(window.width()),
-																						static_cast<float>(window.height()));
-
-			bool wallFound = false; // flag
-
-			// Check for an existing wall
-			for (auto it = gameObjects.begin(); it != gameObjects.end();)
-			{
-				auto &obj = *it;
-				if (obj->type() == Gameplay::GameObjectType::Wall)
-				{
-					vec2 pos = obj->transform().position;
-					vec2 size = obj->size();
-					if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-							mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
-					{
-						// Found wall, delete it
-						std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
-						it = gameObjects.erase(it);
-						wallFound = true;
-						break; // Only delete one wall per click
-					}
-					else
-					{
-						++it;
-					}
-				}
-				else
-				{
-					++it;
-				}
-
-				if (!wallFound)
-				{
-					// If no wall was found, spawn one
-					vec2 wallSize{100.f, 100.f};
-					auto wall = Gameplay::PrefabFactory::get().create("Wall");
-					if (wall)
-					{
-						wall->setPosition(mouseWorld);
-						wall->setSize(wallSize);
-						gameObjects.push_back(std::move(wall));
-						std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
-					}
-				}
-			}
-		}
-
-		// function to delete objects on right click
-		if ((m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && !m_spawnonclick))
-		{
-			for (auto it = gameObjects.begin(); it != gameObjects.end();)
-			{
-				auto &obj = *it;
-				// Simple AABB check
-				vec2 pos = obj->transform().position;
-				vec2 size = obj->size();
-				if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
-				{
-					std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
-					it = gameObjects.erase(it); // Remove object and get new iterator
-				}
-				else
-				{
-					++it; // Only increment if not erased
-				}
-			}
 		}
 
 		// Syafiq - Player movement
@@ -346,22 +265,38 @@ namespace Runtime
 
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
-					float moveSpeed = 100.0f;
+					float moveSpeed = obj->moveSpeed();
+					bool isRunning = false;
+					float maxSpeed = obj->moveSpeed();
+					float maxRunSpeed = maxSpeed*2;
 					//not used
-					float moveAmount = moveSpeed * static_cast<float>(dt);
 					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
 					{
-						moveAmount *= 2;
+						moveSpeed *= 2;
+						isRunning = true;
 					}
 					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
 					{
-						obj->velocity().y = moveAmount;
+						obj->velocity().y += moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
+							obj->velocity().y = maxSpeed;
+						}
+						else if (obj->velocity().y > maxRunSpeed){
+							obj->velocity().y = maxRunSpeed;
+						}
+
 					}
 					else if (m_input.isKeyDown(GLFW_KEY_S))
 					{
-						obj->velocity().y = -moveAmount;
+						obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
+							obj->velocity().y = -maxSpeed;
+						}
+						else if (obj->velocity().y > -maxRunSpeed) {
+							obj->velocity().y = -maxRunSpeed;
+						}
 					}
 					else
 					{
@@ -370,11 +305,23 @@ namespace Runtime
 
 					if (m_input.isKeyDown(GLFW_KEY_A))
 					{
-						obj->velocity().x = -moveAmount;
+						obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
+							obj->velocity().x = -maxSpeed;
+						}
+						else if (obj->velocity().x > -maxRunSpeed) {
+							obj->velocity().x = -maxRunSpeed;
+						}
 					}
 					else if (m_input.isKeyDown(GLFW_KEY_D))
 					{
-						obj->velocity().x = moveAmount;
+						obj->velocity().x += moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
+							obj->velocity().x = maxSpeed;
+						}
+						else if (obj->velocity().y > maxRunSpeed) {
+							obj->velocity().x = maxRunSpeed;
+						}
 					}
 					else
 					{
@@ -632,16 +579,19 @@ namespace Runtime
 			ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
 
 			static float pos[2] = {0, 0};
-			static float size[2] = {100, 100};
+			static float size[2] = {1, 1};
 			ImGui::InputFloat2("Position", pos);
 			ImGui::InputFloat2("Size", size);
 
 			static int hp = 10, damage = 1;
 			static float ms = 100.0f;
-			if (selectedType == 0 || selectedType == 1) // if its enemy or player, set health
+			if (selectedType == 0 || selectedType == 1) { // if its enemy or player, set health
 				ImGui::InputInt("HP", &hp);
-			if (selectedType == 1 || selectedType == 4) // if its enemy or trap, set damage
+			}
+
+			if (selectedType == 1 || selectedType == 4) { // if its enemy or trap, set damage
 				ImGui::InputInt("Damage", &damage);
+			}
 
 			static char texture[64] = "";
 			ImGui::InputText("Texture", texture, IM_ARRAYSIZE(texture));
@@ -791,17 +741,15 @@ namespace Runtime
 
 			ImGui::Spacing();
 
-			/*if (ImGui::Button("Show Performance Profile"))
+			if (ImGui::Button("Show Performance Profile"))
 			{
 				Core::Profiler::Get().print();
-			}*/
+			}
 
 			if (ImGui::Button("Reset Profiler"))
 			{
 				Core::Profiler::Get().reset();
 			}
-
-			ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
 
 			// Add button to spawn 2500 objects
 			if (ImGui::Button("Spawn 2500 Objects"))
@@ -851,6 +799,12 @@ namespace Runtime
 			{
 				resetScene();
 			}
+
+			ImGui::Separator;
+
+			ImGui::Text("Press [W][A][S][D] to move!");
+			ImGui::Text("Press [Shift] to run!");
+			ImGui::Text("Press [Z] to open the level editor!");
 
 			ImGui::End();
 		}
