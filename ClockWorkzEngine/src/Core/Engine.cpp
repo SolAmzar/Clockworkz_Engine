@@ -195,6 +195,7 @@ namespace Core
 	 */
 	void Engine::update(double dt)
 	{
+		std::cout << m_time->fixedDelta()<<std::endl;
 		if (!m_booted)
 		{
 			// Initial State when Run Game, start off from Menu State
@@ -209,8 +210,12 @@ namespace Core
 			m_booted = true;
 		}
 		m_audio->update(); // Update the audio manager class
-		m_gsm->update(dt); // Update the game state manager class
 		m_input->update(); // Update the input manager class
+
+		int steps = m_time->currentSteps();
+		for (int i = 0; i < steps; ++i) {
+			m_gsm->update(m_time->fixedDelta());
+		}
 	}
 
 	/** Function header comment
