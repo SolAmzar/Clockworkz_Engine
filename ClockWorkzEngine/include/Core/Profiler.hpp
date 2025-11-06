@@ -124,6 +124,8 @@ namespace Core {
             std::cout << "========================================\n\n";
         }
 
+        const std::unordered_map<std::string, ProfileData>& data() const { return m_data; }
+
         void reset() {
             m_data.clear();
             m_startTimes.clear();
@@ -179,6 +181,6 @@ namespace Core {
     };
 
 #define PROFILE_FUNCTION() Core::ScopedProfile _profile_##__LINE__(__FUNCTION__)
-#define PROFILE_SCOPE(name) Core::ScopedProfile _profile_##__LINE__(name)
-
+//#define PROFILE_SCOPE(name) Core::ScopedProfile _profile_##__LINE__(name)
+#define PROFILE_SCOPE(name) Core::ScopedProfile _profile_##__COUNTER__(name)
 } // namespace Core

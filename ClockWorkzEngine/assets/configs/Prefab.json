@@ -15,11 +15,14 @@
                     }
                 },
                 "collider": {
-                    "width": 0.8,
-                    "height": 0.8,
-                    "isSolid": true,
-                    "layer": 2,
-                    "collisionMask": 7
+                  "type": "AABB",
+                  "width": 1.0,
+                  "height": 1.0,
+                  "isSolid": true,
+                  "layer": 1,
+                  "collisionMask": 7,
+                  "blocksLight": false,
+                  "isHazard": false
                 },
                 "health": {
                     "hp": 10
@@ -76,11 +79,14 @@
                     }
                 },
                 "collider": {
-                    "width": 1.0,
-                    "height": 1.0,
-                    "isSolid": true,
-                    "layer": 1,
-                    "collisionMask": 4294967295
+                  "type": "AABB",
+                  "width": 1.0,
+                  "height": 1.0,
+                  "isSolid": true,
+                  "layer": 4,
+                  "collisionMask": 7,
+                  "blocksLight": true,
+                  "isHazard": false
                 },
                 "spriteRenderer": {
                     "textureId": "wall_texture"

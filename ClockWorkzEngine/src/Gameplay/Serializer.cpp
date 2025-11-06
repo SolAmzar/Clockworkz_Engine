@@ -91,6 +91,33 @@ namespace Gameplay {
         if (j.contains("collisionMask")) {
             obj.setCollisionMask(j["collisionMask"].get<uint32_t>());
         }
+        if (j.contains("blocksLight")) {
+            obj.setBlocksLight(j["blocksLight"].get<bool>());
+        }
+        if (j.contains("layer")) {
+            obj.setLayer(j["layer"].get<uint32_t>());
+        }
+        if (j.contains("type")) {
+            std::string s = j["type"].get<std::string>();
+            if (s == "AABB") { 
+                auto* collide = obj.addCollider<AABBCollider>();
+                collide->type = ColliderType::AABB;
+                if (j.contains("blocksLight")) {
+                    collide->blocksLight=((j["blocksLight"].get<bool>()));
+                }
+            }
+            else if (s == "Circle") { 
+                auto* collide = obj.addCollider<CircleCollider>();
+                collide->type = ColliderType::Circle;
+                if (j.contains("blocksLight")) {
+                    collide->blocksLight = ((j["blocksLight"].get<bool>()));
+                }
+            }
+            else if (s == "None") {
+                auto* collide = obj.addCollider<Collider>();
+                collide->type = ColliderType::None;
+            }
+        }
     }
 
     void GameObjectSerializer::deserializeHealth(GameObject& obj, const json& j) {
@@ -196,7 +223,10 @@ namespace Gameplay {
             }
 
             // 2️⃣ Create prefab with correct factory (preserves colliders & masks)
-            if (prefabName == "Player")
+
+            obj = PrefabFactory::get().createAt(prefabName, pos);
+
+           /* if (prefabName == "Player")
                 obj = GameObject::MakePlayer(pos, scale, tex);
             else if (prefabName == "Enemy")
                 obj = GameObject::MakeEnemy(pos, scale, hp, tex);
@@ -205,10 +235,10 @@ namespace Gameplay {
             else if (prefabName == "Floor")
                 obj = GameObject::MakeFloor(pos, scale, tex);
             else if (prefabName == "Trap")
-                obj = GameObject::MakeTrap(pos, scale, dmg, tex);
-            else if (prefabName == "Ball")
-                obj = GameObject::MakeBall(pos, 50.f, scale, tex);
-            else {
+                obj = GameObject::MakeTrap(pos, scale, dmg, tex);*/
+            /*else if (prefabName == "Ball")
+                obj = GameObject::MakeBall(pos, 50.f, scale, tex);*/
+            if (!obj) {
                 std::cerr << "[Serializer] Unknown prefab type: " << prefabName << "\n";
                 obj = std::make_unique<GameObject>(GameObjectType::Unknown, prefabName);
             }

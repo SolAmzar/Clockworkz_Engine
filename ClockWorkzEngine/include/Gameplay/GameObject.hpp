@@ -3,6 +3,7 @@
 \file           GameObject.hpp
 \project        Lights Out
 \author(s)      [Lebon], 100% - Will be shared later once other features combine in.
+Serializer guy come in split the 100%
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
@@ -38,15 +39,13 @@ namespace Graphics {
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball
-    };
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball};
+
 	// To disguish between different collision shapes
-    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown
-	};
+    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown};
+
 	// To disguish between different game object shapes
-    enum class GameObjectShape : uint8_t {
-        Square ,Rectangle, Circle, Polygon, Unknown
-    };
+    enum class GameObjectShape : uint8_t { Square ,Rectangle, Circle, Polygon, Unknown};
 
     // ToDo -> Update the glm::vec2 or glm structures into own custom math libraries
     struct Transform2D {
@@ -75,6 +74,7 @@ namespace Gameplay {
 
         // Lifecycle
         virtual void update(double dt);
+        virtual void debugRender(Graphics::RenderingManager& renderer);
         virtual void render(Graphics::RenderingManager& renderer); // hook into Graphics later
 
         // Interactions
@@ -88,14 +88,19 @@ namespace Gameplay {
         bool                  active() const { return m_active; }
         void                  setActive(bool a) { m_active = a; }
 
-        Transform2D&          transform() { m_boundsDirty = true; return m_transform; }
+        Transform2D&          transform() { return m_transform; }
         Transform2D const&    transform() const { return m_transform; }
+        void                  setPosition(glm::vec2 pos) { m_transform.position.x = pos.x;  m_transform.position.y = pos.y;}
+
 
         vec2                  size() const { return m_size; }
-        void                  setSize(vec2 s) { m_size = s; m_boundsDirty = true; }
+        void                  setSize(glm::vec2 s) { m_size = s; }
 
-        vec2 &                velocity() { return m_velocity; }
+        vec2&                 velocity() { return m_velocity; }
         vec2 const&           velocity() const { return m_velocity; }
+
+        float const&          moveSpeed() { return m_moveSpeed; }
+        void                  setMoveSpeed(float ms) { m_moveSpeed = ms; }
 
         // Collision + rendering layers
         uint32_t              layer() const { return m_layer; }
@@ -142,12 +147,7 @@ namespace Gameplay {
 		static std::unique_ptr<GameObject> MakeBall(vec2 pos, float radius, vec2 size, std::string tex = "");
 
         template <typename T, typename... Args>
-        T* addCollider(Args&&... args) {
-            auto col = std::make_unique<T>(std::forward<Args>(args)...);
-            T* ptr = col.get();
-            m_colliders.push_back(std::move(col));
-            return ptr;
-        }
+        T* addCollider(Args&&... args);
 
         const std::vector<std::unique_ptr<Collider>>& colliders() const { return m_colliders; }
         std::vector<std::unique_ptr<Collider>>& colliders() { return m_colliders; }
@@ -162,8 +162,9 @@ namespace Gameplay {
         bool            m_active{ true };
 
         Transform2D     m_transform{};
-        vec2       m_size{1.f, 1.f};
-        vec2       m_velocity{ 0.f, 0.f };
+        vec2            m_size{ 1.f, 1.f };
+        vec2            m_velocity{ 0.f, 0.f };
+        float           m_moveSpeed{ 100.0f };
 
         uint32_t        m_layer{ 0 };
         uint32_t        m_collisionMask{ 0xFFFFFFFFu };
@@ -205,7 +206,7 @@ namespace Gameplay {
     }
 
     template <typename T, typename... Args>
-    T* addCollider(Args&&... args) {
+    T* GameObject::addCollider(Args&&... args) {
         auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
         T* raw = ptr.get();
         m_colliders.emplace_back(std::move(ptr));

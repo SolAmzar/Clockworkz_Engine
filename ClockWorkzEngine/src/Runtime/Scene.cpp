@@ -21,8 +21,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Physics2D.hpp"
-#include "Gameplay/Serializer.hpp"        // ADD THIS
-#include "Gameplay/Prefab.hpp" // ADD THIS
+#include "Gameplay/Serializer.hpp" // ADD THIS
+#include "Gameplay/Prefab.hpp"     // ADD THIS
 #include <iostream>
 #include <exception>
 #include "Assets/ResourceManager.hpp"
@@ -47,7 +47,8 @@ std::vector<std::unique_ptr<Gameplay::GameObject>> &Scene::objects() { return m_
 
 bool Scene::load()
 {
-    try {
+    try
+    {
         // Preload common textures
         std::cout << "[Scene] Loading textures...\n";
 
@@ -55,33 +56,40 @@ bool Scene::load()
         auto wallTex = Assets::TextureManager::Get("wall_texture");
         auto enemyTex = Assets::TextureManager::Get("enemy_texture");
         auto playerTex = Assets::TextureManager::Get("player_texture");
-		auto ballTex = Assets::TextureManager::Get("ball_texture");
+        auto ballTex = Assets::TextureManager::Get("ball_texture");
 
-        if (!playerTex) {
+        if (!playerTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get player_texture");
         }
-        if (!enemyTex) {
+        if (!enemyTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get enemyTex_texture");
         }
-        if (!floorTex) {
+        if (!floorTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get floor_texture");
         }
 
-        if (!wallTex) {
+        if (!wallTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get wall_texture");
         }
-        if (!ballTex) {
+        if (!ballTex)
+        {
             Core::Engine::Get().logger().warn("Failed to get ball_texture");
-		}
+        }
 
         std::cout << "[Scene] load: " << m_name << "\n";
 
         std::string filepath = "assets/scenes/" + m_name + ".json";
 
-        if (!std::filesystem::exists(filepath)) {
+        if (!std::filesystem::exists(filepath))
+        {
             std::cerr << "Scene file does not exist: " << filepath << "\n";
 
-            if (Core::Engine::IsInitialized()) {
+            if (Core::Engine::IsInitialized())
+            {
                 Core::Engine::Get().logger().warn("Scene file not found: " + filepath);
             }
 
@@ -98,21 +106,25 @@ bool Scene::load()
 
         return true;
     }
-    catch (const std::exception& e) {
+    catch (const std::exception &e)
+    {
         std::string errorMsg = std::string("[Scene] CRITICAL ERROR loading '") + m_name + "': " + e.what();
         std::cerr << errorMsg << "\n";
 
-        if (Core::Engine::IsInitialized()) {
+        if (Core::Engine::IsInitialized())
+        {
             Core::Engine::Get().logger().error(errorMsg);
         }
 
         return false;
     }
-    catch (...) {
+    catch (...)
+    {
         std::string errorMsg = std::string("[Scene] UNKNOWN ERROR loading scene: ") + m_name;
         std::cerr << errorMsg << "\n";
 
-        if (Core::Engine::IsInitialized()) {
+        if (Core::Engine::IsInitialized())
+        {
             Core::Engine::Get().logger().error(errorMsg);
         }
 
@@ -134,17 +146,19 @@ void Scene::unload()
     m_objects.clear();
 }
 
-bool Scene::saveToFile(const std::string& filepath)
+bool Scene::saveToFile(const std::string &filepath)
 {
     // ⭐ NEW API: Save using the new serializer
     return GameObjectSerializer::saveSceneToFile(m_name, m_objects, filepath);
 }
 
-Gameplay::Physics2D* Scene::getPhysics() {
+Gameplay::Physics2D *Scene::getPhysics()
+{
     return m_physics.get();
 }
 
-const Gameplay::Physics2D* Scene::getPhysics() const {
+const Gameplay::Physics2D *Scene::getPhysics() const
+{
     return m_physics.get();
 }
 
@@ -162,8 +176,8 @@ void Scene::update(double dt)
 {
     {
         PROFILE_SCOPE("GameObjectUpdates");
-        for (auto& o : objects())
-        {
+        std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+        for (auto& o : objs){
             if (o->active())
                 o->update(dt);
         }
@@ -177,10 +191,11 @@ void Scene::update(double dt)
     }
 }
 
-void Scene::render(Graphics::RenderingManager& renderer)
+void Scene::render(Graphics::RenderingManager &renderer)
 {
     PROFILE_SCOPE("GameObjectRender");
-    for (auto &o : objects())
+    std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+    for (auto &o : objs)
     {
         if (o->active())
             o->render(renderer);
