@@ -195,7 +195,9 @@ namespace Core
 	 */
 	void Engine::update(double dt)
 	{
-		std::cout << m_time->fixedDelta()<<std::endl;
+		//Check if Fixed Delta time (Uncomment if you want to check)
+		/*std::cout << m_time->fixedDelta() << std::endl;*/
+
 		if (!m_booted)
 		{
 			// Initial State when Run Game, start off from Menu State
