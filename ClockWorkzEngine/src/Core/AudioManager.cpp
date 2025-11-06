@@ -2,7 +2,7 @@
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
-\author(s)      [Amzar]
+\author(s)      [Amzar] , 100%
 \brief          Handles Audio using FMOD API.
                 Responsibilities include:
                 - Initializing and shutting down the FMOD system

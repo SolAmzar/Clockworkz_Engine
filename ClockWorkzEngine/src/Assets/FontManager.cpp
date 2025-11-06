@@ -143,6 +143,8 @@ namespace Assets
 
     void FontManager::RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color)
     {
+        //color not being referenced
+
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(VAO);
 

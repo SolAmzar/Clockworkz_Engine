@@ -63,7 +63,7 @@ set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 
 # --- Public/Private include directories ---
 target_include_directories(${PROJECT_NAME}
-  PUBLIC  ${CMAKE_SOURCE_DIR}/include
+  SYSTEM PUBLIC  ${CMAKE_SOURCE_DIR}/include
   PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 

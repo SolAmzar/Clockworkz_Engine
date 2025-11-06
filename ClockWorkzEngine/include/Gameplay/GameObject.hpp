@@ -39,7 +39,7 @@ namespace Graphics {
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball};
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
 
 	// To disguish between different collision shapes
     enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown};
@@ -110,6 +110,7 @@ namespace Gameplay {
 
         // Flags to support horror mechanics (light, blocking, hazards)
         bool isSolid() const { return m_isSolid; }
+		bool ismoveable() const { return m_moveable; }
         bool isHazard() const { return m_isHazard; }
         bool blocksLight() const { return m_blocksLight; }
         void setSolid(bool v) { m_isSolid = v; }
@@ -139,12 +140,12 @@ namespace Gameplay {
         T* getComponent() const;
 
         // Prefabs for your types
-        static std::unique_ptr<GameObject> MakeFloor(vec2 pos, vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeWall(vec2 pos, vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakePlayer(vec2 pos, vec2 size, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeEnemy(vec2 pos, vec2 size, int hp = 2, std::string tex = "");
-        static std::unique_ptr<GameObject> MakeTrap(vec2 pos, vec2 size, int damage = 1, std::string tex = "");
-		static std::unique_ptr<GameObject> MakeBall(vec2 pos, float radius, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeFloor(vec2 pos, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeWall(vec2 pos, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakePlayer(vec2 pos, vec2 size, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeEnemy(vec2 pos, vec2 size, int hp = 2, std::string tex = "");
+  //      static std::unique_ptr<GameObject> MakeTrap(vec2 pos, vec2 size, int damage = 1, std::string tex = "");
+		//static std::unique_ptr<GameObject> MakeBall(vec2 pos, float radius, vec2 size, std::string tex = "");
 
         template <typename T, typename... Args>
         T* addCollider(Args&&... args);
@@ -171,6 +172,7 @@ namespace Gameplay {
         bool            m_isSolid{ false };
         bool            m_isHazard{ false };
         bool            m_blocksLight{ true };
+		bool 		    m_moveable{ false };
 
         mutable bool    m_boundsDirty{ true };
         mutable AABB    m_cachedAABB{};

@@ -34,6 +34,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Prefab.hpp"
 #include "Graphics/Camera2D.hpp"
+#include <Core/Logger.hpp>
 
 struct GLFWwindow;
 
@@ -137,7 +138,7 @@ namespace Platform {
         Gameplay::GameObject* getSelectedObject() { return m_selectedObject; }
         void selectObject(Gameplay::GameObject* obj);
         void deleteSelectedObject();
-        void duplicateSelectedObject();
+        //void duplicateSelectedObject();
 
         // Prefab/Archetype system (Rubric 1206 - Advanced)
         void loadPrefabs();
@@ -212,6 +213,7 @@ namespace Platform {
 
     private:
         // Core systems
+        std::unique_ptr<Core::Logger> m_logger;
         GLFWwindow* m_window;
         Graphics::RenderingManager* m_renderer;
         Platform::InputManager* m_input;

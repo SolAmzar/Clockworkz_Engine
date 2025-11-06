@@ -132,7 +132,7 @@ namespace Core
 			return false;
 
 		//m_camera->setViewport((float)m_window->width(), (float)m_window->height());
-		m_camera->setViewport((float)m_window->width(), (float)m_window->height());
+		m_camera->setViewport((int)m_window->width(), (int)m_window->height());
 		m_camera->setPosition(glm::vec2{ 0,0 });
 		m_camera->setZoom(1.0f);
 

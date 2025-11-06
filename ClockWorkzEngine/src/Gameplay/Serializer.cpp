@@ -33,6 +33,7 @@ namespace Gameplay {
         j["isSolid"] = obj.isSolid();
         j["layer"] = obj.layer();
         j["collisionMask"] = obj.collisionMask();
+        j["moveable"] = obj.ismoveable();
         return j;
     }
 

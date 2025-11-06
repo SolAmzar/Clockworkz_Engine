@@ -165,7 +165,7 @@ namespace Graphics {
 	void RenderingManager::drawLightCone(
 		const glm::vec2& origin,
 		const std::vector<glm::vec2>& polygon,
-		const glm::vec3& color)
+		const glm::vec3& color) const
 	{
 		std::vector<float> verts;
 
@@ -176,10 +176,11 @@ namespace Graphics {
 		verts.push_back(color.g);
 		verts.push_back(color.b);
 
-		float radius = 300.0f;
+		//unused variable
+		//float radius = 300.0f;
 		for (auto& p : polygon) {
 			float dist = glm::length(p - origin);
-			float alpha = glm::clamp(1.0f - dist / radius, 0.0f, 1.0f) * 0.8f;
+			//float alpha = glm::clamp(1.0f - dist / radius, 0.0f, 1.0f) * 0.8f;
 			verts.push_back(p.x);
 			verts.push_back(p.y);
 			verts.push_back(color.r);

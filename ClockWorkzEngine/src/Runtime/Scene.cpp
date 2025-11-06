@@ -82,10 +82,10 @@ bool Scene::load()
         }
 
         std::cout << "[Scene] load: " << m_name << "\n";
-        //std::string filepath = "assets/scenes/" + m_name + ".json";
+        std::string filepath = "assets/scenes/" + m_name + ".json";
 
 #ifndef _DEBUG
-        std::string filepath = "assets/scenes/" + m_name + ".json";
+        filepath = "assets/scenes/" + m_name + ".json";
 #endif
         std::cout << std::filesystem::current_path().string() << "\n";
         if (!std::filesystem::exists(filepath))

@@ -67,7 +67,7 @@ namespace Graphics {
         void drawLightCone(
             const glm::vec2& origin,
             const std::vector<glm::vec2>& polygon,
-            const glm::vec3& color);
+            const glm::vec3& color) const;
     private:
         static constexpr int MAX_TEXTURE_SLOTS = 8;
         Renderer2D m_renderer2D; // textured renderer
