@@ -110,70 +110,6 @@ namespace Gameplay {
         for (auto& c : m_components) c->onRender(*this);
     }
 
-    void GameObject::onCollision(GameObject& other) {
-        // This is not with reference to the intended gameplay
-        // have to modify along the way.
-        // Generic contact damage: if THIS has DamageDealer and OTHER has Health, apply
-        // Current object damage other object with health on collide
-
-        auto resolvePlayerVsWall = [](GameObject& player, GameObject& wall) {
-            // Compute world-space AABBs 
-            AABB pa = player.aabbWorld();
-            AABB wa = wall.aabbWorld();
-
-            // centers and half-sizes
-            vec2 pc = 0.5f * (pa.min + pa.max);
-            vec2 wc = 0.5f * (wa.min + wa.max);
-            vec2 ph = 0.5f * (pa.max - pa.min);
-            vec2 wh = 0.5f * (wa.max - wa.min);
-
-            // overlap along each axis
-            vec2 d = pc - wc;                        
-            vec2 o = (ph + wh) - abs_vec2(d);          
-
-            // if both overlaps are positive, we are intersecting
-            if (o.x > 0.f && o.y > 0.f) {
-                if (o.x < o.y) {
-                    // resolve on X
-                    float push = (d.x < 0.f) ? -o.x : o.x;
-                    player.transform().position.x += push;
-                    // kill X velocity so we don't slide back in
-                    player.velocity().x = 0.f;
-                }
-                else {
-                    // resolve on Y
-                    float push = (d.y < 0.f) ? -o.y : o.y;
-                    player.transform().position.y += push;
-                    // kill Y velocity
-                    player.velocity().y = 0.f;
-                }
-            }
-            };
-
-        // Run resolution if the pair is (Player, Wall) in either order
-        if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall)) {
-            resolvePlayerVsWall(*this, other);
-        }
-        else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player)) {
-            resolvePlayerVsWall(other, *this);
-        }
-
-        if (auto* dealer = this->getComponent<DamageDealerComponent>()) {
-            if (auto* hp = other.getComponent<HealthComponent>()) {
-                hp->damage(other, dealer->damage());
-            }
-        }
-        // If OTHER is a dealer and THIS has health, you could also apply:
-        // other object damage currend object with health on collide
-        if (auto* dealer2 = other.getComponent<DamageDealerComponent>()) {
-            if (auto* hp2 = this->getComponent<HealthComponent>()) {
-                hp2->damage(*this, dealer2->damage());
-            }
-        }
-
-        other.getComponent<HealthComponent>();
-    }
-
     Gameplay::AABB GameObject::worldAABB() const {
         if (!m_boundsDirty) return m_cachedAABB;
 
@@ -360,3 +296,69 @@ namespace Gameplay {
     }
 
 } // namespace Gameplay
+
+
+
+//void GameObject::onCollision(GameObject& other) {
+//    // This is not with reference to the intended gameplay
+//    // have to modify along the way.
+//    // Generic contact damage: if THIS has DamageDealer and OTHER has Health, apply
+//    // Current object damage other object with health on collide
+//
+//    auto resolvePlayerVsWall = [](GameObject& player, GameObject& wall) {
+//        // Compute world-space AABBs 
+//        AABB pa = player.aabbWorld();
+//        AABB wa = wall.aabbWorld();
+//
+//        // centers and half-sizes
+//        vec2 pc = 0.5f * (pa.min + pa.max);
+//        vec2 wc = 0.5f * (wa.min + wa.max);
+//        vec2 ph = 0.5f * (pa.max - pa.min);
+//        vec2 wh = 0.5f * (wa.max - wa.min);
+//
+//        // overlap along each axis
+//        vec2 d = pc - wc;
+//        vec2 o = (ph + wh) - abs_vec2(d);
+//
+//        // if both overlaps are positive, we are intersecting
+//        if (o.x > 0.f && o.y > 0.f) {
+//            if (o.x < o.y) {
+//                // resolve on X
+//                float push = (d.x < 0.f) ? -o.x : o.x;
+//                player.transform().position.x += push;
+//                // kill X velocity so we don't slide back in
+//                player.velocity().x = 0.f;
+//            }
+//            else {
+//                // resolve on Y
+//                float push = (d.y < 0.f) ? -o.y : o.y;
+//                player.transform().position.y += push;
+//                // kill Y velocity
+//                player.velocity().y = 0.f;
+//            }
+//        }
+//        };
+//
+//    // Run resolution if the pair is (Player, Wall) in either order
+//    if ((m_type == GameObjectType::Player && other.m_type == GameObjectType::Wall)) {
+//        resolvePlayerVsWall(*this, other);
+//    }
+//    else if ((m_type == GameObjectType::Wall && other.m_type == GameObjectType::Player)) {
+//        resolvePlayerVsWall(other, *this);
+//    }
+//
+//    if (auto* dealer = this->getComponent<DamageDealerComponent>()) {
+//        if (auto* hp = other.getComponent<HealthComponent>()) {
+//            hp->damage(other, dealer->damage());
+//        }
+//    }
+//    // If OTHER is a dealer and THIS has health, you could also apply:
+//    // other object damage currend object with health on collide
+//    if (auto* dealer2 = other.getComponent<DamageDealerComponent>()) {
+//        if (auto* hp2 = this->getComponent<HealthComponent>()) {
+//            hp2->damage(*this, dealer2->damage());
+//        }
+//    }
+//
+//    other.getComponent<HealthComponent>();
+//}

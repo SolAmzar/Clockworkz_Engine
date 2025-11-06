@@ -78,7 +78,7 @@ namespace Gameplay {
         virtual void render(Graphics::RenderingManager& renderer); // hook into Graphics later
 
         // Interactions
-        virtual void onCollision(GameObject& other);
+       // virtual void onCollision(GameObject& other);
 
         // Data
         uint32_t              id() const { return m_id; }
