@@ -45,8 +45,10 @@ namespace Gameplay {
     {
         // basic top-down integration
         m_transform.position += m_velocity * static_cast<float>(dt);
+        markDirty();
         for (auto &c : m_components)
             c->onUpdate(*this, dt);
+       
     }
 
     void GameObject::debugRender(Graphics::RenderingManager& renderer) {

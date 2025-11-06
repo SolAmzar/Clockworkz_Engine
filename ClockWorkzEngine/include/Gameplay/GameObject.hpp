@@ -88,13 +88,13 @@ namespace Gameplay {
         bool                  active() const { return m_active; }
         void                  setActive(bool a) { m_active = a; }
 
-        Transform2D&          transform() { return m_transform; }
+        Transform2D&          transform() {  m_boundsDirty = true; return m_transform;}
         Transform2D const&    transform() const { return m_transform; }
-        void                  setPosition(vec2 pos) { m_transform.position.x = pos.x;  m_transform.position.y = pos.y;}
+        void                  setPosition(vec2 pos) { m_transform.position.x = pos.x;  m_transform.position.y = pos.y; m_boundsDirty = true;}
 
 
         vec2                  size() const { return m_size; }
-        void                  setSize(vec2 s) { m_size = s; }
+        void                  setSize(vec2 s) { m_size = s; m_boundsDirty = true; }
 
         vec2&                 velocity() { return m_velocity; }
         vec2 const&           velocity() const { return m_velocity; }
