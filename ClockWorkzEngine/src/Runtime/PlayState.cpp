@@ -274,6 +274,7 @@ namespace Runtime
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
 					float moveSpeed = 100.0f;
+					//not used
 					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
