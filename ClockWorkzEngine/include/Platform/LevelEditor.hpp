@@ -108,6 +108,8 @@ namespace Platform {
 
         // Main loop functions
         void update(double dt);
+        void renderSaveDialog();
+        void renderLoadDialog();
         void render();
         void renderUI();
 
@@ -162,7 +164,6 @@ namespace Platform {
         void renderPrefabPalette();
         void renderSceneView();
         void renderLevelSettings();
-        void renderGridSettings();
         void renderCameraControls();
 
         // Object manipulation
@@ -233,7 +234,6 @@ namespace Platform {
         bool m_showPrefabPalette;
         bool m_showSceneView;
         bool m_showLevelSettings;
-        bool m_showGridSettings;
 
         // Recent files
         std::vector<std::string> m_recentLevels;

@@ -65,7 +65,6 @@ namespace Platform {
         , m_showPrefabPalette(true)
         , m_showSceneView(true)
         , m_showLevelSettings(false)
-        , m_showGridSettings(false)
         , m_objectTypeToPlace(Gameplay::GameObjectType::Floor)
         , m_windowWidth(1280.0f)
         , m_windowHeight(720.0f)
@@ -168,10 +167,193 @@ namespace Platform {
         }
     }
 
+// ============================================================================
+// Save Dialog Implementation
+// ============================================================================
+    void LevelEditor::renderSaveDialog() {
+        if (!m_showSaveDialog) return;
+
+        ImGui::OpenPopup("Save Level");
+
+        // Center the popup
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Save Level", &m_showSaveDialog,
+            ImGuiWindowFlags_AlwaysAutoResize)) {
+
+            ImGui::Text("Enter filename (without extension):");
+            ImGui::Spacing();
+
+            // Input field for filename
+            ImGui::InputText("##filename", m_fileDialogBuffer, sizeof(m_fileDialogBuffer));
+
+            ImGui::Spacing();
+            ImGui::Text("Will save to: assets/levels/");
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "%s.json", m_fileDialogBuffer);
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Save button
+            if (ImGui::Button("Save", ImVec2(120, 0))) {
+                if (strlen(m_fileDialogBuffer) > 0) {
+                    // ✓ FIXED: Ensure directory exists
+                    std::string directory = "assets/levels/";
+
+                    try {
+                        if (!fs::exists(directory)) {
+                            fs::create_directories(directory);
+                            std::cout << "[LevelEditor] Created directory: " << directory << "\n";
+                        }
+                    }
+                    catch (const std::exception& e) {
+                        std::cout << "[LevelEditor] Error creating directory: " << e.what() << "\n";
+                        ImGui::EndPopup();
+                        return;
+                    }
+
+                    // Build full filepath
+                    std::string filepath = directory + std::string(m_fileDialogBuffer) + ".json";
+
+                    // ✓ Check if file exists and warn
+                    bool fileExists = fs::exists(filepath);
+                    static bool confirmOverwrite = false;
+
+                    if (fileExists && !confirmOverwrite) {
+                        ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f),
+                            "Warning: File already exists!");
+                        ImGui::Text("Click Save again to overwrite.");
+                        confirmOverwrite = true;
+                        ImGui::EndPopup();
+                        return;
+                    }
+
+                    // Save the level
+                    if (saveLevel(filepath)) {
+                        std::cout << "[LevelEditor] Level saved to: " << filepath << "\n";
+                        m_showSaveDialog = false;
+                        confirmOverwrite = false;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    else {
+                        std::cout << "[LevelEditor] Failed to save level\n";
+                    }
+                }
+                else {
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
+                        "Please enter a filename!");
+                }
+            }
+
+            ImGui::SameLine();
+
+            // Cancel button
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                m_showSaveDialog = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    // ============================================================================
+    // Load Dialog Implementation
+    // ============================================================================
+    void LevelEditor::renderLoadDialog() {
+        if (!m_showLoadDialog) return;
+
+        ImGui::OpenPopup("Open Level");
+
+        // Center the popup
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Open Level", &m_showLoadDialog,
+            ImGuiWindowFlags_AlwaysAutoResize)) {
+
+            ImGui::Text("Select a level to load:");
+            ImGui::Spacing();
+
+            // List available levels from assets/levels/
+            std::string levelsDir = "assets/levels/";
+            static std::vector<std::string> availableLevels;
+            static bool needsRefresh = true;
+
+            if (needsRefresh) {
+                availableLevels.clear();
+                if (fs::exists(levelsDir) && fs::is_directory(levelsDir)) {
+                    for (const auto& entry : fs::directory_iterator(levelsDir)) {
+                        if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                            availableLevels.push_back(entry.path().string());
+                        }
+                    }
+                }
+                needsRefresh = false;
+            }
+
+            // Display list of levels
+            ImGui::BeginChild("LevelList", ImVec2(400, 300), true);
+
+            if (availableLevels.empty()) {
+                ImGui::TextDisabled("No levels found in %s", levelsDir.c_str());
+            }
+            else {
+                for (const auto& levelPath : availableLevels) {
+                    fs::path p(levelPath);
+                    std::string displayName = p.stem().string();
+
+                    if (ImGui::Selectable(displayName.c_str())) {
+                        if (loadLevel(levelPath)) {
+                            std::cout << "[LevelEditor] Level loaded: " << levelPath << "\n";
+                            m_showLoadDialog = false;
+                            needsRefresh = true;
+                            ImGui::CloseCurrentPopup();
+                        }
+                        else {
+                            std::cout << "[LevelEditor] Failed to load level\n";
+                        }
+                    }
+
+                    // Show full path on hover
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("Path: %s", levelPath.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+            }
+
+            ImGui::EndChild();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Refresh button
+            if (ImGui::Button("Refresh", ImVec2(120, 0))) {
+                needsRefresh = true;
+            }
+
+            ImGui::SameLine();
+
+            // Cancel button
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                m_showLoadDialog = false;
+                needsRefresh = true;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
     void LevelEditor::render() {
         if (!m_renderer || !m_currentScene) return;
 
-        Core::Engine& engine = Core::Engine::Get();
+        //Core::Engine& engine = Core::Engine::Get();
 
         // Use editor camera's view-projection matrix
         glm::mat4 viewProj = m_editorCamera.viewProj();
@@ -190,28 +372,18 @@ namespace Platform {
 
         if (m_mode == EditorMode::Edit) {
             renderToolbar();
-
-            if (m_showHierarchy) {
-                renderHierarchy();         
-            }
-
-            if (m_showProperties) {
-                renderProperties();       
-            }
-
-            if (m_showPrefabPalette) {
-                renderPrefabPalette();      
-            }
-
-            if (m_showLevelSettings) {
-                renderLevelSettings();
-            }
         }
+
+        if (m_showHierarchy) renderHierarchy();
+        if (m_showProperties) renderProperties();
+        if (m_showPrefabPalette) renderPrefabPalette();
+        if (m_showLevelSettings) renderLevelSettings();
 
         // Always show scene view
-        if (m_showSceneView) {
-            renderSceneView();
-        }
+        if (m_showSceneView) renderSceneView();
+
+        renderSaveDialog();
+        renderLoadDialog();
     }
 
     /******************************************************************************/
@@ -284,11 +456,26 @@ namespace Platform {
 
     bool LevelEditor::saveLevel(const std::string& filepath) {
         if (!m_currentScene) {
-            std::cout << "not saved";
-            // TODO: Core::Engine::Get().logger().error("No scene to save");
+            std::cout << "[LevelEditor] No scene to save\n";
             return false;
         }
 
+        // ✓ FIXED: Ensure parent directory exists
+        fs::path filePath(filepath);
+        fs::path parentDir = filePath.parent_path();
+
+        try {
+            if (!parentDir.empty() && !fs::exists(parentDir)) {
+                fs::create_directories(parentDir);
+                std::cout << "[LevelEditor] Created directory: " << parentDir << "\n";
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << "[LevelEditor] Error creating directory: " << e.what() << "\n";
+            return false;
+        }
+
+        // Save scene to file (creates file if it doesn't exist)
         bool success = Gameplay::GameObjectSerializer::saveSceneToFile(
             m_currentLevelMetadata.name,
             m_currentScene->objects(),
@@ -296,6 +483,7 @@ namespace Platform {
         );
 
         if (success) {
+            // Update metadata
             m_currentLevelMetadata.filepath = filepath;
             m_levelDirty = false;
 
@@ -309,10 +497,10 @@ namespace Platform {
                 m_recentLevels.resize(MAX_RECENT_LEVELS);
             }
 
-            // TODO: Core::Engine::Get().logger().info("Level saved: " + filepath);
+            std::cout << "[LevelEditor] Successfully saved level: " << filepath << "\n";
         }
         else {
-            // TODO: Core::Engine::Get().logger().error("Failed to save level: " + filepath);
+            std::cout << "[LevelEditor] Failed to save level: " << filepath << "\n";
         }
 
         return success;
@@ -370,11 +558,6 @@ namespace Platform {
         }
 
         return success;
-    }
-
-    bool LevelEditor::saveLevelAs(const std::string& filepath) {
-        m_currentLevelMetadata.filepath = filepath;
-        return saveLevel(filepath);
     }
 
     std::vector<std::string> LevelEditor::getRecentLevels() const {
@@ -614,26 +797,57 @@ namespace Platform {
                 if (ImGui::MenuItem("New Level", "Ctrl+N")) {
                     newLevel("Untitled");
                 }
-                if (ImGui::MenuItem("Open Level", "Ctrl+O")) {
+
+                if (ImGui::MenuItem("Open Level...", "Ctrl+O")) {
                     m_showLoadDialog = true;
                 }
+
                 if (ImGui::MenuItem("Save Level", "Ctrl+S")) {
-                    saveLevel();
+                    // If no filepath, show save dialog
+                    if (m_currentLevelMetadata.filepath.empty()) {
+                        // Pre-fill with current level name
+                        strncpy(m_fileDialogBuffer,
+                            m_currentLevelMetadata.name.c_str(),
+                            sizeof(m_fileDialogBuffer));
+                        m_showSaveDialog = true;
+                    }
+                    else {
+                        // Save to existing file
+                        saveLevel();
+                    }
                 }
+
                 if (ImGui::MenuItem("Save Level As...", "Ctrl+Shift+S")) {
+                    // Pre-fill with current level name
+                    strncpy(m_fileDialogBuffer,
+                        m_currentLevelMetadata.name.c_str(),
+                        sizeof(m_fileDialogBuffer));
                     m_showSaveDialog = true;
                 }
 
                 ImGui::Separator();
 
+                // ✓ FIXED: Recent Levels menu
                 if (ImGui::BeginMenu("Recent Levels")) {
-                    for (const auto& level : m_recentLevels) {
-                        if (ImGui::MenuItem(level.c_str())) {
-                            loadLevel(level);
-                        }
-                    }
                     if (m_recentLevels.empty()) {
                         ImGui::TextDisabled("No recent levels");
+                    }
+                    else {
+                        for (const auto& level : m_recentLevels) {
+                            fs::path p(level);
+                            std::string displayName = p.stem().string();
+
+                            if (ImGui::MenuItem(displayName.c_str())) {
+                                loadLevel(level);
+                            }
+
+                            // Show full path on hover
+                            if (ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::Text("%s", level.c_str());
+                                ImGui::EndTooltip();
+                            }
+                        }
                     }
                     ImGui::EndMenu();
                 }
@@ -723,7 +937,6 @@ namespace Platform {
                 1.0 / m_frameTime,
                 m_objectCount,
                 m_levelDirty ? "Modified" : "Saved");
-
             ImGui::EndMainMenuBar();
         }
     }
@@ -771,20 +984,20 @@ namespace Platform {
         ImGui::Separator();
         ImGui::SameLine();
 
-        // Gizmo mode
-        if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
-            m_gizmoMode = GizmoMode::Translate;
-        }
-        ImGui::SameLine();
+        //// Gizmo mode
+        //if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
+        //    m_gizmoMode = GizmoMode::Translate;
+        //}
+        //ImGui::SameLine();
 
-        if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotate)) {
-            m_gizmoMode = GizmoMode::Rotate;
-        }
-        ImGui::SameLine();
+        //if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotate)) {
+        //    m_gizmoMode = GizmoMode::Rotate;
+        //}
+        //ImGui::SameLine();
 
-        if (ImGui::RadioButton("Scale", m_gizmoMode == GizmoMode::Scale)) {
-            m_gizmoMode = GizmoMode::Scale;
-        }
+        //if (ImGui::RadioButton("Scale", m_gizmoMode == GizmoMode::Scale)) {
+        //    m_gizmoMode = GizmoMode::Scale;
+        //}
 
         ImGui::End();
     }
