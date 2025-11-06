@@ -31,6 +31,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Core/Engine.hpp"
 #include <Core/Profiler.hpp>
 #include <Assets/TextureManager.hpp>
+#include <filesystem>
 
 using namespace Runtime;
 using namespace Gameplay;
@@ -81,9 +82,12 @@ bool Scene::load()
         }
 
         std::cout << "[Scene] load: " << m_name << "\n";
+        //std::string filepath = "assets/scenes/" + m_name + ".json";
 
+#ifndef _DEBUG
         std::string filepath = "assets/scenes/" + m_name + ".json";
-
+#endif
+        std::cout << std::filesystem::current_path().string() << "\n";
         if (!std::filesystem::exists(filepath))
         {
             std::cerr << "Scene file does not exist: " << filepath << "\n";

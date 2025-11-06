@@ -170,8 +170,8 @@ namespace Platform {
         // UI Rendering (ImGui windows)
         void renderMenuBar();
         void renderToolbar();
-        void renderHierarchy();              // Rubric 1204 - Good
-        void renderProperties();              // Rubric 1203 - Good
+        void renderHierarchy();              
+        void renderProperties();             
         void renderPrefabPalette();
         void renderSceneView();
         void renderLevelSettings();
@@ -187,7 +187,7 @@ namespace Platform {
 
         // Grid rendering
         void renderGrid();
-        void renderGizmos();                  // Rubric 1210 - Advanced (optional)
+        void renderGizmos();                
 
         // Input handling
         void handleEditorInput(double dt);
@@ -265,11 +265,10 @@ namespace Platform {
         float m_windowWidth;
         float m_windowHeight;
 
-        // Gizmo state (optional feature)
+        // Gizmo state
         bool m_showGizmos;
         enum class GizmoMode { Translate, Rotate, Scale } m_gizmoMode;
 
-        // Undo/Redo state (bonus feature)
         struct EditorCommand {
             virtual ~EditorCommand() = default;
             virtual void execute() = 0;

@@ -30,6 +30,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -113,7 +114,7 @@ namespace Platform {
             return false;
         }
 
-        // Load prefabs from directory (Rubric 1202 - Good: Data-driven content)
+        // Load prefabs from directory
         loadPrefabs();
 
         // Register built-in prefabs
@@ -166,6 +167,7 @@ namespace Platform {
 
     void LevelEditor::render() {
         if (!m_renderer || !m_currentScene) return;
+
 
         // Render grid in edit mode
         if (m_mode == EditorMode::Edit && m_gridSettings.enabled) {
@@ -274,7 +276,6 @@ namespace Platform {
 
     bool LevelEditor::saveLevel() {
         if (m_currentLevelMetadata.filepath.empty()) {
-            // Need to specify filepath
             m_showSaveDialog = true;
             return false;
         }
@@ -284,11 +285,11 @@ namespace Platform {
 
     bool LevelEditor::saveLevel(const std::string& filepath) {
         if (!m_currentScene) {
+            std::cout << "not saved";
             // TODO: Core::Engine::Get().logger().error("No scene to save");
             return false;
         }
 
-        // Use serializer to save scene (Rubric 1202 - Good: Data-driven)
         bool success = Gameplay::GameObjectSerializer::saveSceneToFile(
             m_currentLevelMetadata.name,
             m_currentScene->objects(),
@@ -557,7 +558,7 @@ namespace Platform {
             }
         }
         catch (const std::exception& e) {
-            // TODO: Core::Engine::Get().logger().error("Failed to scan prefab directory: " + std::string(e.what()));
+            //m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
         }
     }
 
@@ -590,7 +591,7 @@ namespace Platform {
     }
 
     /******************************************************************************/
-    // Camera Control (Rubric 1208 - Advanced)
+    // Camera Control
     /******************************************************************************/
 
     void LevelEditor::resetCamera() {
@@ -764,12 +765,12 @@ namespace Platform {
 
         // Play/Stop button (Rubric 1207 - Advanced)
         if (m_mode == EditorMode::Edit) {
-            if (ImGui::Button("▶ Play")) {
+            if (ImGui::Button("Play")) {
                 togglePlayMode();
             }
         }
         else {
-            if (ImGui::Button("■ Stop")) {
+            if (ImGui::Button("Stop")) {
                 togglePlayMode();
             }
         }
@@ -820,7 +821,6 @@ namespace Platform {
         ImGui::End();
     }
 
-    // Rubric 1204 - Good: Hierarchy objects list
     void LevelEditor::renderHierarchy() {
         ImGui::Begin("Hierarchy");
 
@@ -860,14 +860,14 @@ namespace Platform {
                 }
 
                 // Determine icon based on type
-                const char* icon = "◆";
+                const char* icon = "?";
                 switch (obj->type()) {
-                case Gameplay::GameObjectType::Floor: icon = "▬"; break;
-                case Gameplay::GameObjectType::Wall: icon = "▮"; break;
-                case Gameplay::GameObjectType::Player: icon = "⚉"; break;
-                case Gameplay::GameObjectType::Enemy: icon = "☠"; break;
-                case Gameplay::GameObjectType::Trap: icon = "⚠"; break;
-                default: icon = "◆"; break;
+                case Gameplay::GameObjectType::Floor: icon = "F"; break;
+                case Gameplay::GameObjectType::Wall: icon = "W"; break;
+                case Gameplay::GameObjectType::Player: icon = "P"; break;
+                case Gameplay::GameObjectType::Enemy: icon = "E"; break;
+                case Gameplay::GameObjectType::Trap: icon = "T"; break;
+                default: icon = "?"; break;
                 }
 
                 ImGui::PushID(static_cast<int>(i));

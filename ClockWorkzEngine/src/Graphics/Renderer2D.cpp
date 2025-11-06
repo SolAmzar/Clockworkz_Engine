@@ -122,7 +122,7 @@ void Renderer2D::shutdown() {
 //}
 
 void Renderer2D::beginBatch() {
-    std::cout << "Renderer2D beginBatch" << std::endl;
+    //std::cout << "Renderer2D beginBatch" << std::endl;
     m_vertices.clear();
     m_spriteCount = 0;
     for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i) m_textures[i] = 0;
@@ -154,7 +154,7 @@ void Renderer2D::submitQuad(
     const glm::vec2& pos, const glm::vec2& size, unsigned texId,
     const glm::vec4& color, float angleRad, const glm::vec4& uvRect, Anchor anchor)
 {
-    std::cout << "Renderer2D submitQuad" << std::endl;
+    //std::cout << "Renderer2D submitQuad" << std::endl;
     if (m_spriteCount >= MAX_SPRITES) {
         flush();
         beginBatch();
@@ -196,7 +196,7 @@ void Renderer2D::submitQuad(
 
 void Renderer2D::flush() {
     if (m_spriteCount == 0) return;
-    std::cout << "Renderer2D flush" << std::endl;
+    //std::cout << "Renderer2D flush" << std::endl;
     // Upload vertex buffer for current batch
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -204,7 +204,7 @@ void Renderer2D::flush() {
 
     // Bind all textures used in this batch
     for (int i = 0; i < m_numTextures; ++i) {
-        std::cout << "Slot " << i << " bound GL ID: " << m_textures[i] << "\n";
+        //std::cout << "Slot " << i << " bound GL ID: " << m_textures[i] << "\n";
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, m_textures[i]);
     }
