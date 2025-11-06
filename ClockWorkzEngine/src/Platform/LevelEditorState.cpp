@@ -47,7 +47,6 @@ namespace Runtime {
         m_renderer = &engine.rendering();
         m_windowManager = &engine.window();
 
-        // ✓ FIXED: Load shaders like PlayState (prevents texture loss)
         auto textureShader = Assets::ResourceManager<Graphics::Shader>::Load(
             "texture",
             "assets/shaders/texture.vert",
