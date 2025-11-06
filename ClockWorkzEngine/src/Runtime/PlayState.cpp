@@ -304,7 +304,7 @@ namespace Runtime {
 
                 for (int i = 0; i < toSpawn; ++i) {
                     int gridSize = 50;
-                    float spacing = 50.f;
+                    float spacing = 40.f;
                     int idx = m_spawnedCount + i;
                     int row = idx / gridSize;
                     int col = idx % gridSize;
@@ -312,7 +312,7 @@ namespace Runtime {
                     float x = -gridSize * spacing / 2.0f + col * spacing;
                     float y = -gridSize * spacing / 2.0f + row * spacing;
 
-                    auto obj = factory.createAt("Wall", vec2(x, y));
+                    auto obj = factory.createAt("Enemy", vec2(x, y));
                     if (obj) {
                         currentScene->objects().push_back(std::move(obj));
                     }
@@ -504,7 +504,7 @@ namespace Runtime {
                 if (currentScene) {
                     // Spawn objects in a grid pattern
                     int gridSize = 50; // 50x50 = 2500 objects
-                    float spacing = 20.f;
+                    float spacing = 40.f;
                     float startX = -gridSize * spacing / 2.0f;
                     float startY = -gridSize * spacing / 2.0f;
 
@@ -514,7 +514,7 @@ namespace Runtime {
                             float y = startY + j * spacing;
 
                             // Create an object using your prefab system
-                            auto obj = factory.createAt("Floor", vec2(x, y));
+                            auto obj = factory.createAt("Enemy", vec2(x, y));
                             if (obj) {
                                 currentScene->objects().push_back(std::move(obj));
                             }
