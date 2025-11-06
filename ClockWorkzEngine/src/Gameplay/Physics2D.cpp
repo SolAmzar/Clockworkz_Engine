@@ -213,12 +213,13 @@ namespace Gameplay {
         inline bool movable(GameObject* g) {
         using GT = Gameplay::GameObjectType;
             switch (g->type()) {
-            case GT::Wall:    return false;           // <-- walls are static
-            case GT::Floor:   return false;           // optional: floors static too
-            case GT::Trap:    return false;           // traps as triggers (no push)
-            case GT::Player:
-            case GT::Enemy:
-            case GT::Ball:
+            case GT::Wall:    return g->isSolid();           // <-- walls are static
+            case GT::Floor:   return g->isSolid();         // optional: floors static too
+            case GT::Trap:    return g->isSolid();          // traps as triggers (no push)
+			case GT::Box:	  return g->isSolid();            // boxes are movable
+            case GT::Player:  return g->isSolid();
+            case GT::Enemy:   return g->isSolid();
+            case GT::Ball:    return g->isSolid();
                 return true;                            // dynamic bodies move
             default:
                 return true;

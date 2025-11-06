@@ -75,6 +75,9 @@ namespace Gameplay {
         case GameObjectType::Ball:
             color = glm::vec3(1.0f, 0.0f, 1.0f);
             break;
+        case GameObjectType::Box:
+            color = glm::vec3(1.0f, 0.5f, 0.0f);
+			break;
         case GameObjectType::Unknown:
             color = glm::vec3(0.6f, 0.6f, 0.6f);
             break;
