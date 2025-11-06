@@ -39,7 +39,7 @@ namespace Graphics {
 namespace Gameplay {
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball};
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
 
 	// To disguish between different collision shapes
     enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown};
@@ -110,6 +110,7 @@ namespace Gameplay {
 
         // Flags to support horror mechanics (light, blocking, hazards)
         bool isSolid() const { return m_isSolid; }
+		bool ismoveable() const { return m_moveable; }
         bool isHazard() const { return m_isHazard; }
         bool blocksLight() const { return m_blocksLight; }
         void setSolid(bool v) { m_isSolid = v; }
@@ -171,6 +172,7 @@ namespace Gameplay {
         bool            m_isSolid{ false };
         bool            m_isHazard{ false };
         bool            m_blocksLight{ true };
+		bool 		    m_moveable{ false };
 
         mutable bool    m_boundsDirty{ true };
         mutable AABB    m_cachedAABB{};
