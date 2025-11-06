@@ -319,6 +319,7 @@ namespace Runtime
     // Implementation of ImGui
     void Runtime::MenuState::renderImGui(Core::Time *timer)
     {
+
         if (!m_debug)
             return;
 
@@ -330,6 +331,7 @@ namespace Runtime
             ImGui::Text("[Enter] to select");
             ImGui::End();
         }
+        (void)timer;
     }
 
     void MenuState::onExit()

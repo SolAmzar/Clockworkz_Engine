@@ -197,6 +197,7 @@ namespace Core
 	{
 		//Check if Fixed Delta time (Uncomment if you want to check)
 		/*std::cout << m_time->fixedDelta() << std::endl;*/
+		(void)dt;
 
 		if (!m_booted)
 		{
@@ -218,6 +219,7 @@ namespace Core
 		for (int i = 0; i < steps; ++i) {
 			m_gsm->update(m_time->fixedDelta());
 		}
+		
 	}
 
 	/** Function header comment

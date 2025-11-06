@@ -55,14 +55,14 @@ namespace Runtime
 {
 
 	std::unordered_map<std::string, std::vector<glm::vec4>> playerSprite;
-	const float changeFrameTime = 0.3;
+	const float changeFrameTime = 0.3f;
 	float frameTimer = 0.f;
 	size_t frameCount = 0;
 
 	void ResetFrame()
 	{
-		float frameTimer = 0.f;
-		size_t frameCount = 0;
+		frameTimer = 0.f;
+		frameCount = 0;
 	}
 
 	void InitPlayerSpriteUVs()
@@ -176,11 +176,11 @@ namespace Runtime
 					if (u->type() == Gameplay::GameObjectType::Player)
 					{
 						m_player = &(*u);
-						Gameplay::SpriteRendererComponent *playerSprite = u->getComponent<Gameplay::SpriteRendererComponent>();
-						if (playerSprite)
+						Gameplay::SpriteRendererComponent *playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
+						if (playerSprite2)
 						{
 
-							playerSprite->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
 						}
 					}
 				}
@@ -209,7 +209,7 @@ namespace Runtime
 	{
 
 		Core::Engine &engine = Core::Engine::Get();
-		Platform::InputManager &input = engine.input();
+		//Platform::InputManager &input = engine.input();
 		Graphics::Camera2D &cam = engine.camera();
 		Platform::WindowManager &window = engine.window();
 		vec2 mouseWorld = m_input.getMouseWorldPos(
@@ -333,8 +333,6 @@ namespace Runtime
 						obj->transform().scale.x += static_cast<f32>(10 * dt);
 						obj->transform().scale.y += static_cast<f32>(10 * dt);
 					}
-
-					vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
 					// Player world position
 					vec2 playerPos = obj->transform().position;
@@ -553,6 +551,7 @@ namespace Runtime
 		//		o->debugRender(*m_renderer);
 		// }
 		// m_renderer->endDebugPass();
+		(void)timer;
 	}
 
 	// test for IMGUI (still broken)
@@ -800,7 +799,7 @@ namespace Runtime
 				resetScene();
 			}
 
-			ImGui::Separator;
+			ImGui::Separator();
 
 			ImGui::Text("Press [W][A][S][D] to move!");
 			ImGui::Text("Press [Shift] to run!");

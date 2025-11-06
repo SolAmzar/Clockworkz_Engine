@@ -1557,6 +1557,7 @@ namespace Platform {
         if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
+        (void)dt;
     }
 
     void LevelEditor::handleCameraInput(double dt) {
