@@ -75,10 +75,6 @@ namespace Gameplay {
         static float printInterval = 1.0f; // Print every 1 second
         lastPrintTime += static_cast<f32>(dt);
         if (lastPrintTime >= printInterval) {
-            std::cout << "Chase Debug - Enemy: " << m_enemy.name()
-                << " | Distance to player: " << dist
-                << " | Engage radius: " << m_engageRadius
-                << " | Stop distance: " << m_stopDist << "\n";
             lastPrintTime = 0;
         }
         vec2 dir = (1.0f / dist) * d;
@@ -106,15 +102,12 @@ namespace Gameplay {
         // (A) If you have a velocity field integrated elsewhere each frame:
         if (m_enemy.hasVelocity()) {
             m_enemy.velocity() = desiredVel;
-            std::cout << "Setting velocity for " << m_enemy.name()
-                << ": (" << desiredVel.x << ", " << desiredVel.y << ")\n";
+
         }
         else {
             // (B) Fallback: move directly (simple kinematic)
             m_enemy.transform().position += desiredVel * static_cast<f32>(dt);
             m_enemy.markDirty();
-            std::cout << "Moving directly: " << m_enemy.name()
-                << " by (" << desiredVel.x << ", " << desiredVel.y << ")\n";
         }
     }
 } // namespace Gameplay

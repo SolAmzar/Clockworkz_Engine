@@ -832,11 +832,11 @@ namespace Runtime
 
 					if (!objs.empty() && ImGui::Button("Delete Chosen Object"))
 					{
-						if (auto scene = m_scenes.current())
+						if (auto scene1 = m_scenes.current())
 						{
 							Gameplay::GameObject* doomed = objs[chosen].get();
-							scene->destroyObject(doomed);
-							if (chosen >= (int)scene->objects().size()) chosen = (int)scene->objects().size() - 1;
+							scene1->destroyObject(doomed);
+							if (chosen >= (int)scene1->objects().size()) chosen = (int)scene1->objects().size() - 1;
 						}
 					}
 
@@ -962,6 +962,7 @@ namespace Runtime
 			if (auto* scene = m_scenes.current()) {
 				scene->registerExistingObjectsToLayers(); 
 				m_player = findFirstPlayer(scene);
+
 
 				// ******** Chase function to be implemented in M3 ********
 				auto& objs = scene->objects();
