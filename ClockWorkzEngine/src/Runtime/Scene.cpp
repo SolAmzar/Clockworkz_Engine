@@ -20,6 +20,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
+#include "Graphics/LayerManager.hpp"
 #include "Gameplay/Physics2D.hpp"
 #include "Gameplay/Serializer.hpp" // ADD THIS
 #include "Gameplay/Prefab.hpp"     // ADD THIS
@@ -45,6 +46,52 @@ Scene::Scene(const std::string &name) : m_name(name)
 Scene::~Scene() = default;
 const std::string &Scene::name() const { return m_name; }
 std::vector<std::unique_ptr<Gameplay::GameObject>> &Scene::objects() { return m_objects; }
+
+Gameplay::GameObject* Scene::findByName(std::string const& name) {
+    for (auto& u : m_objects) if (u && u->name() == name) return u.get();
+    return nullptr;
+}
+Gameplay::GameObject* Scene::findFirstByLayer(int layer) {
+    for (auto& u : m_objects) if (u && static_cast<int>(u->layer()) == layer) return u.get();
+    return nullptr;
+}
+
+void Scene::wireLayerCallback(GameObject* o) {
+    // When the object's draw layer changes, we reindex it in LayerManager.
+    // LayerManager::onLayerChanged expects the GameObject* and the new layer value.
+    o->setLayerChangedCallback([this](GameObject* who) {
+        // Provide the current/new layer as the second argument.
+        m_layers.onLayerChanged(who, who->layer());
+    });
+}
+
+void Scene::registerExistingObjectsToLayers() {
+    m_layers.clear();
+    for (auto& up : m_objects) {
+        // Ensure the object notifies the LayerManager when its layer changes.
+        wireLayerCallback(up.get());
+        // Add the object to the LayerManager with its current layer.
+        m_layers.add(up.get(), up->layer());
+    }
+}
+
+void Scene::addObject(std::unique_ptr<GameObject> go) {
+    // Wire the layer-changed callback before adding so LayerManager stays consistent.
+    wireLayerCallback(go.get());
+    // Add to LayerManager with the object's current layer.
+    m_layers.add(go.get(), go->layer());
+    // Transfer ownership into the scene.
+    m_objects.push_back(std::move(go));
+}
+
+void Scene::destroyObject(GameObject* go) {
+    if (!go) return;
+    m_layers.remove(go);
+    // also erase from owning vector
+    auto it = std::remove_if(m_objects.begin(), m_objects.end(),
+        [&](std::unique_ptr<GameObject>& p) { return p.get() == go; });
+    m_objects.erase(it, m_objects.end());
+}
 
 bool Scene::load()
 {
@@ -176,12 +223,47 @@ const Gameplay::Physics2D *Scene::getPhysics() const
 //     }
 // }
 
+//void Scene::update(double dt)
+//{
+//    {
+//        PROFILE_SCOPE("GameObjectUpdates");
+//
+//        // Per-layer updates in a fixed front→back order.
+//        // (Common: skip UI from simulation; change if you want it updated.)
+//        m_layers.for_each_layered_update([&](Gameplay::GameObject& o, uint32_t bit) {
+//            if (bit != Gameplay::DrawLayer::UI && o.active())
+//                o.update(dt);
+//            });
+//    }
+//
+//    if (m_physics)
+//    {
+//        PROFILE_SCOPE("Physics");
+//        m_physics->step(objects(), dt);
+//
+//        // OPTION B (recommended later): if you add an overload that takes
+//        // std::vector<GameObject*> (faster, no unique_ptr unwrap), use this:
+//        // m_physics->step(m_layers.all_objects(), dt);
+//    }
+//}
+//
+//void Scene::render(Graphics::RenderingManager& r) {
+//    PROFILE_SCOPE("GameObjectRender");
+//    m_layers.for_each_layered_render([&](Gameplay::GameObject* o, uint32_t) {
+//        if (o->active()) o->render(r);
+//        });
+//}
+
+
+
+
+
 void Scene::update(double dt)
 {
     {
         PROFILE_SCOPE("GameObjectUpdates");
         std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
-        for (auto& o : objs){
+        for (auto& o : objs) {
             if (o->active())
                 o->update(dt);
         }
@@ -195,11 +277,11 @@ void Scene::update(double dt)
     }
 }
 
-void Scene::render(Graphics::RenderingManager &renderer)
+void Scene::render(Graphics::RenderingManager& renderer)
 {
     PROFILE_SCOPE("GameObjectRender");
     std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
-    for (auto &o : objs)
+    for (auto& o : objs)
     {
         if (o->active())
             o->render(renderer);

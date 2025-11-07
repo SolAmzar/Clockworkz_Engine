@@ -274,6 +274,13 @@ namespace Gameplay
                 objJson["components"][key] = value;
             }
         }
+        if (overrides.contains("patrol")) {
+            objJson["components"]["patrol"] = {
+            {"a", {{"x", 100.f}, {"y", 400.f}}},
+            {"b", {{"x", 300.f}, {"y", 400.f}}},
+            {"speed", 150.f}
+            };
+        }
 
         return GameObjectSerializer::deserializeGameObject(objJson);
     }

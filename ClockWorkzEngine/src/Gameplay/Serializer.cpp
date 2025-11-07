@@ -1,8 +1,8 @@
-﻿
-#include "Gameplay\Serializer.hpp"
+﻿#include "Gameplay\Serializer.hpp"
 #include "Gameplay\GameObject.hpp"
 #include "Gameplay\Components\Health.hpp"
 #include "Gameplay\Components\DamageDealer.hpp"
+#include "Gameplay\Components\Patrol.hpp"
 #include "Gameplay\Collider.hpp"
 #include "Gameplay\Prefab.hpp"
 #include "Math/Vec2.hpp"
@@ -44,6 +44,19 @@ namespace Gameplay {
         json j;
         j["hp"] = health->hp();
         return j;
+    }
+
+    json GameObjectSerializer::serializePatrol(const GameObject& obj) {
+        if (auto* pat = obj.getComponent<PatrolComponent>()) {
+            json j;
+            j["a"]["x"] = pat->a().x;
+            j["a"]["y"] = pat->a().y;
+            j["b"]["x"] = pat->b().x;
+            j["b"]["y"] = pat->b().y;
+            j["speed"] = pat->speed();
+            return j;
+        }
+        return json(); // empty if not present
     }
 
     json GameObjectSerializer::serializeDamage(const GameObject& obj) {
@@ -142,6 +155,29 @@ namespace Gameplay {
         }
     }
 
+    void GameObjectSerializer::deserializePatrol(GameObject& obj, const json& j) {
+        // Expected shape:
+        if (!j.is_object()) return;
+
+        vec2 a{ 0.f, 0.f };
+        vec2 b{ 0.f, 0.f };
+        float speed = 100.f;
+
+        if (j.contains("a")) {
+            a.x = j["a"].value("x", 0.f);
+            a.y = j["a"].value("y", 0.f);
+        }
+        if (j.contains("b")) {
+            b.x = j["b"].value("x", 0.f);
+            b.y = j["b"].value("y", 0.f);
+        }
+        if (j.contains("speed")) {
+            speed = j["speed"].get<float>();
+        }
+
+        obj.addComponent<PatrolComponent>(a, b, speed);
+    }
+
     // ========================================================================
     // GAMEOBJECT SERIALIZATION
     // ========================================================================
@@ -179,6 +215,10 @@ namespace Gameplay {
         if (!obj.textureId().empty()) {
             components["spriteRenderer"] = serializeSpriteRenderer(obj);
         }
+		// Optional patrol component
+        if (obj.getComponent<PatrolComponent>()) {
+            components["patrol"] = serializePatrol(obj);
+        }
 
         j["components"] = components;
 
@@ -198,9 +238,10 @@ namespace Gameplay {
             std::cout << "[Serializer] Loading prefab: " << prefabName << "\n";
 
             // Extract some basic overrides early (position, scale, texture, hp, dmg)
-            vec2 pos{ 0.f }, scale{ 100.f, 100.f };
+            vec2 pos{ 0.f }, scale{ 100.f, 100.f }, patrola{ 0.f, 0.f }, patrolb{ 0.f,0.f };
             std::string tex = "";
             int hp = 3, dmg = 1;
+			float speed = 100.f;
 
             if (j.contains("components")) {
                 const auto& comps = j["components"];
@@ -221,6 +262,19 @@ namespace Gameplay {
 
                 if (comps.contains("damage"))
                     dmg = comps["damage"].value("damage", 1);
+
+                if (comps.contains("patrol")) {
+                    const auto& p = comps["patrol"];
+                    if (p.contains("a")) {
+                        patrola.x = p["a"].value("x", 0.f);
+                        patrola.y = p["a"].value("y", 0.f);
+                    }
+                    if (p.contains("b")) {
+                        patrolb.x = p["b"].value("x", 0.f);
+                        patrolb.y = p["b"].value("y", 0.f);
+                    }
+                    speed = p.value("speed", speed);
+                }
             }
 
             // 2️⃣ Create prefab with correct factory (preserves colliders & masks)
@@ -258,6 +312,8 @@ namespace Gameplay {
                     deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);
                 if (comps.contains("collider"))
                     deserializeCollider(*obj, comps["collider"]);
+                if (comps.contains("patrol"))
+                    deserializePatrol(*obj, comps["patrol"]);
             }
 
             // 4️⃣ Apply generic fields (name, active)

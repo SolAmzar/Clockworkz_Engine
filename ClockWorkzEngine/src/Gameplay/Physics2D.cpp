@@ -213,13 +213,13 @@ namespace Gameplay {
         inline bool movable(GameObject* g) {
         using GT = Gameplay::GameObjectType;
             switch (g->type()) {
-            case GT::Wall:    return g->isSolid();           // <-- walls are static
-            case GT::Floor:   return g->isSolid();         // optional: floors static too
-            case GT::Trap:    return g->isSolid();          // traps as triggers (no push)
-			case GT::Box:	  return g->isSolid();            // boxes are movable
-            case GT::Player:  return g->isSolid();
-            case GT::Enemy:   return g->isSolid();
-            case GT::Ball:    return g->isSolid();                         // dynamic bodies move
+            case GT::Wall:    return false;        // <-- walls are static
+            case GT::Floor:   return false;        // optional: floors static too
+            case GT::Trap:    return false;        // traps as triggers (no push)
+            case GT::Box:	  return true;         // boxes are movable
+            case GT::Player:  return true;
+            case GT::Enemy:   return true;
+            case GT::Ball:    return false;        // dynamic bodies move
             default:
                 return true;
             }
@@ -314,6 +314,7 @@ namespace Gameplay {
         grid.clear();
         for (auto& u : objs) {
             if (!u->active()) continue;
+            u->setLastHitNormal({ 0.f, 0.f });
             grid.insert(u.get());
         }
 
@@ -370,14 +371,20 @@ namespace Gameplay {
                     bool aMov = movable(a);
                     bool bMov = movable(b);
                     positionalCorrection(*a, *b, best, aMov, bMov);
-                    // (Optional) basic velocity response could go here
+
+                    a->setLastHitNormal(best.n);
+                    b->setLastHitNormal(-best.n);
                 }
+
+                
 
                 // 2) Gameplay interaction (death, damage, etc.)
                 applyInteraction(*a, *b);
 
+
+
                 // TODO: add bounce/slide with your velocity fields if needed
-                });
+             });
         }
     }
 

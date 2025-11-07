@@ -56,6 +56,7 @@ namespace Gameplay {
         static json serializeCollider(const GameObject& obj);
         static json serializeHealth(const GameObject& obj);
         static json serializeDamage(const GameObject& obj);
+        static json serializePatrol(const GameObject& obj);
         static json serializeSpriteRenderer(const GameObject& obj);
 
         // Component deserialization helpers
@@ -63,6 +64,7 @@ namespace Gameplay {
         static void deserializeCollider(GameObject& obj, const json& j);
         static void deserializeHealth(GameObject& obj, const json& j);
         static void deserializeDamage(GameObject& obj, const json& j);
+        static void deserializePatrol(GameObject& obj, const json& j);
         static void deserializeSpriteRenderer(GameObject& obj, const json& j);
     };
 

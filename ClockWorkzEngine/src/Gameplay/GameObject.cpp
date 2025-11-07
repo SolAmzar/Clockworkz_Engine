@@ -43,12 +43,15 @@ namespace Gameplay {
 
     void GameObject::update(double dt)
     {
+
+        for (auto& c : m_components) c->onBeforePhysics(*this, dt);
         // basic top-down integration
         m_transform.position += m_velocity * static_cast<float>(dt);
         markDirty();
-        for (auto &c : m_components)
+
+        for (auto& c : m_components) 
             c->onUpdate(*this, dt);
-       
+        
     }
 
     void GameObject::debugRender(Graphics::RenderingManager& renderer) {
@@ -116,7 +119,8 @@ namespace Gameplay {
     }
 
     void GameObject::render(Graphics::RenderingManager& renderer) {
-        // Placeholder: actual rendering handled by Graphics system using textureId
+        // Placeholder: actual rendering handled by Graphics system using textureID
+
         for (auto &c : m_components)
 			c->onRender(*this);
 	}
