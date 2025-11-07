@@ -46,6 +46,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Graphics/RenderingManager.hpp"
 #include <Platform/LevelEditorState.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
+#include "Gameplay/Components/chase.hpp"
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -238,6 +239,16 @@ namespace Runtime
 						{
 
 							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+						}
+					}
+				}
+				// ******** Chase function to be implemented in M3 ********
+				if (m_player) {
+					for (auto& u : objs) {
+						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
+							// Add Chase: speed=150, engageRadius=300 (chase when player within 300 units)
+							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 300.0f);
+							std::cout << "Added Chase component to enemy: " << u->name() << "\n";
 						}
 					}
 				}
@@ -861,11 +872,11 @@ namespace Runtime
 
 					if (!objs.empty() && ImGui::Button("Delete Chosen Object"))
 					{
-						if (auto scene = m_scenes.current())
+						if (auto scene1 = m_scenes.current())
 						{
 							Gameplay::GameObject* doomed = objs[chosen].get();
-							scene->destroyObject(doomed);
-							if (chosen >= (int)scene->objects().size()) chosen = (int)scene->objects().size() - 1;
+							scene1->destroyObject(doomed);
+							if (chosen >= (int)scene1->objects().size()) chosen = (int)scene1->objects().size() - 1;
 						}
 					}
 
@@ -990,7 +1001,20 @@ namespace Runtime
 
 			if (auto* scene = m_scenes.current()) {
 				scene->registerExistingObjectsToLayers(); 
+				m_player = findFirstPlayer(scene);
+
+
+				// ******** Chase function to be implemented in M3 ********
+				auto& objs = scene->objects();
+				if (m_player) {
+					for (auto& u : objs) {
+						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
+							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 100.0f);
+						}
+					}
+				}
 			}
+
 		}
 		else
 		{
@@ -998,6 +1022,18 @@ namespace Runtime
 			rebindLightsAndPlayerAfterReload();
 			if (auto* scene = m_scenes.current()) {
 				scene->registerExistingObjectsToLayers();
+				m_player = findFirstPlayer(scene);
+
+				// ******** Chase function to be implemented in M3 ********
+				auto& objs = scene->objects();
+				if (m_player) {
+					for (auto& u : objs) {
+						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
+							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 100.0f);
+							std::cout << "Re-added Chase to: " << u->name() << "\n";
+						}
+					}
+				}
 			}
 		}
 	}

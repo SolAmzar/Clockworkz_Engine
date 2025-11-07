@@ -304,9 +304,9 @@ namespace Core
 				{
 					PROFILE_SCOPE("Full Render");
 					m_renderer->beginFrame();
-					std::cout << "Core Render Begin: " << std::endl;
+					/*std::cout << "Core Render Begin: " << std::endl;*/
 					render();
-					std::cout << "Core Render End " << std::endl;
+					/*std::cout << "Core Render End " << std::endl;*/
 					m_renderer->endFrame();
 				}
 	/*			m_imgui->endFrame();

@@ -135,7 +135,7 @@ namespace Graphics {
 	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
 		const glm::vec2& size, float angleRad, const glm::vec4& uv, const glm::vec4& color)
 	{
-		std::cout << "draw Sprite: " << texId << std::endl;
+		/*std::cout << "draw Sprite: " << texId << std::endl;*/
 		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, uv, Graphics::Anchor::Center);
 	}
 

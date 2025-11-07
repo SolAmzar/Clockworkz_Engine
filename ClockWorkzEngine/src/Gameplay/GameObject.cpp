@@ -45,12 +45,19 @@ namespace Gameplay {
     {
 
         for (auto& c : m_components) c->onBeforePhysics(*this, dt);
-        // basic top-down integration
-        m_transform.position += m_velocity * static_cast<float>(dt);
-        markDirty();
 
-        for (auto& c : m_components) 
-            c->onUpdate(*this, dt);
+        if(m_chase){
+            for (auto& c : m_components) c->onUpdate(*this, dt);
+            m_transform.position += m_velocity * static_cast<float>(dt);
+            markDirty();
+        }
+        else {
+            // basic top-down integration
+            m_transform.position += m_velocity * static_cast<float>(dt);
+            markDirty();
+            for (auto& c : m_components) c->onUpdate(*this, dt);
+        }
+
         
     }
 
@@ -124,6 +131,21 @@ namespace Gameplay {
         for (auto &c : m_components)
 			c->onRender(*this);
 	}
+
+    //might want to change to this
+    //void GameObject::render(Graphics::RenderingManager& renderer) {
+    //    // 1. Lookup the texture by name _every frame_
+    //    auto texPtr = Assets::TextureManager::Get(m_textureId);
+    //    unsigned texId = texPtr ? texPtr->id() : 0;
+    //    renderer.drawSprite(
+    //        texId,
+    //        glm::vec2(m_transform.position.x, m_transform.position.y),
+    //        glm::vec2(m_size.x, m_size.y),
+    //        m_transform.rotationRad
+    //    );
+    //    // 3. Then render overlays/components if needed
+    //    for (auto& c : m_components) c->onRender(*this);
+    //}
 
 
 

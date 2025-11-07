@@ -2,7 +2,7 @@
 /*!
 \file           LevelEditor.cpp
 \project        Lights Out - Level Editor
-\author(s)      Student Implementation
+\author(s)      [Yusuf], 100%
 \brief          Implementation of comprehensive level editor with all features
                 required by the rubric criteria.
 
@@ -33,6 +33,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <iostream>
 #include <Core/Engine.hpp>
 #include <Runtime/PlayState.hpp>
+#include <Assets/ResourceManager.hpp>
+#include <Assets/TextureManager.hpp>
 
 namespace fs = std::filesystem;
 
@@ -85,6 +87,10 @@ namespace Platform {
         m_currentLevelMetadata.spawnPoint =  vec2(0.0f, 0.0f);
     }
 
+    static bool showReplaceDialog = false;
+    static std::string replacingTexture;
+    static char newFilePathBuf[128] = "";
+
     LevelEditor::~LevelEditor() {
         shutdown();
     }
@@ -92,6 +98,7 @@ namespace Platform {
     /******************************************************************************/
     // Initialization
     /******************************************************************************/
+
 
     bool LevelEditor::init(GLFWwindow* window,
         Graphics::RenderingManager& renderer,
@@ -102,7 +109,6 @@ namespace Platform {
         m_input = &input;
         m_windowManager = &windowMgr;
 
-        // ✓ FIXED: Get actual window size
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         m_windowWidth = static_cast<float>(width);
@@ -119,6 +125,7 @@ namespace Platform {
         if (!m_currentScene->load()) {
             return false;
         }
+
 
         // Load prefabs from directory
         loadPrefabs();
@@ -154,104 +161,23 @@ namespace Platform {
     void LevelEditor::update(double dt) {
         m_frameTime = dt;
 
-        // m_editorCamera.update(dt);  // Uncomment if Camera2D has update method
-
         // Update scene based on mode
         if (m_mode == EditorMode::Play) {
-            if (!m_currentScene) return;
-
-            // Exit play mode
-            if (m_input->wasKeyPressed(GLFW_KEY_ESCAPE)) {
-                EditorMode::Edit;
-                return;
+            // In play mode, just update the scene normally
+            if (m_currentScene) {
+                m_currentScene->update(dt);
             }
+        }
+        else {
+            // In edit mode, handle editor-specific input and camera
+            handleEditorInput(dt);
+            handleCameraInput(dt);
+            handleKeyboardShortcuts();
+        }
 
-            // Pause/Resume
-            if (m_input->wasKeyPressed(GLFW_KEY_SPACE)) {
-                m_isPaused = !m_isPaused;
-                return;
-            }
-
-            if (m_isPaused) return;
-
-            m_playTime += dt;
-
-            Core::Engine& engine = Core::Engine::Get();
-            Graphics::Camera2D& cam = engine.camera();
-            Platform::WindowManager& window = engine.window();
-
-            // ✓ FIXED: Get mouse position in world space
-            vec2 mouseWorld = m_input->getMouseWorldPos(
-                cam,
-                static_cast<float>(window.width()),
-                static_cast<float>(window.height())
-            );
-
-            // Player movement and input handling
-            for (auto& obj : m_currentScene->objects()) {
-
-                if (obj->type() == Gameplay::GameObjectType::Player) {
-                    float moveSpeed = 100.0f;
-
-                    // ===== WASD Movement =====
-                    if (m_input->isKeyDown(GLFW_KEY_W)) {
-                        obj->velocity().y = moveSpeed;
-                    }
-                    else if (m_input->isKeyDown(GLFW_KEY_S)) {
-                        obj->velocity().y = -moveSpeed;
-                    }
-                    else {
-                        obj->velocity().y = 0;
-                    }
-
-                    if (m_input->isKeyDown(GLFW_KEY_A)) {
-                        obj->velocity().x = -moveSpeed;
-                    }
-                    else if (m_input->isKeyDown(GLFW_KEY_D)) {
-                        obj->velocity().x = moveSpeed;
-                    }
-                    else {
-                        obj->velocity().x = 0;
-                    }
-
-                    // ===== Scale with G =====
-                    if (m_input->isKeyDown(GLFW_KEY_G)) {
-                        obj->transform().scale.x += static_cast<float>(10 * dt);
-                        obj->transform().scale.y += static_cast<float>(10 * dt);
-                    }
-
-                        vec2 playerPos = obj->transform().position;
-
-                        // Direction from player to mouse
-                        vec2 dir = mouseWorld - playerPos;
-
-                        // Get distance (only rotate if mouse is far enough)
-                        float distance = std::sqrt(dir.x * dir.x + dir.y * dir.y);
-
-                        if (distance > 10.0f) {
-                            // Normalize direction
-                            dir.x /= distance;
-                            dir.y /= distance;
-
-                            // Calculate angle in radians
-                            // atan2(y, x) gives angle from -π to π
-                            float angleRad = std::atan2(dir.y, dir.x);
-
-                            // Set player rotation
-                            obj->transform().rotationRad = angleRad;
-
-                            std::cout << "Player rotation: " << glm::degrees(angleRad) << " degrees\n";
-                        }
-
-                    // Respawn if inactive
-                    if (!obj->active()) {
-                        obj->respawnAt(vec2(0.0f, 0.0f), true, true);
-                    }
-                }
-            }
-
-            // Update scene (physics, collisions, etc.)
-            m_currentScene->update(dt);
+        // Update object count for UI
+        if (m_currentScene) {
+            m_objectCount = static_cast<int>(m_currentScene->objects().size());
         }
     }
 
@@ -531,6 +457,29 @@ namespace Platform {
         //}
     }
 
+
+
+
+    void LevelEditor::renderReplace()
+    {
+        ImGui::OpenPopup("Replace Texture");
+        if (ImGui::BeginPopupModal("Replace Texture", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::InputText("New PNG path", newFilePathBuf, sizeof(newFilePathBuf));
+            if (ImGui::Button("OK")) {
+                Assets::TextureManager::Unload(replacingTexture);
+                Assets::TextureManager::LoadTexture(replacingTexture, newFilePathBuf); // reloads under same name
+                showReplaceDialog = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                showReplaceDialog = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
     void LevelEditor::renderUI() {
         renderMenuBar();
 
@@ -543,6 +492,12 @@ namespace Platform {
 
         // Always show scene view
         if (m_showSceneView) renderSceneView();
+
+        renderAssetBrowser();
+
+        if (showReplaceDialog) {
+            renderReplace();
+        }
 
         renderSaveDialog();
         renderLoadDialog();
@@ -941,10 +896,14 @@ namespace Platform {
                     // TODO: Core::Engine::Get().logger().info("Loaded prefab from dropped file: " + path);
                 }
             }
-            // Check if it's a texture
             else if (filePath.extension() == ".png" || filePath.extension() == ".jpg") {
-                // TODO: Core::Engine::Get().logger().info("Dropped texture file: " + path);
-                // In a real implementation, this would load the texture into the texture manager
+                std::string name = filePath.stem().string(); // e.g., "my_pic" from "my_pic.png"
+                if (Assets::TextureManager::LoadTexture(name, path)) {
+                    markLevelDirty();
+                }
+                else {
+                    // Optionally: log or alert about failure
+                }
             }
         }
     }
@@ -989,7 +948,6 @@ namespace Platform {
 
                 ImGui::Separator();
 
-                // ✓ FIXED: Recent Levels menu
                 if (ImGui::BeginMenu("Recent Levels")) {
                     if (m_recentLevels.empty()) {
                         ImGui::TextDisabled("No recent levels");
@@ -1330,11 +1288,27 @@ namespace Platform {
         // Rendering
         if (ImGui::CollapsingHeader("Rendering")) {
             // Texture ID
+            // Texture assignment
             char texBuffer[256];
             strncpy(texBuffer, m_selectedObject->textureId().c_str(), sizeof(texBuffer));
             if (ImGui::InputText("Texture ID", texBuffer, sizeof(texBuffer))) {
                 m_selectedObject->setTextureId(texBuffer);
                 markLevelDirty();
+            }
+            // Texture preview (to the right of the field)
+            auto tex = Assets::TextureManager::Get(m_selectedObject->textureId());
+            ImGui::SameLine();
+            if (tex && tex->id() != 0) {
+                ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+            }
+            // --- Drag-and-drop target for texture thumbnails
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_ID")) {
+                    const char* droppedName = (const char*)payload->Data;
+                    m_selectedObject->setTextureId(droppedName);  // update
+                    markLevelDirty();
+                }
+                ImGui::EndDragDropTarget();
             }
 
             // Layer
@@ -1474,6 +1448,57 @@ namespace Platform {
         ImGui::End();
     }
 
+    void LevelEditor::renderAssetBrowser()
+    {
+        ImGui::Begin("Texture Assets Browser");
+        std::vector<std::string> names = Assets::TextureManager::GetLoadedTextureNames();
+        static std::string selectedTextureName;
+
+        for (const auto& name : names) {
+            ImGui::PushID(name.c_str());  // Ensure all widgets in this loop have unique ID scope
+
+            bool isSelected = (selectedTextureName == name);
+            // Selectable - show name, allow context menu
+            if (ImGui::Selectable(name.c_str(), isSelected)) {
+                selectedTextureName = name;
+            }
+            // Context menu for selectable (right-click name)
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Replace")) {
+                    showReplaceDialog = true;
+                    replacingTexture = name;
+                    newFilePathBuf[0] = '\0';
+                }
+                if (ImGui::MenuItem("Rename")) {
+                    // Show rename UI/dialog here
+                }
+                if (ImGui::MenuItem("Delete")) {
+                    Assets::TextureManager::Unload(name);
+                }
+                ImGui::EndPopup();
+            }
+
+            auto tex = Assets::TextureManager::Get(name);
+            if (tex && tex->id() != 0) {
+                // Show texture preview as an ImageButton.
+                // The label ("##thumb") ensures a unique widget, but 'PushID' already ensures uniqueness, so label doesn't need to be unique.
+                if (ImGui::ImageButton("##thumb", (ImTextureID)(intptr_t)tex->id(), ImVec2(64, 64))) {
+                    // You can implement click-to-select or preview here.
+                }
+                // Context menu for the image thumbnail (right-click thumbnail)
+                if (ImGui::BeginDragDropSource()) {
+                    ImGui::SetDragDropPayload("TEXTURE_ID", name.c_str(), name.length() + 1);
+                    ImGui::Text("Drag: %s", name.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
+            ImGui::PopID();
+        }
+        ImGui::End();
+    }
+
+
+
     void LevelEditor::renderLevelSettings() {
         ImGui::Begin("Level Settings", &m_showLevelSettings);
 
@@ -1590,11 +1615,11 @@ namespace Platform {
 
         // Zoom with mouse wheel (would need scroll callback)
         // For now, use keys
-        if (m_input->isKeyDown(GLFW_KEY_EQUAL)) {
+        if (m_input->isKeyDown(GLFW_KEY_Q)) {
             float newZoom = m_editorCamera.zoom() * (1.0f + m_cameraZoomSpeed);
             m_editorCamera.setZoom(newZoom);
         }
-        if (m_input->isKeyDown(GLFW_KEY_MINUS)) {
+        if (m_input->isKeyDown(GLFW_KEY_R)) {
             float newZoom = m_editorCamera.zoom() * (1.0f - m_cameraZoomSpeed);
             m_editorCamera.setZoom(std::max(0.1f, newZoom));
         }

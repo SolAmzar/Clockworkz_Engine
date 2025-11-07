@@ -2,8 +2,8 @@
 /*!
 \file           LevelEditorState.cpp
 \project        Lights Out - Level Editor
-\author(s)      Student Implementation
-\brief          Implementation of EditorState - Fully compatible with GameState
+\author(s)      [Yusuf], 100%
+\brief          
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
@@ -47,7 +47,6 @@ namespace Runtime {
         m_renderer = &engine.rendering();
         m_windowManager = &engine.window();
 
-        // ✓ FIXED: Load shaders like PlayState (prevents texture loss)
         auto textureShader = Assets::ResourceManager<Graphics::Shader>::Load(
             "texture",
             "assets/shaders/texture.vert",
