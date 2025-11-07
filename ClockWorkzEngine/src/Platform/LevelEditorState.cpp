@@ -106,6 +106,7 @@ namespace Runtime {
 
         // Render editor scene
         m_editor->render();
+        (void)timer;
     }
 
     void EditorState::renderImGui(Core::Time* timer) {
@@ -113,6 +114,7 @@ namespace Runtime {
 
         // Render editor UI
         m_editor->renderUI();
+        (void)timer;
     }
 
 } // namespace Runtime

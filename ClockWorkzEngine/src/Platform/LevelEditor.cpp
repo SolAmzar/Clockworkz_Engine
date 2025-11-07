@@ -723,7 +723,7 @@ namespace Platform {
             m_currentScene->load();
 
             for (auto& obj : objects) {
-                m_currentScene->objects().push_back(std::move(obj));
+                m_currentScene->addObject(std::move(obj)); 
             }
             std::cout << "GameObjects loaded (" << m_currentScene->objects().size() << "):\n";
             for (const auto& obj : m_currentScene->objects()) {
@@ -845,7 +845,7 @@ namespace Platform {
 
         auto obj = Gameplay::PrefabFactory::get().createAt(prefabName, position);
         if (obj) {
-            m_currentScene->objects().push_back(std::move(obj));
+            m_currentScene->addObject(std::move(obj)); 
             markLevelDirty();
             // TODO: Core::Engine::Get().logger().info("Created object from prefab: " + prefabName);
         }
@@ -1215,7 +1215,7 @@ namespace Platform {
 			vec2 camPos = compat::to_vec2(m_editorCamera.position());
 
             obj->setPosition(camPos);
-            m_currentScene->objects().push_back(std::move(obj));
+            m_currentScene->addObject(std::move(obj)); 
             markLevelDirty();
         }
 
@@ -1663,6 +1663,7 @@ namespace Platform {
         if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
+        (void)dt;
     }
 
     void LevelEditor::handleCameraInput(double dt) {
@@ -1851,7 +1852,7 @@ namespace Platform {
             m_currentScene->load();
             m_currentScene->objects().clear();
             for (auto& obj : objects) {
-                m_currentScene->objects().push_back(std::move(obj));
+                m_currentScene->addObject(std::move(obj)); 
             }
 
             m_selectedObject = nullptr;

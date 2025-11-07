@@ -359,6 +359,8 @@ namespace Graphics {
 		shader->setFloat("uAngle", glm::radians(lightAngle));   // cone width ~60° total
 		shader->setFloat("uRadius", 300.0f);
 		shader->setVec3("uLightColor", glm::vec3(1.0f, 0.9f, 0.6f));
+		(void)radius;
+		(void)color;
 	}
 
 	void RenderingManager::endLightPass() {

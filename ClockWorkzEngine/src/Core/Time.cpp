@@ -2,12 +2,13 @@
 /*!
 \file           Time.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon], 90% [Syafiq], 10%
 \brief          Declares Time, a utility for tracking frame timing and FPS.
 				Responsibilities include:
 				- beginFrame() to measure delta time between frames
 				- endFrame() placeholder for per-frame finalization
 				- Access to delta time and calculated frames-per-second (FPS)
+				- Set Fixed Delta Time
 
 				Uses GLFW�s high-resolution timer for accurate frame timing.
 				Can be use to track ms on fucntions performance later.
@@ -33,11 +34,29 @@ void Core::Time::beginFrame() {
 	m_last = now;
 	m_accum += m_dt;
 	m_frames++;
-	if (m_accum >= 1.0) { m_fps = m_frames / m_accum; m_accum = 0.0; m_frames = 0; }
+	if (m_accum >= 1.0) { 
+		m_fps = m_frames / m_accum; 
+		m_accum = 0.0; 
+		m_frames = 0; 
+	}
+
+	//Fixed Delta Time
+	m_currentSteps = 0;
+	m_accumTime += m_dt;
+
+	while (m_accumTime >= m_fixedDT) {
+		m_accumTime -= m_fixedDT;
+		m_currentSteps++;
+	}
+
 }
 
-double Core::Time::fps() const { return (m_fps > 0.0) ? m_fps : (m_dt > 0.0 ? 1.0 / m_dt : 0.0); }
-double Core::Time::frameTimeMs() const { return m_dt * 1000.0; }
+double Core::Time::fps() const { 
+	return (m_fps > 0.0) ? m_fps : (m_dt > 0.0 ? 1.0 / m_dt : 0.0); 
+}
+double Core::Time::frameTimeMs() const { 
+	return m_dt * 1000.0; 
+}
 
 void Core::Time::endFrame() {
 	// Compute instantaneous fps from last frame's delta

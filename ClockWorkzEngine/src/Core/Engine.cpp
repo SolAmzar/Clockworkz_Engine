@@ -2,7 +2,7 @@
 /*!
 \file           Engine.cpp
 \project        Lights Out
-\author(s)      [Lebon], 95%% [Wei An], 5%
+\author(s)      [Lebon], 80% [Wei An], 5% [Amzar] 15%
 \brief          Declares Engine, the central orchestrator of the game loop.
 				Responsibilities include:
 				- Initializing and shutting down all subsystems
@@ -195,6 +195,10 @@ namespace Core
 	 */
 	void Engine::update(double dt)
 	{
+		//Check if Fixed Delta time (Uncomment if you want to check)
+		/*std::cout << m_time->fixedDelta() << std::endl;*/
+		(void)dt;
+
 		if (!m_booted)
 		{
 			// Initial State when Run Game, start off from Menu State
@@ -209,8 +213,13 @@ namespace Core
 			m_booted = true;
 		}
 		m_audio->update(); // Update the audio manager class
-		m_gsm->update(dt); // Update the game state manager class
 		m_input->update(); // Update the input manager class
+
+		int steps = m_time->currentSteps();
+		for (int i = 0; i < steps; ++i) {
+			m_gsm->update(m_time->fixedDelta());
+		}
+		
 	}
 
 	/** Function header comment

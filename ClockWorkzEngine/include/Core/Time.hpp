@@ -24,7 +24,17 @@ namespace Core {
 		double delta() const { return m_dt; }
 		double fps() const;
 		double  frameTimeMs() const;
+
+		double fixedDelta() const { return m_fixedDT; }
+		int    currentSteps() const { return m_currentSteps; }
+		void   setFixedDelta(double dt) { m_fixedDT = dt; }
 	private:
-		double m_last = 0.0, m_dt = 0.0, m_accum = 0.0; int m_frames = 0; double m_fps = 0.0;
+		double m_last = 0.0, m_dt = 0.0, m_accum = 0.0; 
+		int m_frames = 0; 
+		double m_fps = 0.0;
+
+		double m_fixedDT = 1.0 / 60.0;
+		double m_accumTime = 0.0;
+		int m_currentSteps = 0;
 	};
 }

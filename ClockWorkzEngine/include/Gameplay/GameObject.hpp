@@ -27,6 +27,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
+#include "Graphics/LayerManager.hpp"
 #include "Math/Vec2.hpp"
 #include "Math/config.hpp"
 #include "Gameplay/Collider.hpp"
@@ -36,7 +38,9 @@ namespace Graphics {
     class RenderingManager;
 }
 
+
 namespace Gameplay {
+	class LayerManager;
 
     // Keep it small; components can add behavior later.
     enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
@@ -98,13 +102,17 @@ namespace Gameplay {
 
         vec2&                 velocity() { return m_velocity; }
         vec2 const&           velocity() const { return m_velocity; }
+        void                  setVelocity(const vec2& v) { m_velocity = v; }
 
         float const&          moveSpeed() { return m_moveSpeed; }
         void                  setMoveSpeed(float ms) { m_moveSpeed = ms; }
 
+        void                  setLastHitNormal(vec2 n) { m_lastHitNormal = n; }
+        vec2                  lastHitNormal() const { return m_lastHitNormal; }
+
         // Collision + rendering layers
         uint32_t              layer() const { return m_layer; }
-        void                  setLayer(uint32_t l) { m_layer = l; }
+        void                  setLayer(uint32_t l) {m_layer = l; if (m_onLayerChanged) m_onLayerChanged(this);}
         uint32_t              collisionMask() const { return m_collisionMask; }
         void                  setCollisionMask(uint32_t m) { m_collisionMask = m; }
 
@@ -116,8 +124,7 @@ namespace Gameplay {
         void setSolid(bool v) { m_isSolid = v; }
         void setHazard(bool v) { m_isHazard = v; }
         void setBlocksLight(bool v) { m_blocksLight = v; }
-        void setName(const std::string& newName);
-
+        void setName(const std::string& newName); 
 
         // Rendering handle for now (swap to Sprite component later)
         std::string const& textureId() const { return m_textureId; }
@@ -130,6 +137,15 @@ namespace Gameplay {
         AABB worldAABB() const;
 
         void markDirty() { m_boundsDirty = true; }
+
+        using LayerChangedFn = std::function<void(GameObject*)>;
+
+        // Setter accepts a std::function (can be a capturing lambda)
+        void setLayerChangedCallback(LayerChangedFn cb) { m_onLayerChanged = std::move(cb); }
+
+       
+      
+       
 
 
         // Very light component hook (safe to ignore at start)
@@ -153,6 +169,25 @@ namespace Gameplay {
         const std::vector<std::unique_ptr<Collider>>& colliders() const { return m_colliders; }
         std::vector<std::unique_ptr<Collider>>& colliders() { return m_colliders; }
 
+        // helpers
+        // GameObjectType::Player already exists in your code.
+        inline Gameplay::GameObject* FindPlayer(std::vector<std::unique_ptr<Gameplay::GameObject>> const& objects)
+        {
+            for (auto const& obj : objects)
+                if (obj && obj->active() && obj->type() == Gameplay::GameObjectType::Player)
+                    return obj.get();
+            return nullptr;
+        }
+
+        // non-const variant if you want to mutate the player:
+        inline Gameplay::GameObject* FindPlayer(std::vector<std::unique_ptr<Gameplay::GameObject>>& objects)
+        {
+            for (auto& obj : objects)
+                if (obj && obj->active() && obj->type() == Gameplay::GameObjectType::Player)
+                    return obj.get();
+            return nullptr;
+        }
+
     private:
         static uint32_t s_nextId;
 
@@ -165,9 +200,9 @@ namespace Gameplay {
         Transform2D     m_transform{};
         vec2            m_size{ 1.f, 1.f };
         vec2            m_velocity{ 0.f, 0.f };
+        vec2            m_lastHitNormal{ 0.f, 0.f };
         float           m_moveSpeed{ 100.0f };
 
-        uint32_t        m_layer{ 0 };
         uint32_t        m_collisionMask{ 0xFFFFFFFFu };
         bool            m_isSolid{ false };
         bool            m_isHazard{ false };
@@ -177,16 +212,20 @@ namespace Gameplay {
         mutable bool    m_boundsDirty{ true };
         mutable AABB    m_cachedAABB{};
 
-        std::string    m_textureId{};
+        std::string     m_textureId{};
 
         std::vector<std::unique_ptr<Collider>> m_colliders;
         std::vector<std::unique_ptr<Component>> m_components;
+
+        LayerChangedFn m_onLayerChanged{ nullptr };
+        uint32_t m_layer{ DrawLayer::World }; // default
     };
 
     // --- Component base kept tiny to avoid ECS bloat now ---
     class Component {
     public:
         virtual ~Component() = default;
+        virtual void onBeforePhysics(GameObject& owner, double dt) {}  
         virtual void onUpdate(GameObject& owner, double dt) { (void)owner; (void)dt; }
         // Render need to take the resource like textures/sprite information from resourcemanager.
         virtual void onRender(GameObject& owner) { (void)owner; }

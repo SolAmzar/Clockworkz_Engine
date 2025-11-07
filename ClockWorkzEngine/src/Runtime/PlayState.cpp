@@ -2,7 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon], 75% [Syafiq] 15%
+\author(s)      [Lebon], 70% [Syafiq] 20%
 \brief          Declares PlayState, the main gameplay loop state.
 				Responsibilities include:
 				- Loading and managing the current Scene and its GameObjects
@@ -55,14 +55,42 @@ namespace Runtime
 {
 
 	std::unordered_map<std::string, std::vector<glm::vec4>> playerSprite;
-	const float changeFrameTime = 0.3;
+	const float changeFrameTime = 0.3f;
 	float frameTimer = 0.f;
 	size_t frameCount = 0;
 
 	void ResetFrame()
 	{
-		float frameTimer = 0.f;
-		size_t frameCount = 0;
+		frameTimer = 0.f;
+		frameCount = 0;
+	}
+
+	static Gameplay::GameObject* findFirstPlayer(Runtime::Scene* scene) {
+		if (!scene) return nullptr;
+		for (auto& u : scene->objects()) {
+			if (u && u->type() == Gameplay::GameObjectType::Player) return u.get();
+		}
+		return nullptr;
+	}
+
+	void PlayState::rebindLightsAndPlayerAfterReload()
+	{
+		auto* scene = m_scenes.current();
+		// 1) Rebind player pointer to the NEW player object created by reload
+		m_player = findFirstPlayer(scene);
+
+		// 2) (Optional) reset your local animation state so UVs start clean
+		ResetFrame();
+
+		// 3) (Optional but recommended) if your light system caches occluders,
+		//    rebuild them here using the new scene objects.
+		//    (If your Renderer2D/RenderingManager doesn’t cache, you can skip.)
+		// Example:
+		// m_flashlight.clearOccluders();
+		// for (auto& u : scene->objects()) {
+		//     if (!u) continue;
+		//     if (u->isSolid() && u->blocksLight()) { m_flashlight.addOccluder(u.get()); }
+		// }
 	}
 
 	void InitPlayerSpriteUVs()
@@ -105,8 +133,9 @@ namespace Runtime
 			playerSprite["run"].push_back(uv);
 		}
 	}
+
 	PlayState::PlayState(std::string initialSceneId, Platform::InputManager &input, GameStateManager &gsm)
-			: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm)
+		: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm), m_player(nullptr)
 	{
 	}
 
@@ -175,11 +204,11 @@ namespace Runtime
 					if (u->type() == Gameplay::GameObjectType::Player)
 					{
 						m_player = &(*u);
-						Gameplay::SpriteRendererComponent *playerSprite = u->getComponent<Gameplay::SpriteRendererComponent>();
-						if (playerSprite)
+						Gameplay::SpriteRendererComponent *playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
+						if (playerSprite2)
 						{
 
-							playerSprite->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
 						}
 					}
 				}
@@ -208,7 +237,7 @@ namespace Runtime
 	{
 
 		Core::Engine &engine = Core::Engine::Get();
-		Platform::InputManager &input = engine.input();
+		//Platform::InputManager &input = engine.input();
 		Graphics::Camera2D &cam = engine.camera();
 		Platform::WindowManager &window = engine.window();
 		vec2 mouseWorld = m_input.getMouseWorldPos(
@@ -241,15 +270,6 @@ namespace Runtime
 			return;
 		}
 
-		if (m_input.wasKeyPressed(GLFW_KEY_L))
-		{
-			m_spawnonclick = !m_spawnonclick;
-			std::cout << "Spawn on click is "
-								<< (m_spawnonclick ? "enabled" : "disabled")
-								<< std::endl;
-			return;
-		}
-
 		// Havign issue with the camera
 		if (m_input.wasKeyPressed(GLFW_KEY_R))
 		{
@@ -260,79 +280,6 @@ namespace Runtime
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))
 		{
 			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
-		}
-
-		if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && m_spawnonclick)
-		{
-			mouseWorld = m_input.getMouseWorldPos(cam,
-																						static_cast<float>(window.width()),
-																						static_cast<float>(window.height()));
-
-			bool wallFound = false; // flag
-
-			// Check for an existing wall
-			for (auto it = gameObjects.begin(); it != gameObjects.end();)
-			{
-				auto &obj = *it;
-				if (obj->type() == Gameplay::GameObjectType::Wall)
-				{
-					vec2 pos = obj->transform().position;
-					vec2 size = obj->size();
-					if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-							mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
-					{
-						// Found wall, delete it
-						std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
-						it = gameObjects.erase(it);
-						wallFound = true;
-						break; // Only delete one wall per click
-					}
-					else
-					{
-						++it;
-					}
-				}
-				else
-				{
-					++it;
-				}
-
-				if (!wallFound)
-				{
-					// If no wall was found, spawn one
-					vec2 wallSize{100.f, 100.f};
-					auto wall = Gameplay::PrefabFactory::get().create("Wall");
-					if (wall)
-					{
-						wall->setPosition(mouseWorld);
-						wall->setSize(wallSize);
-						gameObjects.push_back(std::move(wall));
-						std::cout << "Spawned Wall at (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
-					}
-				}
-			}
-		}
-
-		// function to delete objects on right click
-		if ((m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) && !m_spawnonclick))
-		{
-			for (auto it = gameObjects.begin(); it != gameObjects.end();)
-			{
-				auto &obj = *it;
-				// Simple AABB check
-				vec2 pos = obj->transform().position;
-				vec2 size = obj->size();
-				if (mouseWorld.x >= pos.x - size.x / 2 && mouseWorld.x <= pos.x + size.x / 2 &&
-						mouseWorld.y >= pos.y - size.y / 2 && mouseWorld.y <= pos.y + size.y / 2)
-				{
-					std::cout << "Deleted " << toString(obj->type()) << " at (" << pos.x << ", " << pos.y << ")\n";
-					it = gameObjects.erase(it); // Remove object and get new iterator
-				}
-				else
-				{
-					++it; // Only increment if not erased
-				}
-			}
 		}
 
 		// Syafiq - Player movement
@@ -346,20 +293,38 @@ namespace Runtime
 
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
-					float moveSpeed = 100.0f;
+					float moveSpeed = obj->moveSpeed();
+					bool isRunning = false;
+					float maxSpeed = obj->moveSpeed();
+					float maxRunSpeed = maxSpeed*2;
+					//not used
 					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
 					{
 						moveSpeed *= 2;
+						isRunning = true;
 					}
 					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
 					{
-						obj->velocity().y = moveSpeed;
+						obj->velocity().y += moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
+							obj->velocity().y = maxSpeed;
+						}
+						else if (obj->velocity().y > maxRunSpeed){
+							obj->velocity().y = maxRunSpeed;
+						}
+
 					}
 					else if (m_input.isKeyDown(GLFW_KEY_S))
 					{
-						obj->velocity().y = -moveSpeed;
+						obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
+							obj->velocity().y = -maxSpeed;
+						}
+						else if (obj->velocity().y > -maxRunSpeed) {
+							obj->velocity().y = -maxRunSpeed;
+						}
 					}
 					else
 					{
@@ -368,11 +333,23 @@ namespace Runtime
 
 					if (m_input.isKeyDown(GLFW_KEY_A))
 					{
-						obj->velocity().x = -moveSpeed;
+						obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
+							obj->velocity().x = -maxSpeed;
+						}
+						else if (obj->velocity().x > -maxRunSpeed) {
+							obj->velocity().x = -maxRunSpeed;
+						}
 					}
 					else if (m_input.isKeyDown(GLFW_KEY_D))
 					{
-						obj->velocity().x = moveSpeed;
+						obj->velocity().x += moveSpeed * static_cast<f32>(dt);
+						if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
+							obj->velocity().x = maxSpeed;
+						}
+						else if (obj->velocity().y > maxRunSpeed) {
+							obj->velocity().x = maxRunSpeed;
+						}
 					}
 					else
 					{
@@ -384,8 +361,6 @@ namespace Runtime
 						obj->transform().scale.x += static_cast<f32>(10 * dt);
 						obj->transform().scale.y += static_cast<f32>(10 * dt);
 					}
-
-					vec2 mouseWorld = input.getMouseWorldPos(cam, static_cast<float>(window.width()), static_cast<float>(window.height()));
 
 					// Player world position
 					vec2 playerPos = obj->transform().position;
@@ -516,7 +491,7 @@ namespace Runtime
 					auto obj = factory.createAt("Wall", vec2(x, y));
 					if (obj)
 					{
-						currentScene->objects().push_back(std::move(obj));
+						currentScene->addObject(std::move(obj)); 
 					}
 				}
 
@@ -604,6 +579,7 @@ namespace Runtime
 		//		o->debugRender(*m_renderer);
 		// }
 		// m_renderer->endDebugPass();
+		(void)timer;
 	}
 
 	// test for IMGUI (still broken)
@@ -630,16 +606,19 @@ namespace Runtime
 			ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
 
 			static float pos[2] = {0, 0};
-			static float size[2] = {100, 100};
+			static float size[2] = {1, 1};
 			ImGui::InputFloat2("Position", pos);
 			ImGui::InputFloat2("Size", size);
 
 			static int hp = 10, damage = 1;
 			static float ms = 100.0f;
-			if (selectedType == 0 || selectedType == 1) // if its enemy or player, set health
+			if (selectedType == 0 || selectedType == 1) { // if its enemy or player, set health
 				ImGui::InputInt("HP", &hp);
-			if (selectedType == 1 || selectedType == 4) // if its enemy or trap, set damage
+			}
+
+			if (selectedType == 1 || selectedType == 4) { // if its enemy or trap, set damage
 				ImGui::InputInt("Damage", &damage);
+			}
 
 			static char texture[64] = "";
 			ImGui::InputText("Texture", texture, IM_ARRAYSIZE(texture));
@@ -664,7 +643,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::Actors);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Player created\n";
 					}
@@ -681,7 +661,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::Actors);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Enemy created\n";
 					}
@@ -697,7 +678,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::Background);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Wall created\n";
 					}
@@ -712,7 +694,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::World);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Floor created\n";
 					}
@@ -732,9 +715,11 @@ namespace Runtime
 			if (ImGui::Button("Delete Object"))
 			{
 				auto scene = m_scenes.current();
-				if (!scene->objects().empty())
+				auto& v = scene->objects();
+				if (!v.empty())
 				{
-					scene->objects().pop_back();
+					Gameplay::GameObject* doomed = v.back().get();
+					scene->destroyObject(doomed);   
 				}
 			}
 			ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
@@ -789,14 +774,99 @@ namespace Runtime
 
 			ImGui::Spacing();
 
-			/*if (ImGui::Button("Show Performance Profile"))
+			if (ImGui::Button("Show Performance Profile"))
 			{
 				Core::Profiler::Get().print();
-			}*/
+			}
 
 			if (ImGui::Button("Reset Profiler"))
 			{
 				Core::Profiler::Get().reset();
+			}
+
+			if (ImGui::CollapsingHeader("Layers Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+				auto* scene = m_scenes.current();
+				if (scene) {
+					// 1) Count objects per DrawLayer bit from the scene's objects()
+					std::size_t counts[5] = { 0,0,0,0,0 };
+					static const uint32_t bits[5] = {
+						Gameplay::DrawLayer::Background,
+						Gameplay::DrawLayer::World,
+						Gameplay::DrawLayer::Actors,
+						Gameplay::DrawLayer::FX,
+						Gameplay::DrawLayer::UI
+					};
+					static const char* names[5] = { "Background (1)","World (2)","Actors (4)","FX (8)","UI (16)" };
+
+					auto& objs = scene->objects();
+					for (auto& u : objs) {
+						if (!u) continue;
+						uint32_t L = u->layer();
+						for (int i = 0; i < 5; ++i) {
+							if (L & bits[i]) { counts[i]++; }
+						}
+					}
+
+
+					ImGui::TextDisabled("Per-layer object counts:");
+					for (int i = 0; i < 5; ++i) {
+						ImGui::BulletText("%s : %zu", names[i], counts[i]);
+					}
+
+					ImGui::Separator();
+
+					// 2) Pick an object (by index) and move it to another layer live
+					static int chosen = 0;                       // object index in scene->objects()
+					static int targetLayerIdx = 2;               // default "Actors"
+
+					if (!objs.empty() && ImGui::Button("Delete Chosen Object"))
+					{
+						if (auto scene = m_scenes.current())
+						{
+							Gameplay::GameObject* doomed = objs[chosen].get();
+							scene->destroyObject(doomed);
+							if (chosen >= (int)scene->objects().size()) chosen = (int)scene->objects().size() - 1;
+						}
+					}
+
+					// clamp if list shrank
+					if (chosen < 0) chosen = 0;
+					if (chosen >= (int)objs.size()) chosen = (int)objs.size() - 1;
+
+					
+
+					ImGui::TextDisabled("Move one object to a new draw layer:");
+					ImGui::SliderInt("Object Index", &chosen, 0, (int)objs.size() > 0 ? (int)objs.size() - 1 : 0);
+
+					if (!objs.empty()) {
+						auto* o = objs[chosen].get();
+						ImGui::Text("Chosen: id=%u name=\"%s\" type=%d currentBit=%u",
+							o->id(), o->name().c_str(), (int)o->type(), o->layer());
+
+						ImGui::RadioButton("Background", &targetLayerIdx, 0); ImGui::SameLine();
+						ImGui::RadioButton("World", &targetLayerIdx, 1); ImGui::SameLine();
+						ImGui::RadioButton("Actors", &targetLayerIdx, 2); ImGui::SameLine();
+						ImGui::RadioButton("FX", &targetLayerIdx, 3); ImGui::SameLine();
+						ImGui::RadioButton("UI", &targetLayerIdx, 4);
+
+						if (ImGui::Button("Apply New Layer")) {
+							o->setLayer(bits[targetLayerIdx]);   // IMPORTANT: use setter so Scene’s callback re-buckets
+						}
+					}
+
+					ImGui::Separator();
+
+					// 3) Optional: assert pass ordering once per frame (toggleable)
+					static bool assertOrder = false;
+					ImGui::Checkbox("Assert render order (debug)", &assertOrder);
+					if (assertOrder) {
+						// Lightweight check: next frame Scene::render will hit the assert if order regresses.
+						// (Put the actual assert in Scene::render as shown earlier.)
+					}
+				}
+				else {
+					ImGui::TextDisabled("No scene loaded.");
+				}
 			}
 
 			ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
@@ -826,7 +896,8 @@ namespace Runtime
 							auto obj = factory.createAt("Floor", vec2(x, y));
 							if (obj)
 							{
-								currentScene->objects().push_back(std::move(obj));
+								obj->setLayer(Gameplay::DrawLayer::Background);
+								currentScene->addObject(std::move(obj)); 
 							}
 						}
 					}
@@ -850,6 +921,12 @@ namespace Runtime
 				resetScene();
 			}
 
+			ImGui::Separator();
+
+			ImGui::Text("Press [W][A][S][D] to move!");
+			ImGui::Text("Press [Shift] to run!");
+			ImGui::Text("Press [Z] to open the level editor!");
+
 			ImGui::End();
 		}
 
@@ -868,10 +945,20 @@ namespace Runtime
 		if (m_scenes.reloadCurrent())
 		{
 			std::cout << "[PlayState] Scene reset Success\n";
+
+			rebindLightsAndPlayerAfterReload();
+
+			if (auto* scene = m_scenes.current()) {
+				scene->registerExistingObjectsToLayers(); 
+			}
 		}
 		else
 		{
 			m_scenes.loadScene(m_initialSceneId);
+			rebindLightsAndPlayerAfterReload();
+			if (auto* scene = m_scenes.current()) {
+				scene->registerExistingObjectsToLayers();
+			}
 		}
 	}
 

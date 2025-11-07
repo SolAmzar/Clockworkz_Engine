@@ -22,6 +22,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <memory>
 #include <string>
 #include <vector>
+#include "Graphics/LayerManager.hpp"
 
 // forward decalre the class to be used alter in cpp, cpp file will include the required class file.
 namespace Gameplay {
@@ -32,6 +33,7 @@ namespace Gameplay {
 //Syafiq
 namespace Graphics {
 	class RenderingManager;
+	
 }
 
 namespace Runtime {
@@ -55,10 +57,20 @@ namespace Runtime {
 		bool saveToFile(const std::string& filepath);
 		Gameplay::Physics2D* getPhysics();            // returns raw pointer
 		const Gameplay::Physics2D* getPhysics() const; // optional const overload
+		Gameplay::GameObject* findByName(std::string const& name);
+		Gameplay::GameObject* findFirstByLayer(int layer);
+
+
+		void addObject(std::unique_ptr<Gameplay::GameObject> go);
+		void destroyObject(Gameplay::GameObject* go);
+		void wireLayerCallback(Gameplay::GameObject* o);
+		void registerExistingObjectsToLayers();
+
 	private:
 		std::string m_name;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> m_objects;
 		std::unique_ptr<Gameplay::Physics2D> m_physics;
+		Gameplay::LayerManager m_layers;         
 	};
 
 } // namespace Runtime

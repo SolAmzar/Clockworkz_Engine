@@ -47,6 +47,7 @@ namespace Runtime {
 		int m_spawnedCount = 0;
 		const int SPAWN_PER_FRAME = 100;
 		bool m_shouldReturnToMenu{ false };
+		void rebindLightsAndPlayerAfterReload();
 
 		void renderImGui(Core::Time* timer) override; //Imgui for playstate
 
