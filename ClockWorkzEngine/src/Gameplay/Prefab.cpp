@@ -53,6 +53,10 @@ namespace Gameplay
             return GameObjectType::Floor;
         if (name == "Trap")
             return GameObjectType::Trap;
+        if (name == "Ball")
+			return GameObjectType::Ball;
+		if (name == "Box")
+			return GameObjectType::Box;
         return GameObjectType::Unknown;
     }
 

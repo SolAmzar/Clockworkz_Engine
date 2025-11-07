@@ -46,7 +46,22 @@ namespace Gameplay {
     enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
 
 	// To disguish between different collision shapes
-    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown};
+    enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown}; 
+
+    enum CollisionCategory : uint32_t {
+        CC_None = 0,
+        CC_Wall = 1u << 0,
+        CC_Player = 1u << 1,
+        CC_Enemy = 1u << 2,
+        CC_Trap = 1u << 3,
+        CC_Ball = 1u << 4,
+        CC_Box = 1u << 5,
+        CC_All = 0xFFFFFFFFu
+    };
+
+    constexpr uint32_t Mask(std::initializer_list<uint32_t> cats) {
+        uint32_t m = 0; for (auto c : cats) m |= c; return m;
+    }
 
 	// To disguish between different game object shapes
     enum class GameObjectShape : uint8_t { Square ,Rectangle, Circle, Polygon, Unknown};
@@ -115,6 +130,8 @@ namespace Gameplay {
         void                  setLayer(uint32_t l) {m_layer = l; if (m_onLayerChanged) m_onLayerChanged(this);}
         uint32_t              collisionMask() const { return m_collisionMask; }
         void                  setCollisionMask(uint32_t m) { m_collisionMask = m; }
+        uint32_t              collisionCategory() const { return m_collisionCategory; }
+        void                  setCollisionCategory(uint32_t c) { m_collisionCategory = c; }
 
         // Flags to support horror mechanics (light, blocking, hazards)
         bool isSolid() const { return m_isSolid; }
@@ -142,9 +159,6 @@ namespace Gameplay {
 
         // Setter accepts a std::function (can be a capturing lambda)
         void setLayerChangedCallback(LayerChangedFn cb) { m_onLayerChanged = std::move(cb); }
-
-       
-      
        
 
 
@@ -204,6 +218,7 @@ namespace Gameplay {
         float           m_moveSpeed{ 100.0f };
 
         uint32_t        m_collisionMask{ 0xFFFFFFFFu };
+        uint32_t        m_collisionCategory{ 0 };
         bool            m_isSolid{ false };
         bool            m_isHazard{ false };
         bool            m_blocksLight{ true };
@@ -220,6 +235,8 @@ namespace Gameplay {
         LayerChangedFn m_onLayerChanged{ nullptr };
         uint32_t m_layer{ DrawLayer::World }; // default
     };
+
+   
 
     // --- Component base kept tiny to avoid ECS bloat now ---
     class Component {

@@ -34,6 +34,7 @@ namespace Gameplay {
         j["layer"] = obj.layer();
         j["collisionMask"] = obj.collisionMask();
         j["moveable"] = obj.ismoveable();
+        j["collisionCategory"] = obj.collisionCategory();
         return j;
     }
 
@@ -105,6 +106,9 @@ namespace Gameplay {
         if (j.contains("collisionMask")) {
             obj.setCollisionMask(j["collisionMask"].get<uint32_t>());
         }
+        if (j.contains("collisionCategory")) {
+            obj.setCollisionCategory(j["collisionCategory"].get<uint32_t>());
+        }
         if (j.contains("blocksLight")) {
             obj.setBlocksLight(j["blocksLight"].get<bool>());
         }
@@ -132,6 +136,7 @@ namespace Gameplay {
                 collide->type = ColliderType::None;
             }
         }
+      
     }
 
     void GameObjectSerializer::deserializeHealth(GameObject& obj, const json& j) {

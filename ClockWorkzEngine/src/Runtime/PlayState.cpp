@@ -24,6 +24,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
 #include "Core/AudioManager.hpp"
+#include "Graphics/ParticleSystem.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp"
 #include <GLFW/glfw3.h>
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -166,6 +168,32 @@ namespace Runtime
 	void PlayState::onEnter()
 	{
 		std::cout << "[PlayState] Enter, loading scene: " << m_initialSceneId << "\n";
+		// Create an empty game object you can see in the scene
+		
+		// 1) Make the GO and keep a raw pointer before moving it into the vector
+		auto fxUP = std::make_unique<Gameplay::GameObject>(
+		Gameplay::GameObjectType::Unknown, "ParticleTest");
+		Gameplay::GameObject* fx = fxUP.get();   // keep pointer
+
+		fx->transform().position = { 5.0f, 3.0f };
+
+		// 2) Transfer ownership
+		gameObjects.push_back(std::move(fxUP));
+
+		// 3) Construct the component in-place (NO new). Pass the ctor args.
+		// ParticleEmitter(GameObject& owner, std::size_t max)
+		auto* emitter = fx->addComponent<Gameplay::ParticleEmitter>(*fx, 1000);
+
+		// 4) Configure
+		auto& s = emitter->system();
+		s.dir = normalize(vec2{ 1, 0 });
+		s.spreadDeg = 40.f;
+		s.acceleration = { 0.f, -50.f };
+		s.sizeStart = 0.2f;
+		s.sizeEnd = 0.0f;
+		s.colorStart = { 1.f, 0.6f, 0.1f, 1.f };
+		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
+
 
 		// Syafiq -
 		Core::Engine &engine = Core::Engine::Get();
@@ -189,6 +217,7 @@ namespace Runtime
 			{
 				auto &objs = scene->objects();
 				std::cout << "GameObjects created (" << objs.size() << "):\n";
+
 				for (auto &u : objs)
 				{
 					auto const &o = *u;
@@ -302,6 +331,17 @@ namespace Runtime
 					{
 						moveSpeed *= 2;
 						isRunning = true;
+					}
+
+					Gameplay::GameObject* fx = nullptr;
+					for (auto& up : gameObjects) {
+						if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					}
+					if (fx) {
+						if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
+							if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
+								em->burst(80); // 80-particle puff
+						}
 					}
 					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
@@ -706,7 +746,7 @@ namespace Runtime
 					if (obj)
 					{
 						obj->setPosition(vec2(pos[0], pos[1]));
-						obj->setSize(vec2(size[0], size[1]));
+					obj->setSize(vec2(size[0], size[1]));
 						gameObjects.push_back(std::move(obj));
 					}
 				}
