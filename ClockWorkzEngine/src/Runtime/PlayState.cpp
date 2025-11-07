@@ -670,6 +670,78 @@ namespace Runtime
 				Core::Profiler::Get().reset();
 			}
 
+			if (ImGui::CollapsingHeader("Layers Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+				auto* scene = m_scenes.current();
+				if (scene) {
+					// 1) Count objects per DrawLayer bit from the scene's objects()
+					std::size_t counts[5] = { 0,0,0,0,0 };
+					static const uint32_t bits[5] = {
+						Gameplay::DrawLayer::Background,
+						Gameplay::DrawLayer::World,
+						Gameplay::DrawLayer::Actors,
+						Gameplay::DrawLayer::FX,
+						Gameplay::DrawLayer::UI
+					};
+					static const char* names[5] = { "Background (1)","World (2)","Actors (4)","FX (8)","UI (16)" };
+
+					auto& objs = scene->objects();
+					for (auto& u : objs) {
+						if (!u) continue;
+						uint32_t L = u->layer();
+						for (int i = 0; i < 5; ++i) {
+							if (L & bits[i]) { counts[i]++; }
+						}
+					}
+
+					ImGui::TextDisabled("Per-layer object counts:");
+					for (int i = 0; i < 5; ++i) {
+						ImGui::BulletText("%s : %zu", names[i], counts[i]);
+					}
+
+					ImGui::Separator();
+
+					// 2) Pick an object (by index) and move it to another layer live
+					static int chosen = 0;                       // object index in scene->objects()
+					static int targetLayerIdx = 2;               // default "Actors"
+
+					// clamp if list shrank
+					if (chosen < 0) chosen = 0;
+					if (chosen >= (int)objs.size()) chosen = (int)objs.size() - 1;
+
+					ImGui::TextDisabled("Move one object to a new draw layer:");
+					ImGui::SliderInt("Object Index", &chosen, 0, (int)objs.size() > 0 ? (int)objs.size() - 1 : 0);
+
+					if (!objs.empty()) {
+						auto* o = objs[chosen].get();
+						ImGui::Text("Chosen: id=%u name=\"%s\" type=%d currentBit=%u",
+							o->id(), o->name().c_str(), (int)o->type(), o->layer());
+
+						ImGui::RadioButton("Background", &targetLayerIdx, 0); ImGui::SameLine();
+						ImGui::RadioButton("World", &targetLayerIdx, 1); ImGui::SameLine();
+						ImGui::RadioButton("Actors", &targetLayerIdx, 2); ImGui::SameLine();
+						ImGui::RadioButton("FX", &targetLayerIdx, 3); ImGui::SameLine();
+						ImGui::RadioButton("UI", &targetLayerIdx, 4);
+
+						if (ImGui::Button("Apply New Layer")) {
+							o->setLayer(bits[targetLayerIdx]);   // IMPORTANT: use setter so Scene’s callback re-buckets
+						}
+					}
+
+					ImGui::Separator();
+
+					// 3) Optional: assert pass ordering once per frame (toggleable)
+					static bool assertOrder = false;
+					ImGui::Checkbox("Assert render order (debug)", &assertOrder);
+					if (assertOrder) {
+						// Lightweight check: next frame Scene::render will hit the assert if order regresses.
+						// (Put the actual assert in Scene::render as shown earlier.)
+					}
+				}
+				else {
+					ImGui::TextDisabled("No scene loaded.");
+				}
+			}
+
 			ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
 
 			// Add button to spawn 2500 objects

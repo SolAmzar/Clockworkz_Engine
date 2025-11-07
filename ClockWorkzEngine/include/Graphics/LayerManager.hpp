@@ -46,7 +46,7 @@ namespace Gameplay {
         void for_each_layered_update(F&& fn) {
             for (uint32_t bit : kOrderedBits) {
                 auto& bucket = buckets_[bit_to_index(bit)];
-                for (auto* o : bucket) fn(*o, bit); // caller can check active() etc.
+                for (auto* o : bucket) fn(o, bit); // caller can check active() etc.
             }
         }
 

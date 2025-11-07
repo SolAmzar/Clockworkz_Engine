@@ -26,6 +26,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Prefab.hpp"     // ADD THIS
 #include <iostream>
 #include <exception>
+#include <cassert>
 #include "Assets/ResourceManager.hpp"
 #include <filesystem>
 #include "Graphics/Texture2D.hpp"
@@ -46,6 +47,13 @@ Scene::Scene(const std::string &name) : m_name(name)
 Scene::~Scene() = default;
 const std::string &Scene::name() const { return m_name; }
 std::vector<std::unique_ptr<Gameplay::GameObject>> &Scene::objects() { return m_objects; }
+
+static void DebugDumpLayerCounts(Gameplay::LayerManager const& layers) {
+    for (uint32_t bit : Gameplay::kOrderedBits) {
+        auto const& v = layers.objects_in(bit);
+        std::cout << "[Layer] bit=" << bit << " count=" << v.size() << "\n";
+    }
+}
 
 Gameplay::GameObject* Scene::findByName(std::string const& name) {
     for (auto& u : m_objects) if (u && u->name() == name) return u.get();
@@ -152,10 +160,14 @@ bool Scene::load()
         {
             std::cout << "[Scene] Loaded scene '" << loadedSceneName << "' from file: " << filepath << "\n";
             std::cout << "[Scene] Loaded " << m_objects.size() << " objects\n";
+            registerExistingObjectsToLayers();
+            DebugDumpLayerCounts(m_layers);
             return true;
         }
 
         return true;
+
+
     }
     catch (const std::exception &e)
     {
@@ -213,77 +225,74 @@ const Gameplay::Physics2D *Scene::getPhysics() const
     return m_physics.get();
 }
 
-// temp commented out for testing of serializer
-// void Scene::update(double dt) {
-//     for (auto& o : objects()) {
-//         if (o->active()) o->update(dt);
-//     }
-//     if (m_physics) {
-//         m_physics->step(objects(), dt);
-//     }
-// }
-
-//void Scene::update(double dt)
-//{
-//    {
-//        PROFILE_SCOPE("GameObjectUpdates");
-//
-//        // Per-layer updates in a fixed front→back order.
-//        // (Common: skip UI from simulation; change if you want it updated.)
-//        m_layers.for_each_layered_update([&](Gameplay::GameObject& o, uint32_t bit) {
-//            if (bit != Gameplay::DrawLayer::UI && o.active())
-//                o.update(dt);
-//            });
-//    }
-//
-//    if (m_physics)
-//    {
-//        PROFILE_SCOPE("Physics");
-//        m_physics->step(objects(), dt);
-//
-//        // OPTION B (recommended later): if you add an overload that takes
-//        // std::vector<GameObject*> (faster, no unique_ptr unwrap), use this:
-//        // m_physics->step(m_layers.all_objects(), dt);
-//    }
-//}
-//
-//void Scene::render(Graphics::RenderingManager& r) {
-//    PROFILE_SCOPE("GameObjectRender");
-//    m_layers.for_each_layered_render([&](Gameplay::GameObject* o, uint32_t) {
-//        if (o->active()) o->render(r);
-//        });
-//}
-
-
-
-
+ // temp commented out for testing of serializer
+ //void Scene::update(double dt) {
+ //    for (auto& o : objects()) {
+ //        if (o->active()) o->update(dt);
+ //    }
+ //    if (m_physics) {
+ //        m_physics->step(objects(), dt);
+ //    }
+ //}
 
 void Scene::update(double dt)
 {
     {
         PROFILE_SCOPE("GameObjectUpdates");
-        std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
-        for (auto& o : objs) {
-            if (o->active())
+        m_layers.for_each_layered_update([&](Gameplay::GameObject* o, uint32_t bit) {
+            if (bit != Gameplay::DrawLayer::UI && o->active())
                 o->update(dt);
-        }
+            });
     }
 
     if (m_physics)
     {
         PROFILE_SCOPE("Physics");
-        // collision detection
-        m_physics->step(objects(), dt);
+        m_physics->step(objects(), dt); // or m_layers.all_objects()
     }
 }
 
 void Scene::render(Graphics::RenderingManager& renderer)
 {
+    uint32_t lastBit = 0;
     PROFILE_SCOPE("GameObjectRender");
-    std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
-    for (auto& o : objs)
-    {
-        if (o->active())
-            o->render(renderer);
-    }
+    m_layers.for_each_layered_render([&](Gameplay::GameObject* o, uint32_t bit) {
+        assert(bit >= lastBit && "LayerManager: render order regressed!");
+        lastBit = bit;
+        if (o->active()) o->render(renderer);
+        });
 }
+
+
+
+
+
+//void Scene::update(double dt)
+//{
+//    {
+//        PROFILE_SCOPE("GameObjectUpdates");
+//        std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+//        for (auto& o : objs) {
+//            if (o->active())
+//                o->update(dt);
+//        }
+//    }
+//
+//    if (m_physics)
+//    {
+//        PROFILE_SCOPE("Physics");
+//        // collision detection
+//        m_physics->step(objects(), dt);
+//    }
+//}
+//
+//void Scene::render(Graphics::RenderingManager& renderer)
+//{
+//    PROFILE_SCOPE("GameObjectRender");
+//    std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = objects();
+//    for (auto& o : objs)
+//    {
+//        if (o->active())
+//            o->render(renderer);
+//    }
+//}
