@@ -35,6 +35,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Gameplay/Prefab.hpp"
 #include "Graphics/Camera2D.hpp"
 #include <Core/Logger.hpp>
+#include <Assets/ResourceManager.hpp>
 
 struct GLFWwindow;
 
@@ -111,6 +112,7 @@ namespace Platform {
         void renderSaveDialog();
         void renderLoadDialog();
         void render();
+        void renderReplace();
         void renderUI();
 
         // Editor state
@@ -165,6 +167,9 @@ namespace Platform {
         void renderSceneView();
         void renderLevelSettings();
         void renderCameraControls();
+        void renderAssetBrowser();
+        void handleAssetFileWatch();
+
 
         // Object manipulation
         void handleObjectSelection();
@@ -266,9 +271,16 @@ namespace Platform {
         bool m_isPaused = false;
 
         // File dialog state
+        bool mShowAssetsBrowser = true;
+        std::string mSelectedAssetName;
+        std::string mAssetSearchFilter;
+        std::string mAssetTypeFilter = "All";
+        bool mShowAssetImportDialog = false;
+        bool mShowAssetReplaceDialog = false;
         bool m_showSaveDialog;
         bool m_showLoadDialog;
         char m_fileDialogBuffer[256];
+        char mAssetNameBuffer[256];
     };
 
 } // namespace Editor
