@@ -161,104 +161,23 @@ namespace Platform {
     void LevelEditor::update(double dt) {
         m_frameTime = dt;
 
-        // m_editorCamera.update(dt);  // Uncomment if Camera2D has update method
-
         // Update scene based on mode
         if (m_mode == EditorMode::Play) {
-            if (!m_currentScene) return;
-
-            // Exit play mode
-            if (m_input->wasKeyPressed(GLFW_KEY_ESCAPE)) {
-                EditorMode::Edit;
-                return;
+            // In play mode, just update the scene normally
+            if (m_currentScene) {
+                m_currentScene->update(dt);
             }
+        }
+        else {
+            // In edit mode, handle editor-specific input and camera
+            handleEditorInput(dt);
+            handleCameraInput(dt);
+            handleKeyboardShortcuts();
+        }
 
-            // Pause/Resume
-            if (m_input->wasKeyPressed(GLFW_KEY_SPACE)) {
-                m_isPaused = !m_isPaused;
-                return;
-            }
-
-            if (m_isPaused) return;
-
-            m_playTime += dt;
-
-            Core::Engine& engine = Core::Engine::Get();
-            Graphics::Camera2D& cam = engine.camera();
-            Platform::WindowManager& window = engine.window();
-
-            // ✓ FIXED: Get mouse position in world space
-            vec2 mouseWorld = m_input->getMouseWorldPos(
-                cam,
-                static_cast<float>(window.width()),
-                static_cast<float>(window.height())
-            );
-
-            // Player movement and input handling
-            for (auto& obj : m_currentScene->objects()) {
-
-                if (obj->type() == Gameplay::GameObjectType::Player) {
-                    float moveSpeed = 100.0f;
-
-                    // ===== WASD Movement =====
-                    if (m_input->isKeyDown(GLFW_KEY_W)) {
-                        obj->velocity().y = moveSpeed;
-                    }
-                    else if (m_input->isKeyDown(GLFW_KEY_S)) {
-                        obj->velocity().y = -moveSpeed;
-                    }
-                    else {
-                        obj->velocity().y = 0;
-                    }
-
-                    if (m_input->isKeyDown(GLFW_KEY_A)) {
-                        obj->velocity().x = -moveSpeed;
-                    }
-                    else if (m_input->isKeyDown(GLFW_KEY_D)) {
-                        obj->velocity().x = moveSpeed;
-                    }
-                    else {
-                        obj->velocity().x = 0;
-                    }
-
-                    // ===== Scale with G =====
-                    if (m_input->isKeyDown(GLFW_KEY_G)) {
-                        obj->transform().scale.x += static_cast<float>(10 * dt);
-                        obj->transform().scale.y += static_cast<float>(10 * dt);
-                    }
-
-                        vec2 playerPos = obj->transform().position;
-
-                        // Direction from player to mouse
-                        vec2 dir = mouseWorld - playerPos;
-
-                        // Get distance (only rotate if mouse is far enough)
-                        float distance = std::sqrt(dir.x * dir.x + dir.y * dir.y);
-
-                        if (distance > 10.0f) {
-                            // Normalize direction
-                            dir.x /= distance;
-                            dir.y /= distance;
-
-                            // Calculate angle in radians
-                            // atan2(y, x) gives angle from -π to π
-                            float angleRad = std::atan2(dir.y, dir.x);
-
-                            // Set player rotation
-                            obj->transform().rotationRad = angleRad;
-
-                            std::cout << "Player rotation: " << glm::degrees(angleRad) << " degrees\n";
-                        }
-
-                    // Respawn if inactive
-                    if (!obj->active()) {
-                        obj->respawnAt(vec2(0.0f, 0.0f), true, true);
-                    }
-                }
-            }
-
-            // Update scene (physics, collisions, etc.)
-            m_currentScene->update(dt);
+        // Update object count for UI
+        if (m_currentScene) {
+            m_objectCount = static_cast<int>(m_currentScene->objects().size());
         }
     }
 
