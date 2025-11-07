@@ -104,6 +104,8 @@ namespace Gameplay {
         vec2 const&           velocity() const { return m_velocity; }
         void                  setVelocity(const vec2& v) { m_velocity = v; }
 
+        bool                  hasVelocity() const { return true; }
+
         float const&          moveSpeed() { return m_moveSpeed; }
         void                  setMoveSpeed(float ms) { m_moveSpeed = ms; }
 
@@ -125,6 +127,8 @@ namespace Gameplay {
         void setHazard(bool v) { m_isHazard = v; }
         void setBlocksLight(bool v) { m_blocksLight = v; }
         void setName(const std::string& newName); 
+        void setChase(bool v) { m_chase = v; }
+        bool checkChase() { return m_chase; }
 
         // Rendering handle for now (swap to Sprite component later)
         std::string const& textureId() const { return m_textureId; }
@@ -143,8 +147,11 @@ namespace Gameplay {
         // Setter accepts a std::function (can be a capturing lambda)
         void setLayerChangedCallback(LayerChangedFn cb) { m_onLayerChanged = std::move(cb); }
 
+
+
        
-      
+        const std::vector<std::unique_ptr<Component>>& getComponents() const { return m_components; }
+
        
 
 
@@ -208,6 +215,7 @@ namespace Gameplay {
         bool            m_isHazard{ false };
         bool            m_blocksLight{ true };
 		bool 		    m_moveable{ false };
+        bool            m_chase{ false };
 
         mutable bool    m_boundsDirty{ true };
         mutable AABB    m_cachedAABB{};

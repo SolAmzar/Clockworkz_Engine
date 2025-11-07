@@ -45,12 +45,19 @@ namespace Gameplay {
     {
 
         for (auto& c : m_components) c->onBeforePhysics(*this, dt);
-        // basic top-down integration
-        m_transform.position += m_velocity * static_cast<float>(dt);
-        markDirty();
 
-        for (auto& c : m_components) 
-            c->onUpdate(*this, dt);
+        if(m_chase){
+            for (auto& c : m_components) c->onUpdate(*this, dt);
+            m_transform.position += m_velocity * static_cast<float>(dt);
+            markDirty();
+        }
+        else {
+            // basic top-down integration
+            m_transform.position += m_velocity * static_cast<float>(dt);
+            markDirty();
+            for (auto& c : m_components) c->onUpdate(*this, dt);
+        }
+
         
     }
 
