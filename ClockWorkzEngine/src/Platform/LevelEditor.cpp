@@ -692,17 +692,13 @@ namespace Platform {
     void LevelEditor::deleteSelectedObject() {
         if (!m_selectedObject || !m_currentScene) return;
 
-        auto& objects = m_currentScene->objects();
-        auto it = std::find_if(objects.begin(), objects.end(),
-            [this](const std::unique_ptr<Gameplay::GameObject>& obj) {
-                return obj.get() == m_selectedObject;
-            });
+        m_currentScene->destroyObject(m_selectedObject);
 
-        if (it != objects.end()) {
-            objects.erase(it);
-            m_selectedObject = nullptr;
-            markLevelDirty();
-            // TODO: Core::Engine::Get().logger().info("Deleted object");
+        m_selectedObject = nullptr;
+        markLevelDirty();
+
+        if (Core::Engine::IsInitialized()) {
+            Core::Engine::Get().logger().info("Deleted object from scene");
         }
     }
 
