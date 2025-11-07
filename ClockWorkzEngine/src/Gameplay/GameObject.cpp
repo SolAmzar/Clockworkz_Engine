@@ -132,6 +132,21 @@ namespace Gameplay {
 			c->onRender(*this);
 	}
 
+    //might want to change to this
+    //void GameObject::render(Graphics::RenderingManager& renderer) {
+    //    // 1. Lookup the texture by name _every frame_
+    //    auto texPtr = Assets::TextureManager::Get(m_textureId);
+    //    unsigned texId = texPtr ? texPtr->id() : 0;
+    //    renderer.drawSprite(
+    //        texId,
+    //        glm::vec2(m_transform.position.x, m_transform.position.y),
+    //        glm::vec2(m_size.x, m_size.y),
+    //        m_transform.rotationRad
+    //    );
+    //    // 3. Then render overlays/components if needed
+    //    for (auto& c : m_components) c->onRender(*this);
+    //}
+
 
 
 
