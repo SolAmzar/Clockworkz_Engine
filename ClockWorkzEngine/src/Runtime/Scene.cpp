@@ -103,6 +103,10 @@ void Scene::destroyObject(GameObject* go) {
 
 bool Scene::load()
 {
+
+    m_layers.clear();
+    m_objects.clear();
+
     try
     {
         // Preload common textures
