@@ -2,7 +2,7 @@
 /*!
 \file           LevelEditor.cpp
 \project        Lights Out - Level Editor
-\author(s)      Student Implementation
+\author(s)      [Yusuf], 100%
 \brief          Implementation of comprehensive level editor with all features
                 required by the rubric criteria.
 

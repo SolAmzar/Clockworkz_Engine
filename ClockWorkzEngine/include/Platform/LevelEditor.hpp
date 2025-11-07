@@ -2,7 +2,7 @@
 /*!
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
-\author(s)      Student Implementation
+\author(s)      Yusuf,[100%]
 \brief          Comprehensive level editor,
                 property editing, hierarchy view, and multi-level support.
 

@@ -2,7 +2,7 @@
 /*!
 \file           LevelEditorState.hpp
 \project        Lights Out - Level Editor
-\author(s)      Student Implementation
+\author(s)      Yusuf,[100%]
 \brief          Game state for the level editor, integrating it into the
                 game's state machine. Compatible with existing GameState interface.
 
