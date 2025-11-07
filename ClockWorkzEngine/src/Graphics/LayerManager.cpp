@@ -1,3 +1,17 @@
+/******************************************************************************/
+/*!
+\file           LayerManager.hpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          A Manager for organizing GameObjects into layers for rendering and updating.
+                Responsibilities include:
+                - Storing GameObjects in buckets based on their assigned layers
+                - Allowing efficient iteration over objects by layer
+				- Handling dynamic changes to an object's layer assignment
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Graphics/LayerManager.hpp"
 #include "Gameplay/GameObject.hpp"   // safe to include here
 #include <algorithm>

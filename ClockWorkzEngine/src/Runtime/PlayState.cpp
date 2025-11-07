@@ -65,6 +65,34 @@ namespace Runtime
 		frameCount = 0;
 	}
 
+	static Gameplay::GameObject* findFirstPlayer(Runtime::Scene* scene) {
+		if (!scene) return nullptr;
+		for (auto& u : scene->objects()) {
+			if (u && u->type() == Gameplay::GameObjectType::Player) return u.get();
+		}
+		return nullptr;
+	}
+
+	void PlayState::rebindLightsAndPlayerAfterReload()
+	{
+		auto* scene = m_scenes.current();
+		// 1) Rebind player pointer to the NEW player object created by reload
+		m_player = findFirstPlayer(scene);
+
+		// 2) (Optional) reset your local animation state so UVs start clean
+		ResetFrame();
+
+		// 3) (Optional but recommended) if your light system caches occluders,
+		//    rebuild them here using the new scene objects.
+		//    (If your Renderer2D/RenderingManager doesn’t cache, you can skip.)
+		// Example:
+		// m_flashlight.clearOccluders();
+		// for (auto& u : scene->objects()) {
+		//     if (!u) continue;
+		//     if (u->isSolid() && u->blocksLight()) { m_flashlight.addOccluder(u.get()); }
+		// }
+	}
+
 	void InitPlayerSpriteUVs()
 	{
 		const float frameW = 1.0f / 8.0f; // 0.125
@@ -463,7 +491,7 @@ namespace Runtime
 					auto obj = factory.createAt("Wall", vec2(x, y));
 					if (obj)
 					{
-						currentScene->objects().push_back(std::move(obj));
+						currentScene->addObject(std::move(obj)); 
 					}
 				}
 
@@ -615,7 +643,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::Actors);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Player created\n";
 					}
@@ -632,7 +661,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::Actors);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Enemy created\n";
 					}
@@ -648,7 +678,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::Background);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Wall created\n";
 					}
@@ -663,7 +694,8 @@ namespace Runtime
 						auto scene = m_scenes.current();
 						if (scene)
 						{
-							scene->objects().push_back(std::move(obj));
+							obj->setLayer(Gameplay::DrawLayer::World);
+							scene->addObject(std::move(obj)); 
 						}
 						std::cout << "Floor created\n";
 					}
@@ -683,9 +715,11 @@ namespace Runtime
 			if (ImGui::Button("Delete Object"))
 			{
 				auto scene = m_scenes.current();
-				if (!scene->objects().empty())
+				auto& v = scene->objects();
+				if (!v.empty())
 				{
-					scene->objects().pop_back();
+					Gameplay::GameObject* doomed = v.back().get();
+					scene->destroyObject(doomed);   
 				}
 			}
 			ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
@@ -773,6 +807,7 @@ namespace Runtime
 						}
 					}
 
+
 					ImGui::TextDisabled("Per-layer object counts:");
 					for (int i = 0; i < 5; ++i) {
 						ImGui::BulletText("%s : %zu", names[i], counts[i]);
@@ -784,9 +819,21 @@ namespace Runtime
 					static int chosen = 0;                       // object index in scene->objects()
 					static int targetLayerIdx = 2;               // default "Actors"
 
+					if (!objs.empty() && ImGui::Button("Delete Chosen Object"))
+					{
+						if (auto scene = m_scenes.current())
+						{
+							Gameplay::GameObject* doomed = objs[chosen].get();
+							scene->destroyObject(doomed);
+							if (chosen >= (int)scene->objects().size()) chosen = (int)scene->objects().size() - 1;
+						}
+					}
+
 					// clamp if list shrank
 					if (chosen < 0) chosen = 0;
 					if (chosen >= (int)objs.size()) chosen = (int)objs.size() - 1;
+
+					
 
 					ImGui::TextDisabled("Move one object to a new draw layer:");
 					ImGui::SliderInt("Object Index", &chosen, 0, (int)objs.size() > 0 ? (int)objs.size() - 1 : 0);
@@ -849,7 +896,8 @@ namespace Runtime
 							auto obj = factory.createAt("Floor", vec2(x, y));
 							if (obj)
 							{
-								currentScene->objects().push_back(std::move(obj));
+								obj->setLayer(Gameplay::DrawLayer::Background);
+								currentScene->addObject(std::move(obj)); 
 							}
 						}
 					}
@@ -897,10 +945,20 @@ namespace Runtime
 		if (m_scenes.reloadCurrent())
 		{
 			std::cout << "[PlayState] Scene reset Success\n";
+
+			rebindLightsAndPlayerAfterReload();
+
+			if (auto* scene = m_scenes.current()) {
+				scene->registerExistingObjectsToLayers(); 
+			}
 		}
 		else
 		{
 			m_scenes.loadScene(m_initialSceneId);
+			rebindLightsAndPlayerAfterReload();
+			if (auto* scene = m_scenes.current()) {
+				scene->registerExistingObjectsToLayers();
+			}
 		}
 	}
 
