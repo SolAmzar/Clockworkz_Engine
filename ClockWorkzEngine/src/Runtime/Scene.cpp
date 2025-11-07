@@ -138,7 +138,6 @@ bool Scene::load()
 
         std::cout << "[Scene] load: " << m_name << "\n";
         std::string filepath = "assets/scenes/" + m_name + ".json";
-
 #ifndef _DEBUG
         filepath = "assets/scenes/" + m_name + ".json";
 #endif

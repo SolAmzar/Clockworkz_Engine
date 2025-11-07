@@ -31,6 +31,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <fstream>
 #include <filesystem>
 #include <iostream>
+#include <Core/Engine.hpp>
+#include <Runtime/PlayState.hpp>
 
 namespace fs = std::filesystem;
 
@@ -64,7 +66,6 @@ namespace Platform {
         , m_showPrefabPalette(true)
         , m_showSceneView(true)
         , m_showLevelSettings(false)
-        , m_showGridSettings(false)
         , m_objectTypeToPlace(Gameplay::GameObjectType::Floor)
         , m_windowWidth(1280.0f)
         , m_windowHeight(720.0f)
@@ -96,21 +97,26 @@ namespace Platform {
         Graphics::RenderingManager& renderer,
         Platform::InputManager& input,
         Platform::WindowManager& windowMgr) {
-
         m_window = window;
         m_renderer = &renderer;
         m_input = &input;
         m_windowManager = &windowMgr;
 
-        // Initialize editor camera
+        // ✓ FIXED: Get actual window size
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        m_windowWidth = static_cast<float>(width);
+        m_windowHeight = static_cast<float>(height);
+
+        // Initialize editor camera with proper viewport
         m_editorCamera.setPosition(glm::vec2(0.0f, 0.0f));
         m_editorCamera.setZoom(1.0f);
+        // If Camera2D has setViewport method:
+        // m_editorCamera.setViewport(m_windowWidth, m_windowHeight);
 
         // Create default scene
         m_currentScene = std::make_unique<Runtime::Scene>("EditorScene");
         if (!m_currentScene->load()) {
-            // Logger would be accessed through Engine in real implementation
-            // Core::Engine::Get().logger().error("Failed to initialize editor scene");
             return false;
         }
 
@@ -120,22 +126,25 @@ namespace Platform {
         // Register built-in prefabs
         registerBuiltInPrefabs();
 
-        // Load recent levels
-        // In a real implementation, this would load from a config file
-
-        // Logger would be accessed through Engine in real implementation  
-        // Core::Engine::Get().logger().info("Level Editor initialized successfully");
         return true;
     }
 
     void LevelEditor::shutdown() {
         if (m_levelDirty) {
-            // In a real implementation, prompt user to save
-            // Core::Engine::Get().logger().warn("Shutting down editor with unsaved changes");
+            //// Prompt user: Save / Discard / Cancel
+            //int choice = promptSaveDiscardCancel(); // Implement a modal dialog
+            //if (choice == 0) { // Save
+            //    saveLevel(); // your existing save logic
+            //    // then proceed to leave
+            //}
+            //else if (choice == 1) { // Discard
+            //    // proceed without saving
+            //}
+            //else { // Cancel
+            //    return; // abort leaving
+            //}
         }
-
         m_currentScene.reset();
-        m_playModeSceneBackup.reset();
     }
 
     /******************************************************************************/
@@ -145,74 +154,398 @@ namespace Platform {
     void LevelEditor::update(double dt) {
         m_frameTime = dt;
 
+        // m_editorCamera.update(dt);  // Uncomment if Camera2D has update method
+
         // Update scene based on mode
         if (m_mode == EditorMode::Play) {
-            // In play mode, update scene normally
-            if (m_currentScene) {
-                m_currentScene->update(dt);
+            if (!m_currentScene) return;
+
+            // Exit play mode
+            if (m_input->wasKeyPressed(GLFW_KEY_ESCAPE)) {
+                EditorMode::Edit;
+                return;
+            }
+
+            // Pause/Resume
+            if (m_input->wasKeyPressed(GLFW_KEY_SPACE)) {
+                m_isPaused = !m_isPaused;
+                return;
+            }
+
+            if (m_isPaused) return;
+
+            m_playTime += dt;
+
+            Core::Engine& engine = Core::Engine::Get();
+            Graphics::Camera2D& cam = engine.camera();
+            Platform::WindowManager& window = engine.window();
+
+            // ✓ FIXED: Get mouse position in world space
+            vec2 mouseWorld = m_input->getMouseWorldPos(
+                cam,
+                static_cast<float>(window.width()),
+                static_cast<float>(window.height())
+            );
+
+            // Player movement and input handling
+            for (auto& obj : m_currentScene->objects()) {
+
+                if (obj->type() == Gameplay::GameObjectType::Player) {
+                    float moveSpeed = 100.0f;
+
+                    // ===== WASD Movement =====
+                    if (m_input->isKeyDown(GLFW_KEY_W)) {
+                        obj->velocity().y = moveSpeed;
+                    }
+                    else if (m_input->isKeyDown(GLFW_KEY_S)) {
+                        obj->velocity().y = -moveSpeed;
+                    }
+                    else {
+                        obj->velocity().y = 0;
+                    }
+
+                    if (m_input->isKeyDown(GLFW_KEY_A)) {
+                        obj->velocity().x = -moveSpeed;
+                    }
+                    else if (m_input->isKeyDown(GLFW_KEY_D)) {
+                        obj->velocity().x = moveSpeed;
+                    }
+                    else {
+                        obj->velocity().x = 0;
+                    }
+
+                    // ===== Scale with G =====
+                    if (m_input->isKeyDown(GLFW_KEY_G)) {
+                        obj->transform().scale.x += static_cast<float>(10 * dt);
+                        obj->transform().scale.y += static_cast<float>(10 * dt);
+                    }
+
+                        vec2 playerPos = obj->transform().position;
+
+                        // Direction from player to mouse
+                        vec2 dir = mouseWorld - playerPos;
+
+                        // Get distance (only rotate if mouse is far enough)
+                        float distance = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+
+                        if (distance > 10.0f) {
+                            // Normalize direction
+                            dir.x /= distance;
+                            dir.y /= distance;
+
+                            // Calculate angle in radians
+                            // atan2(y, x) gives angle from -π to π
+                            float angleRad = std::atan2(dir.y, dir.x);
+
+                            // Set player rotation
+                            obj->transform().rotationRad = angleRad;
+
+                            std::cout << "Player rotation: " << glm::degrees(angleRad) << " degrees\n";
+                        }
+
+                    // Respawn if inactive
+                    if (!obj->active()) {
+                        obj->respawnAt(vec2(0.0f, 0.0f), true, true);
+                    }
+                }
+            }
+
+            // Update scene (physics, collisions, etc.)
+            m_currentScene->update(dt);
+        }
+    }
+
+// ============================================================================
+// Save Dialog Implementation
+// ============================================================================
+
+    int promptSaveDiscardCancel() {
+        static bool showDialog = true;
+        static int choice = -1; // 0=save, 1=discard, 2=cancel
+
+        if (showDialog) {
+            ImGui::OpenPopup("Save Changes?");
+            showDialog = false;
+        }
+        if (ImGui::BeginPopupModal("Save Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("You have unsaved changes. Do you want to save before leaving?");
+            if (ImGui::Button("Save")) {
+                choice = 0;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Discard")) {
+                choice = 1;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                choice = 2;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+            if (choice != -1) {
+                return choice;
             }
         }
-        else {
-            // In edit mode, handle editor input
-            handleEditorInput(dt);
-            handleCameraInput(dt);
-            handleKeyboardShortcuts();
-        }
+        return -1; // no user choice yet
+    }
 
-        // Update object count for UI
-        if (m_currentScene) {
-            m_objectCount = static_cast<int>(m_currentScene->objects().size());
+    void LevelEditor::renderSaveDialog() {
+        if (!m_showSaveDialog) return;
+
+        ImGui::OpenPopup("Save Level");
+
+        // Center the popup
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Save Level", &m_showSaveDialog,
+            ImGuiWindowFlags_AlwaysAutoResize)) {
+
+            ImGui::Text("Enter filename (without extension):");
+            ImGui::Spacing();
+
+            // Input field for filename
+            ImGui::InputText("##filename", m_fileDialogBuffer, sizeof(m_fileDialogBuffer));
+
+            ImGui::Spacing();
+            ImGui::Text("Will save to: assets/levels/");
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "%s.json", m_fileDialogBuffer);
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Save button
+            if (ImGui::Button("Save", ImVec2(120, 0))) {
+                if (strlen(m_fileDialogBuffer) > 0) {
+                    // ✓ FIXED: Ensure directory exists
+                    std::string directory = "assets/levels/";
+
+                    try {
+                        if (!fs::exists(directory)) {
+                            fs::create_directories(directory);
+                            std::cout << "[LevelEditor] Created directory: " << directory << "\n";
+                        }
+                    }
+                    catch (const std::exception& e) {
+                        std::cout << "[LevelEditor] Error creating directory: " << e.what() << "\n";
+                        ImGui::EndPopup();
+                        return;
+                    }
+
+                    // Build full filepath
+                    std::string filepath = directory + std::string(m_fileDialogBuffer) + ".json";
+
+                    // ✓ Check if file exists and warn
+                    bool fileExists = fs::exists(filepath);
+                    static bool confirmOverwrite = false;
+
+                    if (fileExists && !confirmOverwrite) {
+                        ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f),
+                            "Warning: File already exists!");
+                        ImGui::Text("Click Save again to overwrite.");
+                        confirmOverwrite = true;
+                        ImGui::EndPopup();
+                        return;
+                    }
+
+                    // Save the level
+                    if (saveLevel(filepath)) {
+                        std::cout << "[LevelEditor] Level saved to: " << filepath << "\n";
+                        m_showSaveDialog = false;
+                        confirmOverwrite = false;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    else {
+                        std::cout << "[LevelEditor] Failed to save level\n";
+                    }
+                }
+                else {
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
+                        "Please enter a filename!");
+                }
+            }
+
+            ImGui::SameLine();
+
+            // Cancel button
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                m_showSaveDialog = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    // ============================================================================
+    // Load Dialog Implementation
+    // ============================================================================
+    void LevelEditor::renderLoadDialog() {
+        if (!m_showLoadDialog) return;
+
+        ImGui::OpenPopup("Open Level");
+
+        // Center the popup
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Open Level", &m_showLoadDialog,
+            ImGuiWindowFlags_AlwaysAutoResize)) {
+
+            ImGui::Text("Select a level to load:");
+            ImGui::Spacing();
+
+            // List available levels from assets/levels/
+            std::string levelsDir = "assets/levels/";
+            static std::vector<std::string> availableLevels;
+            static bool needsRefresh = true;
+
+            if (needsRefresh) {
+                availableLevels.clear();
+                if (fs::exists(levelsDir) && fs::is_directory(levelsDir)) {
+                    for (const auto& entry : fs::directory_iterator(levelsDir)) {
+                        if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                            availableLevels.push_back(entry.path().string());
+                        }
+                    }
+                }
+                needsRefresh = false;
+            }
+
+            // Display list of levels
+            ImGui::BeginChild("LevelList", ImVec2(400, 300), true);
+
+            if (availableLevels.empty()) {
+                ImGui::TextDisabled("No levels found in %s", levelsDir.c_str());
+            }
+            else {
+                for (const auto& levelPath : availableLevels) {
+                    fs::path p(levelPath);
+                    std::string displayName = p.stem().string();
+
+                    if (ImGui::Selectable(displayName.c_str())) {
+                        if (loadLevel(levelPath)) {
+                            std::cout << "[LevelEditor] Level loaded: " << levelPath << "\n";
+                            m_showLoadDialog = false;
+                            needsRefresh = true;
+                            ImGui::CloseCurrentPopup();
+                        }
+                        else {
+                            std::cout << "[LevelEditor] Failed to load level\n";
+                        }
+                    }
+
+                    // Show full path on hover
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("Path: %s", levelPath.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+            }
+
+            ImGui::EndChild();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Refresh button
+            if (ImGui::Button("Refresh", ImVec2(120, 0))) {
+                needsRefresh = true;
+            }
+
+            ImGui::SameLine();
+
+            // Cancel button
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                m_showLoadDialog = false;
+                needsRefresh = true;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
         }
     }
 
     void LevelEditor::render() {
         if (!m_renderer || !m_currentScene) return;
 
+        //Core::Engine& engine = Core::Engine::Get();
 
-        // Render grid in edit mode
-        if (m_mode == EditorMode::Edit && m_gridSettings.enabled) {
-            renderGrid();
-        }
+        // Use editor camera's view-projection matrix
+        glm::mat4 viewProj = m_editorCamera.viewProj();
 
-        // Render scene
+        m_renderer->beginScenePass(viewProj);
+
+
+        // Render all objects via batch rendering
         m_currentScene->render(*m_renderer);
 
-        if (m_mode == EditorMode::Edit && m_selectedObject && m_showGizmos) {
-            renderGizmos();
-        }
+        m_renderer->endScenePass();
+
+        //if (m_mode == EditorMode::Play && m_currentScene) {
+        //    for (auto& obj : m_currentScene->objects()) {
+        //        if (obj->type() == Gameplay::GameObjectType::Player) {
+        //            vec2 playerPos = obj->transform().position;
+        //            float playerRotation = obj->transform().rotationRad;
+
+        //            auto* physics = m_currentScene->getPhysics();
+        //            if (!physics) break;
+
+        //            // Get visibility polygon as vec2
+        //            std::vector<vec2> lightPoly =
+        //                m_renderer->computeVisibilityPolygon(
+        //                    playerPos,
+        //                    playerRotation,
+        //                    glm::radians(60.0f),
+        //                    300.0f,
+        //                    *physics,
+        //                    m_currentScene->objects()
+        //                );
+
+        //            // Pass vec2 directly if methods accept it
+        //            m_renderer->beginLightPass(
+        //                viewProj,
+        //                playerPos,
+        //                vec3(1.0f, 0.9f, 0.6f),
+        //                300.0f,
+        //                playerRotation,
+        //                glm::radians(60.0f)
+        //            );
+
+        //            // Pass vec2 vector directly
+        //            m_renderer->drawLightCone(
+        //                playerPos,
+        //                lightPoly,      
+        //                vec3(1.0f, 0.9f, 0.6f)
+        //            );
+
+        //            m_renderer->endLightPass();
+        //            break;
+        //        }
+        //    }
+        //}
     }
 
     void LevelEditor::renderUI() {
         renderMenuBar();
 
-        if (m_mode == EditorMode::Edit) {
-            renderToolbar();
+        renderToolbar();
 
-            if (m_showHierarchy) {
-                renderHierarchy();         
-            }
-
-            if (m_showProperties) {
-                renderProperties();       
-            }
-
-            if (m_showPrefabPalette) {
-                renderPrefabPalette();      
-            }
-
-            if (m_showLevelSettings) {
-                renderLevelSettings();
-            }
-
-            if (m_showGridSettings) {
-                renderGridSettings();
-            }
-        }
+        if (m_showHierarchy) renderHierarchy();
+        if (m_showProperties) renderProperties();
+        if (m_showPrefabPalette) renderPrefabPalette();
+        if (m_showLevelSettings) renderLevelSettings();
 
         // Always show scene view
-        if (m_showSceneView) {
-            renderSceneView();
-        }
+        if (m_showSceneView) renderSceneView();
+
+        renderSaveDialog();
+        renderLoadDialog();
     }
 
     /******************************************************************************/
@@ -222,7 +555,7 @@ namespace Platform {
     void LevelEditor::setMode(EditorMode mode) {
         if (m_mode == mode) return;
 
-        EditorMode oldMode = m_mode;
+        //EditorMode oldMode = m_mode;
         m_mode = mode;
 
         if (mode == EditorMode::Play) {
@@ -247,7 +580,7 @@ namespace Platform {
     }
 
     /******************************************************************************/
-    // Level Management (Rubric 1205 - Advanced)
+    // Level Management
     /******************************************************************************/
 
     bool LevelEditor::newLevel(const std::string& name) {
@@ -285,11 +618,26 @@ namespace Platform {
 
     bool LevelEditor::saveLevel(const std::string& filepath) {
         if (!m_currentScene) {
-            std::cout << "not saved";
-            // TODO: Core::Engine::Get().logger().error("No scene to save");
+            std::cout << "[LevelEditor] No scene to save\n";
             return false;
         }
 
+        // ✓ FIXED: Ensure parent directory exists
+        fs::path filePath(filepath);
+        fs::path parentDir = filePath.parent_path();
+
+        try {
+            if (!parentDir.empty() && !fs::exists(parentDir)) {
+                fs::create_directories(parentDir);
+                std::cout << "[LevelEditor] Created directory: " << parentDir << "\n";
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << "[LevelEditor] Error creating directory: " << e.what() << "\n";
+            return false;
+        }
+
+        // Save scene to file (creates file if it doesn't exist)
         bool success = Gameplay::GameObjectSerializer::saveSceneToFile(
             m_currentLevelMetadata.name,
             m_currentScene->objects(),
@@ -297,6 +645,7 @@ namespace Platform {
         );
 
         if (success) {
+            // Update metadata
             m_currentLevelMetadata.filepath = filepath;
             m_levelDirty = false;
 
@@ -310,10 +659,10 @@ namespace Platform {
                 m_recentLevels.resize(MAX_RECENT_LEVELS);
             }
 
-            // TODO: Core::Engine::Get().logger().info("Level saved: " + filepath);
+            std::cout << "[LevelEditor] Successfully saved level: " << filepath << "\n";
         }
         else {
-            // TODO: Core::Engine::Get().logger().error("Failed to save level: " + filepath);
+            std::cout << "[LevelEditor] Failed to save level: " << filepath << "\n";
         }
 
         return success;
@@ -322,7 +671,6 @@ namespace Platform {
     bool LevelEditor::loadLevel(const std::string& filepath) {
         if (m_levelDirty) {
             // In a real implementation, prompt to save
-            // TODO: Core::Engine::Get().logger().warn("Loading level with unsaved changes");
         }
 
         std::string sceneName;
@@ -335,13 +683,22 @@ namespace Platform {
         );
 
         if (success) {
-            // Create new scene and transfer objects
             m_currentScene = std::make_unique<Runtime::Scene>(sceneName);
             m_currentScene->load();
 
             for (auto& obj : objects) {
                 m_currentScene->objects().push_back(std::move(obj));
             }
+            std::cout << "GameObjects loaded (" << m_currentScene->objects().size() << "):\n";
+            for (const auto& obj : m_currentScene->objects()) {
+                auto p = obj->transform().position;
+                auto s = obj->size();
+                std::cout << " - name=\"" << obj->name() << "\""
+                    << " pos=(" << p.x << "," << p.y << ")"
+                    << " size=(" << s.x << "," << s.y << ")"
+                    << " texture=\"" << obj->textureId() << "\"\n";
+            }
+            std::cout.flush();
 
             m_currentLevelMetadata.name = sceneName;
             m_currentLevelMetadata.filepath = filepath;
@@ -357,19 +714,12 @@ namespace Platform {
             if (m_recentLevels.size() > MAX_RECENT_LEVELS) {
                 m_recentLevels.resize(MAX_RECENT_LEVELS);
             }
-
-            // TODO: Core::Engine::Get().logger().info("Level loaded: " + filepath);
         }
         else {
-            // TODO: Core::Engine::Get().logger().error("Failed to load level: " + filepath);
+            std::cout << "[LevelEditor] Failed to load level: " << filepath << "\n";
         }
 
         return success;
-    }
-
-    bool LevelEditor::saveLevelAs(const std::string& filepath) {
-        m_currentLevelMetadata.filepath = filepath;
-        return saveLevel(filepath);
     }
 
     std::vector<std::string> LevelEditor::getRecentLevels() const {
@@ -561,35 +911,6 @@ namespace Platform {
             m_logger->fatal("Fatal exception caught: " + std::string(e.what()));
         }
     }
-
-    /******************************************************************************/
-    // Grid System
-    /******************************************************************************/
-
-    vec2 LevelEditor::snapToGrid(vec2 position) const {
-        if (!m_gridSettings.snapToGrid || !m_gridSettings.enabled) {
-            return position;
-        }
-
-        float cellSize = m_gridSettings.cellSize;
-        return vec2(
-            std::round(position.x / cellSize) * cellSize,
-            std::round(position.y / cellSize) * cellSize
-        );
-    }
-
-    void LevelEditor::renderGrid() {
-        // In a real implementation, this would render the grid using the renderer
-        // For now, we'll leave it as a placeholder
-        // The grid would be rendered as lines using the RenderingManager
-    }
-
-    void LevelEditor::renderGizmos() {
-        // In a real implementation, this would render manipulation gizmos
-        // (translate, rotate, scale) for the selected object
-        // This fulfills Rubric 1210 - Advanced (optional)
-    }
-
     /******************************************************************************/
     // Camera Control
     /******************************************************************************/
@@ -638,26 +959,57 @@ namespace Platform {
                 if (ImGui::MenuItem("New Level", "Ctrl+N")) {
                     newLevel("Untitled");
                 }
-                if (ImGui::MenuItem("Open Level", "Ctrl+O")) {
+
+                if (ImGui::MenuItem("Open Level...", "Ctrl+O")) {
                     m_showLoadDialog = true;
                 }
+
                 if (ImGui::MenuItem("Save Level", "Ctrl+S")) {
-                    saveLevel();
+                    // If no filepath, show save dialog
+                    if (m_currentLevelMetadata.filepath.empty()) {
+                        // Pre-fill with current level name
+                        strncpy(m_fileDialogBuffer,
+                            m_currentLevelMetadata.name.c_str(),
+                            sizeof(m_fileDialogBuffer));
+                        m_showSaveDialog = true;
+                    }
+                    else {
+                        // Save to existing file
+                        saveLevel();
+                    }
                 }
+
                 if (ImGui::MenuItem("Save Level As...", "Ctrl+Shift+S")) {
+                    // Pre-fill with current level name
+                    strncpy(m_fileDialogBuffer,
+                        m_currentLevelMetadata.name.c_str(),
+                        sizeof(m_fileDialogBuffer));
                     m_showSaveDialog = true;
                 }
 
                 ImGui::Separator();
 
+                // ✓ FIXED: Recent Levels menu
                 if (ImGui::BeginMenu("Recent Levels")) {
-                    for (const auto& level : m_recentLevels) {
-                        if (ImGui::MenuItem(level.c_str())) {
-                            loadLevel(level);
-                        }
-                    }
                     if (m_recentLevels.empty()) {
                         ImGui::TextDisabled("No recent levels");
+                    }
+                    else {
+                        for (const auto& level : m_recentLevels) {
+                            fs::path p(level);
+                            std::string displayName = p.stem().string();
+
+                            if (ImGui::MenuItem(displayName.c_str())) {
+                                loadLevel(level);
+                            }
+
+                            // Show full path on hover
+                            if (ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::Text("%s", level.c_str());
+                                ImGui::EndTooltip();
+                            }
+                        }
                     }
                     ImGui::EndMenu();
                 }
@@ -665,7 +1017,7 @@ namespace Platform {
                 ImGui::Separator();
 
                 if (ImGui::MenuItem("Exit", "Alt+F4")) {
-                    // In a real implementation, this would properly close the editor
+                    shutdown();
                 }
 
                 ImGui::EndMenu();
@@ -697,9 +1049,6 @@ namespace Platform {
                 if (ImGui::MenuItem("Level Settings")) {
                     m_showLevelSettings = !m_showLevelSettings;
                 }
-                if (ImGui::MenuItem("Grid Settings")) {
-                    m_showGridSettings = !m_showGridSettings;
-                }
 
                 ImGui::EndMenu();
             }
@@ -709,11 +1058,6 @@ namespace Platform {
                 ImGui::MenuItem("Properties", nullptr, &m_showProperties);
                 ImGui::MenuItem("Prefab Palette", nullptr, &m_showPrefabPalette);
                 ImGui::MenuItem("Scene View", nullptr, &m_showSceneView);
-
-                ImGui::Separator();
-
-                ImGui::MenuItem("Show Gizmos", nullptr, &m_showGizmos);
-                ImGui::MenuItem("Show Grid", nullptr, &m_gridSettings.enabled);
 
                 ImGui::Separator();
 
@@ -755,7 +1099,6 @@ namespace Platform {
                 1.0 / m_frameTime,
                 m_objectCount,
                 m_levelDirty ? "Modified" : "Saved");
-
             ImGui::EndMainMenuBar();
         }
     }
@@ -803,20 +1146,20 @@ namespace Platform {
         ImGui::Separator();
         ImGui::SameLine();
 
-        // Gizmo mode
-        if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
-            m_gizmoMode = GizmoMode::Translate;
-        }
-        ImGui::SameLine();
+        //// Gizmo mode
+        //if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
+        //    m_gizmoMode = GizmoMode::Translate;
+        //}
+        //ImGui::SameLine();
 
-        if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotate)) {
-            m_gizmoMode = GizmoMode::Rotate;
-        }
-        ImGui::SameLine();
+        //if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotate)) {
+        //    m_gizmoMode = GizmoMode::Rotate;
+        //}
+        //ImGui::SameLine();
 
-        if (ImGui::RadioButton("Scale", m_gizmoMode == GizmoMode::Scale)) {
-            m_gizmoMode = GizmoMode::Scale;
-        }
+        //if (ImGui::RadioButton("Scale", m_gizmoMode == GizmoMode::Scale)) {
+        //    m_gizmoMode = GizmoMode::Scale;
+        //}
 
         ImGui::End();
     }
@@ -943,9 +1286,6 @@ namespace Platform {
             // Position
             vec2 pos = transform.position;
             if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
-                if (m_gridSettings.snapToGrid) {
-                    pos = snapToGrid(pos);
-                }
                 m_selectedObject->setPosition(pos);
                 markLevelDirty();
             }
@@ -1169,20 +1509,6 @@ namespace Platform {
         ImGui::End();
     }
 
-    void LevelEditor::renderGridSettings() {
-        ImGui::Begin("Grid Settings", &m_showGridSettings);
-
-        ImGui::Checkbox("Enabled", &m_gridSettings.enabled);
-        ImGui::Checkbox("Snap to Grid", &m_gridSettings.snapToGrid);
-
-        ImGui::DragFloat("Cell Size", &m_gridSettings.cellSize, 1.0f, 1.0f, 100.0f);
-
-        ImGui::ColorEdit4("Grid Color", &m_gridSettings.gridColor.x);
-        ImGui::ColorEdit4("Origin Color", &m_gridSettings.originColor.x);
-
-        ImGui::End();
-    }
-
     void LevelEditor::renderCameraControls() {
         // Camera movement hints
         ImGui::Begin("Camera Controls");
@@ -1208,17 +1534,18 @@ namespace Platform {
     // Input Handling
     /******************************************************************************/
 
+    //to be fixed later
     void LevelEditor::handleEditorInput(double dt) {
         if (!m_input) return;
 
-        // Handle object selection
+        //// Handle object selection
         if (m_currentTool == EditorTool::Select) {
             handleObjectSelection();
 
             // Handle object dragging
-            if (m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-                handleObjectDragging();
-            }
+        //    //if (m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        //    //    handleObjectDragging();
+        //    //}
         }
 
         // Handle object placement
@@ -1226,10 +1553,11 @@ namespace Platform {
             handleObjectPlacement();
         }
 
-        // Handle object deletion
+        //// Handle object deletion
         if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
+        (void)dt;
     }
 
     void LevelEditor::handleCameraInput(double dt) {
@@ -1285,30 +1613,38 @@ namespace Platform {
         bool shift = m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
             m_input->isKeyDown(GLFW_KEY_RIGHT_SHIFT);
 
-        // Ctrl+N - New Level
         if (ctrl && m_input->wasKeyPressed(GLFW_KEY_N)) {
             newLevel("Untitled");
         }
 
-        // Ctrl+S - Save Level
         if (ctrl && !shift && m_input->wasKeyPressed(GLFW_KEY_S)) {
-            saveLevel();
+            if (m_currentLevelMetadata.filepath.empty()) {
+                // Show save dialog if no filepath
+                strncpy(m_fileDialogBuffer,
+                    m_currentLevelMetadata.name.c_str(),
+                    sizeof(m_fileDialogBuffer));
+                m_showSaveDialog = true;
+            }
+            else {
+                saveLevel();
+            }
         }
 
-        // Ctrl+Shift+S - Save As
         if (ctrl && shift && m_input->wasKeyPressed(GLFW_KEY_S)) {
+            strncpy(m_fileDialogBuffer,
+                m_currentLevelMetadata.name.c_str(),
+                sizeof(m_fileDialogBuffer));
             m_showSaveDialog = true;
         }
 
-        // Ctrl+O - Open Level
         if (ctrl && m_input->wasKeyPressed(GLFW_KEY_O)) {
             m_showLoadDialog = true;
         }
 
         // Ctrl+D - Duplicate
-        if (ctrl && m_input->wasKeyPressed(GLFW_KEY_D)) {
-            //duplicateSelectedObject();
-        }
+        //if (ctrl && m_input->wasKeyPressed(GLFW_KEY_D)) {
+        //    duplicateSelectedObject();
+        //}
 
         // Delete - Delete selected
         if (m_input->wasKeyPressed(GLFW_KEY_DELETE)) {
@@ -1320,13 +1656,14 @@ namespace Platform {
             togglePlayMode();
         }
 
-        // Tool shortcuts
         if (m_input->wasKeyPressed(GLFW_KEY_Q)) {
             m_currentTool = EditorTool::Select;
         }
+
         if (m_input->wasKeyPressed(GLFW_KEY_W)) {
             m_currentTool = EditorTool::Place;
         }
+
         if (m_input->wasKeyPressed(GLFW_KEY_E)) {
             m_currentTool = EditorTool::Erase;
         }
@@ -1348,10 +1685,6 @@ namespace Platform {
 
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
-        if (m_gridSettings.snapToGrid) {
-            mouseWorld = snapToGrid(mouseWorld);
-        }
-
         createObjectFromPrefab(m_selectedPrefab, mouseWorld);
     }
 
@@ -1372,10 +1705,6 @@ namespace Platform {
 
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
-        if (m_gridSettings.snapToGrid) {
-            mouseWorld = snapToGrid(mouseWorld);
-        }
-
         m_selectedObject->setPosition(mouseWorld);
         markLevelDirty();
     }
@@ -1384,10 +1713,6 @@ namespace Platform {
         if (!m_selectedObject) return;
 
         vec2 newPos = m_selectedObject->transform().position + delta;
-
-        if (m_gridSettings.snapToGrid) {
-            newPos = snapToGrid(newPos);
-        }
 
         m_selectedObject->setPosition(newPos);
         markLevelDirty();
@@ -1419,7 +1744,7 @@ namespace Platform {
         if (Gameplay::GameObjectSerializer::loadSceneFromFile(tempFile, sceneName, objects)) {
             m_currentScene = std::make_unique<Runtime::Scene>(sceneName);
             m_currentScene->load();
-
+            m_currentScene->objects().clear();
             for (auto& obj : objects) {
                 m_currentScene->objects().push_back(std::move(obj));
             }

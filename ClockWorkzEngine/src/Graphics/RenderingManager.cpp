@@ -133,9 +133,10 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
-		const glm::vec2& size, float angleRad, const glm::vec4& color)
+		const glm::vec2& size, float angleRad, const glm::vec4& uv, const glm::vec4& color)
 	{
-		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, { 0,0,1,1 }, Graphics::Anchor::Center);
+		std::cout << "draw Sprite: " << texId << std::endl;
+		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, uv, Graphics::Anchor::Center);
 	}
 
 
@@ -202,7 +203,7 @@ namespace Graphics {
 		//glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
 		//glEnableVertexAttribArray(2);
 
-		glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.size() + 1);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(polygon.size() + 1));
 	}
 
 	void RenderingManager::beginFrame() {
@@ -242,25 +243,100 @@ namespace Graphics {
 		glUseProgram(0);
 	}
 
-	void RenderingManager::beginScenePass(const glm::mat4& vp) {
-		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
+	void RenderingManager::beginFontPass(const glm::mat4& vp) {
+		//auto shader = Assets::ResourceManager<Shader>::Get("text");
+		//shader->use();
+		//glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//shader->setVec3("textColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		//shader->setMat4("projection", vp);
+
+		auto shader = Assets::ResourceManager<Shader>::Get("text");
 		if (!shader) return;
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
 
+		shader->use();
+		shader->setMat4("projection", vp);
+	}
+	void RenderingManager::endFontPass() {
+		//// Unbind everything font touched
+		//glBindVertexArray(0);
+		//glBindTexture(GL_TEXTURE_2D, 0);
+		//glUseProgram(0);
+
+		//// Reset color write and blending to sprite default
+		//glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glDisable(GL_DEPTH_TEST);
+		//glDepthMask(GL_FALSE);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+	}
+
+	void RenderingManager::beginScenePass(const glm::mat4& vp) {
+		//auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
+		//if (!shader) return;
+		//glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		//shader->use();
+		//shader->setMat4("uVP", vp);
+
+		//int samplers[MAX_TEXTURE_SLOTS];
+		//for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i) samplers[i] = i;
+		//glUniform1iv(glGetUniformLocation(shader->ID, "uTextures"), MAX_TEXTURE_SLOTS, samplers);
+
+		//m_renderer2D.beginBatch();
+		////m_renderer2D.flush();
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
+		if (!shader) return;
+
+		// --- Make sure we're in a known state ---
+		glUseProgram(0);
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+
+		// --- Now activate sprite shader ---
 		shader->use();
 		shader->setMat4("uVP", vp);
 
 		int samplers[MAX_TEXTURE_SLOTS];
-		for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i) samplers[i] = i;
+		for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i)
+			samplers[i] = i;
 		glUniform1iv(glGetUniformLocation(shader->ID, "uTextures"), MAX_TEXTURE_SLOTS, samplers);
 
-		m_renderer2D.beginBatch();
+		// --- Start fresh batch ---
+		//m_renderer2D.beginBatch();
 	}
 
 	void RenderingManager::endScenePass() {
-		m_renderer2D.flush();
-		glUseProgram(0);
+		/*m_renderer2D.flush();
+		glUseProgram(0);*/
+
+
+		m_renderer2D.flush();       // upload + draw
+		glBindVertexArray(0);       // clear VAO
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);            // unbind shader
+
+
 	}
 
 	void RenderingManager::beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle) {
@@ -283,6 +359,8 @@ namespace Graphics {
 		shader->setFloat("uAngle", glm::radians(lightAngle));   // cone width ~60° total
 		shader->setFloat("uRadius", 300.0f);
 		shader->setVec3("uLightColor", glm::vec3(1.0f, 0.9f, 0.6f));
+		(void)radius;
+		(void)color;
 	}
 
 	void RenderingManager::endLightPass() {

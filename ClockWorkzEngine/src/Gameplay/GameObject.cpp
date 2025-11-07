@@ -119,8 +119,8 @@ namespace Gameplay {
     }
 
     void GameObject::render(Graphics::RenderingManager& renderer) {
-        // Placeholder: actual rendering handled by Graphics system using textureID
-
+        // Placeholder: actual rendering handled by Graphics system using textureId
+        (void)renderer;
         for (auto &c : m_components)
 			c->onRender(*this);
 	}

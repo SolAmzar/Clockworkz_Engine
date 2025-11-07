@@ -15,7 +15,8 @@
           "layer": 4,
           "collisionMask": 7,
           "blocksLight": false,
-          "isHazard": false
+          "isHazard": false,
+          "moveSpeed": 100.0
         },
         "transform": {
           "position": {

@@ -1,11 +1,11 @@
-/******************************************************************************/
+ï»¿/******************************************************************************/
 /*!
 \file           LevelEditorState.cpp
 \project        Lights Out - Level Editor
 \author(s)      Student Implementation
-\brief          Implementation of EditorState - Fully compatible with your GameState
+\brief          Implementation of EditorState - Fully compatible with GameState
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content Â© 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -19,6 +19,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
 #include "Core/Engine.hpp"
+#include <GLFW/glfw3.h>
+#include "Assets/ResourceManager.hpp"
+#include "Graphics/Shader.hpp"
 
 namespace Runtime {
 
@@ -43,7 +46,17 @@ namespace Runtime {
 
         m_renderer = &engine.rendering();
         m_windowManager = &engine.window();
-        // ImGui manager would be accessed if needed
+
+        // âœ“ FIXED: Load shaders like PlayState (prevents texture loss)
+        auto textureShader = Assets::ResourceManager<Graphics::Shader>::Load(
+            "texture",
+            "assets/shaders/texture.vert",
+            "assets/shaders/texture.frag");
+
+        Assets::ResourceManager<Graphics::Shader>::Load(
+            "light",
+            "assets/shaders/light.vert",
+            "assets/shaders/light.frag");
 
         engine.logger().info("Entering Editor State");
 
@@ -51,7 +64,7 @@ namespace Runtime {
         m_editor = std::make_unique<Platform::LevelEditor>();
 
         if (!m_editor->init(
-            m_windowManager->handle(),  // WindowManager uses handle() not getWindow()
+            m_windowManager->handle(),
             *m_renderer,
             m_input,
             *m_windowManager)) {
@@ -79,6 +92,13 @@ namespace Runtime {
     void EditorState::update(double dt) {
         if (!m_editor || !m_initialized) return;
 
+        // Allow ESC to exit editor
+        if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
+        {
+            m_gsm.pop();
+            return;
+        }
+
         m_editor->update(dt);
     }
 
@@ -87,6 +107,7 @@ namespace Runtime {
 
         // Render editor scene
         m_editor->render();
+        (void)timer;
     }
 
     void EditorState::renderImGui(Core::Time* timer) {
@@ -94,6 +115,7 @@ namespace Runtime {
 
         // Render editor UI
         m_editor->renderUI();
+        (void)timer;
     }
 
 } // namespace Runtime

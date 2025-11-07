@@ -195,6 +195,10 @@ namespace Core
 	 */
 	void Engine::update(double dt)
 	{
+		//Check if Fixed Delta time (Uncomment if you want to check)
+		/*std::cout << m_time->fixedDelta() << std::endl;*/
+		(void)dt;
+
 		if (!m_booted)
 		{
 			// Initial State when Run Game, start off from Menu State
@@ -209,8 +213,13 @@ namespace Core
 			m_booted = true;
 		}
 		m_audio->update(); // Update the audio manager class
-		m_gsm->update(dt); // Update the game state manager class
 		m_input->update(); // Update the input manager class
+
+		int steps = m_time->currentSteps();
+		for (int i = 0; i < steps; ++i) {
+			m_gsm->update(m_time->fixedDelta());
+		}
+		
 	}
 
 	/** Function header comment
@@ -295,7 +304,9 @@ namespace Core
 				{
 					PROFILE_SCOPE("Full Render");
 					m_renderer->beginFrame();
+					std::cout << "Core Render Begin: " << std::endl;
 					render();
+					std::cout << "Core Render End " << std::endl;
 					m_renderer->endFrame();
 				}
 	/*			m_imgui->endFrame();

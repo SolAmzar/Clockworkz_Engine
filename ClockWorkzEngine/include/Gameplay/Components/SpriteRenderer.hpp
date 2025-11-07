@@ -48,7 +48,7 @@ namespace Gameplay
   private:
     std::string m_textureAlias;
     glm::vec4 m_tint{1.0f, 1.0f, 1.0f, 1.0f};
-    glm::vec4 m_uv{0.0f, 0.0f, -1.0f, -1.0f}; // (x,y,w,h); -1 means full texture
+    glm::vec4 m_uv{0.0f, 0.0f, 1.0f, 1.0f}; // (x,y,w,h); -1 means full texture
   };
 
 } // namespace Gameplay

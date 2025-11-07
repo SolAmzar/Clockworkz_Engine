@@ -3,7 +3,7 @@
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
 \author(s)      Student Implementation
-\brief          Comprehensive level editor with grid-based map editing,
+\brief          Comprehensive level editor,
                 property editing, hierarchy view, and multi-level support.
 
                 Features:
@@ -69,15 +69,6 @@ namespace Platform {
         Pan         // Camera panning
     };
 
-    // Grid settings
-    struct GridSettings {
-        bool enabled = true;
-        float cellSize = 32.0f;
-        vec4 gridColor = vec4(0.3f, 0.3f, 0.3f, 0.5f);
-        vec4 originColor = vec4(1.0f, 0.0f, 0.0f, 0.8f);
-        bool snapToGrid = true;
-    };
-
     // Prefab palette entry
     struct PrefabEntry {
         std::string name;
@@ -117,6 +108,8 @@ namespace Platform {
 
         // Main loop functions
         void update(double dt);
+        void renderSaveDialog();
+        void renderLoadDialog();
         void render();
         void renderUI();
 
@@ -125,7 +118,7 @@ namespace Platform {
         void setMode(EditorMode mode);
         void togglePlayMode();
 
-        // Level management (Rubric 1205 - Advanced)
+        // Level management
         bool newLevel(const std::string& name);
         bool saveLevel();
         bool saveLevel(const std::string& filepath);
@@ -146,11 +139,6 @@ namespace Platform {
         bool savePrefab(const std::string& name);
         bool loadPrefab(const std::string& filepath);
         const std::vector<PrefabEntry>& getPrefabPalette() const { return m_prefabPalette; }
-
-        // Grid settings
-        const GridSettings& getGridSettings() const { return m_gridSettings; }
-        void setGridSettings(const GridSettings& settings) { m_gridSettings = settings; }
-        vec2 snapToGrid(vec2 position) const;
 
         // Tool selection
         EditorTool getCurrentTool() const { return m_currentTool; }
@@ -176,7 +164,6 @@ namespace Platform {
         void renderPrefabPalette();
         void renderSceneView();
         void renderLevelSettings();
-        void renderGridSettings();
         void renderCameraControls();
 
         // Object manipulation
@@ -184,11 +171,7 @@ namespace Platform {
         void handleObjectPlacement();
         void handleObjectDeletion();
         void handleObjectDragging();
-        void moveSelectedObject(vec2 delta);
-
-        // Grid rendering
-        void renderGrid();
-        void renderGizmos();                
+        void moveSelectedObject(vec2 delta);             
 
         // Input handling
         void handleEditorInput(double dt);
@@ -241,9 +224,6 @@ namespace Platform {
         float m_cameraSpeed;
         float m_cameraZoomSpeed;
 
-        // Grid
-        GridSettings m_gridSettings;
-
         // Prefab system
         std::vector<PrefabEntry> m_prefabPalette;
         std::string m_selectedPrefab;
@@ -254,7 +234,6 @@ namespace Platform {
         bool m_showPrefabPalette;
         bool m_showSceneView;
         bool m_showLevelSettings;
-        bool m_showGridSettings;
 
         // Recent files
         std::vector<std::string> m_recentLevels;
@@ -282,6 +261,9 @@ namespace Platform {
         // Performance monitoring
         double m_frameTime;
         int m_objectCount;
+
+        double m_playTime = 0.0;
+        bool m_isPaused = false;
 
         // File dialog state
         bool m_showSaveDialog;

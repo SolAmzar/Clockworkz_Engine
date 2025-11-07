@@ -41,6 +41,8 @@ namespace Graphics {
         void endDebugPass();
         void beginScenePass(const glm::mat4& vp);
         void endScenePass();
+        void beginFontPass(const glm::mat4& vp);
+        void endFontPass();
 
         void beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle);
         void endLightPass();
@@ -54,7 +56,8 @@ namespace Graphics {
         void drawAABB(const glm::vec2& min, const glm::vec2& max, const glm::vec3& color);
         void drawVelocity(const glm::vec2& pos, const glm::vec2& vel, const glm::vec3& color);
         // new high-level sprite draw
-        void drawSprite(unsigned texId, const glm::vec2& pos, const glm::vec2& size, float angleRad = 0.f,
+        void drawSprite(unsigned texId, const glm::vec2& pos, const glm::vec2& size, float angleRad = 0.f, 
+            const glm::vec4& uv = glm::vec4(0.f,0.f,1.f,1.0f),
             const glm::vec4& color = glm::vec4(1.0f));
         std::vector<vec2> computeVisibilityPolygon(
             const vec2& origin,

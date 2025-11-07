@@ -308,8 +308,8 @@ namespace Gameplay {
                     deserializeHealth(*obj, comps["health"]);
                 if (comps.contains("damage"))
                     deserializeDamage(*obj, comps["damage"]);
-                if (comps.contains("spriteRenderer"))
-                    deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);
+                /*if (comps.contains("spriteRenderer"))
+                    deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);*/
                 if (comps.contains("collider"))
                     deserializeCollider(*obj, comps["collider"]);
                 if (comps.contains("patrol"))

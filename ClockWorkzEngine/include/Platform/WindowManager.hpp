@@ -38,6 +38,7 @@ namespace Platform {
 		GLFWwindow* handle() const { return m_window; }
 		int width() const { return m_width; }
 		int height() const { return m_height; }
+		GLFWwindow* getWindow() const { return m_window; }
 	private:
 		GLFWwindow* m_window = nullptr;
 		int m_width = 0, m_height = 0;

@@ -29,6 +29,12 @@
 			"path": "assets/textures/ball.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "menu_bg_texture",
+			"path": "assets/textures/background.jpg",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
 	]
 }
