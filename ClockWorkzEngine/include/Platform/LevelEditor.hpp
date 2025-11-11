@@ -1,4 +1,4 @@
-/******************************************************************************/
+ï»¿/******************************************************************************/
 /*!
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
@@ -17,7 +17,7 @@
                 - Free camera navigation with docking support
                 - In-world object picking with gizmos
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -161,14 +161,15 @@ namespace Platform {
         // UI Rendering (ImGui windows)
         void renderMenuBar();
         void renderToolbar();
-        void renderHierarchy();              
-        void renderProperties();             
+        void renderHierarchy();
+        void renderProperties();
         void renderPrefabPalette();
         void renderSceneView();
         void renderLevelSettings();
         void renderCameraControls();
         void renderAssetBrowser();
         void handleAssetFileWatch();
+        void renderGrid();
 
 
         // Object manipulation
@@ -176,7 +177,7 @@ namespace Platform {
         void handleObjectPlacement();
         void handleObjectDeletion();
         void handleObjectDragging();
-        void moveSelectedObject(vec2 delta);             
+        void moveSelectedObject(vec2 delta);
 
         // Input handling
         void handleEditorInput(double dt);
@@ -194,6 +195,7 @@ namespace Platform {
         vec2 screenToWorld(vec2 screenPos) const;
         vec2 worldToScreen(vec2 worldPos) const;
         bool isMouseOverUI() const;
+        vec2 snapToGrid(vec2 position) const;
 
         // Prefab management helpers
         void registerBuiltInPrefabs();
@@ -281,6 +283,11 @@ namespace Platform {
         bool m_showLoadDialog;
         char m_fileDialogBuffer[256];
         char mAssetNameBuffer[256];
+
+        // Grid settings
+        float m_gridSize;           // Size of each grid cell (e.g., 32.0f)
+        bool m_enableGridSnap;      // Enable/disable grid snapping
+        bool m_showGrid;            // Show/hide grid visualization
     };
 
 } // namespace Editor

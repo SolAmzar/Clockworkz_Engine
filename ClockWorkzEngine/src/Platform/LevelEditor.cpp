@@ -77,6 +77,9 @@ namespace Platform {
         , m_objectCount(0)
         , m_showSaveDialog(false)
         , m_showLoadDialog(false)
+        , m_gridSize(100.0f)
+        , m_enableGridSnap(true)
+        , m_showGrid(true)
     {
         m_fileDialogBuffer[0] = '\0';
 
@@ -84,7 +87,7 @@ namespace Platform {
         m_currentLevelMetadata.name = "Untitled";
         m_currentLevelMetadata.filepath = "";
         m_currentLevelMetadata.description = "New Level";
-        m_currentLevelMetadata.spawnPoint =  vec2(0.0f, 0.0f);
+        m_currentLevelMetadata.spawnPoint = vec2(0.0f, 0.0f);
     }
 
     static bool showReplaceDialog = false;
@@ -181,9 +184,9 @@ namespace Platform {
         }
     }
 
-// ============================================================================
-// Save Dialog Implementation
-// ============================================================================
+    // ============================================================================
+    // Save Dialog Implementation
+    // ============================================================================
 
     int promptSaveDiscardCancel() {
         static bool showDialog = true;
@@ -397,6 +400,65 @@ namespace Platform {
         }
     }
 
+    /******************************************************************************/
+    // Grid Rendering
+    /******************************************************************************/
+
+    void LevelEditor::renderGrid() {
+        if (!m_showGrid || !m_renderer) return;
+
+        // Calculate visible area in world space
+        vec2 topLeft = screenToWorld(vec2(0, 0));
+        vec2 bottomRight = screenToWorld(vec2(m_windowWidth, m_windowHeight));
+
+        // Ensure topLeft is actually top-left and bottomRight is bottom-right
+        if (topLeft.x > bottomRight.x) std::swap(topLeft.x, bottomRight.x);
+        if (topLeft.y > bottomRight.y) std::swap(topLeft.y, bottomRight.y);
+
+        // Expand the grid bounds to span much further (5x viewport size)
+        float width = bottomRight.x - topLeft.x;
+        float height = bottomRight.y - topLeft.y;
+        topLeft.x -= width * 2.0f;
+        topLeft.y -= height * 2.0f;
+        bottomRight.x += width * 2.0f;
+        bottomRight.y += height * 2.0f;
+
+        // Calculate grid boundaries (snap to grid)
+        float startX = std::floor(topLeft.x / m_gridSize) * m_gridSize;
+        float startY = std::floor(topLeft.y / m_gridSize) * m_gridSize;
+        float endX = std::ceil(bottomRight.x / m_gridSize) * m_gridSize;
+        float endY = std::ceil(bottomRight.y / m_gridSize) * m_gridSize;
+
+        float gridR = 1.0f, gridG = 0.0f, gridB = 0.0f;
+        float axisR = 0.8f, axisG = 0.9f, axisB = 1.0f;
+
+        // Draw vertical lines
+        for (float x = startX; x <= endX; x += m_gridSize) {
+            // Use axis color for origin line (x = 0)
+            bool isOrigin = std::abs(x) < 0.01f;
+            float r = isOrigin ? axisR : gridR;
+            float g = isOrigin ? axisG : gridG;
+            float b = isOrigin ? axisB : gridB;
+
+            m_renderer->drawLine(x, topLeft.y, x, bottomRight.y, r, g, b);
+        }
+
+        // Draw horizontal lines
+        for (float y = startY; y <= endY; y += m_gridSize) {
+            // Use axis color for origin line (y = 0)
+            bool isOrigin = std::abs(y) < 0.01f;
+            float r = isOrigin ? axisR : gridR;
+            float g = isOrigin ? axisG : gridG;
+            float b = isOrigin ? axisB : gridB;
+
+            m_renderer->drawLine(topLeft.x, y, bottomRight.x, y, r, g, b);
+        }
+    }
+
+    /******************************************************************************/
+    // Scene Rendering
+    /******************************************************************************/
+
     void LevelEditor::render() {
         if (!m_renderer || !m_currentScene) return;
 
@@ -407,6 +469,10 @@ namespace Platform {
 
         m_renderer->beginScenePass(viewProj);
 
+        // Render grid in edit mode
+        if (m_mode == EditorMode::Edit) {
+            renderGrid();
+        }
 
         // Render all objects via batch rendering
         m_currentScene->render(*m_renderer);
@@ -642,7 +708,7 @@ namespace Platform {
             m_currentScene->load();
 
             for (auto& obj : objects) {
-                m_currentScene->addObject(std::move(obj)); 
+                m_currentScene->addObject(std::move(obj));
             }
             std::cout << "GameObjects loaded (" << m_currentScene->objects().size() << "):\n";
             for (const auto& obj : m_currentScene->objects()) {
@@ -760,7 +826,7 @@ namespace Platform {
 
         auto obj = Gameplay::PrefabFactory::get().createAt(prefabName, position);
         if (obj) {
-            m_currentScene->addObject(std::move(obj)); 
+            m_currentScene->addObject(std::move(obj));
             markLevelDirty();
             // TODO: Core::Engine::Get().logger().info("Created object from prefab: " + prefabName);
         }
@@ -1100,6 +1166,25 @@ namespace Platform {
         ImGui::Separator();
         ImGui::SameLine();
 
+        // Grid controls
+        ImGui::Checkbox("Grid Snap", &m_enableGridSnap);
+        ImGui::SameLine();
+        ImGui::Checkbox("Show Grid", &m_showGrid);
+        ImGui::SameLine();
+
+        ImGui::PushItemWidth(100);
+        ImGui::SliderFloat("Grid Size", &m_gridSize, 8.0f, 200.0f, "%.0f");
+        ImGui::PopItemWidth();
+
+        ImGui::SameLine();
+        if (ImGui::Button("32")) m_gridSize = 32.0f;
+        ImGui::SameLine();
+        if (ImGui::Button("64")) m_gridSize = 64.0f;
+        ImGui::SameLine();
+        if (ImGui::Button("100")) m_gridSize = 100.0f;
+        ImGui::SameLine();
+        if (ImGui::Button("128")) m_gridSize = 128.0f;
+
         //// Gizmo mode
         //if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
         //    m_gizmoMode = GizmoMode::Translate;
@@ -1127,10 +1212,10 @@ namespace Platform {
                 "GameObject",
                 Gameplay::GameObjectShape::Square
             );
-			vec2 camPos = compat::to_vec2(m_editorCamera.position());
+            vec2 camPos = compat::to_vec2(m_editorCamera.position());
 
             obj->setPosition(camPos);
-            m_currentScene->addObject(std::move(obj)); 
+            m_currentScene->addObject(std::move(obj));
             markLevelDirty();
         }
 
@@ -1436,7 +1521,7 @@ namespace Platform {
 
         if (ImGui::Button("Frame Selected")) {
             if (m_selectedObject) {
-				glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
+                glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
                 m_editorCamera.setPosition(selObjectPos);
             }
         }
@@ -1601,22 +1686,25 @@ namespace Platform {
         // Apply movement
         if (magnitude(cameraMove) > 0.0f) {
             cameraMove = normalize(cameraMove);
-			vec2 cameraPos = compat::to_vec2(m_editorCamera.position());
+            vec2 cameraPos = compat::to_vec2(m_editorCamera.position());
 
             vec2 newPos = cameraPos + cameraMove * m_cameraSpeed * static_cast<float>(dt);
-			glm::vec2 Posnew = glm::vec2(newPos.x, newPos.y);
+            glm::vec2 Posnew = glm::vec2(newPos.x, newPos.y);
 
             m_editorCamera.setPosition(Posnew);
         }
 
         // Zoom with mouse wheel (would need scroll callback)
         // For now, use keys
-        if (m_input->isKeyDown(GLFW_KEY_Q)) {
-            float newZoom = m_editorCamera.zoom() * (1.0f + m_cameraZoomSpeed);
+        if (m_input->isKeyDown(GLFW_KEY_Q))
+        {
+            float newZoom = m_editorCamera.zoom() * (1.0f + m_cameraZoomSpeed * static_cast<float>(dt));
             m_editorCamera.setZoom(newZoom);
         }
-        if (m_input->isKeyDown(GLFW_KEY_R)) {
-            float newZoom = m_editorCamera.zoom() * (1.0f - m_cameraZoomSpeed);
+
+        if (m_input->isKeyDown(GLFW_KEY_R))
+        {
+            float newZoom = m_editorCamera.zoom() * (1.0f - m_cameraZoomSpeed * static_cast<float>(dt));
             m_editorCamera.setZoom(std::max(0.1f, newZoom));
         }
 
@@ -1701,13 +1789,40 @@ namespace Platform {
     }
 
     void LevelEditor::handleObjectPlacement() {
-        if (isMouseOverUI()) return;
-        if (m_selectedPrefab.empty()) return;
+        if (isMouseOverUI()) {
+            std::cout << "[DEBUG] Mouse over UI - blocked\n";
+            return;
+        }
+        if (m_selectedPrefab.empty()) {
+            std::cout << "[DEBUG] No prefab selected\n";
+            return;
+        }
 
-        vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+        vec2 mouseScreen = m_input->mousePosition();
+        vec2 mouseWorld = screenToWorld(mouseScreen);
 
-        createObjectFromPrefab(m_selectedPrefab, mouseWorld);
+        // Apply grid snapping - this snaps to the grid corner
+        vec2 snappedWorld = snapToGrid(mouseWorld);
+
+        // Center the object in the grid cell
+        // The offset should always be half the grid size regardless of zoom
+        float halfGrid = 0.5f * m_gridSize;
+        vec2 offsetPos = snappedWorld + vec2(halfGrid, halfGrid);
+
+        std::cout << "\n=== PLACEMENT ===\n";
+        std::cout << "Screen: (" << mouseScreen.x << ", " << mouseScreen.y << ")\n";
+        std::cout << "World: (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+        std::cout << "Snapped: (" << snappedWorld.x << ", " << snappedWorld.y << ")\n";
+        std::cout << "Camera: (" << m_editorCamera.position().x << ", "
+            << m_editorCamera.position().y << ")\n";
+        std::cout << "Zoom: " << m_editorCamera.zoom() << "\n";
+        std::cout << "Grid Size: " << m_gridSize << "\n";
+        std::cout << "Half Grid: " << halfGrid << "\n";
+        std::cout << "Final Position: (" << offsetPos.x << ", " << offsetPos.y << ")\n\n";
+
+        createObjectFromPrefab(m_selectedPrefab, offsetPos);
     }
+
 
     void LevelEditor::handleObjectDeletion() {
         if (isMouseOverUI()) return;
@@ -1726,7 +1841,10 @@ namespace Platform {
 
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
 
-        m_selectedObject->setPosition(mouseWorld);
+        // Apply grid snapping
+        vec2 snappedWorld = snapToGrid(mouseWorld);
+
+        m_selectedObject->setPosition(snappedWorld);
         markLevelDirty();
     }
 
@@ -1734,6 +1852,9 @@ namespace Platform {
         if (!m_selectedObject) return;
 
         vec2 newPos = m_selectedObject->transform().position + delta;
+
+        // Apply grid snapping
+        newPos = snapToGrid(newPos);
 
         m_selectedObject->setPosition(newPos);
         markLevelDirty();
@@ -1767,7 +1888,7 @@ namespace Platform {
             m_currentScene->load();
             m_currentScene->objects().clear();
             for (auto& obj : objects) {
-                m_currentScene->addObject(std::move(obj)); 
+                m_currentScene->addObject(std::move(obj));
             }
 
             m_selectedObject = nullptr;
@@ -1802,30 +1923,29 @@ namespace Platform {
     }
 
     vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
-        // In a real implementation, this would use the camera's projection matrix
-        // to properly convert screen coordinates to world coordinates
+        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
 
-        // Simple implementation: adjust for camera position and zoom
-        vec2 worldPos = screenPos;
-		vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-        worldPos -= vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
-        worldPos /= m_editorCamera.zoom();
-		worldPos += m_editorCameraPos;
+        // Center the screen position (make (0,0) at screen center)
+        vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
 
-        // Flip Y coordinate (screen space is top-down, world space is bottom-up)
-        worldPos.y = -worldPos.y;
+        centered /= m_editorCamera.zoom();
+
+        vec2 worldPos = centered + m_editorCameraPos;
 
         return worldPos;
     }
 
+
     vec2 LevelEditor::worldToScreen(vec2 worldPos) const {
-        // Inverse of screenToWorld
-        vec2 screenPos = worldPos;
         vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-        screenPos -= m_editorCameraPos;
-        screenPos *= m_editorCamera.zoom();
-        screenPos += vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
-        screenPos.y = -screenPos.y;
+
+        // Inverse of screenToWorld:
+        vec2 relative = worldPos - m_editorCameraPos;
+
+        // 2. Multiply by zoom (inverse of divide)
+        relative *= m_editorCamera.zoom();
+
+        vec2 screenPos = relative + vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
 
         return screenPos;
     }
@@ -1834,6 +1954,18 @@ namespace Platform {
         // Check if mouse is over any ImGui window
         return ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ||
             ImGui::IsAnyItemHovered();
+    }
+
+    vec2 LevelEditor::snapToGrid(vec2 position) const {
+        if (!m_enableGridSnap) {
+            return position;
+        }
+
+        // Snap to nearest grid point
+        float snappedX = std::round(position.x / m_gridSize) * m_gridSize;
+        float snappedY = std::round(position.y / m_gridSize) * m_gridSize;
+
+        return vec2(snappedX, snappedY);
     }
 
 } // namespace Editor
