@@ -58,6 +58,7 @@ namespace Gameplay {
         static json serializeDamage(const GameObject& obj);
         static json serializePatrol(const GameObject& obj);
         static json serializeSpriteRenderer(const GameObject& obj);
+        static json serializeSpriteAnimator(const GameObject& obj);
 
         // Component deserialization helpers
         static void deserializeTransform(GameObject& obj, const json& j);
@@ -66,6 +67,7 @@ namespace Gameplay {
         static void deserializeDamage(GameObject& obj, const json& j);
         static void deserializePatrol(GameObject& obj, const json& j);
         static void deserializeSpriteRenderer(GameObject& obj, const json& j);
+        static void deserializeSpriteAnimator(GameObject& obj, const json& j);
     };
 
 } // namespace Gameplay
