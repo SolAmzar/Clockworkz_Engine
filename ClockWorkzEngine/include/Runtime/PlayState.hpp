@@ -48,7 +48,8 @@ namespace Runtime {
 		const int SPAWN_PER_FRAME = 100;
 		bool m_shouldReturnToMenu{ false };
 		void rebindLightsAndPlayerAfterReload();
-
+		void InitPlayerSpriteUVs();
+		const char* toString(Gameplay::GameObjectType t);
 		void renderImGui(Core::Time* timer) override; //Imgui for playstate
 
 	private:

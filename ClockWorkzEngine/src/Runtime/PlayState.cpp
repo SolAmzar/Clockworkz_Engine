@@ -94,7 +94,7 @@ namespace Runtime
 		// }
 	}
 
-	void InitPlayerSpriteUVs()
+	void PlayState::InitPlayerSpriteUVs()
 	{
 		const float frameW = 1.0f / 8.0f; // 0.125
 		const float frameH = 1.0f / 8.0f; // 0.125
@@ -142,7 +142,7 @@ namespace Runtime
 
 	const char *PlayState::name() const { return "PlayState"; }
 
-	static const char *toString(Gameplay::GameObjectType t)
+	const char * PlayState::toString(Gameplay::GameObjectType t)
 	{
 		using T = Gameplay::GameObjectType;
 		switch (t)

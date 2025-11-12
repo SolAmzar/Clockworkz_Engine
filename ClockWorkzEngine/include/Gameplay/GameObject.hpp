@@ -147,12 +147,8 @@ namespace Gameplay {
         // Setter accepts a std::function (can be a capturing lambda)
         void setLayerChangedCallback(LayerChangedFn cb) { m_onLayerChanged = std::move(cb); }
 
-
-
        
         const std::vector<std::unique_ptr<Component>>& getComponents() const { return m_components; }
-
-       
 
 
         // Very light component hook (safe to ignore at start)
@@ -237,13 +233,18 @@ namespace Gameplay {
         virtual void onUpdate(GameObject& owner, double dt) { (void)owner; (void)dt; }
         // Render need to take the resource like textures/sprite information from resourcemanager.
         virtual void onRender(GameObject& owner) { (void)owner; }
+        GameObject* owner() const { return m_owner; }
+    private:
+        friend class GameObject;   // lets GameObject assign this
+        GameObject* m_owner = nullptr;
     };
 
     template<typename T, typename... Args>
     T* GameObject::addComponent(Args&&... args) {
         auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
         T* raw = ptr.get();
-        m_components.emplace_back(std::move(ptr));
+        raw->m_owner = this;
+        m_components.emplace_back(std::move(ptr));      
         return raw;
     }
 
