@@ -31,6 +31,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <GLFW/glfw3.h>
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/MenuState.hpp"
+#include "Runtime/SpriteState.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include <iostream>
 #include <exception>
@@ -210,6 +211,8 @@ namespace Core
 				this->audio(),
 				[this]()
 				{ m_running = false; }));
+
+
 			m_booted = true;
 		}
 		m_audio->update(); // Update the audio manager class

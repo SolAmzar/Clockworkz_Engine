@@ -9,6 +9,9 @@
 #include <fstream>
 #include <iostream>
 #include <Gameplay/Components/SpriteRenderer.hpp>
+#include <Gameplay/Components/SpriteAnimator.hpp>
+
+
 
 namespace Gameplay {
 
@@ -73,6 +76,13 @@ namespace Gameplay {
         json j;
         j["textureId"] = obj.textureId();
         return j;
+    }
+
+    json GameObjectSerializer::serializeSpriteAnimator(const GameObject& obj) {
+        if (auto* anim = obj.getComponent<SpriteAnimatorComponent>()) {
+            return anim->serialize();
+        }
+        return json();
     }
 
     // ========================================================================
@@ -183,6 +193,14 @@ namespace Gameplay {
         obj.addComponent<PatrolComponent>(a, b, speed);
     }
 
+    void GameObjectSerializer::deserializeSpriteAnimator(GameObject& obj, const json& j) {
+        if (!j.is_object()) return;
+        auto* comp = obj.addComponent<SpriteAnimatorComponent>();
+        comp->loadFromJson(j);
+        if (auto* sr = obj.getComponent<SpriteRendererComponent>())
+            comp->setSpriteRenderer(sr);
+    }
+
     // ========================================================================
     // GAMEOBJECT SERIALIZATION
     // ========================================================================
@@ -225,10 +243,17 @@ namespace Gameplay {
             components["patrol"] = serializePatrol(obj);
         }
 
+        if (obj.getComponent<SpriteAnimatorComponent>()) {
+            components["spriteAnimator"] = serializeSpriteAnimator(obj);
+        }
+            
+
         j["components"] = components;
 
         return j;
     }
+
+
 
     // ========================================================================
     // GAMEOBJECT DESERIALIZATION (WITH PREFAB SUPPORT)
@@ -319,6 +344,9 @@ namespace Gameplay {
                     deserializeCollider(*obj, comps["collider"]);
                 if (comps.contains("patrol"))
                     deserializePatrol(*obj, comps["patrol"]);
+                if (comps.contains("spriteAnimator")) {
+                    deserializeSpriteAnimator(*obj, comps["spriteAnimator"]);
+                }
             }
 
             // 4️⃣ Apply generic fields (name, active)
@@ -354,7 +382,13 @@ namespace Gameplay {
                 deserializeDamage(*obj, comps["damage"]);
             if (comps.contains("spriteRenderer"))
                 deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);
+            if (comps.contains("spriteAnimator")) {
+                deserializeSpriteAnimator(*obj, comps["spriteAnimator"]);
+            }
         }
+
+
+            
 
         return obj;
     }

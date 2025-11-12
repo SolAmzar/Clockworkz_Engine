@@ -1,0 +1,25 @@
+{
+  "sceneName": "level_01",
+  "objects": [
+    {
+      "name": "SpriteObject",
+      "active": true,
+
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "scale": {
+            "x": 100,
+            "y": 100
+          }
+        },
+        "spriteRenderer": {
+          "textureId": "player_texture"
+        }
+      }
+    }
+    ]
+}

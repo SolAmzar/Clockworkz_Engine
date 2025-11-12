@@ -40,6 +40,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Graphics/RenderingManager.hpp"
 
 #include <Gameplay/Components/SpriteRenderer.hpp>
+#include <Runtime/SpriteState.hpp>
 
 using Assets::ResourceManager;
 using Graphics::Shader;
@@ -228,6 +229,13 @@ namespace Runtime
                 std::cout << "Debug is pressed\n";
             }
             return;
+        }
+
+        if (m_input.wasKeyTriggered(GLFW_KEY_M)) {
+            m_gsm.push(std::make_shared<Runtime::SpriteState>(
+                "SpriteEditor",
+                m_input,
+                m_gsm));
         }
 
         // Optional: mouse click to select as well

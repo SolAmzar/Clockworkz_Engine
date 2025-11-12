@@ -76,7 +76,7 @@ namespace Gameplay {
             float dist = magnitude(toT);
 
             vec2 bias = normalize(vec2{ target.x - p.x, target.y - p.y });
-            target += bias * 4.f; // 2–4 units to avoid scraping exact corners
+            target += bias * 4.f; // 2ï¿½4 units to avoid scraping exact corners
 
             // arrival
             if (dist <= m_arriveEps) { m_toB = !m_toB; owner.setVelocity({ 0,0 }); m_stuckTime = 0.f; m_lastDist = FLT_MAX; return; }
