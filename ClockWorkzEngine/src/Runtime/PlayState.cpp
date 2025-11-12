@@ -23,7 +23,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
-#include "Core/AudioManager.hpp"
+#include "Audio/AudioManager.hpp"
 #include "Graphics/ParticleSystem.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include <GLFW/glfw3.h>
@@ -173,17 +173,23 @@ namespace Runtime
 		
 		// 1) Make the GO and keep a raw pointer before moving it into the vector
 		auto fxUP = std::make_unique<Gameplay::GameObject>(
-		Gameplay::GameObjectType::Unknown, "ParticleTest");
-		Gameplay::GameObject* fx = fxUP.get();   // keep pointer
+		Gameplay::GameObjectType::Wall, "ParticleTest");
+		Gameplay::GameObject* fx = fxUP.get();   
 
 		fx->transform().position = { 5.0f, 3.0f };
+		// fx->setLayer(Gameplay::DrawLayer::FX);
 
 		// 2) Transfer ownership
-		gameObjects.push_back(std::move(fxUP));
+		if (auto* scene = m_scenes.current()) {
+			scene->addObject(std::move(fxUP));               
+		}
+		m_fx = fx;
 
 		// 3) Construct the component in-place (NO new). Pass the ctor args.
 		// ParticleEmitter(GameObject& owner, std::size_t max)
-		auto* emitter = fx->addComponent<Gameplay::ParticleEmitter>(*fx, 1000);
+		auto* emitter = fx->addComponent<Gameplay::ParticleEmitter>(1000);
+
+		emitter->setRenderer(m_renderer);
 
 		// 4) Configure
 		auto& s = emitter->system();
@@ -194,7 +200,7 @@ namespace Runtime
 		s.sizeEnd = 0.0f;
 		s.colorStart = { 1.f, 0.6f, 0.1f, 1.f };
 		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
-
+		s.rate = 120.f;
 
 		// Syafiq -
 		Core::Engine &engine = Core::Engine::Get();
@@ -223,12 +229,12 @@ namespace Runtime
 				{
 					auto const &o = *u;
 					auto p = o.transform().position;
-					auto s = o.size();
+					auto z = o.size();
 					std::cout << " - id=" << o.id()
 										<< " type=" << toString(o.type())
 										<< " name=\"" << o.name() << "\""
 										<< " pos=(" << p.x << "," << p.y << ")"
-										<< " size=(" << s.x << "," << s.y << ")"
+										<< " size=(" << z.x << "," << z.y << ")"
 										<< (o.active() ? "" : " [inactive]") << "\n";
 
 					if (u->type() == Gameplay::GameObjectType::Player)
@@ -344,16 +350,16 @@ namespace Runtime
 						isRunning = true;
 					}
 
-					Gameplay::GameObject* fx = nullptr;
-					for (auto& up : gameObjects) {
-						if (up->name() == "ParticleTest") { fx = up.get(); break; }
-					}
-					if (fx) {
-						if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
-							if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
-								em->burst(80); // 80-particle puff
-						}
-					}
+					//Gameplay::GameObject* fx = nullptr;
+					//for (auto& up : gameObjects) {
+					//	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					//}
+					//if (fx) {
+					//	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
+					//		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
+					//			em->burst(80); // 80-particle puff
+					//	}
+					//}
 					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
@@ -504,6 +510,11 @@ namespace Runtime
 					obj->transform().position.x = nextX; // snap to keep within bounds (optional)
 				}
 			}
+		}
+
+		if (m_fx && m_input.isKeyDown(GLFW_KEY_SPACE)) {
+			if (auto* em = m_fx->getComponent<Gameplay::ParticleEmitter>())
+				em->burst(80);
 		}
 
 		if (m_input.isKeyDown(GLFW_KEY_Z))

@@ -16,31 +16,33 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Gameplay/GameObject.hpp"
-using namespace Gameplay;
+namespace Gameplay {
 
-ParticleEmitter::ParticleEmitter(GameObject& owner, std::size_t max)
-    : m_owner(owner), m_system(max) {
-}
-
-void ParticleEmitter::update(float dt) {
-    // adapt to your Transform API if different
-    ps::v2 origin{ m_owner.transform().position.x, m_owner.transform().position.y };
-    origin = origin + localOffset;
-
-    if (m_active && m_system.rate > 0.f) {
-        m_system.emitContinuous(m_system.worldSpace ? origin : ps::v2{ 0,0 }, dt);
+    ParticleEmitter::ParticleEmitter(std::size_t max)
+        : m_system(max) {
     }
-    m_system.update(dt);
-}
 
-void ParticleEmitter::render() const {
-    if (m_renderer) {
-        m_system.render(*m_renderer);
-    }; 
-}
+    void ParticleEmitter::onUpdate(GameObject& /*owner*/, double dt) {
+        if (!owner()) return;
+        ps::v2 origin{ owner()->transform().position.x, owner()->transform().position.y };
+        origin = origin + localOffset;
+        if (m_active && m_system.rate > 0.f) {
+            m_system.emitContinuous(m_system.worldSpace ? origin : ps::v2{ 0,0 }, dt);
+        }
+        m_system.update(dt);
+    }
+
+    void ParticleEmitter::onRender(GameObject& /*owner*/) {
+        if (m_renderer) {
+            m_system.render(*m_renderer);
+        };
+    }
 
 
-void ParticleEmitter::burst(int count) {
-    ps::v2 origin{ m_owner.transform().position.x, m_owner.transform().position.y };
-    m_system.emitBurst(origin + localOffset, count);
+    void ParticleEmitter::burst(int count) {
+        if (!owner()) return;
+        ps::v2 origin{ owner()->transform().position.x, owner()->transform().position.y };
+        m_system.emitBurst(origin + localOffset, count);
+    }
+
 }

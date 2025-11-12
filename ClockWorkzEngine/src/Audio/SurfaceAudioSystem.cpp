@@ -1,0 +1,24 @@
+#include "Audio/SurfaceAudioSystem.hpp"
+#include <random>
+
+
+namespace Audio {
+    void SurfaceAudioSystem::init(Audio::AudioManager& audio) {
+        // preload all footstep clips (shared across scenes)
+        audio.load("fs_tiles_01", { "assets/audio/fs/Tiles/tiles_1.ogg", false, false, false });
+        audio.load("fs_tiles_02", { "assets/audio/fs/Tiles/tiles_2.ogg", false, false, false });
+    }
+
+    void SurfaceAudioSystem::playFootstep(Audio::AudioManager& audio, Gameplay::SurfaceType surface, float speed) {
+        // choose id list from surface type
+        const char* id = "fs_default";
+        switch (surface) {
+        case Gameplay::SurfaceType::Wood:  id = "fs_tiles_01"; break;
+        case Gameplay::SurfaceType::Tile:  id = "fs_tiles_02"; break;
+            // ...
+        default: break;
+        }
+        float volume = std::clamp(0.4f + 0.6f * (speed / 200.0f), 0.3f, 1.0f);
+        audio.play(id, Audio::Group::SFX, volume, false);
+    }
+} // namespace Audio

@@ -22,7 +22,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Config.hpp"
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
-#include "Core/AudioManager.hpp"
+#include "Audio/AudioManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Graphics/GraphicsManager.hpp"

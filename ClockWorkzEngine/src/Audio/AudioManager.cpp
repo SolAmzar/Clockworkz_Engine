@@ -17,10 +17,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 
 
-
-
-
-#include "Core/AudioManager.hpp"
+#include "Audio/AudioManager.hpp"
 #include <fmod.hpp>
 #include <fmod_errors.h>
 #include <cassert>
@@ -34,6 +31,13 @@ static bool FMOD_CHECK(FMOD_RESULT r, const char* what) {
         return false;
     }
     return true;
+}
+
+static bool isChannelAlive(FMOD::Channel* ch) {
+    if (!ch) return false;
+    bool playing = false;
+    if (ch->isPlaying(&playing) != FMOD_OK) return false;
+    return playing;
 }
 
 AudioManager::~AudioManager() { shutdown(); }
@@ -67,6 +71,11 @@ void AudioManager::shutdown() {
 
 void AudioManager::update() {
     if (m_system) m_system->update();
+    for (auto it = m_channels.begin(); it != m_channels.end(); ) {
+        FMOD::Channel* ch = it->second.ch;
+        if (!isChannelAlive(ch)) it = m_channels.erase(it);
+        else ++it;
+    }
 }
 
 bool AudioManager::createSound(const SoundDesc& d, FMOD::Sound** out) {
@@ -150,6 +159,34 @@ void AudioManager::stop(int h) {
         ch->stop();
         m_channels.erase(it);
 	}
+}
+
+void AudioManager::stop(std::string const& name) {
+    for (auto it = m_channels.begin(); it != m_channels.end(); ) {
+        if (it->second.soundId == name) {
+            if (it->second.ch) it->second.ch->stop();
+            it = m_channels.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+}
+
+void AudioManager::stopGroup(Group g) {
+    if (auto* grp = groupHandle(g)) {
+        grp->stop(); // stops all channels in that group
+    }
+    // also clear any cached handles from that group
+    for (auto it = m_channels.begin(); it != m_channels.end(); ) {
+        if (it->second.group == g) it = m_channels.erase(it);
+        else ++it;
+    }
+}
+
+void AudioManager::stopAll() {
+    if (m_master) m_master->stop(); // nukes everything
+    m_channels.clear();
 }
 
 void AudioManager::setPaused(int h, bool paused) {

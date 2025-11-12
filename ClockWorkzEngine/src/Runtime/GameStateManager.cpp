@@ -29,6 +29,9 @@ void GameStateManager::push(std::shared_ptr<GameState> s)
 {
 	if (!s)
 		return;
+	/*if (!m_states.empty()) {
+		m_states.top()->onExit();
+	}*/
 	m_states.push(std::move(s));
 	m_states.top()->onEnter();
 }

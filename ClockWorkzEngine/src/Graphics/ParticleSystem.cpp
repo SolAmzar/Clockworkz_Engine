@@ -56,24 +56,24 @@ void ParticleSystem::emitBurst(ps::v2 origin, int count) {
     }
 }
 
-void ParticleSystem::emitContinuous(ps::v2 origin, float dt) {
-    m_emitAcc += rate * dt;
+void ParticleSystem::emitContinuous(ps::v2 origin, double dt) {
+    m_emitAcc += rate * static_cast<float>(dt);
     int toEmit = static_cast<int>(m_emitAcc);
     m_emitAcc -= toEmit;
     emitBurst(origin, toEmit);
 }
 
-void ParticleSystem::update(float dt) {
+void ParticleSystem::update(double dt) {
     std::size_t write = 0;
     for (std::size_t read = 0; read < m_firstDead; ++read) {
         Particle& p = m_pool[read];
         if (!p.alive) continue;
 
-        p.life -= dt;
+        p.life -= static_cast<float>(dt);
         if (p.life <= 0.f) { p.alive = false; continue; }
 
-        p.vel = p.vel + p.acc * dt;
-        p.pos = p.pos + p.vel * dt;
+        p.vel = p.vel + p.acc * static_cast<float>(dt);
+        p.pos = p.pos + p.vel * static_cast<float>(dt);
 
         const float t = 1.f - p.life * p.invLife; // 0..1
         p.size = sizeStart + (sizeEnd - sizeStart) * t;
@@ -95,10 +95,11 @@ void ParticleSystem::render(Graphics::RenderingManager& renderer) const {
         const Particle& p = m_pool[i];
 
         // Your API expects center + radius, no alpha
-        const float radius = p.size * 0.5f;
-        renderer.drawCircle(
+        // const float radius = p.size * 0.5f;
+        renderer.drawRect(
             p.pos.x, p.pos.y,
-            radius,
+            p.size * p.pos.x,
+			p.size * p.pos.y,
             p.color.r, p.color.g, p.color.b
         );
     }

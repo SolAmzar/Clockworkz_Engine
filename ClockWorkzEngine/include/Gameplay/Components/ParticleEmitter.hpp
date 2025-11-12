@@ -20,21 +20,18 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Gameplay/GameObject.hpp"
 
 namespace Gameplay {
-	class GameObject;
+	// class GameObject;
 
 	class ParticleEmitter : public Component {
 	public:
-		explicit ParticleEmitter(GameObject& owner, std::size_t max = 1024);
+		explicit ParticleEmitter(std::size_t max = 1024);
 		void setActive(bool on) { m_active = on; }
 		bool active() const { return m_active; }
 
 		void setRenderer(Graphics::RenderingManager* r) { m_renderer = r; }
-		void onRender(GameObject&) override {
-			if (m_renderer) m_system.render(*m_renderer);
-		}
 
-		void update(float dt);
-		void render() const;
+		void onUpdate(GameObject& owner, double dt) override;
+		void onRender(GameObject& owner) override;
 		void burst(int count);
 
 		ps::v2 localOffset{ 0.f, 0.f };
@@ -43,7 +40,6 @@ namespace Gameplay {
 		ParticleSystem& system() { return m_system; }
 
 	private:
-		GameObject& m_owner;
 		ParticleSystem m_system;
 		bool m_active{ true };
 		Graphics::RenderingManager* m_renderer{ nullptr };

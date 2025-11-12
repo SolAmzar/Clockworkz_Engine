@@ -76,7 +76,11 @@ namespace Audio {
         bool isReady() const noexcept { return m_system != nullptr; }
 
     private:
-        struct ChannelHandle { FMOD::Channel* ch = nullptr; };
+        struct ChannelHandle { 
+            FMOD::Channel* ch = nullptr;  
+            std::string soundId{};
+            Group group = Group::SFX;
+        };
 
         FMOD::System* m_system = nullptr;
         FMOD::ChannelGroup* m_master = nullptr;

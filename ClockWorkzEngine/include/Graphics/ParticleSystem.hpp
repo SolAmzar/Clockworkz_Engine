@@ -13,11 +13,11 @@ class ParticleSystem {
 public:
 	explicit ParticleSystem(std::size_t max = 2048);
 
-	void update(float dt);
+	void update(double dt);
 	void render(Graphics::RenderingManager& renderer) const;
 
 	void emitBurst(ps::v2 origin, int count);
-	void emitContinuous(ps::v2 origin, float dt);
+	void emitContinuous(ps::v2 origin, double dt);
 
 	// Tunables
 	float rate = 200.f;
@@ -26,7 +26,7 @@ public:
 	float spreadDeg = 45.f;
 	ps::v2 dir = { 1.f, 0.f };              // should be normalized
 	ps::v2 acceleration = { 0.f, -200.f };
-	float sizeStart = 0.25f, sizeEnd = 0.f;
+	float sizeStart = 2.25f, sizeEnd = 0.f;
 	ps::Color colorStart = { 1,1,1,1 };
 	ps::Color colorEnd = { 1,1,1,0 };
 	bool  worldSpace = true;
