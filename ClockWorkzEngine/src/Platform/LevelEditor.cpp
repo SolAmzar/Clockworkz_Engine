@@ -35,6 +35,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <Runtime/PlayState.hpp>
 #include <Assets/ResourceManager.hpp>
 #include <Assets/TextureManager.hpp>
+#include <IMGUI/imgui_internal.h>
 
 namespace fs = std::filesystem;
 
@@ -552,7 +553,7 @@ namespace Platform {
         if (m_showProperties) renderProperties();
         if (m_showPrefabPalette) renderPrefabPalette();
         if (m_showLevelSettings) renderLevelSettings();
-        renderSceneViewDropZone();
+        if(ImGui::IsDragDropActive())renderSceneViewDropZone();
 
         // Always show scene view
         if (m_showSceneView) renderSceneView();
@@ -1674,13 +1675,13 @@ namespace Platform {
         if (!m_input) return;
 
         //// Handle object selection
-        if (m_currentTool == EditorTool::Select) {
+        if (m_currentTool == EditorTool::Select && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectSelection();
+        }
 
-            // Handle object dragging
-        //    //if (m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-        //    //    handleObjectDragging();
-        //    //}
+        // Handle object dragging (while mouse is held down)
+        if (m_currentTool == EditorTool::Select && m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            handleObjectDragging();
         }
 
         // Handle object placement
@@ -1799,17 +1800,17 @@ namespace Platform {
             togglePlayMode();
         }
 
-        if (m_input->wasKeyPressed(GLFW_KEY_Q)) {
-            m_currentTool = EditorTool::Select;
-        }
+        //if (m_input->wasKeyPressed(GLFW_KEY_Q)) {
+        //    m_currentTool = EditorTool::Select;
+        //}
 
-        if (m_input->wasKeyPressed(GLFW_KEY_W)) {
-            m_currentTool = EditorTool::Place;
-        }
+        //if (m_input->wasKeyPressed(GLFW_KEY_W)) {
+        //    m_currentTool = EditorTool::Place;
+        //}
 
-        if (m_input->wasKeyPressed(GLFW_KEY_E)) {
-            m_currentTool = EditorTool::Erase;
-        }
+        //if (m_input->wasKeyPressed(GLFW_KEY_E)) {
+        //    m_currentTool = EditorTool::Erase;
+        //}
     }
 
     void LevelEditor::handleObjectSelection() {
@@ -1936,13 +1937,15 @@ namespace Platform {
         if (!m_selectedObject) return;
 
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
-
-        // Apply grid snapping
         vec2 snappedWorld = snapToGrid(mouseWorld);
 
-        m_selectedObject->setPosition(snappedWorld);
+        float halfGrid = 0.5f * m_gridSize;
+        vec2 offsetPos = snappedWorld + vec2(halfGrid, halfGrid);
+
+        m_selectedObject->setPosition(offsetPos);
         markLevelDirty();
     }
+
 
     void LevelEditor::moveSelectedObject(vec2 delta) {
         if (!m_selectedObject) return;
