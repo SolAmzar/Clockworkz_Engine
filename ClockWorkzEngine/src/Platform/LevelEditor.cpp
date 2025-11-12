@@ -120,8 +120,6 @@ namespace Platform {
         // Initialize editor camera with proper viewport
         m_editorCamera.setPosition(glm::vec2(0.0f, 0.0f));
         m_editorCamera.setZoom(1.0f);
-        // If Camera2D has setViewport method:
-        // m_editorCamera.setViewport(m_windowWidth, m_windowHeight);
 
         // Create default scene
         m_currentScene = std::make_unique<Runtime::Scene>("EditorScene");
@@ -174,7 +172,6 @@ namespace Platform {
         else {
             // In edit mode, handle editor-specific input and camera
             handleEditorInput(dt);
-            handleCameraInput(dt);
             handleKeyboardShortcuts();
         }
 
@@ -555,6 +552,7 @@ namespace Platform {
         if (m_showProperties) renderProperties();
         if (m_showPrefabPalette) renderPrefabPalette();
         if (m_showLevelSettings) renderLevelSettings();
+        renderSceneViewDropZone();
 
         // Always show scene view
         if (m_showSceneView) renderSceneView();
@@ -564,7 +562,6 @@ namespace Platform {
         if (showReplaceDialog) {
             renderReplace();
         }
-
         renderSaveDialog();
         renderLoadDialog();
     }
@@ -1126,7 +1123,6 @@ namespace Platform {
     void LevelEditor::renderToolbar() {
         ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
 
-        // Play/Stop button (Rubric 1207 - Advanced)
         if (m_mode == EditorMode::Edit) {
             if (ImGui::Button("Play")) {
                 togglePlayMode();
@@ -1171,19 +1167,6 @@ namespace Platform {
         ImGui::SameLine();
         ImGui::Checkbox("Show Grid", &m_showGrid);
         ImGui::SameLine();
-
-        ImGui::PushItemWidth(100);
-        ImGui::SliderFloat("Grid Size", &m_gridSize, 8.0f, 200.0f, "%.0f");
-        ImGui::PopItemWidth();
-
-        ImGui::SameLine();
-        if (ImGui::Button("32")) m_gridSize = 32.0f;
-        ImGui::SameLine();
-        if (ImGui::Button("64")) m_gridSize = 64.0f;
-        ImGui::SameLine();
-        if (ImGui::Button("100")) m_gridSize = 100.0f;
-        ImGui::SameLine();
-        if (ImGui::Button("128")) m_gridSize = 128.0f;
 
         //// Gizmo mode
         //if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
@@ -1292,7 +1275,6 @@ namespace Platform {
         ImGui::End();
     }
 
-    // Rubric 1203 - Good: Property editor for modifying objects
     void LevelEditor::renderProperties() {
         ImGui::Begin("Properties");
 
@@ -1447,7 +1429,6 @@ namespace Platform {
         ImGui::End();
     }
 
-    // Rubric 1206 - Advanced: Prefab palette
     void LevelEditor::renderPrefabPalette() {
         ImGui::Begin("Prefab Palette");
 
@@ -1486,6 +1467,14 @@ namespace Platform {
                 ImGui::Text("Category: %s", prefab.category.c_str());
                 ImGui::Text("Click to select, then click in scene to place");
                 ImGui::EndTooltip();
+            }
+
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                ImGui::SetDragDropPayload("PREFAB_NAME",
+                    prefab.name.c_str(),
+                    prefab.name.length() + 1);
+                ImGui::Text("Drag: %s", prefab.displayName.c_str());
+                ImGui::EndDragDropSource();
             }
 
             ImGui::PopID();
@@ -1528,6 +1517,47 @@ namespace Platform {
 
         ImGui::End();
     }
+
+    void LevelEditor::renderSceneViewDropZone() {
+        ImVec2 scenePos = ImVec2(0, 0);
+        ImVec2 sceneSize = ImGui::GetIO().DisplaySize;
+
+        ImGui::SetNextWindowPos(scenePos);
+        ImGui::SetNextWindowSize(sceneSize);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0));
+        bool opened = ImGui::Begin("SceneDropOverlay", nullptr,
+            ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoScrollWithMouse |
+            ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoBringToFrontOnFocus);
+        ImGui::PopStyleColor();
+
+        if (opened) {
+            ImGui::InvisibleButton("DropZone", sceneSize);
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
+                    const char* prefabName = (const char*)payload->Data;
+                    ImVec2 mouseImGui = ImGui::GetMousePos();
+                    vec2 mouseScreen(mouseImGui.x, mouseImGui.y);
+                    vec2 mouseWorld = screenToWorld(mouseScreen);
+                    vec2 snappedWorld = snapToGrid(mouseWorld);
+                    float halfGrid = 0.5f * m_gridSize;
+                    vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
+                    createObjectFromPrefab(prefabName, finalPos);
+                }
+                ImGui::EndDragDropTarget();
+            }
+        }
+        ImGui::End(); // Make sure this always executes
+    }
+
+
+
 
     void LevelEditor::renderAssetBrowser()
     {
@@ -1640,7 +1670,6 @@ namespace Platform {
     // Input Handling
     /******************************************************************************/
 
-    //to be fixed later
     void LevelEditor::handleEditorInput(double dt) {
         if (!m_input) return;
 
@@ -1662,6 +1691,11 @@ namespace Platform {
         //// Handle object deletion
         if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
+        }
+
+        if (m_currentTool == EditorTool::Pan)
+        {
+            handleCameraInput(dt);
         }
         (void)dt;
     }
@@ -1782,8 +1816,70 @@ namespace Platform {
         if (!m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) return;
         if (isMouseOverUI()) return;
 
-        vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+        vec2 mouseScreen = m_input->mousePosition();
+        vec2 mouseWorld = screenToWorld(mouseScreen);
         Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
+
+        // ENHANCED DEBUG OUTPUT
+        std::cout << "\n=== ENHANCED SELECTION DEBUG ===\n";
+        std::cout << "Screen Position: (" << mouseScreen.x << ", " << mouseScreen.y << ")\n";
+        std::cout << "Window Size: (" << m_windowWidth << ", " << m_windowHeight << ")\n";
+        std::cout << "Camera Position: (" << m_editorCamera.position().x << ", "
+            << m_editorCamera.position().y << ")\n";
+        std::cout << "Camera Zoom: " << m_editorCamera.zoom() << "\n";
+
+        // Show the conversion steps
+        vec2 centered = mouseScreen - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        vec2 scaled = centered / m_editorCamera.zoom();
+        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
+        vec2 final = scaled + m_editorCameraPos;
+
+        std::cout << "\nConversion Steps:\n";
+        std::cout << "  1. Centered: (" << centered.x << ", " << centered.y << ")\n";
+        std::cout << "  2. Scaled by zoom: (" << scaled.x << ", " << scaled.y << ")\n";
+        std::cout << "  3. Add camera pos: (" << final.x << ", " << final.y << ")\n";
+        std::cout << "  4. Final world: (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+
+        std::cout << "\nObject found: " << (obj ? obj->name() : "nullptr") << "\n";
+
+        if (m_currentScene) {
+            std::cout << "\nChecking " << m_currentScene->objects().size() << " objects:\n";
+            for (auto& o : m_currentScene->objects()) {
+                auto aabb = o->aabbWorld();
+                auto pos = o->transform().position;
+                auto size = o->size();
+
+                // Calculate distance from mouse to object center
+                f32 distToCenter = magnitude(vec2(pos.x, pos.y) - mouseWorld);
+
+                // Check if mouse is inside AABB
+                bool isInside = (mouseWorld.x >= aabb.min.x && mouseWorld.x <= aabb.max.x &&
+                    mouseWorld.y >= aabb.min.y && mouseWorld.y <= aabb.max.y);
+
+                std::cout << "  - " << o->name() << "\n";
+                std::cout << "    Position: (" << pos.x << ", " << pos.y << ")\n";
+                std::cout << "    Size: (" << size.x << ", " << size.y << ")\n";
+                std::cout << "    AABB: [" << aabb.min.x << "," << aabb.min.y
+                    << " to " << aabb.max.x << "," << aabb.max.y << "]\n";
+                std::cout << "    Distance from mouse: " << distToCenter << " units\n";
+                std::cout << "    Mouse inside AABB: " << (isInside ? "YES " : "NO ") << "\n";
+
+                // Additional check: is the AABB calculation correct?
+                vec2 expectedMin = vec2(pos.x, pos.y) - vec2(size.x, size.y) * 0.5f;
+                vec2 expectedMax = vec2(pos.x, pos.y) + vec2(size.x, size.y) * 0.5f;
+
+                if (std::abs(aabb.min.x - expectedMin.x) > 0.1f ||
+                    std::abs(aabb.min.y - expectedMin.y) > 0.1f) {
+                    std::cout << "    AABB MIN MISMATCH! Expected: ("
+                        << expectedMin.x << ", " << expectedMin.y << ")\n";
+                }
+                if (std::abs(aabb.max.x - expectedMax.x) > 0.1f ||
+                    std::abs(aabb.max.y - expectedMax.y) > 0.1f) {
+                    std::cout << "    AABB MAX MISMATCH! Expected: ("
+                        << expectedMax.x << ", " << expectedMax.y << ")\n";
+                }
+            }
+        }
 
         selectObject(obj);
     }
@@ -1809,16 +1905,16 @@ namespace Platform {
         float halfGrid = 0.5f * m_gridSize;
         vec2 offsetPos = snappedWorld + vec2(halfGrid, halfGrid);
 
-        std::cout << "\n=== PLACEMENT ===\n";
-        std::cout << "Screen: (" << mouseScreen.x << ", " << mouseScreen.y << ")\n";
-        std::cout << "World: (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
-        std::cout << "Snapped: (" << snappedWorld.x << ", " << snappedWorld.y << ")\n";
-        std::cout << "Camera: (" << m_editorCamera.position().x << ", "
-            << m_editorCamera.position().y << ")\n";
-        std::cout << "Zoom: " << m_editorCamera.zoom() << "\n";
-        std::cout << "Grid Size: " << m_gridSize << "\n";
-        std::cout << "Half Grid: " << halfGrid << "\n";
-        std::cout << "Final Position: (" << offsetPos.x << ", " << offsetPos.y << ")\n\n";
+        //std::cout << "\n=== PLACEMENT ===\n";
+        //std::cout << "Screen: (" << mouseScreen.x << ", " << mouseScreen.y << ")\n";
+        //std::cout << "World: (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+        //std::cout << "Snapped: (" << snappedWorld.x << ", " << snappedWorld.y << ")\n";
+        //std::cout << "Camera: (" << m_editorCamera.position().x << ", "
+        //    << m_editorCamera.position().y << ")\n";
+        //std::cout << "Zoom: " << m_editorCamera.zoom() << "\n";
+        //std::cout << "Grid Size: " << m_gridSize << "\n";
+        //std::cout << "Half Grid: " << halfGrid << "\n";
+        //std::cout << "Final Position: (" << offsetPos.x << ", " << offsetPos.y << ")\n\n";
 
         createObjectFromPrefab(m_selectedPrefab, offsetPos);
     }
@@ -1906,45 +2002,62 @@ namespace Platform {
     Gameplay::GameObject* LevelEditor::getObjectAtPosition(vec2 worldPos) {
         if (!m_currentScene) return nullptr;
 
-        // Check objects in reverse order (top to bottom)
         auto& objects = m_currentScene->objects();
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             auto& obj = *it;
 
-            // Simple AABB check
-            auto aabb = obj->aabbWorld();
+            // Use the object's own AABB but make it larger for easier selection
+            Gameplay::AABB aabb = obj->aabbWorld();
+
+            // Expand the AABB by 50% on all sides for easier clicking
+            vec2 expand = (aabb.max - aabb.min) * 0.5f * 0.5f;
+            aabb.min -= expand;
+            aabb.max += expand;
+
             if (worldPos.x >= aabb.min.x && worldPos.x <= aabb.max.x &&
                 worldPos.y >= aabb.min.y && worldPos.y <= aabb.max.y) {
                 return obj.get();
             }
         }
-
         return nullptr;
     }
 
-    vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
-        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
 
-        // Center the screen position (make (0,0) at screen center)
-        vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
 
-        centered /= m_editorCamera.zoom();
+vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+    vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
 
-        vec2 worldPos = centered + m_editorCameraPos;
+    // Step 1: Flip Y first (GLFW has Y=0 at top)
+    screenPos.y = m_windowHeight - screenPos.y;
 
-        return worldPos;
-    }
+    // Step 2: Center the screen position
+    vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+
+    // Step 3: Scale by zoom
+    centered /= m_editorCamera.zoom();
+
+    // Step 4: Add camera position
+    vec2 worldPos = centered + m_editorCameraPos;
+
+    return worldPos;
+}
+
+
 
 
     vec2 LevelEditor::worldToScreen(vec2 worldPos) const {
         vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
 
-        // Inverse of screenToWorld:
+        // 1. Subtract camera position
         vec2 relative = worldPos - m_editorCameraPos;
 
-        // 2. Multiply by zoom (inverse of divide)
+        // 2. Multiply by zoom
         relative *= m_editorCamera.zoom();
 
+  
+        relative.y = -relative.y;
+
+        // 4. Add window center
         vec2 screenPos = relative + vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
 
         return screenPos;

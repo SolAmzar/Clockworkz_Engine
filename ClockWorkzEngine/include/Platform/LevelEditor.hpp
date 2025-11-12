@@ -146,7 +146,7 @@ namespace Platform {
         EditorTool getCurrentTool() const { return m_currentTool; }
         void setCurrentTool(EditorTool tool) { m_currentTool = tool; }
 
-        // Camera control (Rubric 1208 - Advanced)
+        // Camera control
         Graphics::Camera2D& getEditorCamera() { return m_editorCamera; }
         const Graphics::Camera2D& getEditorCamera() const { return m_editorCamera; }
         void resetCamera();
@@ -165,6 +165,7 @@ namespace Platform {
         void renderProperties();
         void renderPrefabPalette();
         void renderSceneView();
+        void renderSceneViewDropZone();
         void renderLevelSettings();
         void renderCameraControls();
         void renderAssetBrowser();
@@ -248,6 +249,7 @@ namespace Platform {
 
         // Object creation
         Gameplay::GameObjectType m_objectTypeToPlace;
+        std::string m_draggedPrefab;
 
         // Window dimensions
         float m_windowWidth;
