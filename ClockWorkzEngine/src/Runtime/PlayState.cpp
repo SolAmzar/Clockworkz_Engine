@@ -17,6 +17,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
+#include "Runtime/PauseState.hpp"
 #include "IMGUI/imgui.h"
 #include "Runtime/MenuState.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -246,6 +247,30 @@ namespace Runtime
 
 	void PlayState::update(double dt)
 	{
+		if (m_returnToMenuRequested)
+		{
+			std::cout << "[PlayState] Return to menu requested\n";
+			m_gsm.pop();
+			return;
+		}
+
+		if (m_pauseRequested)
+		{
+			m_pauseRequested = false;
+			std::cout << "[PlayState] Processing pause request\n";
+			m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
+			return;
+		}
+
+		if (!m_loaded) return;
+
+		// Check for pause input
+		if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
+		{
+			std::cout << "[PlayState] ESC pressed - requesting pause\n";
+			m_pauseRequested = true;
+			return; // Don't continue this frame
+		}
 
 		Core::Engine &engine = Core::Engine::Get();
 		//Platform::InputManager &input = engine.input();
@@ -296,7 +321,7 @@ namespace Runtime
 		// Syafiq - Player movement
 		if (auto *scene = m_scenes.current())
 		{
-
+			m_scenes.update(dt);
 			// Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
 			// objMap["Player"][0] <- since only 1 player. index 0 will work.
 			for (auto &obj : scene->objects())

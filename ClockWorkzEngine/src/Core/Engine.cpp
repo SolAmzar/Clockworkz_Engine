@@ -218,10 +218,11 @@ namespace Core
 		m_audio->update(); // Update the audio manager class
 		m_input->update(); // Update the input manager class
 
-		int steps = m_time->currentSteps();
-		for (int i = 0; i < steps; ++i) {
-			m_gsm->update(m_time->fixedDelta());
-		}
+		m_gsm->update(dt);
+		//int steps = m_time->currentSteps();
+		//for (int i = 0; i < steps; ++i) {
+		//	m_gsm->update(m_time->fixedDelta());
+		//}
 		
 	}
 

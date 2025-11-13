@@ -140,12 +140,17 @@ namespace Runtime
 
         if (choice == "Start Game")
         {
+            //*** DO NOT REMOVE! Working on SwitchTo GSM*****
+            //m_gsm.switchTo(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
+
             m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
             return;
         }
         if (choice == "Exit Game")
         {
             std::cout << "Exiting game...\n";
+
+            //**** Exit game needs work *****
             if (m_quitFn)
                 m_quitFn();
             return;
@@ -198,7 +203,7 @@ namespace Runtime
         if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
         {
             m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
-            std::this_thread::sleep_for(std::chrono::milliseconds(120));
+            /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
             select();
         }
 
@@ -217,7 +222,7 @@ namespace Runtime
         // Enter / KP_Enter to select
         if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER))
         {
-            m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), std::this_thread::sleep_for(std::chrono::milliseconds(120));
+            m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
             select();
         }
 
