@@ -23,6 +23,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
 #include "Audio/AudioManager.hpp"
+#include "Audio/SurfaceAudioSystem.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -100,11 +101,13 @@ namespace Core
 		m_logger->info("Engine init...");
 
 		m_audio = std::make_unique<Audio::AudioManager>();
+		m_sfAudio = std::make_unique<Audio::SurfaceAudioSystem>();
 
 		if (!m_audio->init())
 		{
 			return false;
 		}
+		m_sfAudio->init(*m_audio);
 
 		if (!m_window->create(*m_config))
 			return false;
@@ -181,6 +184,7 @@ namespace Core
 		m_config.reset();
 		m_camera.reset();
 		m_audio.reset();
+		m_sfAudio.reset();
 
 		Assets::TextureManager::Clear();
 	}

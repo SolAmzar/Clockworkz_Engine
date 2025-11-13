@@ -26,6 +26,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Audio/AudioManager.hpp"
 #include "Graphics/ParticleSystem.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
+#include "Gameplay/Components/SurfaceComponent.hpp"
+#include "Audio/SurfaceAudioSystem.hpp"
 #include <GLFW/glfw3.h>
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -74,6 +76,24 @@ namespace Runtime
 			if (u && u->type() == Gameplay::GameObjectType::Player) return u.get();
 		}
 		return nullptr;
+	}
+
+	Gameplay::SurfaceType PlayState::getSurfaceUnder(Gameplay::GameObject* player) {
+		auto* scene = m_scenes.current();
+		if (!scene) return Gameplay::SurfaceType::Default;
+
+		vec2 pos = player->transform().position;
+		for (auto& obj : scene->objects()) {
+			if (!obj || !obj->active()) continue;
+			if (auto* surf = obj->getComponent<Gameplay::SurfaceComponent>()) {
+				vec2 half = obj->size() * 0.5f;
+				if (abs(pos.x - obj->transform().position.x) <= half.x &&
+					abs(pos.y - obj->transform().position.y) <= half.y) {
+					return surf->type();
+				}
+			}
+		}
+		return Gameplay::SurfaceType::Default;	
 	}
 
 	void PlayState::rebindLightsAndPlayerAfterReload()
@@ -286,10 +306,13 @@ namespace Runtime
 		//Platform::InputManager &input = engine.input();
 		Graphics::Camera2D &cam = engine.camera();
 		Platform::WindowManager &window = engine.window();
+		auto& audio = engine.audio();
+		auto& steps = engine.surfaceAudio();
 		vec2 mouseWorld = m_input.getMouseWorldPos(
 				cam,
 				static_cast<float>(window.width()),
 				static_cast<float>(window.height()));
+		
 
 		if (m_shouldReturnToMenu)
 		{
@@ -343,6 +366,39 @@ namespace Runtime
 					bool isRunning = false;
 					float maxSpeed = obj->moveSpeed();
 					float maxRunSpeed = maxSpeed*2;
+
+					m_timeSinceStep += (float)dt;
+					auto surfaceType = getSurfaceUnder(obj.get());
+					vec2 curPos = obj->transform().position;
+					float speed = magnitude(obj->velocity());    // use your magnitude/length
+					bool  moving = speed > 5.0f;
+					
+					if (moving) {
+						if (!m_haveLastFootPos) {
+							m_lastFootPos = curPos;
+							m_haveLastFootPos = true;
+						}
+						vec2 delta = curPos - m_lastFootPos;
+						float frameDist = magnitude(delta);
+						m_distanceSinceStep += frameDist;
+						m_lastFootPos = curPos;
+
+						if (m_distanceSinceStep >= m_stepDistance && m_timeSinceStep >= m_minStepInterval) {
+							// Time for exactly ONE footsteps
+							steps.playFootstep(audio, surfaceType, speed);
+
+							m_distanceSinceStep = 0.0f;   // reset distance
+							m_timeSinceStep = 0.0f;
+						}
+					}
+					else {
+						// not moving → reset so we don’t “owe” steps
+						m_distanceSinceStep = 0.0f;
+						m_timeSinceStep = 0.0f;
+						m_haveLastFootPos = false;
+					}
+
+
 					//not used
 					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
 					{

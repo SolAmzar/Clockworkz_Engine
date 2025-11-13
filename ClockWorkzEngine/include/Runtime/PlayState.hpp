@@ -18,6 +18,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/GameState.hpp"
 #include "Runtime/SceneManager.hpp"
 #include "Gameplay/GameObject.hpp"
+#include "Gameplay/Components/SurfaceComponent.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -51,6 +52,7 @@ namespace Runtime {
 		void InitPlayerSpriteUVs();
 		const char* toString(Gameplay::GameObjectType t);
 		void renderImGui(Core::Time* timer) override; //Imgui for playstate
+		Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject* player);
 
 	private:
 		std::string m_initialSceneId;
@@ -67,6 +69,12 @@ namespace Runtime {
 		float m_rightBound{ 700.f };
 		float m_ballSpeed{ 220.f };
 		int   m_ballDir{ +1 };
+		float m_distanceSinceStep = 0.0f;
+		float m_stepDistance = 60.0f;
+		float m_timeSinceStep = 0.0f;
+		float m_minStepInterval = 0.22f;
+		vec2  m_lastFootPos{};
+		bool  m_haveLastFootPos = false;
 		void resetScene();
 		Gameplay::GameObject* m_player;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
