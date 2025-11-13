@@ -38,31 +38,74 @@ void GameStateManager::push(std::shared_ptr<GameState> s)
 
 void GameStateManager::pop()
 {
-	if (m_states.empty())
+
+	m_pendingOp = Operation::Pop;
+	m_popCount++;
+	/*if (m_states.empty())
 	{
 		return;
 	}
 	m_states.top()->onExit();
-	m_states.pop();
+	m_states.pop();*/
 }
 
 void GameStateManager::switchTo(std::shared_ptr<GameState> s)
 {
 	if (!s)
 		return;
-	if (!m_states.empty())
+
+	m_pendingOp = Operation::Switch;
+	m_pendingState = std::move(s);
+	/*if (!m_states.empty())
 	{
 		m_states.top()->onExit();
 		m_states.pop();
 	}
 	m_states.push(std::move(s));
-	m_states.top()->onEnter();
+	m_states.top()->onEnter();*/
+}
+
+void GameStateManager::processPendingOps()
+{
+	if (m_pendingOp == Operation::None)
+		return;
+
+	if (m_pendingOp == Operation::Pop)
+	{
+		for (int i = 0; i < m_popCount && !m_states.empty(); ++i)
+		{
+			std::cout << "[GSM] Popping state: " << m_states.top()->name() << "\n";
+			m_states.top()->onExit();
+			m_states.pop();
+		}
+		m_popCount = 0;
+	}
+	else if (m_pendingOp == Operation::Switch)
+	{
+		if (!m_states.empty())
+		{
+			std::cout << "[GSM] Switching from: " << m_states.top()->name() << "\n";
+			m_states.top()->onExit();
+			m_states.pop();
+		}
+
+		if (m_pendingState)
+		{
+			std::cout << "[GSM] Switching to: " << m_pendingState->name() << "\n";
+			m_states.push(m_pendingState);
+			m_states.top()->onEnter();
+			m_pendingState.reset();
+		}
+	}
+	m_pendingOp = Operation::None;
 }
 
 void GameStateManager::update(double dt)
 {
 	if (!m_states.empty())
 		m_states.top()->update(dt);
+
+		processPendingOps();
 }
 
 void GameStateManager::render(Core::Time *timer)

@@ -53,6 +53,7 @@ namespace Runtime {
 		const char* toString(Gameplay::GameObjectType t);
 		void renderImGui(Core::Time* timer) override; //Imgui for playstate
 		Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject* player);
+		void requestReturnToMenu() { m_returnToMenuRequested = true; }
 
 	private:
 		std::string m_initialSceneId;
@@ -78,6 +79,9 @@ namespace Runtime {
 		void resetScene();
 		Gameplay::GameObject* m_player;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
+
+		bool m_pauseRequested{ false };
+		bool m_returnToMenuRequested{ false };
 
 	};
 
