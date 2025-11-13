@@ -1,4 +1,4 @@
-/******************************************************************************/
+ï»¿/******************************************************************************/
 /*!
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
@@ -17,7 +17,7 @@
                 - Free camera navigation with docking support
                 - In-world object picking with gizmos
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -146,7 +146,7 @@ namespace Platform {
         EditorTool getCurrentTool() const { return m_currentTool; }
         void setCurrentTool(EditorTool tool) { m_currentTool = tool; }
 
-        // Camera control (Rubric 1208 - Advanced)
+        // Camera control
         Graphics::Camera2D& getEditorCamera() { return m_editorCamera; }
         const Graphics::Camera2D& getEditorCamera() const { return m_editorCamera; }
         void resetCamera();
@@ -161,14 +161,16 @@ namespace Platform {
         // UI Rendering (ImGui windows)
         void renderMenuBar();
         void renderToolbar();
-        void renderHierarchy();              
-        void renderProperties();             
+        void renderHierarchy();
+        void renderProperties();
         void renderPrefabPalette();
         void renderSceneView();
+        void renderSceneViewDropZone();
         void renderLevelSettings();
         void renderCameraControls();
         void renderAssetBrowser();
         void handleAssetFileWatch();
+        void renderGrid();
 
 
         // Object manipulation
@@ -176,7 +178,7 @@ namespace Platform {
         void handleObjectPlacement();
         void handleObjectDeletion();
         void handleObjectDragging();
-        void moveSelectedObject(vec2 delta);             
+        void moveSelectedObject(vec2 delta);
 
         // Input handling
         void handleEditorInput(double dt);
@@ -194,6 +196,7 @@ namespace Platform {
         vec2 screenToWorld(vec2 screenPos) const;
         vec2 worldToScreen(vec2 worldPos) const;
         bool isMouseOverUI() const;
+        vec2 snapToGrid(vec2 position) const;
 
         // Prefab management helpers
         void registerBuiltInPrefabs();
@@ -246,6 +249,7 @@ namespace Platform {
 
         // Object creation
         Gameplay::GameObjectType m_objectTypeToPlace;
+        std::string m_draggedPrefab;
 
         // Window dimensions
         float m_windowWidth;
@@ -281,6 +285,11 @@ namespace Platform {
         bool m_showLoadDialog;
         char m_fileDialogBuffer[256];
         char mAssetNameBuffer[256];
+
+        // Grid settings
+        float m_gridSize;           // Size of each grid cell (e.g., 32.0f)
+        bool m_enableGridSnap;      // Enable/disable grid snapping
+        bool m_showGrid;            // Show/hide grid visualization
     };
 
 } // namespace Editor

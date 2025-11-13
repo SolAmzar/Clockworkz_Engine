@@ -9,22 +9,23 @@
             "components": {
                 "collider": {
                     "type": "AABB",
-                    "width": 1.0,
-                    "height": 1.0,
+                    "width": 100.0,
+                    "height": 100.0,
                     "isSolid": true,
-                    "layer": 1,
+                    "layer": 4,
                     "collisionMask": 7,
                     "blocksLight": false,
-                    "isHazard": false
+                    "isHazard": false,
+                    "moveSpeed": 100.0
                 },
                 "transform": {
                     "position": {
-                        "x": -100,
-                        "y": -100
+                        "x": -50,
+                        "y": -50
                     },
                     "scale": {
-                        "x": 100,
-                        "y": 100
+                        "x": 1,
+                        "y": 1
                     }
                 },
                 "spriteRenderer": {
@@ -38,26 +39,37 @@
             "prefab": "Enemy",
             "components": {
                 "collider": {
-                    "width": 1.0,
-                    "height": 1.0,
+                    "width": 100.0,
+                    "height": 100.0,
                     "isSolid": true,
-                    "layer": 2,
+                    "layer": 4,
                     "collisionMask": 7,
                     "blocksLight": true,
                     "isHazard": false
                 },
                 "transform": {
                     "position": {
-                        "x": 300,
-                        "y": -100
+                        "x": 350,
+                        "y": -150
                     },
                     "scale": {
-                        "x": 100,
-                        "y": 100
+                        "x": 1,
+                        "y": 1
                     }
                 },
                 "spriteRenderer": {
                     "textureId": "enemy_texture"
+                },
+                "patrol": {
+                    "a": {
+                        "x": -650,
+                        "y": 450
+                    },
+                    "b": {
+                        "x": -200,
+                        "y": 300
+                    },
+                    "speed": 20.0
                 }
             }
         },
@@ -67,8 +79,8 @@
             "prefab": "Enemy",
             "components": {
                 "collider": {
-                    "width": 1.0,
-                    "height": 1.0,
+                    "width": 100,
+                    "height": 100,
                     "isSolid": true,
                     "layer": 2,
                     "collisionMask": 7,
@@ -77,12 +89,12 @@
                 },
                 "transform": {
                     "position": {
-                        "x": 200,
-                        "y": 200
+                        "x": 250,
+                        "y": 250
                     },
                     "scale": {
-                        "x": 100,
-                        "y": 100
+                        "x": 1,
+                        "y": 1
                     }
                 },
                 "health": {
@@ -90,6 +102,17 @@
                 },
                 "spriteRenderer": {
                     "textureId": "enemy_texture"
+                },
+                "patrol": {
+                    "a": {
+                        "x": 200,
+                        "y": 300
+                    },
+                    "b": {
+                        "x": 700,
+                        "y": 600
+                    },
+                    "speed": 50.0
                 }
             }
         },
@@ -100,8 +123,8 @@
             "components": {
                 "collider": {
                     "type": "AABB",
-                    "width": 1.0,
-                    "height": 1.0,
+                    "width": 100,
+                    "height": 100,
                     "isSolid": true,
                     "layer": 4,
                     "collisionMask": 7,
@@ -110,12 +133,12 @@
                 },
                 "transform": {
                     "position": {
-                        "x": 300,
-                        "y": 300
+                        "x": 350,
+                        "y": 350
                     },
                     "scale": {
-                        "x": 100,
-                        "y": 100
+                        "x": 1,
+                        "y": 1
                     }
                 },
                 "spriteRenderer": {
@@ -130,8 +153,8 @@
             "components": {
                 "collider": {
                     "type": "AABB",
-                    "width": 1.0,
-                    "height": 1.0,
+                    "width": 100,
+                    "height": 100,
                     "isSolid": true,
                     "layer": 4,
                     "collisionMask": 7,
@@ -140,12 +163,12 @@
                 },
                 "transform": {
                     "position": {
-                        "x": 400,
-                        "y": 400
+                        "x": 450,
+                        "y": 450
                     },
                     "scale": {
-                        "x": 100,
-                        "y": 100
+                        "x": 1,
+                        "y": 1
                     }
                 },
                 "spriteRenderer": {

@@ -24,8 +24,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 using namespace Graphics;
 
 void Camera2D::recalcProj() {
-  const float halfW = (m_viewW * 0.5f);
-  const float halfH = (m_viewH * 0.5f);
+  const float halfW = (m_viewW * 0.5f)/ m_zoom;
+  const float halfH = (m_viewH * 0.5f)/ m_zoom;
   m_proj = glm::ortho(-halfW, halfW, -halfH, halfH, -1.0f, 1.0f);
   recalcVP();
 }

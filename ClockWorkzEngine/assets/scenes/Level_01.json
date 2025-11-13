@@ -9,8 +9,8 @@
       "components": {
         "collider": {
           "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
+          "width": 100.0,
+          "height": 100.0,
           "isSolid": true,
           "layer": 4,
           "collisionMask": 7,
@@ -25,8 +25,8 @@
             "y": -100
           },
           "scale": {
-            "x": 100,
-            "y": 100
+            "x": 1,
+            "y": 1
           }
         },
         "spriteRenderer": {
@@ -40,8 +40,8 @@
       "prefab": "Enemy",
       "components": {
         "collider": {
-          "width": 1.0,
-          "height": 1.0,
+          "width": 100.0,
+          "height": 100.0,
           "isSolid": true,
           "layer": 4,
           "collisionMask": 7,
@@ -55,8 +55,8 @@
             "y": -100
           },
           "scale": {
-            "x": 100,
-            "y": 100
+            "x": 1,
+            "y": 1
           }
         },
         "spriteRenderer": {
@@ -81,8 +81,8 @@
       "prefab": "Enemy",
       "components": {
         "collider": {
-          "width": 1.0,
-          "height": 1.0,
+          "width": 100.0,
+          "height": 100.0,
           "isSolid": true,
           "layer": 2,
           "collisionCategory": 4,
@@ -96,8 +96,8 @@
             "y": 200
           },
           "scale": {
-            "x": 100,
-            "y": 100
+            "x": 1,
+            "y": 1
           }
         },
         "health": {
@@ -126,8 +126,8 @@
       "components": {
         "collider": {
           "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
+          "width": 100.0,
+          "height": 100.0,
           "isSolid": true,
           "layer": 4,
           "collisionCategory": 1,
@@ -141,8 +141,8 @@
             "y": 300
           },
           "scale": {
-            "x": 100,
-            "y": 100
+            "x": 1,
+            "y": 1
           }
         },
         "spriteRenderer": {
@@ -157,8 +157,8 @@
       "components": {
         "collider": {
           "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
+          "width": 100.0,
+          "height": 100.0,
           "isSolid": true,
           "layer": 4,
           "collisionMask": 7,
@@ -172,8 +172,8 @@
             "y": 400
           },
           "scale": {
-            "x": 100,
-            "y": 100
+            "x": 1,
+            "y": 1
           }
         },
         "spriteRenderer": {
@@ -188,8 +188,8 @@
       "components": {
         "collider": {
           "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
+          "width": 100.0,
+          "height": 100.0,
           "isSolid": true,
           "layer": 4,
           "collisionCategory": 1,
@@ -203,8 +203,8 @@
             "y": 100
           },
           "scale": {
-            "x": 100,
-            "y": 100
+            "x": 1,
+            "y": 1
           }
         },
         "spriteRenderer": {
