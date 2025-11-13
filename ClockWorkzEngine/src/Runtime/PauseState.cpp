@@ -14,7 +14,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Runtime/PlayState.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
-#include "Core/AudioManager.hpp"
+#include "Audio/AudioManager.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Graphics/Shader.hpp"

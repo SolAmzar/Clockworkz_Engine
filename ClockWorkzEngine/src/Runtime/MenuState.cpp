@@ -103,14 +103,7 @@ namespace Runtime
             "assets/shaders/texture.vert",
             "assets/shaders/texture.frag");
         // Amzar
-        if (!m_bgmPaused){
-            m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
-        }
-        else {
-			m_bgmPaused = false;
-			m_audio.setPaused(m_bgmChannel, m_bgmPaused);
-        }
-       
+        m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
         m_background.addComponent<SpriteRendererComponent>("menu_bg_texture");
         m_background.setSize({1.f, 1.f});                    // Proper dimensions
         m_background.transform().scale = {1920.0f, 1080.0f}; // Keep scale neutral
@@ -158,11 +151,11 @@ namespace Runtime
             std::cout << "Exiting game...\n";
 
             //**** Exit game needs work *****
-            if (m_quitFn)
-                m_quitFn();
+            /*if (m_quitFn)
+                m_quitFn();*/
             return;
         }
-        // yusuf    
+        // yusuf
         if (choice == "Load Game")
         {
             m_gsm.push(std::make_shared<PlayState>("Level_01_autosave", m_input, m_gsm));
@@ -212,7 +205,6 @@ namespace Runtime
             m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
             /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
             select();
-            return;
         }
 
         // Keys: arrows or WASD
@@ -232,7 +224,6 @@ namespace Runtime
         {
             m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
             select();
-            return;
         }
 
         if (m_input.wasKeyPressed(GLFW_KEY_P))
@@ -252,6 +243,8 @@ namespace Runtime
                 m_gsm));
         }
 
+        // Optional: mouse click to select as well
+        // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
         if (m_input.wasKeyTriggered(GLFW_KEY_P))
         {
             std::cout << "P pressed -> toggling BGM\n";
@@ -259,20 +252,10 @@ namespace Runtime
             if (m_bgmChannel)
                 m_audio.setPaused(m_bgmChannel, m_bgmPaused);
         }
-
-        // Optional: mouse click to select as well
-        // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
-        if (m_input.wasKeyPressed(GLFW_KEY_N))
-        {
-			m_bgmPaused = true;
-            m_audio.setPaused(m_bgmChannel, m_bgmPaused);
-        }
-        if (m_input.wasKeyPressed(GLFW_KEY_B)) {
-			m_bgmPaused = false;
-            m_audio.setPaused(m_bgmChannel, m_bgmPaused);
-            // m_audio.setGroupVolume(Audio::Group::BGM, 0.7f);
-        }
-          
+        if (m_input.wasKeyPressed(GLFW_KEY_M))
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.0f);
+        if (m_input.wasKeyPressed(GLFW_KEY_U))
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.7f);
 
         /* if (m_dirty) {
              printMenu();
@@ -373,8 +356,8 @@ namespace Runtime
         m_loaded = false;*/
         if (m_bgmChannel != 0)
         {
-            m_audio.setPaused(m_bgmChannel, true);
-			m_bgmPaused = true;
+            m_audio.stop(m_bgmChannel);
+            m_bgmChannel = 0;
         }
     }
 
