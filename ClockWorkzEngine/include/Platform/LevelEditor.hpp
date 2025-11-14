@@ -3,7 +3,7 @@
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
 \author(s)      Yusuf,[100%]
-\brief          Comprehensive level editor,
+\brief          Comprehensive level editor with integrated gizmo system,
                 property editing, hierarchy view, and multi-level support.
 
                 Features:
@@ -16,8 +16,9 @@
                 - Drag-and-drop asset placement
                 - Free camera navigation with docking support
                 - In-world object picking with gizmos
+                - INTEGRATED GIZMO: Translate, Rotate, Scale tools
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -70,6 +71,22 @@ namespace Platform {
         Pan         // Camera panning
     };
 
+    // INTEGRATED GIZMO: Gizmo mode enumeration
+    enum class GizmoMode {
+        None,
+        Translate,
+        Rotate,
+        Scale
+    };
+
+    // INTEGRATED GIZMO: Axis selection for manipulation
+    enum class GizmoAxis {
+        None,
+        X,
+        Y,
+        Both  // For uniform scaling or XY plane
+    };
+
     // Prefab palette entry
     struct PrefabEntry {
         std::string name;
@@ -91,7 +108,7 @@ namespace Platform {
     /******************************************************************************/
     /*!
     \class  LevelEditor
-    \brief  Main level editor class that handles all editor functionality
+    \brief  Main level editor class with integrated gizmo functionality
     */
     /******************************************************************************/
     class LevelEditor {
@@ -172,13 +189,13 @@ namespace Platform {
         void handleAssetFileWatch();
         void renderGrid();
 
-
         // Object manipulation
         void handleObjectSelection();
         void handleObjectPlacement();
         void handleObjectDeletion();
         void handleObjectDragging();
         void moveSelectedObject(vec2 delta);
+        bool m_isDraggingObject = false;
 
         // Input handling
         void handleEditorInput(double dt);
@@ -202,6 +219,32 @@ namespace Platform {
         void registerBuiltInPrefabs();
         void scanPrefabDirectory(const std::string& directory);
 
+        // ====================================================================
+        // INTEGRATED GIZMO SYSTEM - Private Methods
+        // ====================================================================
+
+        // Gizmo update functions for each mode
+        void updateGizmoTranslate();
+        void updateGizmoRotate();
+        void updateGizmoScale();
+
+        // Gizmo render functions for each mode
+        void renderGizmoTranslate();
+        void renderGizmoRotate();
+        void renderGizmoScale();
+        void renderGizmo();  // Main gizmo render call
+
+        // Gizmo helper functions
+        GizmoAxis getGizmoHoveredAxis(const vec2& mouseWorldPos) const;
+        vec2 getGizmoCenterPosition() const;
+        float getGizmoScaledSize() const;
+        float snapAngleToGrid(float angle) const;
+        float snapScaleToGrid(float scale) const;
+
+        vec2 snapToHalfGrid(vec2 position) const;
+
+        bool isMouseOverGizmo(const vec2& mouseWorldPos) const;
+
     private:
         // Core systems
         std::unique_ptr<Core::Logger> m_logger;
@@ -223,7 +266,6 @@ namespace Platform {
         // Selection and manipulation
         Gameplay::GameObject* m_selectedObject;
         vec2 m_dragStartPos;
-        bool m_isDraggingObject;
 
         // Camera
         Graphics::Camera2D m_editorCamera;
@@ -255,9 +297,39 @@ namespace Platform {
         float m_windowWidth;
         float m_windowHeight;
 
+        // ====================================================================
+        // INTEGRATED GIZMO SYSTEM - Member Variables
+        // ====================================================================
+
         // Gizmo state
         bool m_showGizmos;
-        enum class GizmoMode { Translate, Rotate, Scale } m_gizmoMode;
+        GizmoMode m_gizmoMode;
+        GizmoAxis m_gizmoHoveredAxis;
+        GizmoAxis m_gizmoActiveAxis;
+        bool m_isGizmoActive;
+
+        // Gizmo interaction state
+        vec2 m_gizmoDragStartWorld;
+        vec2 m_gizmoInitialPosition;
+        float m_gizmoInitialRotation;
+        vec2 m_gizmoInitialScale;
+
+        // Gizmo configuration
+        float m_gizmoSize;              // Base size of gizmo (80.0f)
+        float m_gizmoHandleSize;        // Size of handles (12.0f)
+        float m_gizmoLineThickness;     // Line thickness (2.0f)
+        bool m_gizmoSnapEnabled;        // Snap to grid/angle
+        float m_gizmoSnapAngle;         // Rotation snap in degrees (15.0f)
+        float m_gizmoSnapScale;         // Scale snap step (0.1f)
+
+        // Gizmo colors
+        glm::vec4 m_gizmoColorX;        // Red for X axis
+        glm::vec4 m_gizmoColorY;        // Green for Y axis
+        glm::vec4 m_gizmoColorBoth;     // Yellow for both axes
+        glm::vec4 m_gizmoColorHover;    // White for hover
+        glm::vec4 m_gizmoColorActive;   // Orange for active
+
+        // ====================================================================
 
         struct EditorCommand {
             virtual ~EditorCommand() = default;
@@ -292,4 +364,4 @@ namespace Platform {
         bool m_showGrid;            // Show/hide grid visualization
     };
 
-} // namespace Editor
+} // namespace Platform

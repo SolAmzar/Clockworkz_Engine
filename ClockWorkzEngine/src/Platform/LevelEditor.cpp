@@ -89,6 +89,33 @@ namespace Platform {
         m_currentLevelMetadata.filepath = "";
         m_currentLevelMetadata.description = "New Level";
         m_currentLevelMetadata.spawnPoint = vec2(0.0f, 0.0f);
+
+        // Initialize gizmo state
+        m_showGizmos = true;
+        m_gizmoMode = GizmoMode::Translate;
+        m_gizmoHoveredAxis = GizmoAxis::None;
+        m_gizmoActiveAxis = GizmoAxis::None;
+        m_isGizmoActive = false;
+
+        m_gizmoDragStartWorld = vec2(0.0f, 0.0f);
+        m_gizmoInitialPosition = vec2(0.0f, 0.0f);
+        m_gizmoInitialRotation = 0.0f;
+        m_gizmoInitialScale = vec2(1.0f, 1.0f);
+
+        // Gizmo configuration
+        m_gizmoSize = 80.0f;
+        m_gizmoHandleSize = 12.0f;
+        m_gizmoLineThickness = 2.0f;
+        m_gizmoSnapEnabled = false;
+        m_gizmoSnapAngle = 15.0f;
+        m_gizmoSnapScale = 0.1f;
+
+        // Gizmo colors (RGBA)
+        m_gizmoColorX = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);      // Red
+        m_gizmoColorY = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);      // Green
+        m_gizmoColorBoth = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);   // Yellow
+        m_gizmoColorHover = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);  // White
+        m_gizmoColorActive = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f); // Orange
     }
 
     static bool showReplaceDialog = false;
@@ -114,11 +141,12 @@ namespace Platform {
         m_windowManager = &windowMgr;
 
         int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+        glfwGetWindowSize(window, &width, &height);
         m_windowWidth = static_cast<float>(width);
         m_windowHeight = static_cast<float>(height);
 
         // Initialize editor camera with proper viewport
+        m_editorCamera.setViewport(width, height);
         m_editorCamera.setPosition(glm::vec2(0.0f, 0.0f));
         m_editorCamera.setZoom(1.0f);
 
@@ -179,6 +207,385 @@ namespace Platform {
         // Update object count for UI
         if (m_currentScene) {
             m_objectCount = static_cast<int>(m_currentScene->objects().size());
+        }
+    }
+
+// ============================================================================
+// gizmo Implementation
+// ============================================================================
+
+
+
+
+void LevelEditor::renderGizmoTranslate() {
+    vec2 center = getGizmoCenterPosition();
+    float scaledSize = getGizmoScaledSize();
+
+    // Draw X axis (horizontal arrow)
+    {
+        glm::vec3 color = (m_gizmoActiveAxis == GizmoAxis::X) ? glm::vec3(m_gizmoColorActive) :
+                         (m_gizmoHoveredAxis == GizmoAxis::X) ? glm::vec3(m_gizmoColorHover) :
+                         glm::vec3(m_gizmoColorX);
+
+        vec2 endPos = vec2(center.x + scaledSize, center.y);
+        m_renderer->drawLine(center.x, center.y, endPos.x, endPos.y,
+                           color.r, color.g, color.b);
+        
+        // Arrow head
+        float arrowSize = m_gizmoHandleSize;
+        m_renderer->drawLine(endPos.x, endPos.y, 
+                           endPos.x - arrowSize, endPos.y - arrowSize/2,
+                           color.r, color.g, color.b);
+        m_renderer->drawLine(endPos.x, endPos.y,
+                           endPos.x - arrowSize, endPos.y + arrowSize/2,
+                           color.r, color.g, color.b);
+    }
+
+    // Draw Y axis (vertical arrow)
+    {
+        glm::vec3 color = (m_gizmoActiveAxis == GizmoAxis::Y) ? glm::vec3(m_gizmoColorActive) :
+                         (m_gizmoHoveredAxis == GizmoAxis::Y) ? glm::vec3(m_gizmoColorHover) :
+                         glm::vec3(m_gizmoColorY);
+
+        vec2 endPos = vec2(center.x, center.y + scaledSize);
+        m_renderer->drawLine(center.x, center.y, endPos.x, endPos.y,
+                           color.r, color.g, color.b);
+        
+        // Arrow head
+        float arrowSize = m_gizmoHandleSize;
+        m_renderer->drawLine(endPos.x, endPos.y,
+                           endPos.x - arrowSize/2, endPos.y - arrowSize,
+                           color.r, color.g, color.b);
+        m_renderer->drawLine(endPos.x, endPos.y,
+                           endPos.x + arrowSize/2, endPos.y - arrowSize,
+                           color.r, color.g, color.b);
+    }
+
+    // Draw center point
+    m_renderer->drawCircle(center.x, center.y, m_gizmoHandleSize/2,
+                          1.0f, 1.0f, 1.0f, 16);
+}
+
+void LevelEditor::renderGizmoRotate() {
+    vec2 center = getGizmoCenterPosition();
+    float scaledSize = getGizmoScaledSize();
+
+    // Choose color based on state
+    glm::vec3 color;
+    if (m_isGizmoActive) {
+        color = glm::vec3(m_gizmoColorActive);
+    } else if (m_gizmoHoveredAxis != GizmoAxis::None) {
+        color = glm::vec3(m_gizmoColorHover);
+    } else {
+        color = glm::vec3(m_gizmoColorBoth);
+    }
+
+    // Draw rotation circle
+    m_renderer->drawCircle(center.x, center.y, scaledSize, color.r, color.g, color.b, 64);
+
+    // Draw rotation handles (4 cardinal directions)
+    const int numHandles = 4;
+    const float PI = 3.14159265359f;
+    for (int i = 0; i < numHandles; ++i) {
+        float angle = (PI * 2.0f * i) / numHandles;
+        vec2 handlePos = vec2(
+            center.x + std::cos(angle) * scaledSize,
+            center.y + std::sin(angle) * scaledSize
+        );
+        
+        m_renderer->drawCircle(handlePos.x, handlePos.y, m_gizmoHandleSize, 
+                             color.r, color.g, color.b, 16);
+    }
+
+    // Draw angle indicator if active
+    if (m_isGizmoActive && m_selectedObject) {
+        float currentRotation = m_selectedObject->transform().rotationRad;
+        vec2 directionEnd = vec2(
+            center.x + std::cos(currentRotation) * scaledSize * 1.5f,
+            center.y + std::sin(currentRotation) * scaledSize * 1.5f
+        );
+        
+        m_renderer->drawLine(center.x, center.y, directionEnd.x, directionEnd.y,
+                           color.r, color.g, color.b);
+    }
+}
+
+void LevelEditor::renderGizmoScale() {
+    vec2 center = getGizmoCenterPosition();
+    float scaledSize = getGizmoScaledSize();
+
+    // Draw X axis (horizontal)
+    {
+        glm::vec3 color = (m_gizmoActiveAxis == GizmoAxis::X) ? glm::vec3(m_gizmoColorActive) :
+                         (m_gizmoHoveredAxis == GizmoAxis::X) ? glm::vec3(m_gizmoColorHover) :
+                         glm::vec3(m_gizmoColorX);
+
+        vec2 endPos = vec2(center.x + scaledSize, center.y);
+        m_renderer->drawLine(center.x, center.y, endPos.x, endPos.y, 
+                           color.r, color.g, color.b);
+        
+        // Draw handle at the end
+        m_renderer->drawRect(endPos.x - m_gizmoHandleSize/2, endPos.y - m_gizmoHandleSize/2,
+                           m_gizmoHandleSize, m_gizmoHandleSize, color.r, color.g, color.b);
+    }
+
+    // Draw Y axis (vertical)
+    {
+        glm::vec3 color = (m_gizmoActiveAxis == GizmoAxis::Y) ? glm::vec3(m_gizmoColorActive) :
+                         (m_gizmoHoveredAxis == GizmoAxis::Y) ? glm::vec3(m_gizmoColorHover) :
+                         glm::vec3(m_gizmoColorY);
+
+        vec2 endPos = vec2(center.x, center.y + scaledSize);
+        m_renderer->drawLine(center.x, center.y, endPos.x, endPos.y,
+                           color.r, color.g, color.b);
+        
+        // Draw handle at the end
+        m_renderer->drawRect(endPos.x - m_gizmoHandleSize/2, endPos.y - m_gizmoHandleSize/2,
+                           m_gizmoHandleSize, m_gizmoHandleSize, color.r, color.g, color.b);
+    }
+
+    // Draw center handle for uniform scaling
+    {
+        glm::vec3 color = (m_gizmoActiveAxis == GizmoAxis::Both) ? glm::vec3(m_gizmoColorActive) :
+                         (m_gizmoHoveredAxis == GizmoAxis::Both) ? glm::vec3(m_gizmoColorHover) :
+                         glm::vec3(m_gizmoColorBoth);
+
+        m_renderer->drawRect(center.x - m_gizmoHandleSize/2, center.y - m_gizmoHandleSize/2,
+                           m_gizmoHandleSize, m_gizmoHandleSize, color.r, color.g, color.b);
+    }
+}
+
+void LevelEditor::updateGizmoTranslate() {
+    if (!m_selectedObject) return;
+
+    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+
+    // Update hovered axis when not active
+    if (!m_isGizmoActive) {
+        m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
+    }
+
+    // Check for mouse button press
+    if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (m_gizmoHoveredAxis != GizmoAxis::None) {
+            m_isGizmoActive = true;
+            m_gizmoActiveAxis = m_gizmoHoveredAxis;
+            m_gizmoDragStartWorld = mouseWorld;
+            m_gizmoInitialPosition = m_selectedObject->transform().position;
+        }
+    }
+
+    // Handle active translation
+    if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        vec2 dragDelta = vec2(
+            mouseWorld.x - m_gizmoDragStartWorld.x,
+            mouseWorld.y - m_gizmoDragStartWorld.y
+        );
+
+        // Constrain movement based on active axis
+        if (m_gizmoActiveAxis == GizmoAxis::X) {
+            dragDelta.y = 0.0f;
+        }
+        else if (m_gizmoActiveAxis == GizmoAxis::Y) {
+            dragDelta.x = 0.0f;
+        }
+
+        vec2 newPos = vec2(
+            m_gizmoInitialPosition.x + dragDelta.x,
+            m_gizmoInitialPosition.y + dragDelta.y
+        );
+
+        // NEW: Apply 0.5 grid offset snapping
+        if (m_enableGridSnap) {
+            // Snap to 0.5 grid increments (e.g., 0.5, 1.5, 2.5, 3.5, etc.)
+            newPos = snapToHalfGrid(newPos);
+        }
+
+        m_selectedObject->transform().position = newPos;
+        markLevelDirty();
+    }
+
+    // Release
+    if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        m_isGizmoActive = false;
+        m_gizmoActiveAxis = GizmoAxis::None;
+    }
+}
+
+
+
+    void LevelEditor::updateGizmoRotate() {
+        if (!m_selectedObject) return;
+
+        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+        vec2 center = getGizmoCenterPosition();
+        float scaledSize = getGizmoScaledSize();
+
+        // Check for mouse button press
+        if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+            // Check if mouse is within the rotation circle
+            float distToCenter = glm::length(glm::vec2(mouseWorld.x - center.x, mouseWorld.y - center.y));
+            float innerRadius = scaledSize * 0.8f;
+            float outerRadius = scaledSize * 1.2f;
+
+            if (distToCenter >= innerRadius && distToCenter <= outerRadius) {
+                m_isGizmoActive = true;
+                m_gizmoDragStartWorld = mouseWorld;
+                m_gizmoInitialRotation = m_selectedObject->transform().rotationRad;
+            }
+        }
+
+        // Handle active rotation
+        if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            vec2 startDir = vec2(
+                m_gizmoDragStartWorld.x - center.x,
+                m_gizmoDragStartWorld.y - center.y
+            );
+            vec2 currentDir = vec2(
+                mouseWorld.x - center.x,
+                mouseWorld.y - center.y
+            );
+
+            // Normalize
+            float startLen = std::sqrt(startDir.x * startDir.x + startDir.y * startDir.y);
+            float currentLen = std::sqrt(currentDir.x * currentDir.x + currentDir.y * currentDir.y);
+
+            if (startLen > 0.001f) startDir = vec2(startDir.x / startLen, startDir.y / startLen);
+            if (currentLen > 0.001f) currentDir = vec2(currentDir.x / currentLen, currentDir.y / currentLen);
+
+            // Calculate angle difference using atan2
+            float startAngle = std::atan2(startDir.y, startDir.x);
+            float currentAngle = std::atan2(currentDir.y, currentDir.x);
+            float deltaAngle = currentAngle - startAngle;
+
+            // Apply snapping if enabled
+            if (m_gizmoSnapEnabled) {
+                deltaAngle = snapAngleToGrid(deltaAngle);
+            }
+
+            m_selectedObject->transform().rotationRad = m_gizmoInitialRotation + deltaAngle;
+            markLevelDirty();
+        }
+
+        // Release
+        if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            m_isGizmoActive = false;
+        }
+
+        // Update hover state
+        if (!m_isGizmoActive) {
+            float distToCenter = glm::length(glm::vec2(mouseWorld.x - center.x, mouseWorld.y - center.y));
+            float innerRadius = scaledSize * 0.8f;
+            float outerRadius = scaledSize * 1.2f;
+            m_gizmoHoveredAxis = (distToCenter >= innerRadius && distToCenter <= outerRadius)
+                ? GizmoAxis::Both : GizmoAxis::None;
+        }
+    }
+
+    void LevelEditor::updateGizmoScale() {
+        if (!m_selectedObject) return;
+
+        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+        vec2 center = getGizmoCenterPosition();
+        float scaledSize = getGizmoScaledSize();
+
+        // Update hovered axis when not active
+        if (!m_isGizmoActive) {
+            m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
+        }
+
+        // Check for mouse button press
+        if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+            if (m_gizmoHoveredAxis != GizmoAxis::None) {
+                m_isGizmoActive = true;
+                m_gizmoActiveAxis = m_gizmoHoveredAxis;
+                m_gizmoDragStartWorld = mouseWorld;
+                m_gizmoInitialScale = m_selectedObject->transform().scale;
+            }
+        }
+
+        // Handle active scaling
+        if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            vec2 dragDelta = vec2(
+                mouseWorld.x - m_gizmoDragStartWorld.x,
+                mouseWorld.y - m_gizmoDragStartWorld.y
+            );
+
+            vec2 newScale = m_gizmoInitialScale;
+
+            switch (m_gizmoActiveAxis) {
+            case GizmoAxis::X: {
+                float scaleChange = dragDelta.x / scaledSize;
+                newScale.x = m_gizmoInitialScale.x + scaleChange;
+                newScale.x = std::max(0.1f, newScale.x); // Prevent negative/zero scale
+                break;
+            }
+            case GizmoAxis::Y: {
+                float scaleChange = dragDelta.y / scaledSize;
+                newScale.y = m_gizmoInitialScale.y + scaleChange;
+                newScale.y = std::max(0.1f, newScale.y);
+                break;
+            }
+            case GizmoAxis::Both: {
+                // Uniform scaling based on distance from center
+                float initialDist = std::sqrt(
+                    (m_gizmoDragStartWorld.x - center.x) * (m_gizmoDragStartWorld.x - center.x) +
+                    (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y)
+                );
+                float currentDist = std::sqrt(
+                    (mouseWorld.x - center.x) * (mouseWorld.x - center.x) +
+                    (mouseWorld.y - center.y) * (mouseWorld.y - center.y)
+                );
+                float scaleFactor = currentDist / std::max(0.001f, initialDist);
+
+                newScale = vec2(
+                    m_gizmoInitialScale.x * scaleFactor,
+                    m_gizmoInitialScale.y * scaleFactor
+                );
+                newScale.x = std::max(0.1f, newScale.x);
+                newScale.y = std::max(0.1f, newScale.y);
+                break;
+            }
+            default:
+                break;
+            }
+
+            // Apply snapping if enabled
+            if (m_gizmoSnapEnabled) {
+                newScale.x = snapScaleToGrid(newScale.x);
+                newScale.y = snapScaleToGrid(newScale.y);
+            }
+
+            m_selectedObject->transform().scale = newScale;
+            markLevelDirty();
+        }
+
+        // Release
+        if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            m_isGizmoActive = false;
+            m_gizmoActiveAxis = GizmoAxis::None;
+        }
+    }
+
+// ============================================================================
+// GIZMO render Implementation
+// ============================================================================
+
+    void LevelEditor::renderGizmo() {
+        if (!m_selectedObject) return;
+
+        switch (m_gizmoMode) {
+        case GizmoMode::Translate:
+            renderGizmoTranslate();
+            break;
+        case GizmoMode::Rotate:
+            renderGizmoRotate();
+            break;
+        case GizmoMode::Scale:
+            renderGizmoScale();
+            break;
+        default:
+            break;
         }
     }
 
@@ -305,6 +712,181 @@ namespace Platform {
 
             ImGui::EndPopup();
         }
+    }
+
+// ============================================================================
+// GIZMO HELPER FUNCTIONS - Add these as new methods
+// ============================================================================
+
+    vec2 LevelEditor::snapToHalfGrid(vec2 position) const {
+        float halfGrid = m_gridSize * 0.5f;
+        position.x = std::round(position.x / halfGrid) * halfGrid;
+        position.y = std::round(position.y / halfGrid) * halfGrid;
+        return position;
+    }
+
+    bool LevelEditor::isMouseOverGizmo(const vec2& mouseWorldPos) const {
+        if (!m_selectedObject || !m_showGizmos) return false;
+
+        vec2 center = getGizmoCenterPosition();
+        float scaledSize = getGizmoScaledSize();
+        float threshold = m_gizmoHandleSize * 1.5f;
+
+        switch (m_gizmoMode) {
+        case GizmoMode::Translate: {
+            // Check X axis
+            vec2 xEnd = vec2(center.x + scaledSize, center.y);
+            float distToXAxis = std::abs(mouseWorldPos.y - center.y);
+            if (mouseWorldPos.x >= center.x && mouseWorldPos.x <= xEnd.x &&
+                distToXAxis < threshold) {
+                return true;
+            }
+
+            // Check Y axis
+            vec2 yEnd = vec2(center.x, center.y + scaledSize);
+            float distToYAxis = std::abs(mouseWorldPos.x - center.x);
+            if (mouseWorldPos.y >= center.y && mouseWorldPos.y <= yEnd.y &&
+                distToYAxis < threshold) {
+                return true;
+            }
+            break;
+        }
+
+        case GizmoMode::Rotate: {
+            // Check if within rotation circle
+            float distToCenter = std::sqrt(
+                (mouseWorldPos.x - center.x) * (mouseWorldPos.x - center.x) +
+                (mouseWorldPos.y - center.y) * (mouseWorldPos.y - center.y)
+            );
+            float innerRadius = scaledSize * 0.8f;
+            float outerRadius = scaledSize * 1.2f;
+            if (distToCenter >= innerRadius && distToCenter <= outerRadius) {
+                return true;
+            }
+            break;
+        }
+
+        case GizmoMode::Scale: {
+            // Check center handle
+            float distToCenter = std::sqrt(
+                (mouseWorldPos.x - center.x) * (mouseWorldPos.x - center.x) +
+                (mouseWorldPos.y - center.y) * (mouseWorldPos.y - center.y)
+            );
+            if (distToCenter < m_gizmoHandleSize) {
+                return true;
+            }
+
+            // Check X handle
+            vec2 xHandle = vec2(center.x + scaledSize, center.y);
+            float distToXHandle = std::sqrt(
+                (mouseWorldPos.x - xHandle.x) * (mouseWorldPos.x - xHandle.x) +
+                (mouseWorldPos.y - xHandle.y) * (mouseWorldPos.y - xHandle.y)
+            );
+            if (distToXHandle < threshold) {
+                return true;
+            }
+
+            // Check Y handle
+            vec2 yHandle = vec2(center.x, center.y + scaledSize);
+            float distToYHandle = std::sqrt(
+                (mouseWorldPos.x - yHandle.x) * (mouseWorldPos.x - yHandle.x) +
+                (mouseWorldPos.y - yHandle.y) * (mouseWorldPos.y - yHandle.y)
+            );
+            if (distToYHandle < threshold) {
+                return true;
+            }
+            break;
+        }
+
+        default:
+            break;
+        }
+
+        return false;
+    }
+
+
+    GizmoAxis LevelEditor::getGizmoHoveredAxis(const vec2& mouseWorldPos) const {
+        if (!m_selectedObject) return GizmoAxis::None;
+
+        vec2 center = getGizmoCenterPosition();
+        float scaledSize = getGizmoScaledSize();
+        float threshold = m_gizmoHandleSize * 1.5f;
+
+        if (m_gizmoMode == GizmoMode::Scale) {
+            // Check center handle for uniform scaling
+            float distToCenter = std::sqrt(
+                (mouseWorldPos.x - center.x) * (mouseWorldPos.x - center.x) +
+                (mouseWorldPos.y - center.y) * (mouseWorldPos.y - center.y)
+            );
+            if (distToCenter < m_gizmoHandleSize) {
+                return GizmoAxis::Both;
+            }
+
+            // Check X axis handle
+            vec2 xHandle = vec2(center.x + scaledSize, center.y);
+            float distToXHandle = std::sqrt(
+                (mouseWorldPos.x - xHandle.x) * (mouseWorldPos.x - xHandle.x) +
+                (mouseWorldPos.y - xHandle.y) * (mouseWorldPos.y - xHandle.y)
+            );
+            if (distToXHandle < threshold) {
+                return GizmoAxis::X;
+            }
+
+            // Check Y axis handle
+            vec2 yHandle = vec2(center.x, center.y + scaledSize);
+            float distToYHandle = std::sqrt(
+                (mouseWorldPos.x - yHandle.x) * (mouseWorldPos.x - yHandle.x) +
+                (mouseWorldPos.y - yHandle.y) * (mouseWorldPos.y - yHandle.y)
+            );
+            if (distToYHandle < threshold) {
+                return GizmoAxis::Y;
+            }
+        }
+        else if (m_gizmoMode == GizmoMode::Translate) {
+            // Check distance to X axis line
+            vec2 xEnd = vec2(center.x + scaledSize, center.y);
+            float distToXAxis = std::abs(mouseWorldPos.y - center.y);
+            if (mouseWorldPos.x >= center.x && mouseWorldPos.x <= xEnd.x &&
+                distToXAxis < threshold) {
+                return GizmoAxis::X;
+            }
+
+            // Check distance to Y axis line
+            vec2 yEnd = vec2(center.x, center.y + scaledSize);
+            float distToYAxis = std::abs(mouseWorldPos.x - center.x);
+            if (mouseWorldPos.y >= center.y && mouseWorldPos.y <= yEnd.y &&
+                distToYAxis < threshold) {
+                return GizmoAxis::Y;
+            }
+        }
+
+        return GizmoAxis::None;
+    }
+
+    vec2 LevelEditor::getGizmoCenterPosition() const {
+        if (!m_selectedObject) return vec2(0.0f, 0.0f);
+        return m_selectedObject->transform().position;
+    }
+
+    float LevelEditor::getGizmoScaledSize() const {
+        // Make gizmo size consistent regardless of zoom
+        // Adjust this based on your camera zoom implementation
+        return m_gizmoSize;
+    }
+
+    float LevelEditor::snapAngleToGrid(float angle) const {
+        if (!m_gizmoSnapEnabled) return angle;
+
+        const float PI = 3.14159265359f;
+        float snapRadians = m_gizmoSnapAngle * (PI / 180.0f);
+        return std::round(angle / snapRadians) * snapRadians;
+    }
+
+    float LevelEditor::snapScaleToGrid(float scale) const {
+        if (!m_gizmoSnapEnabled) return scale;
+
+        return std::round(scale / m_gizmoSnapScale) * m_gizmoSnapScale;
     }
 
     // ============================================================================
@@ -466,6 +1048,11 @@ namespace Platform {
         glm::mat4 viewProj = m_editorCamera.viewProj();
 
         m_renderer->beginScenePass(viewProj);
+
+        // Render gizmo if object is selected
+        if (m_selectedObject && m_showGizmos && m_mode == EditorMode::Edit) {
+            renderGizmo();
+        }
 
         // Render grid in edit mode
         if (m_mode == EditorMode::Edit) {
@@ -936,7 +1523,7 @@ namespace Platform {
     }
 
     /******************************************************************************/
-    // Drag-and-Drop Support (Rubric 1209 - Advanced)
+    // Drag-and-Drop Support
     /******************************************************************************/
 
     void LevelEditor::handleFileDrop(const std::vector<std::string>& paths) {
@@ -1169,20 +1756,35 @@ namespace Platform {
         ImGui::Checkbox("Show Grid", &m_showGrid);
         ImGui::SameLine();
 
-        //// Gizmo mode
-        //if (ImGui::RadioButton("Translate", m_gizmoMode == GizmoMode::Translate)) {
-        //    m_gizmoMode = GizmoMode::Translate;
-        //}
-        //ImGui::SameLine();
+        // Gizmo mode
+        ImGui::Separator();
+        ImGui::Text("Gizmo Tools");
 
-        //if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotate)) {
-        //    m_gizmoMode = GizmoMode::Rotate;
-        //}
-        //ImGui::SameLine();
+        // Mode buttons
+        if (ImGui::RadioButton("Translate (Q)", m_gizmoMode == GizmoMode::Translate)) {
+            m_gizmoMode = GizmoMode::Translate;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Rotate (W)", m_gizmoMode == GizmoMode::Rotate)) {
+            m_gizmoMode = GizmoMode::Rotate;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Scale (E)", m_gizmoMode == GizmoMode::Scale)) {
+            m_gizmoMode = GizmoMode::Scale;
+        }
 
-        //if (ImGui::RadioButton("Scale", m_gizmoMode == GizmoMode::Scale)) {
-        //    m_gizmoMode = GizmoMode::Scale;
-        //}
+        // Snap settings
+        ImGui::Checkbox("Enable Snap (Ctrl)", &m_gizmoSnapEnabled);
+
+        if (m_gizmoMode == GizmoMode::Rotate) {
+            ImGui::SliderFloat("Snap Angle", &m_gizmoSnapAngle, 1.0f, 90.0f, "%.0f°");
+        }
+
+        if (m_gizmoMode == GizmoMode::Scale) {
+            ImGui::SliderFloat("Snap Scale", &m_gizmoSnapScale, 0.01f, 1.0f, "%.2f");
+        }
+
+        ImGui::Checkbox("Show Gizmos", &m_showGizmos);
 
         ImGui::End();
     }
@@ -1300,8 +1902,6 @@ namespace Platform {
         ImGui::Text("Type: %s", typeNames[typeIndex]);
 
         ImGui::Separator();
-
-        // Transform
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
             auto& transform = m_selectedObject->transform();
 
@@ -1312,10 +1912,10 @@ namespace Platform {
                 markLevelDirty();
             }
 
-            // Rotation
-            float rotation = glm::degrees(transform.rotationRad);
-            if (ImGui::DragFloat("Rotation", &rotation, 1.0f)) {
-                transform.rotationRad = glm::radians(rotation);
+            // Rotation (convert to degrees for UI display)
+            float rotationDeg = transform.rotationRad * (180.0f / 3.14159265359f);
+            if (ImGui::DragFloat("Rotation", &rotationDeg, 1.0f, -360.0f, 360.0f, "%.1f°")) {
+                transform.rotationRad = rotationDeg * (3.14159265359f / 180.0f);
                 markLevelDirty();
             }
 
@@ -1326,15 +1926,31 @@ namespace Platform {
                 markLevelDirty();
             }
 
-            // Size
+            // Size (collider size)
             vec2 size = m_selectedObject->size();
             if (ImGui::DragFloat2("Size", &size.x, 1.0f, 1.0f, 1000.0f)) {
                 m_selectedObject->setSize(size);
                 markLevelDirty();
             }
-        }
 
-        // Physics
+            ImGui::Separator();
+
+            // Quick reset buttons
+            if (ImGui::Button("Reset Rotation")) {
+                m_selectedObject->transform().rotationRad = 0.0f;
+                markLevelDirty();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Reset Scale")) {
+                m_selectedObject->transform().scale = vec2(1.0f, 1.0f);
+                markLevelDirty();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Reset Position")) {
+                m_selectedObject->transform().position = vec2(0.0f, 0.0f);
+                markLevelDirty();
+            }
+        }
         if (ImGui::CollapsingHeader("Physics")) {
             vec2 vel = m_selectedObject->velocity();
             if (ImGui::DragFloat2("Velocity", &vel.x, 1.0f)) {
@@ -1348,28 +1964,27 @@ namespace Platform {
                 markLevelDirty();
             }
         }
-
-        // Rendering
         if (ImGui::CollapsingHeader("Rendering")) {
             // Texture ID
-            // Texture assignment
             char texBuffer[256];
             strncpy(texBuffer, m_selectedObject->textureId().c_str(), sizeof(texBuffer));
             if (ImGui::InputText("Texture ID", texBuffer, sizeof(texBuffer))) {
                 m_selectedObject->setTextureId(texBuffer);
                 markLevelDirty();
             }
+
             // Texture preview (to the right of the field)
             auto tex = Assets::TextureManager::Get(m_selectedObject->textureId());
             ImGui::SameLine();
             if (tex && tex->id() != 0) {
                 ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
             }
-            // --- Drag-and-drop target for texture thumbnails
+
+            // Drag-and-drop target for texture thumbnails
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_ID")) {
                     const char* droppedName = (const char*)payload->Data;
-                    m_selectedObject->setTextureId(droppedName);  // update
+                    m_selectedObject->setTextureId(droppedName);
                     markLevelDirty();
                 }
                 ImGui::EndDragDropTarget();
@@ -1382,8 +1997,6 @@ namespace Platform {
                 markLevelDirty();
             }
         }
-
-        // Flags
         if (ImGui::CollapsingHeader("Flags")) {
             bool solid = m_selectedObject->isSolid();
             if (ImGui::Checkbox("Solid", &solid)) {
@@ -1409,16 +2022,12 @@ namespace Platform {
                 markLevelDirty();
             }
         }
-
-        // Components
         if (ImGui::CollapsingHeader("Components")) {
             ImGui::TextDisabled("Component list would appear here");
             // In a real implementation, list and edit components
         }
 
         ImGui::Separator();
-
-        // Actions
         if (ImGui::Button("Duplicate")) {
             //duplicateSelectedObject();
         }
@@ -1674,32 +2283,71 @@ namespace Platform {
     void LevelEditor::handleEditorInput(double dt) {
         if (!m_input) return;
 
-        //// Handle object selection
-        if (m_currentTool == EditorTool::Select && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
-            handleObjectSelection();
+        if (m_selectedObject && m_showGizmos && m_mode == EditorMode::Edit) {
+            switch (m_gizmoMode) {
+            case GizmoMode::Translate:
+                updateGizmoTranslate();
+                break;
+            case GizmoMode::Rotate:
+                updateGizmoRotate();
+                break;
+            case GizmoMode::Scale:
+                updateGizmoScale();
+                break;
+            default:
+                break;
+            }
         }
 
-        // Handle object dragging (while mouse is held down)
-        if (m_currentTool == EditorTool::Select && m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            handleObjectDragging();
+        // Handle object selection and dragging
+        if (m_currentTool == EditorTool::Select && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            if (!isMouseOverUI()) {
+                vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+
+                // On first click
+                if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+                    if (m_selectedObject && isMouseOverGizmo(mouseWorld)) {
+                        // Gizmo will handle this - do nothing here
+                        return;
+                    }
+
+                    Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
+                    if (obj) {
+                        selectObject(obj);
+                        m_isDraggingObject = true;
+                    }
+                    else {
+                        selectObject(nullptr);
+                        m_isDraggingObject = false;
+                    }
+                }
+                // Continue dragging on subsequent frames (only if gizmo isn't active)
+                else if (m_selectedObject && m_isDraggingObject && !m_isGizmoActive) {
+                    handleObjectDragging();
+                }
+            }
+        }
+
+        // STOP dragging when mouse is released
+        if (m_input->wasMouseReleased(GLFW_MOUSE_BUTTON_LEFT)) {
+            m_isDraggingObject = false;
         }
 
         // Handle object placement
-        if (m_currentTool == EditorTool::Place && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (m_currentTool == EditorTool::Place && m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectPlacement();
         }
 
-        //// Handle object deletion
-        if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        // Handle object deletion
+        if (m_currentTool == EditorTool::Erase && m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
 
-        if (m_currentTool == EditorTool::Pan)
-        {
+        if (m_currentTool == EditorTool::Pan) {
             handleCameraInput(dt);
         }
-        (void)dt;
     }
+
 
     void LevelEditor::handleCameraInput(double dt) {
         if (!m_input) return;
@@ -1811,6 +2459,20 @@ namespace Platform {
         //if (m_input->wasKeyPressed(GLFW_KEY_E)) {
         //    m_currentTool = EditorTool::Erase;
         //}
+
+        if (m_input->wasKeyPressed(GLFW_KEY_Z)) {
+            m_gizmoMode = GizmoMode::Translate;
+        }
+        if (m_input->wasKeyPressed(GLFW_KEY_X)) {
+            m_gizmoMode = GizmoMode::Rotate;
+        }
+        if (m_input->wasKeyPressed(GLFW_KEY_C)) {
+            m_gizmoMode = GizmoMode::Scale;
+        }
+
+        // Toggle snapping with Ctrl
+        m_gizmoSnapEnabled = m_input->isKeyDown(GLFW_KEY_LEFT_CONTROL) ||
+            m_input->isKeyDown(GLFW_KEY_RIGHT_CONTROL);
     }
 
     void LevelEditor::handleObjectSelection() {
@@ -1819,68 +2481,65 @@ namespace Platform {
 
         vec2 mouseScreen = m_input->mousePosition();
         vec2 mouseWorld = screenToWorld(mouseScreen);
+
+        if (m_selectedObject && isMouseOverGizmo(mouseWorld)) {
+            return; // Let gizmo handle the click
+        }
+
         Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
 
-        // ENHANCED DEBUG OUTPUT
-        std::cout << "\n=== ENHANCED SELECTION DEBUG ===\n";
-        std::cout << "Screen Position: (" << mouseScreen.x << ", " << mouseScreen.y << ")\n";
-        std::cout << "Window Size: (" << m_windowWidth << ", " << m_windowHeight << ")\n";
-        std::cout << "Camera Position: (" << m_editorCamera.position().x << ", "
-            << m_editorCamera.position().y << ")\n";
-        std::cout << "Camera Zoom: " << m_editorCamera.zoom() << "\n";
+        //// Show the conversion steps
+        //vec2 centered = mouseScreen - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        //vec2 scaled = centered / m_editorCamera.zoom();
+        //vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
+        //vec2 final = scaled + m_editorCameraPos;
 
-        // Show the conversion steps
-        vec2 centered = mouseScreen - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
-        vec2 scaled = centered / m_editorCamera.zoom();
-        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-        vec2 final = scaled + m_editorCameraPos;
+        //std::cout << "\nConversion Steps:\n";
+        //std::cout << "  1. Centered: (" << centered.x << ", " << centered.y << ")\n";
+        //std::cout << "  2. Scaled by zoom: (" << scaled.x << ", " << scaled.y << ")\n";
+        //std::cout << "  3. Add camera pos: (" << final.x << ", " << final.y << ")\n";
+        //std::cout << "  4. Final world: (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
 
-        std::cout << "\nConversion Steps:\n";
-        std::cout << "  1. Centered: (" << centered.x << ", " << centered.y << ")\n";
-        std::cout << "  2. Scaled by zoom: (" << scaled.x << ", " << scaled.y << ")\n";
-        std::cout << "  3. Add camera pos: (" << final.x << ", " << final.y << ")\n";
-        std::cout << "  4. Final world: (" << mouseWorld.x << ", " << mouseWorld.y << ")\n";
+        //std::cout << "\nObject found: " << (obj ? obj->name() : "nullptr") << "\n";
 
-        std::cout << "\nObject found: " << (obj ? obj->name() : "nullptr") << "\n";
+        //if (m_currentScene) {
+        //    std::cout << "\nChecking " << m_currentScene->objects().size() << " objects:\n";
+        //    for (auto& o : m_currentScene->objects()) {
+        //        auto aabb = o->aabbWorld();
+        //        auto pos = o->transform().position;
+        //        auto size = o->size();
 
-        if (m_currentScene) {
-            std::cout << "\nChecking " << m_currentScene->objects().size() << " objects:\n";
-            for (auto& o : m_currentScene->objects()) {
-                auto aabb = o->aabbWorld();
-                auto pos = o->transform().position;
-                auto size = o->size();
+        //        // Calculate distance from mouse to object center
+        //        f32 distToCenter = magnitude(vec2(pos.x, pos.y) - mouseWorld);
 
-                // Calculate distance from mouse to object center
-                f32 distToCenter = magnitude(vec2(pos.x, pos.y) - mouseWorld);
+        //        // Check if mouse is inside AABB
+        //        bool isInside = (mouseWorld.x >= aabb.min.x && mouseWorld.x <= aabb.max.x &&
+        //            mouseWorld.y >= aabb.min.y && mouseWorld.y <= aabb.max.y);
 
-                // Check if mouse is inside AABB
-                bool isInside = (mouseWorld.x >= aabb.min.x && mouseWorld.x <= aabb.max.x &&
-                    mouseWorld.y >= aabb.min.y && mouseWorld.y <= aabb.max.y);
+        //        std::cout << "  - " << o->name() << "\n";
+        //        std::cout << "    Position: (" << pos.x << ", " << pos.y << ")\n";
+        //        std::cout << "    Size: (" << size.x << ", " << size.y << ")\n";
+        //        std::cout << "    AABB: [" << aabb.min.x << "," << aabb.min.y
+        //            << " to " << aabb.max.x << "," << aabb.max.y << "]\n";
+        //        std::cout << "    Distance from mouse: " << distToCenter << " units\n";
+        //        std::cout << "    Mouse inside AABB: " << (isInside ? "YES " : "NO ") << "\n";
 
-                std::cout << "  - " << o->name() << "\n";
-                std::cout << "    Position: (" << pos.x << ", " << pos.y << ")\n";
-                std::cout << "    Size: (" << size.x << ", " << size.y << ")\n";
-                std::cout << "    AABB: [" << aabb.min.x << "," << aabb.min.y
-                    << " to " << aabb.max.x << "," << aabb.max.y << "]\n";
-                std::cout << "    Distance from mouse: " << distToCenter << " units\n";
-                std::cout << "    Mouse inside AABB: " << (isInside ? "YES " : "NO ") << "\n";
+        //        // Additional check: is the AABB calculation correct?
+        //        vec2 expectedMin = vec2(pos.x, pos.y) - vec2(size.x, size.y) * 0.5f;
+        //        vec2 expectedMax = vec2(pos.x, pos.y) + vec2(size.x, size.y) * 0.5f;
 
-                // Additional check: is the AABB calculation correct?
-                vec2 expectedMin = vec2(pos.x, pos.y) - vec2(size.x, size.y) * 0.5f;
-                vec2 expectedMax = vec2(pos.x, pos.y) + vec2(size.x, size.y) * 0.5f;
-
-                if (std::abs(aabb.min.x - expectedMin.x) > 0.1f ||
-                    std::abs(aabb.min.y - expectedMin.y) > 0.1f) {
-                    std::cout << "    AABB MIN MISMATCH! Expected: ("
-                        << expectedMin.x << ", " << expectedMin.y << ")\n";
-                }
-                if (std::abs(aabb.max.x - expectedMax.x) > 0.1f ||
-                    std::abs(aabb.max.y - expectedMax.y) > 0.1f) {
-                    std::cout << "    AABB MAX MISMATCH! Expected: ("
-                        << expectedMax.x << ", " << expectedMax.y << ")\n";
-                }
-            }
-        }
+        //        if (std::abs(aabb.min.x - expectedMin.x) > 0.1f ||
+        //            std::abs(aabb.min.y - expectedMin.y) > 0.1f) {
+        //            std::cout << "    AABB MIN MISMATCH! Expected: ("
+        //                << expectedMin.x << ", " << expectedMin.y << ")\n";
+        //        }
+        //        if (std::abs(aabb.max.x - expectedMax.x) > 0.1f ||
+        //            std::abs(aabb.max.y - expectedMax.y) > 0.1f) {
+        //            std::cout << "    AABB MAX MISMATCH! Expected: ("
+        //                << expectedMax.x << ", " << expectedMax.y << ")\n";
+        //        }
+        //    }
+        //}
 
         selectObject(obj);
     }
@@ -2027,23 +2686,17 @@ namespace Platform {
 
 
 
-vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
-    vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
+    vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
 
-    // Step 1: Flip Y first (GLFW has Y=0 at top)
-    screenPos.y = m_windowHeight - screenPos.y;
+        screenPos.y = m_windowHeight - screenPos.y;
+        vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
 
-    // Step 2: Center the screen position
-    vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        centered /= m_editorCamera.zoom();
 
-    // Step 3: Scale by zoom
-    centered /= m_editorCamera.zoom();
-
-    // Step 4: Add camera position
-    vec2 worldPos = centered + m_editorCameraPos;
-
-    return worldPos;
-}
+        vec2 worldPos = centered + m_editorCameraPos;
+        return worldPos;
+    }
 
 
 
