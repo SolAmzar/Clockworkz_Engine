@@ -114,11 +114,12 @@ namespace Platform {
         m_windowManager = &windowMgr;
 
         int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+        glfwGetWindowSize(window, &width, &height);
         m_windowWidth = static_cast<float>(width);
         m_windowHeight = static_cast<float>(height);
 
         // Initialize editor camera with proper viewport
+        m_editorCamera.setViewport(width, height);
         m_editorCamera.setPosition(glm::vec2(0.0f, 0.0f));
         m_editorCamera.setZoom(1.0f);
 
@@ -936,7 +937,7 @@ namespace Platform {
     }
 
     /******************************************************************************/
-    // Drag-and-Drop Support (Rubric 1209 - Advanced)
+    // Drag-and-Drop Support
     /******************************************************************************/
 
     void LevelEditor::handleFileDrop(const std::vector<std::string>& paths) {
@@ -1674,32 +1675,49 @@ namespace Platform {
     void LevelEditor::handleEditorInput(double dt) {
         if (!m_input) return;
 
-        //// Handle object selection
-        if (m_currentTool == EditorTool::Select && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
-            handleObjectSelection();
+        // Handle object selection and dragging
+        if (m_currentTool == EditorTool::Select && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            if (!isMouseOverUI()) {
+                vec2 mouseWorld = screenToWorld(m_input->mousePosition());
+
+                if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+                    Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
+                    if (obj) {
+                        selectObject(obj);
+                        m_isDraggingObject = true;
+                    }
+                    else {
+                        selectObject(nullptr);
+                        m_isDraggingObject = false;
+                    }
+                }
+                // Continue dragging on subsequent frames
+                else if (m_selectedObject && m_isDraggingObject) {
+                    handleObjectDragging();
+                }
+            }
         }
 
-        // Handle object dragging (while mouse is held down)
-        if (m_currentTool == EditorTool::Select && m_selectedObject && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            handleObjectDragging();
+        // STOP dragging when mouse is released
+        if (m_input->wasMouseReleased(GLFW_MOUSE_BUTTON_LEFT)) {
+            m_isDraggingObject = false;
         }
 
         // Handle object placement
-        if (m_currentTool == EditorTool::Place && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (m_currentTool == EditorTool::Place && m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectPlacement();
         }
 
-        //// Handle object deletion
-        if (m_currentTool == EditorTool::Erase && m_input->wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        // Handle object deletion
+        if (m_currentTool == EditorTool::Erase && m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
 
-        if (m_currentTool == EditorTool::Pan)
-        {
+        if (m_currentTool == EditorTool::Pan) {
             handleCameraInput(dt);
         }
-        (void)dt;
     }
+
 
     void LevelEditor::handleCameraInput(double dt) {
         if (!m_input) return;
@@ -2027,23 +2045,17 @@ namespace Platform {
 
 
 
-vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
-    vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
+    vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
 
-    // Step 1: Flip Y first (GLFW has Y=0 at top)
-    screenPos.y = m_windowHeight - screenPos.y;
+        screenPos.y = m_windowHeight - screenPos.y;
+        vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
 
-    // Step 2: Center the screen position
-    vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        centered /= m_editorCamera.zoom();
 
-    // Step 3: Scale by zoom
-    centered /= m_editorCamera.zoom();
-
-    // Step 4: Add camera position
-    vec2 worldPos = centered + m_editorCameraPos;
-
-    return worldPos;
-}
+        vec2 worldPos = centered + m_editorCameraPos;
+        return worldPos;
+    }
 
 
 

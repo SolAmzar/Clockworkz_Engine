@@ -179,6 +179,7 @@ namespace Platform {
         void handleObjectDeletion();
         void handleObjectDragging();
         void moveSelectedObject(vec2 delta);
+        bool m_isDraggingObject = false;
 
         // Input handling
         void handleEditorInput(double dt);
@@ -223,7 +224,6 @@ namespace Platform {
         // Selection and manipulation
         Gameplay::GameObject* m_selectedObject;
         vec2 m_dragStartPos;
-        bool m_isDraggingObject;
 
         // Camera
         Graphics::Camera2D m_editorCamera;
