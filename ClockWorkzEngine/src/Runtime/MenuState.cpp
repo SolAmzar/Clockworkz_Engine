@@ -146,9 +146,9 @@ namespace Runtime
             m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
             return;
         }
-        if (choice == "Exit Game")
+        if (choice == "Quit Game")
         {
-            std::cout << "Exiting game...\n";
+            std::cout << "Quiting game...\n";
 
             //**** Exit game needs work *****
             if (m_quitFn)
