@@ -151,8 +151,8 @@ namespace Runtime
             std::cout << "Exiting game...\n";
 
             //**** Exit game needs work *****
-            /*if (m_quitFn)
-                m_quitFn();*/
+            if (m_quitFn)
+                m_quitFn();
             return;
         }
         // yusuf

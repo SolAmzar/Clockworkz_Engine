@@ -155,6 +155,7 @@ namespace Core
 
 	void Engine::shutdown()
 	{
+		std::cout << "Shutdown started" << std::endl;
 		if (m_logger)
 			m_logger->info("Engine shutdown.");
 
@@ -165,6 +166,7 @@ namespace Core
 			while (m_gsm->top())
 			{
 				m_gsm->pop();
+				m_gsm->update(0.0);
 			}
 			m_gsm.reset();
 		}
@@ -187,6 +189,8 @@ namespace Core
 		m_sfAudio.reset();
 
 		Assets::TextureManager::Clear();
+
+		std::cout << "Shutdown done" << std::endl;
 	}
 
 	/** Function header comment
@@ -202,7 +206,6 @@ namespace Core
 	{
 		//Check if Fixed Delta time (Uncomment if you want to check)
 		/*std::cout << m_time->fixedDelta() << std::endl;*/
-		(void)dt;
 
 		if (!m_booted)
 		{
@@ -215,7 +218,6 @@ namespace Core
 				this->audio(),
 				[this]()
 				{ m_running = false; }));
-
 
 			m_booted = true;
 		}
@@ -340,6 +342,7 @@ namespace Core
 					m_window->setTitle(title);
 				}
 			}
+			std::cout << "Exiting main loop" << std::endl;
 			shutdown();
 			return 0;
 		}
