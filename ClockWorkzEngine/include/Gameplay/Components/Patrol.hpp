@@ -19,6 +19,7 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Gameplay/GameObject.hpp"
 #include "Math/Vec2.hpp"
 #include "Math/config.hpp"
+
 namespace Gameplay {
     class PatrolComponent : public Component {
     public:

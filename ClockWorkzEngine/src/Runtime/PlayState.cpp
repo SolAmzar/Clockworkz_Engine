@@ -17,13 +17,18 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/Scene.hpp"
 #include "Gameplay/GameObject.hpp"
+#include "Runtime/PauseState.hpp"
 #include "IMGUI/imgui.h"
 #include "Runtime/MenuState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
-#include "Core/AudioManager.hpp"
+#include "Audio/AudioManager.hpp"
+#include "Graphics/ParticleSystem.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp"
+#include "Gameplay/Components/SurfaceComponent.hpp"
+#include "Audio/SurfaceAudioSystem.hpp"
 #include <GLFW/glfw3.h>
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -72,6 +77,24 @@ namespace Runtime
 			if (u && u->type() == Gameplay::GameObjectType::Player) return u.get();
 		}
 		return nullptr;
+	}
+
+	Gameplay::SurfaceType PlayState::getSurfaceUnder(Gameplay::GameObject* player) {
+		auto* scene = m_scenes.current();
+		if (!scene) return Gameplay::SurfaceType::Default;
+
+		vec2 pos = player->transform().position;
+		for (auto& obj : scene->objects()) {
+			if (!obj || !obj->active()) continue;
+			if (auto* surf = obj->getComponent<Gameplay::SurfaceComponent>()) {
+				vec2 half = obj->size() * 0.5f;
+				if (abs(pos.x - obj->transform().position.x) <= half.x &&
+					abs(pos.y - obj->transform().position.y) <= half.y) {
+					return surf->type();
+				}
+			}
+		}
+		return Gameplay::SurfaceType::Default;	
 	}
 
 	void PlayState::rebindLightsAndPlayerAfterReload()
@@ -167,6 +190,38 @@ namespace Runtime
 	void PlayState::onEnter()
 	{
 		std::cout << "[PlayState] Enter, loading scene: " << m_initialSceneId << "\n";
+		// Create an empty game object you can see in the scene
+		
+		// 1) Make the GO and keep a raw pointer before moving it into the vector
+		auto fxUP = std::make_unique<Gameplay::GameObject>(
+		Gameplay::GameObjectType::Wall, "ParticleTest");
+		Gameplay::GameObject* fx = fxUP.get();   
+
+		fx->transform().position = { 5.0f, 3.0f };
+		// fx->setLayer(Gameplay::DrawLayer::FX);
+
+		// 2) Transfer ownership
+		if (auto* scene = m_scenes.current()) {
+			scene->addObject(std::move(fxUP));               
+		}
+		m_fx = fx;
+
+		// 3) Construct the component in-place (NO new). Pass the ctor args.
+		// ParticleEmitter(GameObject& owner, std::size_t max)
+		auto* emitter = fx->addComponent<Gameplay::ParticleEmitter>(1000);
+
+		emitter->setRenderer(m_renderer);
+
+		// 4) Configure
+		auto& s = emitter->system();
+		s.dir = normalize(vec2{ 1, 0 });
+		s.spreadDeg = 40.f;
+		s.acceleration = { 0.f, -50.f };
+		s.sizeStart = 0.2f;
+		s.sizeEnd = 0.0f;
+		s.colorStart = { 1.f, 0.6f, 0.1f, 1.f };
+		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
+		s.rate = 120.f;
 
 		// Syafiq -
 		Core::Engine &engine = Core::Engine::Get();
@@ -190,16 +245,17 @@ namespace Runtime
 			{
 				auto &objs = scene->objects();
 				std::cout << "GameObjects created (" << objs.size() << "):\n";
+
 				for (auto &u : objs)
 				{
 					auto const &o = *u;
 					auto p = o.transform().position;
-					auto s = o.size();
+					auto z = o.size();
 					std::cout << " - id=" << o.id()
 										<< " type=" << toString(o.type())
 										<< " name=\"" << o.name() << "\""
 										<< " pos=(" << p.x << "," << p.y << ")"
-										<< " size=(" << s.x << "," << s.y << ")"
+										<< " size=(" << z.x << "," << z.y << ")"
 										<< (o.active() ? "" : " [inactive]") << "\n";
 
 					if (u->type() == Gameplay::GameObjectType::Player)
@@ -246,15 +302,42 @@ namespace Runtime
 
 	void PlayState::update(double dt)
 	{
+		if (m_returnToMenuRequested)
+		{
+			std::cout << "[PlayState] Return to menu requested\n";
+			m_gsm.pop();
+			return;
+		}
+
+		if (m_pauseRequested)
+		{
+			m_pauseRequested = false;
+			std::cout << "[PlayState] Processing pause request\n";
+			m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
+			return;
+		}
+
+		if (!m_loaded) return;
+
+		// Check for pause input
+		if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
+		{
+			std::cout << "[PlayState] ESC pressed - requesting pause\n";
+			m_pauseRequested = true;
+			return; // Don't continue this frame
+		}
 
 		Core::Engine &engine = Core::Engine::Get();
 		//Platform::InputManager &input = engine.input();
 		Graphics::Camera2D &cam = engine.camera();
 		Platform::WindowManager &window = engine.window();
+		auto& audio = engine.audio();
+		auto& steps = engine.surfaceAudio();
 		vec2 mouseWorld = m_input.getMouseWorldPos(
 				cam,
 				static_cast<float>(window.width()),
 				static_cast<float>(window.height()));
+		
 
 		if (m_shouldReturnToMenu)
 		{
@@ -296,7 +379,7 @@ namespace Runtime
 		// Syafiq - Player movement
 		if (auto *scene = m_scenes.current())
 		{
-
+			m_scenes.update(dt);
 			// Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
 			// objMap["Player"][0] <- since only 1 player. index 0 will work.
 			for (auto &obj : scene->objects())
@@ -308,12 +391,56 @@ namespace Runtime
 					bool isRunning = false;
 					float maxSpeed = obj->moveSpeed();
 					float maxRunSpeed = maxSpeed*2;
+
+					m_timeSinceStep += (float)dt;
+					auto surfaceType = getSurfaceUnder(obj.get());
+					vec2 curPos = obj->transform().position;
+					float speed = magnitude(obj->velocity());    // use your magnitude/length
+					bool  moving = speed > 5.0f;
+					
+					if (moving) {
+						if (!m_haveLastFootPos) {
+							m_lastFootPos = curPos;
+							m_haveLastFootPos = true;
+						}
+						vec2 delta = curPos - m_lastFootPos;
+						float frameDist = magnitude(delta);
+						m_distanceSinceStep += frameDist;
+						m_lastFootPos = curPos;
+
+						if (m_distanceSinceStep >= m_stepDistance && m_timeSinceStep >= m_minStepInterval) {
+							// Time for exactly ONE footsteps
+							steps.playFootstep(audio, surfaceType, speed);
+
+							m_distanceSinceStep = 0.0f;   // reset distance
+							m_timeSinceStep = 0.0f;
+						}
+					}
+					else {
+						// not moving → reset so we don’t “owe” steps
+						m_distanceSinceStep = 0.0f;
+						m_timeSinceStep = 0.0f;
+						m_haveLastFootPos = false;
+					}
+
+
 					//not used
 					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
 					{
 						moveSpeed *= 2;
 						isRunning = true;
 					}
+
+					//Gameplay::GameObject* fx = nullptr;
+					//for (auto& up : gameObjects) {
+					//	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					//}
+					//if (fx) {
+					//	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
+					//		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
+					//			em->burst(80); // 80-particle puff
+					//	}
+					//}
 					//float moveAmount = moveSpeed * static_cast<float>(dt);
 
 					if (m_input.isKeyDown(GLFW_KEY_W))
@@ -464,6 +591,11 @@ namespace Runtime
 					obj->transform().position.x = nextX; // snap to keep within bounds (optional)
 				}
 			}
+		}
+
+		if (m_fx && m_input.isKeyDown(GLFW_KEY_SPACE)) {
+			if (auto* em = m_fx->getComponent<Gameplay::ParticleEmitter>())
+				em->burst(80);
 		}
 
 		if (m_input.isKeyDown(GLFW_KEY_Z))
@@ -717,7 +849,7 @@ namespace Runtime
 					if (obj)
 					{
 						obj->setPosition(vec2(pos[0], pos[1]));
-						obj->setSize(vec2(size[0], size[1]));
+					obj->setSize(vec2(size[0], size[1]));
 						gameObjects.push_back(std::move(obj));
 					}
 				}

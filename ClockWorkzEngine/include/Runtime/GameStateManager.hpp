@@ -40,7 +40,15 @@ namespace Runtime {
 		std::shared_ptr<GameState> top() const { return m_states.empty() ? nullptr : m_states.top(); }
 
 	private:
+		void processPendingOps();
+
 		std::stack<std::shared_ptr<GameState>> m_states;
+
+		//deffered op
+		enum class Operation { None, Pop, Switch };
+		Operation m_pendingOp{ Operation::None };
+		std::shared_ptr<GameState> m_pendingState{ nullptr };
+		int m_popCount{ 0 };
 	};
 
 } // namespace Runtime

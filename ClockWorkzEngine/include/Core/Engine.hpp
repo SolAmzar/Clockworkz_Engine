@@ -25,7 +25,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 
 namespace Runtime { class GameStateManager; class MenuState; }
 
-namespace Audio { class AudioManager; }
+namespace Audio { class AudioManager; class SurfaceAudioSystem; }
 
 namespace Core {
 	class Config; class Logger; class Time;
@@ -61,6 +61,8 @@ namespace Core {
 		Platform::InputManager& input() { return *m_input; }
 		Platform::LevelEditor& editor() { return *m_editor; }
 		Core::Logger& logger() { return *m_logger; }
+		Audio::SurfaceAudioSystem& surfaceAudio() { return *m_sfAudio; }
+		Audio::SurfaceAudioSystem const& surfaceAudio() const { return *m_sfAudio; }
 		//Audio::AudioManager& audio() { return *m_audio; }
 	private:
 		bool init();
@@ -88,6 +90,7 @@ namespace Core {
 
 		// Inside namespace Audio
 		std::unique_ptr<Audio::AudioManager> m_audio;
+		std::unique_ptr<Audio::SurfaceAudioSystem> m_sfAudio; // separate SFX audio manager for surface audio system
 
 		// Inside namespace Runtime
 		std::unique_ptr<Runtime::GameStateManager> m_gsm;

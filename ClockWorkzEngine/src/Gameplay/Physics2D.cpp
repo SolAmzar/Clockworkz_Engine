@@ -232,8 +232,8 @@ namespace Gameplay {
             if (a == b) return false;
             if (!a->active() || !b->active()) return false;
             // layer/mask filter:
-            if ((a->collisionMask() & b->layer()) == 0) return false;
-            if ((b->collisionMask() & a->layer()) == 0) return false;
+            if ((a->collisionMask() & b->collisionCategory()) == 0) return false;
+            if ((b->collisionMask() & a->collisionCategory()) == 0) return false;
             return true;
         }
 
