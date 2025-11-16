@@ -1042,70 +1042,34 @@ void LevelEditor::updateGizmoTranslate() {
     void LevelEditor::render() {
         if (!m_renderer || !m_currentScene) return;
 
-        //Core::Engine& engine = Core::Engine::Get();
-
-        // Use editor camera's view-projection matrix
+        // Get editor camera's view-projection matrix
         glm::mat4 viewProj = m_editorCamera.viewProj();
 
+        // Start the frame
+        m_renderer->beginFrame();
         m_renderer->beginScenePass(viewProj);
 
-        // Render gizmo if object is selected
-        if (m_selectedObject && m_showGizmos && m_mode == EditorMode::Edit) {
-            renderGizmo();
-        }
-
-        // Render grid in edit mode
-        if (m_mode == EditorMode::Edit) {
-            renderGrid();
-        }
-
-        // Render all objects via batch rendering
+        // Render all scene objects via batch rendering
         m_currentScene->render(*m_renderer);
 
         m_renderer->endScenePass();
 
-        //if (m_mode == EditorMode::Play && m_currentScene) {
-        //    for (auto& obj : m_currentScene->objects()) {
-        //        if (obj->type() == Gameplay::GameObjectType::Player) {
-        //            vec2 playerPos = obj->transform().position;
-        //            float playerRotation = obj->transform().rotationRad;
+        if (m_mode == EditorMode::Edit) {
+            m_renderer->beginDebugPass(viewProj);
 
-        //            auto* physics = m_currentScene->getPhysics();
-        //            if (!physics) break;
+            // Render grid
+            renderGrid();
 
-        //            // Get visibility polygon as vec2
-        //            std::vector<vec2> lightPoly =
-        //                m_renderer->computeVisibilityPolygon(
-        //                    playerPos,
-        //                    playerRotation,
-        //                    glm::radians(60.0f),
-        //                    300.0f,
-        //                    *physics,
-        //                    m_currentScene->objects()
-        //                );
+            // Render gizmo if object is selected
+            if (m_selectedObject && m_showGizmos) {
+                renderGizmo();
+            }
 
-        //            // Pass vec2 directly if methods accept it
-        //            m_renderer->beginLightPass(
-        //                viewProj,
-        //                playerPos,
-        //                vec3(1.0f, 0.9f, 0.6f),
-        //                300.0f,
-        //                playerRotation,
-        //                glm::radians(60.0f)
-        //            );
+            m_renderer->endDebugPass();
+        }
 
-        //            // Pass vec2 vector directly
-        //            m_renderer->drawLightCone(
-        //                playerPos,
-        //                lightPoly,      
-        //                vec3(1.0f, 0.9f, 0.6f)
-        //            );
-
-        //            m_renderer->endLightPass();
-        //            break;
-        //        }
-        //    }
-        //}
+        // End the frame
+        m_renderer->endFrame();
     }
 
 

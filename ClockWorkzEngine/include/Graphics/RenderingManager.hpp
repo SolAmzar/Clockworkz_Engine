@@ -75,6 +75,7 @@ namespace Graphics {
         static constexpr int MAX_TEXTURE_SLOTS = 8;
         Renderer2D m_renderer2D; // textured renderer
         unsigned int m_vao{0}, m_vbo{0}; // Debug draw
+        glm::mat4 m_viewProj{ 1.0f };
         //unsigned int m_shader{0};
     };
 }

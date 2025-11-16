@@ -49,6 +49,10 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawPoint(float x, float y, float r, float g, float b, float size) {
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("debug");
+		if (!shader) return;
+		shader->use();
+
 		struct Vertex { float x, y; float r, g, b; };
 		Vertex v = { x, y, r, g, b };
 
@@ -66,15 +70,16 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawLine(float x1, float y1, float x2, float y2, float r, float g, float b) {
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("debug");
+		if (!shader) return;
+		shader->use();
+
 		struct Vertex { float x, y; float r, g, b; };
-		Vertex vertices[2] = {
-			{x1, y1, r, g, b},
-			{x2, y2, r, g, b}
-		};
+		Vertex vertices[2] = { {x1, y1, r, g, b}, {x2, y2, r, g, b} };
 
 		glBindVertexArray(m_vao);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -209,7 +214,6 @@ namespace Graphics {
 	void RenderingManager::beginFrame() {
 		glClearColor(0.05f, 0.05f, 0.15f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Normal alpha blending
 		glDepthMask(GL_TRUE);
