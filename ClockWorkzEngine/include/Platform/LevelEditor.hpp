@@ -37,6 +37,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Graphics/Camera2D.hpp"
 #include <Core/Logger.hpp>
 #include <Assets/ResourceManager.hpp>
+#include "Platform/UndoSystem.hpp"
 
 struct GLFWwindow;
 
@@ -278,6 +279,17 @@ namespace Platform {
         std::vector<PrefabEntry> m_prefabPalette;
         std::string m_selectedPrefab;
 
+        //Undo/Redo systems
+        std::vector<std::unique_ptr<Platform::EditorCommand>> m_undoStack;
+        std::vector<std::unique_ptr<Platform::EditorCommand>> m_redoStack;
+        const size_t MAX_UNDO_LEVELS = 20;  // Limit to 20 undo operations
+
+        // Temporary storage for tracking changes
+        vec2 m_transformStartPosition;
+        float m_transformStartRotation;
+        vec2 m_transformStartScale;
+        bool m_isTransforming;
+
         // UI State
         bool m_showHierarchy;
         bool m_showProperties;
@@ -296,6 +308,17 @@ namespace Platform {
         // Window dimensions
         float m_windowWidth;
         float m_windowHeight;
+
+        //undo/redo
+        void executeCommand(std::unique_ptr<Platform::EditorCommand> cmd);
+        void undo();
+        void redo();
+        void clearRedoStack();
+
+        // Helper methods to record commands
+        void recordMoveCommand(Gameplay::GameObject* obj, vec2 oldPos, vec2 newPos);
+        void recordRotateCommand(Gameplay::GameObject* obj, float oldRot, float newRot);
+        void recordScaleCommand(Gameplay::GameObject* obj, vec2 oldScale, vec2 newScale);
 
         // ====================================================================
         // INTEGRATED GIZMO SYSTEM - Member Variables
@@ -336,8 +359,6 @@ namespace Platform {
             virtual void execute() = 0;
             virtual void undo() = 0;
         };
-        std::vector<std::unique_ptr<EditorCommand>> m_undoStack;
-        std::vector<std::unique_ptr<EditorCommand>> m_redoStack;
 
         // Performance monitoring
         double m_frameTime;

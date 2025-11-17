@@ -81,6 +81,7 @@ namespace Platform {
         , m_gridSize(100.0f)
         , m_enableGridSnap(true)
         , m_showGrid(true)
+        , m_isTransforming(false)
     {
         m_fileDialogBuffer[0] = '\0';
 
@@ -208,6 +209,112 @@ namespace Platform {
         if (m_currentScene) {
             m_objectCount = static_cast<int>(m_currentScene->objects().size());
         }
+    }
+
+// ============================================================================
+// Undo/redo Implementation
+// ============================================================================
+    void LevelEditor::executeCommand(std::unique_ptr<Platform::EditorCommand> cmd) {
+        // Execute the command
+        cmd->execute();
+
+        // Add to undo stack
+        m_undoStack.push_back(std::move(cmd));
+
+        // Limit undo stack to MAX_UNDO_LEVELS
+        if (m_undoStack.size() > MAX_UNDO_LEVELS) {
+            m_undoStack.erase(m_undoStack.begin());
+        }
+
+        // Clear redo stack (can't redo after new action)
+        clearRedoStack();
+
+        // Mark level as dirty
+        markLevelDirty();
+    }
+
+    void LevelEditor::undo() {
+        if (m_undoStack.empty()) {
+            std::cout << "Nothing to undo" << std::endl;
+            return;
+        }
+
+        // Pop command from undo stack
+        auto cmd = std::move(m_undoStack.back());
+        m_undoStack.pop_back();
+
+        // Undo it
+        cmd->undo();
+
+        // Move to redo stack
+        m_redoStack.push_back(std::move(cmd));
+
+        // Mark level as dirty
+        markLevelDirty();
+
+        std::cout << "Undo successful" << std::endl;
+    }
+
+    void LevelEditor::redo() {
+        if (m_redoStack.empty()) {
+            std::cout << "Nothing to redo" << std::endl;
+            return;
+        }
+
+        // Pop command from redo stack
+        auto cmd = std::move(m_redoStack.back());
+        m_redoStack.pop_back();
+
+        // Execute it again
+        cmd->execute();
+
+        // Move back to undo stack
+        m_undoStack.push_back(std::move(cmd));
+
+        // Mark level as dirty
+        markLevelDirty();
+
+        std::cout << "Redo successful" << std::endl;
+    }
+
+    void LevelEditor::clearRedoStack() {
+        m_redoStack.clear();
+    }
+
+    void LevelEditor::recordMoveCommand(Gameplay::GameObject* obj, vec2 oldPos, vec2 newPos) {
+        auto cmd = std::make_unique<Platform::MoveCommand>(obj, oldPos, newPos);
+        m_undoStack.push_back(std::move(cmd));
+
+        if (m_undoStack.size() > MAX_UNDO_LEVELS) {
+            m_undoStack.erase(m_undoStack.begin());
+        }
+
+        clearRedoStack();
+        markLevelDirty();
+    }
+
+    void LevelEditor::recordRotateCommand(Gameplay::GameObject* obj, float oldRot, float newRot) {
+        auto cmd = std::make_unique<Platform::RotateCommand>(obj, oldRot, newRot);
+        m_undoStack.push_back(std::move(cmd));
+
+        if (m_undoStack.size() > MAX_UNDO_LEVELS) {
+            m_undoStack.erase(m_undoStack.begin());
+        }
+
+        clearRedoStack();
+        markLevelDirty();
+    }
+
+    void LevelEditor::recordScaleCommand(Gameplay::GameObject* obj, vec2 oldScale, vec2 newScale) {
+        auto cmd = std::make_unique<Platform::ScaleCommand>(obj, oldScale, newScale);
+        m_undoStack.push_back(std::move(cmd));
+
+        if (m_undoStack.size() > MAX_UNDO_LEVELS) {
+            m_undoStack.erase(m_undoStack.begin());
+        }
+
+        clearRedoStack();
+        markLevelDirty();
     }
 
 // ============================================================================
@@ -355,34 +462,35 @@ void LevelEditor::renderGizmoScale() {
     }
 }
 
+// Modify updateGizmoTranslate():
 void LevelEditor::updateGizmoTranslate() {
     if (!m_selectedObject) return;
 
     vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
 
-    // Update hovered axis when not active
     if (!m_isGizmoActive) {
         m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
     }
 
-    // Check for mouse button press
     if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
         if (m_gizmoHoveredAxis != GizmoAxis::None) {
             m_isGizmoActive = true;
             m_gizmoActiveAxis = m_gizmoHoveredAxis;
             m_gizmoDragStartWorld = mouseWorld;
             m_gizmoInitialPosition = m_selectedObject->transform().position;
+
+            // RECORD START POSITION FOR UNDO
+            m_transformStartPosition = m_selectedObject->transform().position;
+            m_isTransforming = true;
         }
     }
 
-    // Handle active translation
     if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
         vec2 dragDelta = vec2(
             mouseWorld.x - m_gizmoDragStartWorld.x,
             mouseWorld.y - m_gizmoDragStartWorld.y
         );
 
-        // Constrain movement based on active axis
         if (m_gizmoActiveAxis == GizmoAxis::X) {
             dragDelta.y = 0.0f;
         }
@@ -395,9 +503,7 @@ void LevelEditor::updateGizmoTranslate() {
             m_gizmoInitialPosition.y + dragDelta.y
         );
 
-        // NEW: Apply 0.5 grid offset snapping
         if (m_enableGridSnap) {
-            // Snap to 0.5 grid increments (e.g., 0.5, 1.5, 2.5, 3.5, etc.)
             newPos = snapToHalfGrid(newPos);
         }
 
@@ -405,167 +511,198 @@ void LevelEditor::updateGizmoTranslate() {
         markLevelDirty();
     }
 
-    // Release
     if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        // RECORD COMMAND WHEN RELEASING MOUSE
+        if (m_isGizmoActive && m_isTransforming) {
+            vec2 finalPosition = m_selectedObject->transform().position;
+
+            // Only record if position actually changed
+            if (m_transformStartPosition.x != finalPosition.x ||
+                m_transformStartPosition.y != finalPosition.y) {
+                recordMoveCommand(m_selectedObject, m_transformStartPosition, finalPosition);
+            }
+
+            m_isTransforming = false;
+        }
+
         m_isGizmoActive = false;
         m_gizmoActiveAxis = GizmoAxis::None;
     }
 }
 
+// Modify updateGizmoRotate():
+void LevelEditor::updateGizmoRotate() {
+    if (!m_selectedObject) return;
 
+    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 center = getGizmoCenterPosition();
+    float scaledSize = getGizmoScaledSize();
 
-    void LevelEditor::updateGizmoRotate() {
-        if (!m_selectedObject) return;
+    if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        float distToCenter = glm::length(glm::vec2(mouseWorld.x - center.x, mouseWorld.y - center.y));
+        float innerRadius = scaledSize * 0.8f;
+        float outerRadius = scaledSize * 1.2f;
 
-        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
-        vec2 center = getGizmoCenterPosition();
-        float scaledSize = getGizmoScaledSize();
+        if (distToCenter >= innerRadius && distToCenter <= outerRadius) {
+            m_isGizmoActive = true;
+            m_gizmoDragStartWorld = mouseWorld;
+            m_gizmoInitialRotation = m_selectedObject->transform().rotationRad;
 
-        // Check for mouse button press
-        if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
-            // Check if mouse is within the rotation circle
-            float distToCenter = glm::length(glm::vec2(mouseWorld.x - center.x, mouseWorld.y - center.y));
-            float innerRadius = scaledSize * 0.8f;
-            float outerRadius = scaledSize * 1.2f;
-
-            if (distToCenter >= innerRadius && distToCenter <= outerRadius) {
-                m_isGizmoActive = true;
-                m_gizmoDragStartWorld = mouseWorld;
-                m_gizmoInitialRotation = m_selectedObject->transform().rotationRad;
-            }
-        }
-
-        // Handle active rotation
-        if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            vec2 startDir = vec2(
-                m_gizmoDragStartWorld.x - center.x,
-                m_gizmoDragStartWorld.y - center.y
-            );
-            vec2 currentDir = vec2(
-                mouseWorld.x - center.x,
-                mouseWorld.y - center.y
-            );
-
-            // Normalize
-            float startLen = std::sqrt(startDir.x * startDir.x + startDir.y * startDir.y);
-            float currentLen = std::sqrt(currentDir.x * currentDir.x + currentDir.y * currentDir.y);
-
-            if (startLen > 0.001f) startDir = vec2(startDir.x / startLen, startDir.y / startLen);
-            if (currentLen > 0.001f) currentDir = vec2(currentDir.x / currentLen, currentDir.y / currentLen);
-
-            // Calculate angle difference using atan2
-            float startAngle = std::atan2(startDir.y, startDir.x);
-            float currentAngle = std::atan2(currentDir.y, currentDir.x);
-            float deltaAngle = currentAngle - startAngle;
-
-            // Apply snapping if enabled
-            if (m_gizmoSnapEnabled) {
-                deltaAngle = snapAngleToGrid(deltaAngle);
-            }
-
-            m_selectedObject->transform().rotationRad = m_gizmoInitialRotation + deltaAngle;
-            markLevelDirty();
-        }
-
-        // Release
-        if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            m_isGizmoActive = false;
-        }
-
-        // Update hover state
-        if (!m_isGizmoActive) {
-            float distToCenter = glm::length(glm::vec2(mouseWorld.x - center.x, mouseWorld.y - center.y));
-            float innerRadius = scaledSize * 0.8f;
-            float outerRadius = scaledSize * 1.2f;
-            m_gizmoHoveredAxis = (distToCenter >= innerRadius && distToCenter <= outerRadius)
-                ? GizmoAxis::Both : GizmoAxis::None;
+            // RECORD START ROTATION FOR UNDO
+            m_transformStartRotation = m_selectedObject->transform().rotationRad;
+            m_isTransforming = true;
         }
     }
 
-    void LevelEditor::updateGizmoScale() {
-        if (!m_selectedObject) return;
+    if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        vec2 startDir = vec2(
+            m_gizmoDragStartWorld.x - center.x,
+            m_gizmoDragStartWorld.y - center.y
+        );
+        vec2 currentDir = vec2(
+            mouseWorld.x - center.x,
+            mouseWorld.y - center.y
+        );
 
-        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
-        vec2 center = getGizmoCenterPosition();
-        float scaledSize = getGizmoScaledSize();
+        float startLen = std::sqrt(startDir.x * startDir.x + startDir.y * startDir.y);
+        float currentLen = std::sqrt(currentDir.x * currentDir.x + currentDir.y * currentDir.y);
 
-        // Update hovered axis when not active
-        if (!m_isGizmoActive) {
-            m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
+        if (startLen > 0.001f) startDir = vec2(startDir.x / startLen, startDir.y / startLen);
+        if (currentLen > 0.001f) currentDir = vec2(currentDir.x / currentLen, currentDir.y / currentLen);
+
+        float startAngle = std::atan2(startDir.y, startDir.x);
+        float currentAngle = std::atan2(currentDir.y, currentDir.x);
+        float deltaAngle = currentAngle - startAngle;
+
+        if (m_gizmoSnapEnabled) {
+            deltaAngle = snapAngleToGrid(deltaAngle);
         }
 
-        // Check for mouse button press
-        if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
-            if (m_gizmoHoveredAxis != GizmoAxis::None) {
-                m_isGizmoActive = true;
-                m_gizmoActiveAxis = m_gizmoHoveredAxis;
-                m_gizmoDragStartWorld = mouseWorld;
-                m_gizmoInitialScale = m_selectedObject->transform().scale;
+        m_selectedObject->transform().rotationRad = m_gizmoInitialRotation + deltaAngle;
+        markLevelDirty();
+    }
+
+    if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        // RECORD COMMAND WHEN RELEASING MOUSE
+        if (m_isGizmoActive && m_isTransforming) {
+            float finalRotation = m_selectedObject->transform().rotationRad;
+
+            // Only record if rotation actually changed
+            if (std::abs(m_transformStartRotation - finalRotation) > 0.001f) {
+                recordRotateCommand(m_selectedObject, m_transformStartRotation, finalRotation);
             }
+
+            m_isTransforming = false;
         }
 
-        // Handle active scaling
-        if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            vec2 dragDelta = vec2(
-                mouseWorld.x - m_gizmoDragStartWorld.x,
-                mouseWorld.y - m_gizmoDragStartWorld.y
-            );
+        m_isGizmoActive = false;
+    }
 
-            vec2 newScale = m_gizmoInitialScale;
+    if (!m_isGizmoActive) {
+        float distToCenter = glm::length(glm::vec2(mouseWorld.x - center.x, mouseWorld.y - center.y));
+        float innerRadius = scaledSize * 0.8f;
+        float outerRadius = scaledSize * 1.2f;
+        m_gizmoHoveredAxis = (distToCenter >= innerRadius && distToCenter <= outerRadius)
+            ? GizmoAxis::Both : GizmoAxis::None;
+    }
+}
 
-            switch (m_gizmoActiveAxis) {
-            case GizmoAxis::X: {
-                float scaleChange = dragDelta.x / scaledSize;
-                newScale.x = m_gizmoInitialScale.x + scaleChange;
-                newScale.x = std::max(0.1f, newScale.x); // Prevent negative/zero scale
-                break;
-            }
-            case GizmoAxis::Y: {
-                float scaleChange = dragDelta.y / scaledSize;
-                newScale.y = m_gizmoInitialScale.y + scaleChange;
-                newScale.y = std::max(0.1f, newScale.y);
-                break;
-            }
-            case GizmoAxis::Both: {
-                // Uniform scaling based on distance from center
-                float initialDist = std::sqrt(
-                    (m_gizmoDragStartWorld.x - center.x) * (m_gizmoDragStartWorld.x - center.x) +
-                    (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y)
-                );
-                float currentDist = std::sqrt(
-                    (mouseWorld.x - center.x) * (mouseWorld.x - center.x) +
-                    (mouseWorld.y - center.y) * (mouseWorld.y - center.y)
-                );
-                float scaleFactor = currentDist / std::max(0.001f, initialDist);
+// Modify updateGizmoScale():
+void LevelEditor::updateGizmoScale() {
+    if (!m_selectedObject) return;
 
-                newScale = vec2(
-                    m_gizmoInitialScale.x * scaleFactor,
-                    m_gizmoInitialScale.y * scaleFactor
-                );
-                newScale.x = std::max(0.1f, newScale.x);
-                newScale.y = std::max(0.1f, newScale.y);
-                break;
-            }
-            default:
-                break;
-            }
+    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 center = getGizmoCenterPosition();
+    float scaledSize = getGizmoScaledSize();
 
-            // Apply snapping if enabled
-            if (m_gizmoSnapEnabled) {
-                newScale.x = snapScaleToGrid(newScale.x);
-                newScale.y = snapScaleToGrid(newScale.y);
-            }
+    if (!m_isGizmoActive) {
+        m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
+    }
 
-            m_selectedObject->transform().scale = newScale;
-            markLevelDirty();
-        }
+    if (m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (m_gizmoHoveredAxis != GizmoAxis::None) {
+            m_isGizmoActive = true;
+            m_gizmoActiveAxis = m_gizmoHoveredAxis;
+            m_gizmoDragStartWorld = mouseWorld;
+            m_gizmoInitialScale = m_selectedObject->transform().scale;
 
-        // Release
-        if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            m_isGizmoActive = false;
-            m_gizmoActiveAxis = GizmoAxis::None;
+            // RECORD START SCALE FOR UNDO
+            m_transformStartScale = m_selectedObject->transform().scale;
+            m_isTransforming = true;
         }
     }
+
+    if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        vec2 dragDelta = vec2(
+            mouseWorld.x - m_gizmoDragStartWorld.x,
+            mouseWorld.y - m_gizmoDragStartWorld.y
+        );
+
+        vec2 newScale = m_gizmoInitialScale;
+
+        switch (m_gizmoActiveAxis) {
+        case GizmoAxis::X: {
+            float scaleChange = dragDelta.x / scaledSize;
+            newScale.x = m_gizmoInitialScale.x + scaleChange;
+            newScale.x = std::max(0.1f, newScale.x);
+            break;
+        }
+        case GizmoAxis::Y: {
+            float scaleChange = dragDelta.y / scaledSize;
+            newScale.y = m_gizmoInitialScale.y + scaleChange;
+            newScale.y = std::max(0.1f, newScale.y);
+            break;
+        }
+        case GizmoAxis::Both: {
+            float initialDist = std::sqrt(
+                (m_gizmoDragStartWorld.x - center.x) * (m_gizmoDragStartWorld.x - center.x) +
+                (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y)
+            );
+            float currentDist = std::sqrt(
+                (mouseWorld.x - center.x) * (mouseWorld.x - center.x) +
+                (mouseWorld.y - center.y) * (mouseWorld.y - center.y)
+            );
+            float scaleFactor = currentDist / std::max(0.001f, initialDist);
+
+            newScale = vec2(
+                m_gizmoInitialScale.x * scaleFactor,
+                m_gizmoInitialScale.y * scaleFactor
+            );
+            newScale.x = std::max(0.1f, newScale.x);
+            newScale.y = std::max(0.1f, newScale.y);
+            break;
+        }
+        default:
+            break;
+        }
+
+        if (m_gizmoSnapEnabled) {
+            newScale.x = snapScaleToGrid(newScale.x);
+            newScale.y = snapScaleToGrid(newScale.y);
+        }
+
+        m_selectedObject->transform().scale = newScale;
+        markLevelDirty();
+    }
+
+    if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        // RECORD COMMAND WHEN RELEASING MOUSE
+        if (m_isGizmoActive && m_isTransforming) {
+            vec2 finalScale = m_selectedObject->transform().scale;
+
+            // Only record if scale actually changed
+            if (std::abs(m_transformStartScale.x - finalScale.x) > 0.001f ||
+                std::abs(m_transformStartScale.y - finalScale.y) > 0.001f) {
+                recordScaleCommand(m_selectedObject, m_transformStartScale, finalScale);
+            }
+
+            m_isTransforming = false;
+        }
+
+        m_isGizmoActive = false;
+        m_gizmoActiveAxis = GizmoAxis::None;
+    }
+}
 
 // ============================================================================
 // GIZMO render Implementation
@@ -1159,6 +1296,8 @@ void LevelEditor::updateGizmoTranslate() {
             // TODO: Core::Engine::Get().logger().warn("Creating new level with unsaved changes");
         }
 
+        m_undoStack.clear();
+        m_redoStack.clear();
         m_currentScene = std::make_unique<Runtime::Scene>(name);
         if (!m_currentScene->load()) {
             // TODO: Core::Engine::Get().logger().error("Failed to create new level");
@@ -1242,7 +1381,8 @@ void LevelEditor::updateGizmoTranslate() {
         if (m_levelDirty) {
             // In a real implementation, prompt to save
         }
-
+        m_undoStack.clear();
+        m_redoStack.clear();
         std::string sceneName;
         std::vector<std::unique_ptr<Gameplay::GameObject>> objects;
 
@@ -1306,6 +1446,14 @@ void LevelEditor::updateGizmoTranslate() {
 
     void LevelEditor::deleteSelectedObject() {
         if (!m_selectedObject || !m_currentScene) return;
+
+
+        // Create delete command
+        auto cmd = std::make_unique<Platform::DeleteCommand>(m_selectedObject, m_currentScene.get());
+        executeCommand(std::move(cmd));
+
+        // Deselect
+        m_selectedObject = nullptr;
 
         m_currentScene->destroyObject(m_selectedObject);
 
@@ -1673,7 +1821,7 @@ void LevelEditor::updateGizmoTranslate() {
     }
 
     void LevelEditor::renderToolbar() {
-        ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
+        ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar);
 
         if (m_mode == EditorMode::Edit) {
             if (ImGui::Button("Play")) {
@@ -1749,6 +1897,45 @@ void LevelEditor::updateGizmoTranslate() {
         }
 
         ImGui::Checkbox("Show Gizmos", &m_showGizmos);
+        ImGui::Separator();
+        ImGui::Text("History");
+
+        // Undo button
+        if (ImGui::Button("Undo (Ctrl+Z)")) {
+            undo();
+        }
+        if (!m_undoStack.empty()) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(%zu)", m_undoStack.size());
+        }
+
+        // Redo button
+        if (ImGui::Button("Redo (Ctrl+Y)")) {
+            redo();
+        }
+        if (!m_redoStack.empty()) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(%zu)", m_redoStack.size());
+        }
+
+        // Show undo stack
+        if (ImGui::CollapsingHeader("Undo History")) {
+            ImGui::Text("Recent Actions:");
+            ImGui::Indent();
+
+            // Show last 10 actions
+            int showCount = std::min(10, (int)m_undoStack.size());
+            for (int i = 0; i < showCount; ++i) {
+                int index = m_undoStack.size() - 1 - i;
+                ImGui::BulletText("%s", m_undoStack[index]->getName().c_str());
+            }
+
+            if (m_undoStack.size() > 10) {
+                ImGui::BulletText("... and %zu more", m_undoStack.size() - 10);
+            }
+
+            ImGui::Unindent();
+        }
 
         ImGui::End();
     }
@@ -2428,10 +2615,24 @@ void LevelEditor::updateGizmoTranslate() {
             m_gizmoMode = GizmoMode::Translate;
         }
         if (m_input->wasKeyPressed(GLFW_KEY_X)) {
-            m_gizmoMode = GizmoMode::Rotate;
+            undo();
+            //m_gizmoMode = GizmoMode::Rotate;
         }
         if (m_input->wasKeyPressed(GLFW_KEY_C)) {
-            m_gizmoMode = GizmoMode::Scale;
+            redo();
+            //m_gizmoMode = GizmoMode::Scale;
+        }
+
+        // Undo with Ctrl+Z
+        if ((m_input->isKeyDown(GLFW_KEY_LEFT_CONTROL) || m_input->isKeyDown(GLFW_KEY_RIGHT_CONTROL)) &&
+            m_input->wasKeyPressed(GLFW_KEY_Z)) {
+            undo();
+        }
+
+        // Redo with Ctrl+Y (or Ctrl+Shift+Z)
+        if ((m_input->isKeyDown(GLFW_KEY_LEFT_CONTROL) || m_input->isKeyDown(GLFW_KEY_RIGHT_CONTROL)) &&
+            m_input->wasKeyPressed(GLFW_KEY_Y)) {
+            redo();
         }
 
         // Toggle snapping with Ctrl
