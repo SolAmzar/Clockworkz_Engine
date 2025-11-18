@@ -67,7 +67,7 @@ namespace Gameplay {
         static void deserializeDamage(GameObject& obj, const json& j);
         static void deserializePatrol(GameObject& obj, const json& j);
         static void deserializeSpriteRenderer(GameObject& obj, const json& j);
-        static void deserializeSpriteAnimator(GameObject& obj, const json& j);
+        static void deserializeSpriteAnimator(GameObject& obj, const std::string& j);
     };
 
 } // namespace Gameplay

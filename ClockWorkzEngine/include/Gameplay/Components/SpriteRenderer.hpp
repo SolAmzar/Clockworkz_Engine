@@ -45,6 +45,7 @@ namespace Gameplay
 
     void onRender(GameObject &owner) override;
 
+    void resetAll();
   private:
     std::string m_textureAlias;
     glm::vec4 m_tint{1.0f, 1.0f, 1.0f, 1.0f};

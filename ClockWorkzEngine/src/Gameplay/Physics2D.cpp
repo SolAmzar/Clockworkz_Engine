@@ -24,6 +24,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Collider.hpp"
 #include "Gameplay/GameObject.hpp"
 #include <algorithm>
+#include <Gameplay/Components/SpriteAnimator.hpp>
 
 namespace Gameplay {
     std::optional<vec2> Physics2D::raycastLight(
@@ -278,10 +279,20 @@ namespace Gameplay {
                 (bt == GT::Player && at == GT::Enemy))
             {
                 Gameplay::GameObject* player = at == GT::Player ? &a : &b;
+                Gameplay::GameObject* enemy = at == GT::Enemy ? &b : &a;
                 // Your API has respawnAt(spawn, resetVel, resetHealth).
                 // You can store a player spawn point somewhere central; here, just reset & deactivate:
                 // player->setActive(false); // or:
-                player->respawnAt(/*spawn=*/{ 0.f,0.f }, /*resetVel=*/true, /*resetHealth=*/true);
+                //player->respawnAt(/*spawn=*/{ 0.f,0.f }, /*resetVel=*/true, /*resetHealth=*/true);
+                SpriteAnimatorComponent* spriteAnimatorPlayer = player->getComponent<SpriteAnimatorComponent>();
+                // There is no death for player/monster and no state for attack for enemy, code here will be overtaken by walk/idle
+                if (spriteAnimatorPlayer) {
+                    spriteAnimatorPlayer->play("death");
+                }
+                SpriteAnimatorComponent* spriteAnimatorEnemy = enemy->getComponent<SpriteAnimatorComponent>();
+                if (spriteAnimatorEnemy) {
+                    spriteAnimatorEnemy->play("attack");
+                }
                 return;
             }
 
@@ -307,6 +318,7 @@ namespace Gameplay {
 
         // 1) Ensure AABBs are cached
         for (auto& u : objs) { (void)u->worldAABB(); }
+
 
         // 2) Build grid
         constexpr float kCell = 128.f; // tune to your scale

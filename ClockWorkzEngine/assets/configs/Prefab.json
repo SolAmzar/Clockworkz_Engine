@@ -2,80 +2,87 @@
   "prefabs": [
     {
       "prefabName": "Player",
-      "components": {
-        "transform": {
-          "position": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 100.0,
-            "y": 100.0
-          }
-        },
-        "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 4,
-          "collisionMask": 7,
-          "collisionCategory": 2,
-          "blocksLight": false,
-          "isHazard": false
-        },
-        "health": {
-          "hp": 10
-        },
-        "spriteRenderer": {
-          "textureId": "player_texture"
+        "components": {
+            "transform": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                "rotation": 0.0,
+                "scale": {
+                    "x": 100.0,
+                    "y": 100.0
+                }
+            },
+            "collider": {
+                "type": "AABB",
+                "width": 1.0,
+                "height": 1.0,
+                "isSolid": true,
+                "layer": 4,
+                "collisionMask": 7,
+                "collisionCategory": 2,
+                "blocksLight": false,
+                "isHazard": false
+            },
+            "health": {
+                "hp": 10
+            },
+            "spriteRenderer": {
+                "textureId": "player_texture"
+            },
+            "spriteAnimator": {
+                "filename": "player.json"
+            }
         }
-      }
     },
     {
       "prefabName": "Enemy",
-      "components": {
-        "transform": {
-          "position": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 100.0,
-            "y": 100.0
-          }
-        },
-        "collider": {
-          "width": 0.9,
-          "height": 0.9,
-          "isSolid": true,
-          "layer": 4,
-          "collisionMask": 7,
-          "collisionCategory": 4
-        },
-        "health": {
-          "hp": 3
-        },
-        "damage": {
-          "damage": 2
-        },
-        "spriteRenderer": {
-          "textureId": "enemy_texture"
-        },
-        "patrol": {
-          "a": {
-            "x": 200,
-            "y": 300
-          },
-          "b": {
-            "x": 500,
-            "y": 300
-          },
-          "speed": 120.0
+        "components": {
+            "transform": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                "rotation": 0.0,
+                "scale": {
+                    "x": 100.0,
+                    "y": 100.0
+                }
+            },
+            "collider": {
+                "width": 0.9,
+                "height": 0.9,
+                "isSolid": true,
+                "layer": 4,
+                "collisionMask": 7,
+                "collisionCategory": 4
+            },
+            "health": {
+                "hp": 3
+            },
+            "damage": {
+                "damage": 2
+            },
+            "spriteRenderer": {
+                "textureId": "monster_texture"
+            },
+
+            "spriteAnimator": {
+                "filename": "enemy.json"
+            },
+            "patrol": {
+                "a": {
+                    "x": 200,
+                    "y": 300
+                },
+                "b": {
+                    "x": 500,
+                    "y": 300
+                },
+                "speed": 120.0
+            }
         }
-      }
     },
     {
       "prefabName": "Wall",

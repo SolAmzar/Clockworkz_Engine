@@ -45,6 +45,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <string>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <filesystem>
+#include <Assets/TextureManager.hpp>
 namespace fs = std::filesystem;
 
 // Website to see how sprite work
@@ -78,8 +79,9 @@ namespace Runtime
 		
 	}
 
-	std::vector<std::string> SpriteState::GetTextureList(const std::string& folder)
+	/*std::vector<std::string> SpriteState::GetTextureList(const std::string& folder)
 	{
+		
 		std::vector<std::string> textures;
 		for (auto& entry : std::filesystem::directory_iterator(folder))
 		{
@@ -96,7 +98,7 @@ namespace Runtime
 				textures.push_back(path);
 		}
 		return textures;
-	}
+	}*/
 
 	void SpriteState::InitPlayerSpriteUVs()
 	{
@@ -305,14 +307,14 @@ namespace Runtime
 		}
 
 
-		if (m_input.isKeyDown(GLFW_KEY_Q))
-		{
-			cam.setZoom(cam.zoom() * 1.02f);
-		}
-		if (m_input.isKeyDown(GLFW_KEY_E))
-		{
-			cam.setZoom(cam.zoom() / 1.02f);
-		}
+		//if (m_input.isKeyDown(GLFW_KEY_Q))
+		//{
+		//	cam.setZoom(cam.zoom() * 1.02f);
+		//}
+		//if (m_input.isKeyDown(GLFW_KEY_E))
+		//{
+		//	cam.setZoom(cam.zoom() / 1.02f);
+		//}
 
 
 		m_scenes.update(dt);
@@ -330,6 +332,35 @@ namespace Runtime
 		// Batch rendering
 		m_renderer->beginScenePass(engine.camera().viewProj());
 		m_scenes.render(*m_renderer);
+		// Custom render for seeing bigger spritesheet
+		Gameplay::SpriteRendererComponent* spriteImageRenderer = m_sprite_obj->getComponent<Gameplay::SpriteRendererComponent>();
+		if (spriteImageRenderer) {
+			// Resolve texture alias (local override or GameObject's textureId)
+			std::string texAlias = spriteImageRenderer->textureAlias();
+			if (texAlias.empty()) return;
+
+			auto texture = ResourceManager<Texture2D>::Get(texAlias);
+			if (!texture) {
+				std::cerr << "[SpriteRenderer] Missing texture: " << texAlias << "\n";
+				return;
+			}
+
+			// Bind texture
+			//texture->bind(0);
+
+			// Access central RenderingManager (from Engine)
+			Graphics::RenderingManager& renderer = Core::Engine::Get().rendering();
+			glm::vec2 size = glm::vec2(m_sprite_obj->size().x, m_sprite_obj->size().y);
+			glm::vec2 pos = glm::vec2(m_sprite_obj->transform().position.x+550, m_sprite_obj->transform().position.y+100);
+			glm::vec2 scale = glm::vec2(m_sprite_obj->transform().scale.x * 7, m_sprite_obj->transform().scale.y * 7);
+
+			renderer.drawSprite(texture->id(),
+				pos,
+				size * scale, m_sprite_obj->transform().rotationRad,
+				glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f },
+				glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+		}
+
 		m_renderer->endScenePass();
 
 		(void)timer;
@@ -339,9 +370,9 @@ namespace Runtime
 	{
 		if (!m_debug || !m_sprite_obj) return;
 		using namespace Gameplay;
-		ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Sprite Animator Editor", nullptr, ImGuiWindowFlags_MenuBar);
 
 		SpriteAnimatorComponent* anim = m_sprite_obj->getComponent<SpriteAnimatorComponent>();
@@ -353,10 +384,16 @@ namespace Runtime
 
 		// --- Texture Browser ---
 		if (ImGui::CollapsingHeader("Textures", ImGuiTreeNodeFlags_DefaultOpen)) {
-			static std::vector<std::string> texList = GetTextureList("assets/textures");
+			//static std::vector<std::string> texList = GetTextureList("assets/textures");
+			static std::vector<std::string> texList = Assets::TextureManager::GetLoadedTextureNames();
 			for (auto& tex : texList) {
-				if (ImGui::Selectable(tex.c_str(), tex == m_selectedTexture))
+				if (ImGui::Selectable(tex.c_str(), tex == m_selectedTexture)) {
 					m_selectedTexture = tex;
+					SpriteRendererComponent* spriteImageRenderer = m_sprite_obj->getComponent<SpriteRendererComponent>();
+					if (spriteImageRenderer) {
+						spriteImageRenderer->setTexture(tex);
+					}
+				}
 			}
 		}
 
@@ -530,7 +567,7 @@ namespace Runtime
 				ImGui::OpenPopup("ConfirmOverwrite");
 			}
 			else {
-				nlohmann::json j = anim->serialize();
+				nlohmann::json j = anim->serialize(jsonFileName);
 				std::ofstream(path) << j.dump(4);
 				std::ofstream(path2) << j.dump(4);
 				std::cout << "[SpriteState] Saved animation JSON to: "
@@ -542,7 +579,7 @@ namespace Runtime
 			ImGui::Text("File '%s' already exists.\nDo you want to overwrite it?", jsonFileName.c_str());
 			ImGui::Separator();
 			if (ImGui::Button("Yes, Overwrite", ImVec2(150, 0))) {
-				nlohmann::json j = anim->serialize();
+				nlohmann::json j = anim->serialize(jsonFileName);
 				std::ofstream(path) << j.dump(4);
 				std::ofstream(path2) << j.dump(4);
 				std::cout << "[SpriteState] Overwrote: "
@@ -555,6 +592,17 @@ namespace Runtime
 			}
 			ImGui::EndPopup();
 		}
+		ImGui::SameLine();
+
+		if (ImGui::Button("Reset JSON")) {
+			anim->clearAll();
+			jsonFileName = "";
+			SpriteRendererComponent* spriteImageRenderer = m_sprite_obj->getComponent<SpriteRendererComponent>();
+			if (spriteImageRenderer) {
+				spriteImageRenderer->resetAll();
+			}
+		}
+
 		ImGui::SameLine();
 		if (ImGui::Button("Reload JSON")) {
 			std::string folder = "assets/animations/";

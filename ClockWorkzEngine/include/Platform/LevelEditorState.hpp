@@ -6,7 +6,7 @@
 \brief          Game state for the level editor, integrating it into the
                 game's state machine. Compatible with existing GameState interface.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 

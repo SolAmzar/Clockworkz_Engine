@@ -32,16 +32,19 @@ namespace Gameplay {
 
         // --- JSON (load/save) ---
         void loadFromJson(const nlohmann::json& j);
-        nlohmann::json serialize() const;
+        nlohmann::json serialize(std::string);
+        std::string getFilename() const { return m_fileName; }
 
         // --- Animation Clip Management ---
         bool hasClip(const std::string& name) const;
         void addClip(const AnimationClip& clip);
+        void clearAll();
         AnimationClip* getClip(const std::string& name);
         AnimationClip& createClip(const std::string& name, bool loop = true);
 
         const std::unordered_map<std::string, AnimationClip>& clips() const { return m_clips; }
         std::unordered_map<std::string, AnimationClip>& clips() { return m_clips; }
+        
 
         // Add a single frame to a specific clip (if exists)
         bool addFrameToClip(const std::string& clipName, const glm::vec4& uv, float duration);
@@ -54,6 +57,7 @@ namespace Gameplay {
     private:
         std::unordered_map<std::string, AnimationClip> m_clips;
         std::string m_currentClip;
+        std::string m_fileName;
         float m_timer = 0.f;
         size_t m_frameIndex = 0;
         bool m_playing = false;

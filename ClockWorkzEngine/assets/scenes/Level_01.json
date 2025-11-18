@@ -6,118 +6,129 @@
       "active": true,
       "prefab": "Player",
 
-      "components": {
-        "collider": {
-          "type": "AABB",
-          "width": 100.0,
-          "height": 100.0,
-          "isSolid": true,
-          "layer": 4,
-          "collisionMask": 7,
-          "collisionCategory": 2,
-          "blocksLight": false,
-          "isHazard": false,
-          "moveSpeed": 100.0
-        },
-        "transform": {
-          "position": {
-            "x": -100,
-            "y": -100
-          },
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        "spriteRenderer": {
-          "textureId": "player_texture"
+        "components": {
+            "collider": {
+                "type": "AABB",
+                "width": 100.0,
+                "height": 100.0,
+                "isSolid": true,
+                "layer": 4,
+                "collisionMask": 7,
+                "collisionCategory": 2,
+                "blocksLight": false,
+                "isHazard": false,
+                "moveSpeed": 100.0
+            },
+            "transform": {
+                "position": {
+                    "x": -100,
+                    "y": -100
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1
+                }
+            },
+            "spriteRenderer": {
+                "textureId": "player_texture"
+            },
+            "spriteAnimator": {
+                "filename": "player.json"
+            }
         }
-      }
     },
     {
       "name": "Enemy1",
       "active": true,
       "prefab": "Enemy",
-      "components": {
-        "collider": {
-          "width": 100.0,
-          "height": 100.0,
-          "isSolid": true,
-          "layer": 4,
-          "collisionMask": 7,
-          "collisionCategory": 4,
-          "blocksLight": true,
-          "isHazard": false
-        },
-        "transform": {
-          "position": {
-            "x": 300,
-            "y": -100
-          },
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        "spriteRenderer": {
-          "textureId": "enemy_texture"
-        },
-        "patrol": {
-          "a": {
-            "x": -600,
-            "y": 400
-          },
-          "b": {
-            "x": -200,
-            "y": 300
-          },
-          "speed": 20.0
+        "components": {
+            "collider": {
+                "width": 100.0,
+                "height": 100.0,
+                "isSolid": true,
+                "layer": 4,
+                "collisionMask": 7,
+                "collisionCategory": 4,
+                "blocksLight": true,
+                "isHazard": false
+            },
+            "transform": {
+                "position": {
+                    "x": 300,
+                    "y": -100
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1
+                }
+            },
+            "spriteRenderer": {
+                "textureId": "enemy_texture"
+            },
+
+            "spriteAnimator": {
+                "filename": "enemy.json"
+            },
+            "patrol": {
+                "a": {
+                    "x": -600,
+                    "y": 400
+                },
+                "b": {
+                    "x": -200,
+                    "y": 300
+                },
+                "speed": 20.0
+            }
         }
-      }
     },
     {
       "name": "Enemy2",
       "active": true,
       "prefab": "Enemy",
-      "components": {
-        "collider": {
-          "width": 100.0,
-          "height": 100.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionCategory": 4,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false
-        },
-        "transform": {
-          "position": {
-            "x": 200,
-            "y": 200
-          },
-          "scale": {
-            "x": 1,
-            "y": 1
-          }
-        },
-        "health": {
-          "hp": 5
-        },
-        "spriteRenderer": {
-          "textureId": "enemy_texture"
-        },
-        "patrol": {
-          "a": {
-            "x": 200,
-            "y": 300
-          },
-          "b": {
-            "x": 700,
-            "y": 600
-          },
-          "speed": 50.0
+        "components": {
+            "collider": {
+                "width": 100.0,
+                "height": 100.0,
+                "isSolid": true,
+                "layer": 2,
+                "collisionCategory": 4,
+                "collisionMask": 7,
+                "blocksLight": true,
+                "isHazard": false
+            },
+            "transform": {
+                "position": {
+                    "x": 200,
+                    "y": 200
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1
+                }
+            },
+            "health": {
+                "hp": 5
+            },
+            "spriteRenderer": {
+                "textureId": "enemy_texture"
+            },
+
+            "spriteAnimator": {
+                "filename": "enemy.json"
+            },
+            "patrol": {
+                "a": {
+                    "x": 200,
+                    "y": 300
+                },
+                "b": {
+                    "x": 700,
+                    "y": 600
+                },
+                "speed": 50.0
+            }
         }
-      }
     },
     {
       "name": "WallLeft",

@@ -11,7 +11,7 @@
                 - Supports multiple operation types (move, rotate, scale, delete)
                 - Memory efficient
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
