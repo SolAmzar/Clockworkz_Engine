@@ -319,7 +319,7 @@ namespace Core
 					/*std::cout << "Core Render End " << std::endl;*/
 					m_renderer->endFrame();
 				}
-	/*			m_imgui->endFrame();
+				/*m_imgui->endFrame();
 				m_renderer->endFrame();*/
 				
 

@@ -38,6 +38,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <Core/Logger.hpp>
 #include <Assets/ResourceManager.hpp>
 #include "Platform/UndoSystem.hpp"
+#include "IMGUI/imgui.h"
+#include "Graphics/FrameBuffer.hpp"
 
 struct GLFWwindow;
 
@@ -383,6 +385,9 @@ namespace Platform {
         float m_gridSize;           // Size of each grid cell (e.g., 32.0f)
         bool m_enableGridSnap;      // Enable/disable grid snapping
         bool m_showGrid;            // Show/hide grid visualization
+
+        Graphics::FrameBuffer m_sceneFramebuffer;  // Renders game to texture
+        ImVec2 m_sceneViewportSize;
     };
 
 } // namespace Platform
