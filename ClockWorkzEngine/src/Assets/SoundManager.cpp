@@ -4,7 +4,7 @@
 \project        Lights Out
 \author(s)      [Amzar], 100%
 \brief          Implementation of Sound Manager for data-driven sound loading and management.
-				Does not manage playback, only loading and unloading sound assets.
+                Does not manage playback, only loading and unloading sound assets.
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
@@ -92,9 +92,16 @@ namespace Assets {
         bool ok = true;
         for (const auto& cfg : configs) {
             std::cout << "[SoundManager]Loading Soundfile: " << cfg.name
-                      << "from path" << cfg.path;
+                      << " from path" << cfg.path << std::endl;
             auto clip = LoadSound(cfg.name, cfg.path, cfg.loop, cfg.stream, cfg.is3D);
-            if (!clip) ok = false;
+            if (!clip) {
+                ok = false;
+                std::cerr << "[SoundManager] Failed to load: " << cfg.name << std::endl;
+            } else
+            {
+                std::cout << "[TextureManager] Successfully loaded: " << cfg.name
+                    << " ( Loop: " << cfg.loop << ", Stream: " << cfg.stream << " Is3D: " << cfg.is3D << ")" << std::endl;
+            }
         }
         return ok;
     }

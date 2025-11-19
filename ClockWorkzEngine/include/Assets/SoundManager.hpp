@@ -1,3 +1,15 @@
+﻿/******************************************************************************/
+/*!
+\file           SoundManager.hpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Declaration of Sound Manager for data-driven sound loading and management.
+                Does not manage playback, only loading and unloading sound assets.
+
+All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <string>
 #include <memory>
