@@ -6,7 +6,6 @@
 namespace Audio {
 	class  SurfaceAudioSystem {	
 	public:
-		void init(Audio::AudioManager& audio);
 		void playFootstep(Audio::AudioManager& audio, Gameplay::SurfaceType surface, float speed);
 
 	private:

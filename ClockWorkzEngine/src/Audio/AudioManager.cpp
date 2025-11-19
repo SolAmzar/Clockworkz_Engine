@@ -18,12 +18,14 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 
 #include "Audio/AudioManager.hpp"
+#include "Assets/SoundManager.hpp"
 #include <fmod.hpp>
 #include <fmod_errors.h>
 #include <cassert>
 #include <iostream>
 
 using namespace Audio;
+
 
 static bool FMOD_CHECK(FMOD_RESULT r, const char* what) {
     if (r != FMOD_OK) {
@@ -90,11 +92,11 @@ bool AudioManager::createSound(const SoundDesc& d, FMOD::Sound** out) {
     return FMOD_CHECK(r, ("createSound " + d.path).c_str());
 }
 
-bool AudioManager::load(const std::string& id, const SoundDesc& desc) {
-    if (m_sounds.find(id) != m_sounds.end()) return true;
+bool AudioManager::load(const SoundDesc& desc) {
+    if (m_sounds.find(desc.name) != m_sounds.end()) return true;
     FMOD::Sound* s = nullptr;
     if (!createSound(desc, &s)) return false;
-    m_sounds[id] = s;
+    m_sounds[desc.name] = s;
     return true;
 }
 
@@ -122,33 +124,44 @@ FMOD::ChannelGroup* AudioManager::groupHandle(Group g) const {
 }
 
 int AudioManager::play(const std::string& id, Group g, float volume, bool paused) {
-    auto it = m_sounds.find(id);
+    if (!m_system) return 0;
 
-    if (it == m_sounds.end()) {
-        std::cerr << "[Audio] Sound not loaded: " << id << "\n";
+    auto clip = Assets::SoundManager::Get(id);
+    if (!clip) {
+        std::cerr << "[Audio] Sound not loaded via SoundManager: " << id << "\n";
         return 0;
     }
 
-    if (it->second == nullptr) {
-        std::cerr << "[Audio] Sound* is null: " << id << "\n";
+    FMOD::Sound* sound = clip->GetRaw();
+    if (!sound) {
+        std::cerr << "[Audio] AudioClip has null sound: " << id << "\n";
         return 0;
     }
-
 
     FMOD::Channel* ch = nullptr;
-    if (!FMOD_CHECK(m_system->playSound(it->second, groupHandle(g), true, &ch), "playSound")) return 0;
+    if (!FMOD_CHECK(m_system->playSound(sound, groupHandle(g), true, &ch), "playSound"))
+        return 0;
+
     if (ch) {
         ch->setVolume(volume);
         ch->setChannelGroup(groupHandle(g));
         ch->setPaused(paused);
+
+        int handle = m_nextChannelId++;
+        m_channels[handle] = ChannelHandle{ ch, id, g };
+        if (!isChannelAlive(ch)) {
+            m_channels.erase(handle);
+        }
+        return handle;
     }
-    int handle = m_nextChannelId++;
-    m_channels[handle] = { ch };
-    return handle;
+
+    return 0;
 }
 
 void AudioManager::playOneShot(const std::string& id, Group g, float volume) {
-    (void)play(id, g, volume, false);
+    int h = play(id, g, volume, false);
+    // nothing special: one-shot just doesn't track or pause later
+    (void)h;
 }
 
 void AudioManager::stop(int h) {
@@ -219,3 +232,29 @@ void AudioManager::setListener(const vec3& pos, const vec3& vel, const vec3& for
     FMOD_VECTOR u{ up.x, up.y, up.z };
     m_system->set3DListenerAttributes(0, &p, &v, &f, &u);
 }
+
+//int AudioManager::play(const std::string& id, Group g, float volume, bool paused) {
+//    auto it = m_sounds.find(id);
+//
+//    if (it == m_sounds.end()) {
+//        std::cerr << "[Audio] Sound not loaded: " << id << "\n";
+//        return 0;
+//    }
+//
+//    if (it->second == nullptr) {
+//        std::cerr << "[Audio] Sound* is null: " << id << "\n";
+//        return 0;
+//    }
+//
+//
+//    FMOD::Channel* ch = nullptr;
+//    if (!FMOD_CHECK(m_system->playSound(it->second, groupHandle(g), true, &ch), "playSound")) return 0;
+//    if (ch) {
+//        ch->setVolume(volume);
+//        ch->setChannelGroup(groupHandle(g));
+//        ch->setPaused(paused);
+//    }
+//    int handle = m_nextChannelId++;
+//    m_channels[handle] = { ch };
+//    return handle;
+//}

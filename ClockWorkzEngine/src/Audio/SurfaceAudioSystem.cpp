@@ -3,12 +3,6 @@
 
 
 namespace Audio {
-    void SurfaceAudioSystem::init(Audio::AudioManager& audio) {
-        // preload all footstep clips (shared across scenes)
-        audio.load("fs_tiles_01", { "assets/audio/fs/Tiles/tiles_1.ogg", false, false, false });
-        audio.load("fs_tiles_02", { "assets/audio/fs/Tiles/tiles_2.ogg", false, false, false });
-    }
-
     void SurfaceAudioSystem::playFootstep(Audio::AudioManager& audio, Gameplay::SurfaceType surface, float speed) {
         // choose id list from surface type
         const char* id = "fs_default";

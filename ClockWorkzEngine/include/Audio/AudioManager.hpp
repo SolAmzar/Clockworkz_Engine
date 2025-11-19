@@ -23,6 +23,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <memory>
 #include "Math/Vec3.hpp"
 
+
 // Forward declare FMOD to avoid heavy headers leaking
 namespace FMOD { class System; class Sound; class Channel; class ChannelGroup; }
 
@@ -31,7 +32,8 @@ namespace Audio {
     enum class Group { Master, BGM, SFX };
 
     struct SoundDesc {
-        std::string path;
+		std::string name; // unique id
+        std::string path = "";
         bool loop = false;
         bool stream = false; // stream large bgm from disk
         bool is3D = false;
@@ -47,7 +49,7 @@ namespace Audio {
         void update();
 
         // Resources
-        bool load(const std::string& id, const SoundDesc& desc);
+        bool load(const SoundDesc& desc);
         void unload(const std::string& id);
         void unloadAll();
 
@@ -74,6 +76,8 @@ namespace Audio {
         void setListener(const vec3& pos, const vec3& vel, const vec3& forward, const vec3& up);
 
         bool isReady() const noexcept { return m_system != nullptr; }
+
+        FMOD::System* getSystem() const { return m_system; }
 
     private:
         struct ChannelHandle { 

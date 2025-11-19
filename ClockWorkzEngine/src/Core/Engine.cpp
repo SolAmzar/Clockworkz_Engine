@@ -41,6 +41,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Assets/TextureManager.hpp"
 #include "Gameplay/Prefab.hpp"
 #include "Platform/LevelEditor.hpp"
+#include "Assets/SoundManager.hpp"
 
 using namespace Core;
 
@@ -102,12 +103,13 @@ namespace Core
 
 		m_audio = std::make_unique<Audio::AudioManager>();
 		m_sfAudio = std::make_unique<Audio::SurfaceAudioSystem>();
+		
 
 		if (!m_audio->init())
 		{
 			return false;
 		}
-		m_sfAudio->init(*m_audio);
+		// m_sfAudio->init(*m_audio);
 
 		if (!m_window->create(*m_config))
 			return false;
@@ -115,8 +117,15 @@ namespace Core
 		if (!m_gfx->init(*m_window))
 			return false;
 
+		Assets::SoundManager::Init(*m_audio);
+
 		if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json")) {
 			m_logger->fatal("Failed to load textures from config");
+			return false;
+		}
+
+		if (!Assets::SoundManager::LoadFromConfig("assets/audio/sounds.json")) {
+			m_logger->fatal("Failed to load sounds from config");
 			return false;
 		}
 
@@ -142,13 +151,14 @@ namespace Core
 
 		m_gsm = std::make_unique<Runtime::GameStateManager>();
 
-
-		m_audio->load("ui_move", { "assets/audio/ui_move.wav", false, false, false });
-		m_audio->load("ui_select", { "assets/audio/ui_select.wav", false, false, false });
+		
+        /*
+		m_audio->load({"ui_move", "assets/audio/ui_move.wav", false, false, false });
+		m_audio->load({"ui_select", "assets/audio/ui_select.wav", false, false, false });
 
 		// BGM Test but it's just random royalty-free music atm
-		m_audio->load("menu_bgm", { "assets/audio/menu_bgm.mp3", true, true, false });
-
+		m_audio->load({"menu_bgm", "assets/audio/menu_bgm.mp3", true, true, false});
+		*/
 		m_running = true;
 		return true;
 	}
