@@ -1,3 +1,17 @@
+/******************************************************************************/
+/*!
+\file			SurfaceAudioSystem.hpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Declaration of SurfaceAudioSystem for playing footstep sounds
+				based on surface type and movement speed.
+				Responsibilities include:
+				- playFootstep(): Play appropriate footstep sound for given surface and speed
+				- Managing timing between footsteps to avoid overlap
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include "Gameplay/Surface.hpp"
 #include "Audio/AudioManager.hpp"

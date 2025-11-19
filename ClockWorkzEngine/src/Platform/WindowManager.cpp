@@ -52,6 +52,17 @@ bool WindowManager::create(const Core::Config& cfg) {
 
 	m_width = cfg.width; m_height = cfg.height;
 	m_window = glfwCreateWindow(m_width, m_height, cfg.title.c_str(), nullptr, nullptr);
+
+	glfwSetWindowUserPointer(m_window, this);
+	glfwSetDropCallback(m_window, [](GLFWwindow* w, int count, const char** paths) {
+		auto* self = static_cast<WindowManager*>(glfwGetWindowUserPointer(w));
+		if (!self) return;
+		self->m_droppedFiles.clear();
+		for (int i = 0; i < count; ++i) {
+			self->m_droppedFiles.emplace_back(paths[i]);
+		}
+		});
+
 	if (!m_window) return false;
 	glfwMakeContextCurrent(m_window);
 	if (glewInit() != GLEW_OK) {

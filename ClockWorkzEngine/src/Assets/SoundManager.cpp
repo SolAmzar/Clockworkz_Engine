@@ -1,3 +1,15 @@
+﻿/******************************************************************************/
+/*!
+\file           SoundManager.cpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Implementation of Sound Manager for data-driven sound loading and management.
+				Does not manage playback, only loading and unloading sound assets.
+
+All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Assets/SoundManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include <core/json.hpp> 
@@ -28,7 +40,7 @@ namespace Assets {
         desc.is3D = is3D;
 
         if (!s_audio) {
-            // Audio system not initialised � you might want an assert or log here
+            // Audio system not initialised – you might want an assert or log here
             std::cout << "SoundManager::Init must be called before LoadSound\n";
             return nullptr;
         }
@@ -79,6 +91,8 @@ namespace Assets {
         auto configs = ParseConfig(configPath);
         bool ok = true;
         for (const auto& cfg : configs) {
+            std::cout << "[SoundManager]Loading Soundfile: " << cfg.name
+                      << "from path" << cfg.path;
             auto clip = LoadSound(cfg.name, cfg.path, cfg.loop, cfg.stream, cfg.is3D);
             if (!clip) ok = false;
         }

@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file			AudioClip.hpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Definition of AudioClip class that wraps FMOD::Sound for sound resource management.
+                Responsibilities include:
+                - Load(): Load sound data from file using AudioManager and SoundDesc
+                - Unload(): Release FMOD resources
+                - Move semantics for safe resource transfer
+				- Provides low-level access to FMOD::Sound if needed
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 // AudioClip.hpp
 #pragma once
 #include <string>
