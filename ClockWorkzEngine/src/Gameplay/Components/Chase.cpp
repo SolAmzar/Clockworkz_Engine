@@ -19,6 +19,7 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Gameplay/Components/Chase.hpp"
 #include "Gameplay/GameObject.hpp"
 #include <iostream> 
+#include <Gameplay/Components/SpriteAnimator.hpp>
 
 namespace Gameplay {
 
@@ -80,15 +81,28 @@ namespace Gameplay {
         vec2 dir = (1.0f / dist) * d;
         dir.x = cleanFloat(dir.x);
         dir.y = cleanFloat(dir.y);
-        // 3) Optional “only chase if near enough”
+        
+        // 3) Optional ï¿½only chase if near enoughï¿½
         if (m_engageRadius > 0.0f && dist > m_engageRadius) {
             enemy.setChase(false);
-            if (m_enemy.hasVelocity()) m_enemy.velocity() = { 0.f, 0.f }; 
-            return;
+            if (m_enemy.hasVelocity())
+            {
+                m_enemy.velocity() = { 0.f, 0.f };
+            }
         }
         else {
             enemy.setChase(true);
         }
+
+        SpriteAnimatorComponent* spriteAnimator = enemy.getComponent<SpriteAnimatorComponent>();
+        if (enemy.checkChase() && spriteAnimator) {
+            spriteAnimator->play("walk");
+        }
+
+        if (!enemy.checkChase()) {
+            return;
+        }
+
         // 4) Respect walls: slide along the last collision normal your Physics2D stored
         // Physics step writes setLastHitNormal(...) when it resolves a solid pair. :contentReference[oaicite:3]{index=3}
         vec2 desiredVel = dir * m_speed;
@@ -98,7 +112,7 @@ namespace Gameplay {
         if (n.x != 0.f || n.y != 0.f) {
             desiredVel = slideAgainst(desiredVel, n);
         }
-        // 5) Apply movement—use the pathway your engine already uses:
+        // 5) Apply movementï¿½use the pathway your engine already uses:
         // (A) If you have a velocity field integrated elsewhere each frame:
         if (m_enemy.hasVelocity()) {
             m_enemy.velocity() = desiredVel;

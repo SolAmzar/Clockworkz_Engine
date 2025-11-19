@@ -80,7 +80,9 @@ namespace Gameplay {
 
     json GameObjectSerializer::serializeSpriteAnimator(const GameObject& obj) {
         if (auto* anim = obj.getComponent<SpriteAnimatorComponent>()) {
-            return anim->serialize();
+            json j;
+            j["filename"] = anim->getFilename();
+            return j;
         }
         return json();
     }
@@ -193,12 +195,20 @@ namespace Gameplay {
         obj.addComponent<PatrolComponent>(a, b, speed);
     }
 
-    void GameObjectSerializer::deserializeSpriteAnimator(GameObject& obj, const json& j) {
-        if (!j.is_object()) return;
-        auto* comp = obj.addComponent<SpriteAnimatorComponent>();
-        comp->loadFromJson(j);
-        if (auto* sr = obj.getComponent<SpriteRendererComponent>())
-            comp->setSpriteRenderer(sr);
+    void GameObjectSerializer::deserializeSpriteAnimator(GameObject& obj, const std::string& jsonFileName) {
+        std::string folder = "assets/animations/";
+        std::string path = folder + std::string(jsonFileName);
+        std::ifstream f(path);
+        if (f.is_open()) {
+            nlohmann::json j;
+            f >> j;
+            auto* comp = obj.addComponent<SpriteAnimatorComponent>();
+            comp->loadFromJson(j);
+            std::cout << "[SpriteState] Reloaded animation from: "
+                << std::filesystem::absolute(path) << std::endl;
+            if (auto* sr = obj.getComponent<SpriteRendererComponent>())
+                comp->setSpriteRenderer(sr);
+        }
     }
 
     // ========================================================================
@@ -270,6 +280,7 @@ namespace Gameplay {
             // Extract some basic overrides early (position, scale, texture, hp, dmg)
             vec2 pos{ 0.f }, scale{ 100.f, 100.f }, patrola{ 0.f, 0.f }, patrolb{ 0.f,0.f };
             std::string tex = "";
+            std::string spriteAnimatorFileName;
             int hp = 3, dmg = 1;
 			float speed = 100.f;
 
@@ -286,6 +297,10 @@ namespace Gameplay {
 
                 if (comps.contains("spriteRenderer"))
                     tex = comps["spriteRenderer"].value("textureId", "");
+
+                if (comps.contains("spriteAnimator")) {
+                    spriteAnimatorFileName = comps["spriteAnimator"].value("filename", "");
+                }
 
                 if (comps.contains("health"))
                     hp = comps["health"].value("hp", 3);
@@ -345,7 +360,7 @@ namespace Gameplay {
                 if (comps.contains("patrol"))
                     deserializePatrol(*obj, comps["patrol"]);
                 if (comps.contains("spriteAnimator")) {
-                    deserializeSpriteAnimator(*obj, comps["spriteAnimator"]);
+                    deserializeSpriteAnimator(*obj, comps["spriteAnimator"].value("filename", ""));
                 }
             }
 
@@ -383,7 +398,8 @@ namespace Gameplay {
             if (comps.contains("spriteRenderer"))
                 deserializeSpriteRenderer(*obj, comps["spriteRenderer"]);
             if (comps.contains("spriteAnimator")) {
-                deserializeSpriteAnimator(*obj, comps["spriteAnimator"]);
+                std::string spriteAnimatorFilePath = comps["spriteAnimator"].value("filename", "");
+                deserializeSpriteAnimator(*obj, spriteAnimatorFilePath);
             }
         }
 

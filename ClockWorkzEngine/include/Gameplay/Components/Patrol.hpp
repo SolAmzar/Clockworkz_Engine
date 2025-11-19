@@ -19,7 +19,7 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Gameplay/GameObject.hpp"
 #include "Math/Vec2.hpp"
 #include "Math/config.hpp"
-
+#include <Gameplay/Components/SpriteAnimator.hpp>
 namespace Gameplay {
     class PatrolComponent : public Component {
     public:
@@ -52,6 +52,10 @@ namespace Gameplay {
         void onBeforePhysics(GameObject& owner, double dt) override {
             m_ranThisFrame = true;                 // mark so onUpdate won't re-run
             applyDesiredVelocity(owner, dt);
+            SpriteAnimatorComponent* spriteAnimator = owner.getComponent<SpriteAnimatorComponent>();
+            if (spriteAnimator) {
+                spriteAnimator->play("walk");
+            }
         }
 
         // Post-physics: fallback if your engine doesn't have the pre-physics hook

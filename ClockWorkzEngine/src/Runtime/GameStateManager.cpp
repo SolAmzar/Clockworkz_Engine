@@ -108,10 +108,14 @@ void GameStateManager::update(double dt)
 		processPendingOps();
 }
 
-void GameStateManager::render(Core::Time *timer)
+void GameStateManager::render(Core::Time* timer)
 {
 	if (!m_states.empty())
 	{
+		// Start ImGui FIRST
+		Core::Engine& engine = Core::Engine::Get();
+		Graphics::ImGuiManager& imgui = engine.imguiManager();
+		imgui.beginFrame();
 
 		{
 			PROFILE_SCOPE("Render Game State");
@@ -120,11 +124,9 @@ void GameStateManager::render(Core::Time *timer)
 
 		{
 			PROFILE_SCOPE("Render IMGUI");
-			Core::Engine &engine = Core::Engine::Get();
-			Graphics::ImGuiManager &imgui = engine.imguiManager();
-			imgui.beginFrame();
 			m_states.top()->renderImGui(timer);
-			imgui.endFrame();
 		}
+
+		imgui.endFrame();
 	}
 }

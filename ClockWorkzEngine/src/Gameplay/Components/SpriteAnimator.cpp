@@ -39,6 +39,7 @@ void SpriteAnimatorComponent::onUpdate(GameObject& owner, double dt) {
 }
 
 void SpriteAnimatorComponent::play(const std::string& name, bool forceRestart) {
+    // if same animation, no need to replay same animation.
     if (!forceRestart && m_currentClip == name && m_playing) return;
 
     auto it = m_clips.find(name);
@@ -57,9 +58,10 @@ void SpriteAnimatorComponent::play(const std::string& name, bool forceRestart) {
 }
 
 void SpriteAnimatorComponent::loadFromJson(const nlohmann::json& j) {
-    m_clips.clear();
+    clearAll();
+    m_currentClip = "";
     if (!j.contains("animations")) return;
-
+    m_fileName = j["filename"];
     for (const auto& anim : j["animations"]) {
         AnimationClip clip;
         clip.name = anim["name"].get<std::string>();
@@ -75,11 +77,13 @@ void SpriteAnimatorComponent::loadFromJson(const nlohmann::json& j) {
     }
 }
 
-nlohmann::json SpriteAnimatorComponent::serialize() const {
+nlohmann::json SpriteAnimatorComponent::serialize(std::string filename) {
     nlohmann::json j;
+    j["filename"] = m_fileName;
     for (const auto& [name, clip] : m_clips) {
         nlohmann::json clipJ;
         clipJ["name"] = name;
+        
         clipJ["loop"] = clip.loop;
         for (const auto& f : clip.frames) {
             nlohmann::json frame;
@@ -92,6 +96,7 @@ nlohmann::json SpriteAnimatorComponent::serialize() const {
         }
         j["animations"].push_back(clipJ);
     }
+    m_fileName = filename;
     return j;
 }
 
@@ -101,6 +106,14 @@ bool SpriteAnimatorComponent::hasClip(const std::string& name) const {
 
 void SpriteAnimatorComponent::addClip(const AnimationClip& clip) {
     m_clips[clip.name] = clip;
+}
+
+void SpriteAnimatorComponent::clearAll() {
+    m_clips.clear();
+    m_currentClip.clear();
+    m_playing = false;
+    m_frameIndex = 0;
+    m_timer = 0.0f;
 }
 
 AnimationClip* SpriteAnimatorComponent::getClip(const std::string& name) {

@@ -164,6 +164,14 @@ namespace Platform {
         // Register built-in prefabs
         registerBuiltInPrefabs();
 
+        // Create framebuffer for scene view
+        if (!m_sceneFramebuffer.create(1280, 720)) {
+            m_logger->error("Failed to create scene framebuffer");
+            return false;
+        }
+        m_sceneViewportSize = ImVec2(1280, 720);
+
+
         return true;
     }
 
@@ -183,6 +191,7 @@ namespace Platform {
             //}
         }
         m_currentScene.reset();
+        m_sceneFramebuffer.destroy();
     }
 
     /******************************************************************************/
@@ -1177,25 +1186,34 @@ void LevelEditor::updateGizmoScale() {
     /******************************************************************************/
 
     void LevelEditor::render() {
-        if (!m_renderer || !m_currentScene) return;
+        if (!m_currentScene) {
+            std::cout << "ERROR: No scene to render!\n";
+            return;
+        }
 
-        // Get editor camera's view-projection matrix
+        std::cout << "Rendering to framebuffer...\n";
+        m_sceneFramebuffer.bind();
+
+        // Clear the framebuffer (this is your blue background!)
+        glClearColor(0.05f, 0.05f, 0.15f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Get camera's view-projection matrix
         glm::mat4 viewProj = m_editorCamera.viewProj();
 
-        // Start the frame
-        m_renderer->beginFrame();
+        // Render sprites/objects using your Scene's render method
         m_renderer->beginScenePass(viewProj);
-
-        // Render all scene objects via batch rendering
-        m_currentScene->render(*m_renderer);
-
+        m_currentScene->render(*m_renderer); 
         m_renderer->endScenePass();
 
+        // Render debug/editor elements (only in Edit mode)
         if (m_mode == EditorMode::Edit) {
             m_renderer->beginDebugPass(viewProj);
 
             // Render grid
-            renderGrid();
+            if (m_showGrid) {
+                renderGrid();
+            }
 
             // Render gizmo if object is selected
             if (m_selectedObject && m_showGizmos) {
@@ -1205,8 +1223,11 @@ void LevelEditor::updateGizmoScale() {
             m_renderer->endDebugPass();
         }
 
-        // End the frame
-        m_renderer->endFrame();
+        m_sceneFramebuffer.unbind();
+            std::cout << "Framebuffer render complete\n";
+
+        glViewport(0, 0, static_cast<int>(m_windowWidth),
+            static_cast<int>(m_windowHeight));
     }
 
 
@@ -1821,7 +1842,7 @@ void LevelEditor::updateGizmoScale() {
     }
 
     void LevelEditor::renderToolbar() {
-        ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Toolbar");
 
         if (m_mode == EditorMode::Edit) {
             if (ImGui::Button("Play")) {
@@ -2251,33 +2272,108 @@ void LevelEditor::updateGizmoScale() {
     }
 
     void LevelEditor::renderSceneView() {
+        // Remove padding for clean scene view
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Scene View");
+        ImGui::PopStyleVar();
 
-        // Display scene statistics
-        ImGui::Text("Camera Position: (%.1f, %.1f)",
+        // Get available content region (space inside window)
+        ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+        // Resize framebuffer if window size changed
+        if (viewportPanelSize.x != m_sceneViewportSize.x ||
+            viewportPanelSize.y != m_sceneViewportSize.y) {
+
+            // Only resize if size is valid
+            if (viewportPanelSize.x > 0 && viewportPanelSize.y > 0) {
+                m_sceneFramebuffer.resize(
+                    static_cast<int>(viewportPanelSize.x),
+                    static_cast<int>(viewportPanelSize.y)
+                );
+                m_sceneViewportSize = viewportPanelSize;
+
+                // Update window dimensions for mouse calculations
+                m_windowWidth = viewportPanelSize.x;
+                m_windowHeight = viewportPanelSize.y;
+            }
+        }
+
+        // ⭐ THIS IS THE CRITICAL PART - Display framebuffer as image
+        GLuint texID = m_sceneFramebuffer.getTextureID();
+        if (texID != 0) {
+            ImGui::Image(
+                (void*)(intptr_t)texID,      // Framebuffer texture
+                viewportPanelSize,            // Size to display
+                ImVec2(0, 1),                 // UV top-left (flipped Y)
+                ImVec2(1, 0)                  // UV bottom-right
+            );
+        }
+        else {
+            ImGui::Text("ERROR: Framebuffer texture is invalid!");
+        }
+
+        // Handle drag-drop of prefabs into scene view
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
+                const char* prefabName = (const char*)payload->Data;
+
+                // Get mouse position and convert to world
+                ImVec2 mouseImGui = ImGui::GetMousePos();
+                ImVec2 scenePos = ImGui::GetWindowPos();
+                ImVec2 relativePos = ImVec2(
+                    mouseImGui.x - scenePos.x,
+                    mouseImGui.y - scenePos.y
+                );
+
+                vec2 mouseWorld = screenToWorld(vec2(relativePos.x, relativePos.y));
+                vec2 snappedWorld = snapToGrid(mouseWorld);
+                createObjectFromPrefab(prefabName, snappedWorld);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Optional: Display scene info overlay
+        ImGui::SetCursorPos(ImVec2(10, 30));
+        ImGui::BeginChild("SceneInfo", ImVec2(250, 80), false,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs);
+        ImGui::Text("Camera: (%.1f, %.1f)",
             m_editorCamera.position().x,
             m_editorCamera.position().y);
         ImGui::Text("Zoom: %.2f", m_editorCamera.zoom());
         ImGui::Text("Objects: %d", m_objectCount);
-
-        ImGui::Separator();
-
-        // Camera controls
-        if (ImGui::Button("Reset Camera")) {
-            resetCamera();
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Frame Selected")) {
-            if (m_selectedObject) {
-                glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
-                m_editorCamera.setPosition(selObjectPos);
-            }
-        }
+        ImGui::EndChild();
 
         ImGui::End();
     }
+
+    //void LevelEditor::renderSceneView() {
+    //    ImGui::Begin("Scene View");
+
+    //    // Display scene statistics
+    //    ImGui::Text("Camera Position: (%.1f, %.1f)",
+    //        m_editorCamera.position().x,
+    //        m_editorCamera.position().y);
+    //    ImGui::Text("Zoom: %.2f", m_editorCamera.zoom());
+    //    ImGui::Text("Objects: %d", m_objectCount);
+
+    //    ImGui::Separator();
+
+    //    // Camera controls
+    //    if (ImGui::Button("Reset Camera")) {
+    //        resetCamera();
+    //    }
+
+    //    ImGui::SameLine();
+
+    //    if (ImGui::Button("Frame Selected")) {
+    //        if (m_selectedObject) {
+    //            glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
+    //            m_editorCamera.setPosition(selObjectPos);
+    //        }
+    //    }
+
+    //    ImGui::End();
+    //}
 
     void LevelEditor::renderSceneViewDropZone() {
         ImVec2 scenePos = ImVec2(0, 0);
@@ -2902,4 +2998,27 @@ void LevelEditor::updateGizmoScale() {
         return vec2(snappedX, snappedY);
     }
 
+    //void LevelEditor::setupDefaultDockLayout() {
+    //    ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+
+    //    // Clear existing layout
+    //    ImGui::DockBuilderRemoveNode(dockspaceId);
+    //    ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+
+    //    // Split the dockspace
+    //    ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Up, 0.05f, nullptr, &dockspaceId);
+    //    ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, &dockspaceId);
+    //    ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Right, 0.25f, nullptr, &dockspaceId);
+    //    ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Down, 0.3f, nullptr, &dockspaceId);
+
+    //    // Dock windows to specific locations
+    //    ImGui::DockBuilderDockWindow("Toolbar", dockTop);
+    //    ImGui::DockBuilderDockWindow("Hierarchy", dockLeft);
+    //    ImGui::DockBuilderDockWindow("Prefab Palette", dockLeft);
+    //    ImGui::DockBuilderDockWindow("Properties", dockRight);
+    //    ImGui::DockBuilderDockWindow("Scene View", dockspaceId);  // Center
+    //    ImGui::DockBuilderDockWindow("Texture Assets Browser", dockBottom);
+
+    //    ImGui::DockBuilderFinish(dockspaceId);
+    //}
 } // namespace Editor

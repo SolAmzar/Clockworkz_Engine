@@ -41,7 +41,7 @@ namespace Gameplay {
     private:
         float m_speed{};
         float m_engageRadius{};  // 0 = always chase
-        float m_stopDist{ 25.0f }; // don’t jitter right on top of player
+        float m_stopDist{ 25.0f }; // donï¿½t jitter right on top of player
         GameObject& m_enemy;
         GameObject* m_player = nullptr;
     };

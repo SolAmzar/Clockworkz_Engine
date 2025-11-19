@@ -53,24 +53,13 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <Gameplay/Components/SpriteAnimator.hpp>
 
 using namespace Graphics;
 using namespace Assets;
 
 namespace Runtime
 {
-
-	std::unordered_map<std::string, std::vector<glm::vec4>> playerSprite;
-	const float changeFrameTime = 0.3f;
-	float frameTimer = 0.f;
-	size_t frameCount = 0;
-
-	void ResetFrame()
-	{
-		frameTimer = 0.f;
-		frameCount = 0;
-	}
-
 	static Gameplay::GameObject* findFirstPlayer(Runtime::Scene* scene) {
 		if (!scene) return nullptr;
 		for (auto& u : scene->objects()) {
@@ -103,60 +92,8 @@ namespace Runtime
 		// 1) Rebind player pointer to the NEW player object created by reload
 		m_player = findFirstPlayer(scene);
 
-		// 2) (Optional) reset your local animation state so UVs start clean
-		ResetFrame();
-
-		// 3) (Optional but recommended) if your light system caches occluders,
-		//    rebuild them here using the new scene objects.
-		//    (If your Renderer2D/RenderingManager doesn’t cache, you can skip.)
-		// Example:
-		// m_flashlight.clearOccluders();
-		// for (auto& u : scene->objects()) {
-		//     if (!u) continue;
-		//     if (u->isSolid() && u->blocksLight()) { m_flashlight.addOccluder(u.get()); }
-		// }
 	}
 
-	void PlayState::InitPlayerSpriteUVs()
-	{
-		const float frameW = 1.0f / 8.0f; // 0.125
-		const float frameH = 1.0f / 8.0f; // 0.125
-
-		for (int i = 1; i <= 8; ++i)
-		{
-			glm::vec4 uv = {frameW * 3.f, 1.0 - (i * frameH), frameW, frameH};
-			// for example group rows by animation name
-			playerSprite["walk"].push_back(uv);
-		}
-
-		for (int i = 1; i <= 4; ++i)
-		{
-			glm::vec4 uv = {frameW * 4.f, 1.0 - (i * frameH), frameW, frameH};
-			// for example group rows by animation name
-			playerSprite["idle"].push_back(uv);
-		}
-
-		for (int i = 1; i <= 6; ++i)
-		{
-			glm::vec4 uv = {frameW * 5.f, 1.0 - (i * frameH), frameW, frameH};
-			// for example group rows by animation name
-			playerSprite["run_torch"].push_back(uv);
-		}
-
-		for (int i = 1; i <= 8; ++i)
-		{
-			glm::vec4 uv = {frameW * 6.f, 1.0 - (i * frameH), frameW, frameH};
-			// for example group rows by animation name
-			playerSprite["walk_torch"].push_back(uv);
-		}
-
-		for (int i = 1; i <= 6; ++i)
-		{
-			glm::vec4 uv = {frameW * 7.f, 1.0 - (i * frameH), frameW, frameH};
-			// for example group rows by animation name
-			playerSprite["run"].push_back(uv);
-		}
-	}
 
 	PlayState::PlayState(std::string initialSceneId, Platform::InputManager &input, GameStateManager &gsm)
 		: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm), m_player(nullptr)
@@ -226,7 +163,7 @@ namespace Runtime
 		// Syafiq -
 		Core::Engine &engine = Core::Engine::Get();
 		m_renderer = &engine.rendering();
-		InitPlayerSpriteUVs();
+
 		auto textureShader = ResourceManager<Shader>::Load(
 				"texture",
 				"assets/shaders/texture.vert",
@@ -525,24 +462,17 @@ namespace Runtime
 					}
 
 					// --- Player Animation Control ---
-					Gameplay::SpriteRendererComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteRendererComponent>();
+					Gameplay::SpriteAnimatorComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
 					if (playerSpriteComp)
 					{
 						// Determine animation state
-						std::string animState = "idle";
-
+						std::string animState = m_flashlightOn ? "idle_torch" : "idle";
+						//std::string animState = m_flashlightOn ? "idle" : "idle";
 						bool isMoving = (obj->velocity().x != 0 || obj->velocity().y != 0);
 
 						if (isMoving)
 						{
-							if (m_flashlightOn)
-							{
-								animState = "walk_torch";
-							}
-							else
-							{
-								animState = "walk";
-							}
+							animState = m_flashlightOn ? "walk_torch" : "walk";
 
 							// You can decide if shift key means run
 							if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
@@ -551,22 +481,7 @@ namespace Runtime
 							}
 						}
 
-						// Update animation frame timer
-						frameTimer += static_cast<float>(dt);
-						if (frameTimer >= changeFrameTime)
-						{
-							frameTimer = 0.0f;
-							frameCount++;
-						}
-
-						// Get current animation frames safely
-						auto it = playerSprite.find(animState);
-						if (it != playerSprite.end() && !it->second.empty())
-						{
-							const auto &frames = it->second;
-							frameCount %= frames.size(); // wrap around
-							playerSpriteComp->setUV(frames[frameCount]);
-						}
+						playerSpriteComp->play(animState);
 					}
 				}
 
@@ -671,13 +586,20 @@ namespace Runtime
 		auto *physics = scene->getPhysics();
 		if (m_flashlightOn && physics && m_player && m_player->active())
 		{
-
+			glm::vec2 torchOffsetLocal(35.0f, -20.0f);
 			vec2 origin = m_player->transform().position;
 			float angle = m_player->transform().rotationRad;
+			glm::vec2 torchOffsetWorld(
+				torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+				torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
+			);
+			glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
+
 			std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+			vec2 originVec2 = { originGLM.x, originGLM.y };
 			std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-					origin, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-			glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
+				originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+			//glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
 			std::vector<glm::vec2> lightPolyGLM;
 			for (const auto &point : lightPoly)
 			{

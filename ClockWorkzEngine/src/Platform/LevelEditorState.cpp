@@ -112,8 +112,15 @@ namespace Runtime {
     void EditorState::renderImGui(Core::Time* timer) {
         if (!m_editor || !m_initialized) return;
 
-        // Render editor UI
+        Core::Engine& engine = Core::Engine::Get();
+        Graphics::ImGuiManager& imgui = engine.imguiManager();
+
+        imgui.beginDockspace(); 
+
         m_editor->renderUI();
+
+        imgui.endDockspace();
+
         (void)timer;
     }
 

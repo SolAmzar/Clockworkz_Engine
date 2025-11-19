@@ -27,6 +27,9 @@ namespace Graphics{
 		void shutdown();
 		void beginFrame();
 		void endFrame();
+
+		void beginDockspace();
+		void endDockspace();
 	private:
 		bool m_initialised = false;
 	};

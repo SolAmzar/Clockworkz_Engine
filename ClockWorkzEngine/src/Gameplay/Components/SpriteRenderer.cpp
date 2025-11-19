@@ -52,4 +52,10 @@ namespace Gameplay {
             m_tint);
     }
 
+    void SpriteRendererComponent::resetAll() {
+        m_tint = glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
+        m_uv = glm::vec4 { 0.0f, 0.0f, 1.0f, 1.0f }; // (x,y,w,h); -1 means full texture
+    }
+        
+
 } // namespace Gameplay

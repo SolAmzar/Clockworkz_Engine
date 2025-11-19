@@ -35,6 +35,18 @@
 			"path": "assets/textures/background.jpg",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "corgi_texture",
+			"path": "assets/textures/corgi.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "monster_texture",
+			"path": "assets/textures/monster.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
 	]
 }
