@@ -2324,17 +2324,15 @@ void LevelEditor::updateGizmoScale() {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
                 const char* prefabName = (const char*)payload->Data;
 
-                // Get mouse position and convert to world
                 ImVec2 mouseImGui = ImGui::GetMousePos();
-                ImVec2 scenePos = ImGui::GetWindowPos();
-                ImVec2 relativePos = ImVec2(
-                    mouseImGui.x - scenePos.x,
-                    mouseImGui.y - scenePos.y
-                );
+                vec2 mouseWorld = screenToWorld(vec2(mouseImGui.x, mouseImGui.y));
 
-                vec2 mouseWorld = screenToWorld(vec2(relativePos.x, relativePos.y));
                 vec2 snappedWorld = snapToGrid(mouseWorld);
-                createObjectFromPrefab(prefabName, snappedWorld);
+
+                float halfGrid = m_gridSize * 0.5f;
+                vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
+
+                createObjectFromPrefab(prefabName, finalPos);
             }
             ImGui::EndDragDropTarget();
         }
@@ -3017,8 +3015,8 @@ void LevelEditor::updateGizmoScale() {
         }
 
         // Snap to nearest grid point
-        float snappedX = std::round(position.x / m_gridSize) * m_gridSize;
-        float snappedY = std::round(position.y / m_gridSize) * m_gridSize;
+        float snappedX = std::floor(position.x / m_gridSize) * m_gridSize;
+        float snappedY = std::floor(position.y / m_gridSize) * m_gridSize;
 
         return vec2(snappedX, snappedY);
     }
