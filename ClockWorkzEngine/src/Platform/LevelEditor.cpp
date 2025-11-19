@@ -2277,6 +2277,12 @@ void LevelEditor::updateGizmoScale() {
         ImGui::Begin("Scene View");
         ImGui::PopStyleVar();
 
+        m_sceneViewHovered = ImGui::IsWindowHovered();
+        m_sceneViewFocused = ImGui::IsWindowFocused();
+
+        ImVec2 winPos = ImGui::GetCursorScreenPos();
+        m_sceneViewPosition = winPos;
+
         // Get available content region (space inside window)
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 
@@ -2284,17 +2290,18 @@ void LevelEditor::updateGizmoScale() {
         if (viewportPanelSize.x != m_sceneViewportSize.x ||
             viewportPanelSize.y != m_sceneViewportSize.y) {
 
-            // Only resize if size is valid
             if (viewportPanelSize.x > 0 && viewportPanelSize.y > 0) {
-                m_sceneFramebuffer.resize(
-                    static_cast<int>(viewportPanelSize.x),
-                    static_cast<int>(viewportPanelSize.y)
-                );
-                m_sceneViewportSize = viewportPanelSize;
+                // 1. Update the Framebuffer size
+                m_sceneFramebuffer.resize((int)viewportPanelSize.x, (int)viewportPanelSize.y);
 
-                // Update window dimensions for mouse calculations
+                // 2. Update your tracking variables for Input Math
+                m_sceneViewportSize = viewportPanelSize;
                 m_windowWidth = viewportPanelSize.x;
                 m_windowHeight = viewportPanelSize.y;
+
+                // [IMPORTANT] 3. Update the Camera Projection to match!
+                // This prevents the "Displacement" drift when resizing.
+                m_editorCamera.setViewport((int)m_windowWidth, (int)m_windowHeight);
             }
         }
 
@@ -2598,6 +2605,8 @@ void LevelEditor::updateGizmoScale() {
 
     void LevelEditor::handleCameraInput(double dt) {
         if (!m_input) return;
+
+        if (!m_sceneViewFocused) return;
 
         vec2 cameraMove(0.0f, 0.0f);
 
@@ -2948,15 +2957,26 @@ void LevelEditor::updateGizmoScale() {
 
 
     vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+        // 1. Get the mouse position relative to the Top-Left of the Scene View panel
+            //    (Subtracts the position of the ImGui window itself)
+        vec2 localPos = screenPos - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
+
+        // 2. Convert to coordinates relative to the CENTER of the viewport.
+        //    (0,0) is now the center of the screen. 
+        //    +X is Right, +Y is Down (because screen coordinates increase downwards)
+        vec2 centered = localPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+
+        // 3. Scale by Camera Zoom to get World Units
+        vec2 worldRel = centered / m_editorCamera.zoom();
+
+        // 4. FIX THE FLIP: Convert Screen Y (Down) to World Y (Up)
+        //    In your worldToScreen, you do: relative.y = -relative.y
+        //    So we must do the exact same negation here to reverse it.
+        worldRel.y = -worldRel.y;
+
+        // 5. Add the Camera Position to get the final World Coordinate
         vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-
-        screenPos.y = m_windowHeight - screenPos.y;
-        vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
-
-        centered /= m_editorCamera.zoom();
-
-        vec2 worldPos = centered + m_editorCameraPos;
-        return worldPos;
+        return worldRel + m_editorCameraPos;
     }
 
 
@@ -2981,9 +3001,14 @@ void LevelEditor::updateGizmoScale() {
     }
 
     bool LevelEditor::isMouseOverUI() const {
-        // Check if mouse is over any ImGui window
-        return ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ||
-            ImGui::IsAnyItemHovered();
+        bool anyWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
+        bool anyItemHovered = ImGui::IsAnyItemHovered();
+
+        // If we are hovering the Scene View, we do NOT consider it "UI" 
+        // that blocks gameplay, so we subtract it from the check.
+        if (m_sceneViewHovered) {
+            return false;
+        }
     }
 
     vec2 LevelEditor::snapToGrid(vec2 position) const {

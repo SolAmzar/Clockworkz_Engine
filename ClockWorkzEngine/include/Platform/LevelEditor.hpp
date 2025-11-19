@@ -388,6 +388,10 @@ namespace Platform {
 
         Graphics::FrameBuffer m_sceneFramebuffer;  // Renders game to texture
         ImVec2 m_sceneViewportSize;
+
+        bool m_sceneViewHovered = false;
+        bool m_sceneViewFocused = false;
+        ImVec2 m_sceneViewPosition = ImVec2(0, 0);
     };
 
 } // namespace Platform
