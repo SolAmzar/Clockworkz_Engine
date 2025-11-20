@@ -43,6 +43,7 @@ namespace Runtime {
 		void onEnter() override;
 		void onExit()  override;
 		void update(double dt) override;
+		void updateLightExposure(double dt);
 		void render(Core::Time* timer) override;
 		bool m_spawning = false;
 		int m_spawnedCount = 0;

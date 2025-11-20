@@ -43,7 +43,7 @@ namespace Gameplay {
 	class LayerManager;
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box , Torch};
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
 
 	// To disguish between different collision shapes
     enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown}; 
@@ -156,6 +156,9 @@ namespace Gameplay {
         float checkBatt() const { return m_battery; }
         float checkDrain() const { return drainRate; }
         float checkCharge() const { return chargeRate; }
+        float lightExposureTime() const { return m_lightExposureTime; }
+        void addLightExposure(float dt) { m_lightExposureTime += dt; }
+        void resetLightExposure() { m_lightExposureTime = 0.0f; }
 
         // Rendering handle for now (swap to Sprite component later)
         std::string const& textureId() const { return m_textureId; }
@@ -244,6 +247,8 @@ namespace Gameplay {
         float           m_battery = 10.0f;
         const float     drainRate = 2.0f;   // battery units per second
         const float     chargeRate = 1.0f;  // battery units per second
+
+        float           m_lightExposureTime{ 0.0f };  // Time exposed to light
 
         mutable bool    m_boundsDirty{ true };
         mutable AABB    m_cachedAABB{};
