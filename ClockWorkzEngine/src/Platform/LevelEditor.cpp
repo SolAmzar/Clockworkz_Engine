@@ -29,6 +29,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <GLFW/glfw3.h>   
 #include <cmath>
 
+#include "Assets/SoundManager.hpp"
+#include "Core/json.hpp"
 
 #include <IMGUI/imgui.h>
 #include <algorithm>
@@ -184,6 +186,14 @@ namespace Platform {
         // Register built-in prefabs
         registerBuiltInPrefabs();
 
+        // Create framebuffer for scene view
+        if (!m_sceneFramebuffer.create(1280, 720)) {
+            m_logger->error("Failed to create scene framebuffer");
+            return false;
+        }
+        m_sceneViewportSize = ImVec2(1280, 720);
+
+
         return true;
     }
 
@@ -203,6 +213,7 @@ namespace Platform {
             //}
         }
         m_currentScene.reset();
+        m_sceneFramebuffer.destroy();
     }
 
     /******************************************************************************/
@@ -1335,25 +1346,34 @@ void LevelEditor::updateGizmoScale() {
     /******************************************************************************/
 
     void LevelEditor::render() {
-        if (!m_renderer || !m_currentScene) return;
+        if (!m_currentScene) {
+            std::cout << "ERROR: No scene to render!\n";
+            return;
+        }
 
-        // Get editor camera's view-projection matrix
+        //std::cout << "Rendering to framebuffer...\n";
+        m_sceneFramebuffer.bind();
+
+        // Clear the framebuffer (this is your blue background!)
+        glClearColor(0.05f, 0.05f, 0.15f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Get camera's view-projection matrix
         glm::mat4 viewProj = m_editorCamera.viewProj();
 
-        // Start the frame
-        m_renderer->beginFrame();
+        // Render sprites/objects using your Scene's render method
         m_renderer->beginScenePass(viewProj);
-
-        // Render all scene objects via batch rendering
-        m_currentScene->render(*m_renderer);
-
+        m_currentScene->render(*m_renderer); 
         m_renderer->endScenePass();
 
+        // Render debug/editor elements (only in Edit mode)
         if (m_mode == EditorMode::Edit) {
             m_renderer->beginDebugPass(viewProj);
 
             // Render grid
-            renderGrid();
+            if (m_showGrid) {
+                renderGrid();
+            }
 
             // Render gizmo if object is selected
             if (m_selectedObject && m_showGizmos) {
@@ -1363,8 +1383,11 @@ void LevelEditor::updateGizmoScale() {
             m_renderer->endDebugPass();
         }
 
-        // End the frame
-        m_renderer->endFrame();
+        m_sceneFramebuffer.unbind();
+            //std::cout << "Framebuffer render complete\n";
+
+        glViewport(0, 0, static_cast<int>(m_windowWidth),
+            static_cast<int>(m_windowHeight));
     }
 
 
@@ -1830,6 +1853,106 @@ void LevelEditor::updateGizmoScale() {
                     // Optionally: log or alert about failure
                 }
             }
+            else if (filePath.extension() == ".wav"
+                || filePath.extension() == ".ogg"
+                || filePath.extension() == ".mp3")
+            {
+                using nlohmann::json;
+
+                // logical sound id based on filename (e.g. "door_open")
+                std::string name = filePath.stem().string();
+
+                // Decide where to store inside your project
+                fs::path dstDir = fs::path("assets") / "audio" / "imported";
+                fs::create_directories(dstDir);
+
+                fs::path dstPath = dstDir / filePath.filename();  // e.g. assets/audio/imported/door_open.ogg
+
+                // Copy from original location into assets folder
+                std::error_code ec;
+                fs::copy_file(filePath, dstPath,
+                    fs::copy_options::overwrite_existing, ec);
+                if (ec) {
+                    std::cout << "[LevelEditor] Failed to copy audio file: "
+                        << filePath << " -> " << dstPath
+                        << " (" << ec.message() << ")\n";
+                    continue;
+                }
+
+                // Build the path string as used by the engine (forward slashes)
+                std::string enginePath = dstPath.generic_string();
+
+                // Simple heuristic: stream long formats (mp3/ogg), sample wav
+                bool stream = (filePath.extension() == ".mp3" || filePath.extension() == ".ogg");
+                bool loop = false;
+                bool is3D = false;
+
+                // 4a) Load immediately into SoundManager/AudioManager
+                auto clip = Assets::SoundManager::LoadSound(
+                    name,
+                    enginePath,
+                    loop,
+                    stream,
+                    is3D
+                );
+
+                if (!clip) {
+                    std::cout << "[LevelEditor] Failed to load audio clip: " << name << "\n";
+                    continue;
+                }
+
+                std::cout << "[LevelEditor] Imported audio '" << name
+                    << "' from '" << path
+                    << "' to '" << enginePath << "'\n";
+
+                // 4b) Append entry to assets/configs/sounds.json so it persists
+                const std::string configPath = "assets/configs/sounds.json";
+
+                json j;
+                {
+                    std::ifstream in(configPath);
+                    if (in) {
+                        try {
+                            in >> j;
+                        }
+                        catch (...) {
+                            // if file is corrupt, fall back to empty
+                            j = json::object();
+                        }
+                    }
+                    else {
+                        // file did not exist yet
+                        j = json::object();
+                    }
+                }
+
+                if (!j.contains("sounds") || !j["sounds"].is_array()) {
+                    j["sounds"] = json::array();
+                }
+
+                json entry;
+                entry["name"] = name;
+                entry["path"] = enginePath;
+                entry["loop"] = loop;
+                entry["stream"] = stream;
+                entry["is3D"] = is3D;
+
+                j["sounds"].push_back(entry);
+
+                {
+                    std::ofstream out(configPath);
+                    if (!out) {
+                        std::cout << "[LevelEditor] Failed to open sounds.json for writing\n";
+                    }
+                    else {
+                        out << j.dump(4);
+                        std::cout << "[LevelEditor] Updated sounds.json with entry '" << name << "'\n";
+                    }
+                }
+
+                // optional: mark editor dirty if you treat audio as part of level data
+                // markLevelDirty();
+            }
         }
     }
 
@@ -1987,7 +2110,7 @@ void LevelEditor::updateGizmoScale() {
     }
 
     void LevelEditor::renderToolbar() {
-        ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Toolbar");
 
         if (m_mode == EditorMode::Edit) {
             if (ImGui::Button("Play")) {
@@ -2417,33 +2540,113 @@ void LevelEditor::updateGizmoScale() {
     }
 
     void LevelEditor::renderSceneView() {
+        // Remove padding for clean scene view
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Scene View");
+        ImGui::PopStyleVar();
 
-        // Display scene statistics
-        ImGui::Text("Camera Position: (%.1f, %.1f)",
+        m_sceneViewHovered = ImGui::IsWindowHovered();
+        m_sceneViewFocused = ImGui::IsWindowFocused();
+
+        ImVec2 winPos = ImGui::GetCursorScreenPos();
+        m_sceneViewPosition = winPos;
+
+        // Get available content region (space inside window)
+        ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+        // Resize framebuffer if window size changed
+        if (viewportPanelSize.x != m_sceneViewportSize.x ||
+            viewportPanelSize.y != m_sceneViewportSize.y) {
+
+            if (viewportPanelSize.x > 0 && viewportPanelSize.y > 0) {
+                // 1. Update the Framebuffer size
+                m_sceneFramebuffer.resize((int)viewportPanelSize.x, (int)viewportPanelSize.y);
+
+                // 2. Update your tracking variables for Input Math
+                m_sceneViewportSize = viewportPanelSize;
+                m_windowWidth = viewportPanelSize.x;
+                m_windowHeight = viewportPanelSize.y;
+
+                // [IMPORTANT] 3. Update the Camera Projection to match!
+                // This prevents the "Displacement" drift when resizing.
+                m_editorCamera.setViewport((int)m_windowWidth, (int)m_windowHeight);
+            }
+        }
+
+        // ⭐ THIS IS THE CRITICAL PART - Display framebuffer as image
+        GLuint texID = m_sceneFramebuffer.getTextureID();
+        if (texID != 0) {
+            ImGui::Image(
+                (void*)(intptr_t)texID,      // Framebuffer texture
+                viewportPanelSize,            // Size to display
+                ImVec2(0, 1),                 // UV top-left (flipped Y)
+                ImVec2(1, 0)                  // UV bottom-right
+            );
+        }
+        else {
+            ImGui::Text("ERROR: Framebuffer texture is invalid!");
+        }
+
+        // Handle drag-drop of prefabs into scene view
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
+                const char* prefabName = (const char*)payload->Data;
+
+                ImVec2 mouseImGui = ImGui::GetMousePos();
+                vec2 mouseWorld = screenToWorld(vec2(mouseImGui.x, mouseImGui.y));
+
+                vec2 snappedWorld = snapToGrid(mouseWorld);
+
+                float halfGrid = m_gridSize * 0.5f;
+                vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
+
+                createObjectFromPrefab(prefabName, finalPos);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Optional: Display scene info overlay
+        ImGui::SetCursorPos(ImVec2(10, 30));
+        ImGui::BeginChild("SceneInfo", ImVec2(250, 80), false,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs);
+        ImGui::Text("Camera: (%.1f, %.1f)",
             m_editorCamera.position().x,
             m_editorCamera.position().y);
         ImGui::Text("Zoom: %.2f", m_editorCamera.zoom());
         ImGui::Text("Objects: %d", m_objectCount);
-
-        ImGui::Separator();
-
-        // Camera controls
-        if (ImGui::Button("Reset Camera")) {
-            resetCamera();
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Frame Selected")) {
-            if (m_selectedObject) {
-                glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
-                m_editorCamera.setPosition(selObjectPos);
-            }
-        }
+        ImGui::EndChild();
 
         ImGui::End();
     }
+
+    //void LevelEditor::renderSceneView() {
+    //    ImGui::Begin("Scene View");
+
+    //    // Display scene statistics
+    //    ImGui::Text("Camera Position: (%.1f, %.1f)",
+    //        m_editorCamera.position().x,
+    //        m_editorCamera.position().y);
+    //    ImGui::Text("Zoom: %.2f", m_editorCamera.zoom());
+    //    ImGui::Text("Objects: %d", m_objectCount);
+
+    //    ImGui::Separator();
+
+    //    // Camera controls
+    //    if (ImGui::Button("Reset Camera")) {
+    //        resetCamera();
+    //    }
+
+    //    ImGui::SameLine();
+
+    //    if (ImGui::Button("Frame Selected")) {
+    //        if (m_selectedObject) {
+    //            glm::vec2 selObjectPos = glm::vec2(m_selectedObject->transform().position.x, m_selectedObject->transform().position.y);
+    //            m_editorCamera.setPosition(selObjectPos);
+    //        }
+    //    }
+
+    //    ImGui::End();
+    //}
 
     void LevelEditor::renderSceneViewDropZone() {
         ImVec2 scenePos = ImVec2(0, 0);
@@ -2668,6 +2871,8 @@ void LevelEditor::updateGizmoScale() {
 
     void LevelEditor::handleCameraInput(double dt) {
         if (!m_input) return;
+
+        if (!m_sceneViewFocused) return;
 
         vec2 cameraMove(0.0f, 0.0f);
 
@@ -3021,15 +3226,26 @@ void LevelEditor::updateGizmoScale() {
 
 
     vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+        // 1. Get the mouse position relative to the Top-Left of the Scene View panel
+            //    (Subtracts the position of the ImGui window itself)
+        vec2 localPos = screenPos - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
+
+        // 2. Convert to coordinates relative to the CENTER of the viewport.
+        //    (0,0) is now the center of the screen. 
+        //    +X is Right, +Y is Down (because screen coordinates increase downwards)
+        vec2 centered = localPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+
+        // 3. Scale by Camera Zoom to get World Units
+        vec2 worldRel = centered / m_editorCamera.zoom();
+
+        // 4. FIX THE FLIP: Convert Screen Y (Down) to World Y (Up)
+        //    In your worldToScreen, you do: relative.y = -relative.y
+        //    So we must do the exact same negation here to reverse it.
+        worldRel.y = -worldRel.y;
+
+        // 5. Add the Camera Position to get the final World Coordinate
         vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-
-        screenPos.y = m_windowHeight - screenPos.y;
-        vec2 centered = screenPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
-
-        centered /= m_editorCamera.zoom();
-
-        vec2 worldPos = centered + m_editorCameraPos;
-        return worldPos;
+        return worldRel + m_editorCameraPos;
     }
 
 
@@ -3054,9 +3270,15 @@ void LevelEditor::updateGizmoScale() {
     }
 
     bool LevelEditor::isMouseOverUI() const {
-        // Check if mouse is over any ImGui window
-        return ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ||
-            ImGui::IsAnyItemHovered();
+        bool anyWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
+        bool anyItemHovered = ImGui::IsAnyItemHovered();
+
+        // If we are hovering the Scene View, we do NOT consider it "UI" 
+        // that blocks gameplay, so we subtract it from the check.
+        if (m_sceneViewHovered) {
+            return false;
+        }
+        return anyWindowHovered || anyItemHovered;;
     }
 
     vec2 LevelEditor::snapToGrid(vec2 position) const {
@@ -3065,10 +3287,33 @@ void LevelEditor::updateGizmoScale() {
         }
 
         // Snap to nearest grid point
-        float snappedX = std::round(position.x / m_gridSize) * m_gridSize;
-        float snappedY = std::round(position.y / m_gridSize) * m_gridSize;
+        float snappedX = std::floor(position.x / m_gridSize) * m_gridSize;
+        float snappedY = std::floor(position.y / m_gridSize) * m_gridSize;
 
         return vec2(snappedX, snappedY);
     }
 
+    //void LevelEditor::setupDefaultDockLayout() {
+    //    ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+
+    //    // Clear existing layout
+    //    ImGui::DockBuilderRemoveNode(dockspaceId);
+    //    ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+
+    //    // Split the dockspace
+    //    ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Up, 0.05f, nullptr, &dockspaceId);
+    //    ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, &dockspaceId);
+    //    ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Right, 0.25f, nullptr, &dockspaceId);
+    //    ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Down, 0.3f, nullptr, &dockspaceId);
+
+    //    // Dock windows to specific locations
+    //    ImGui::DockBuilderDockWindow("Toolbar", dockTop);
+    //    ImGui::DockBuilderDockWindow("Hierarchy", dockLeft);
+    //    ImGui::DockBuilderDockWindow("Prefab Palette", dockLeft);
+    //    ImGui::DockBuilderDockWindow("Properties", dockRight);
+    //    ImGui::DockBuilderDockWindow("Scene View", dockspaceId);  // Center
+    //    ImGui::DockBuilderDockWindow("Texture Assets Browser", dockBottom);
+
+    //    ImGui::DockBuilderFinish(dockspaceId);
+    //}
 } // namespace Editor

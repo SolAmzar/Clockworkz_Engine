@@ -1,0 +1,39 @@
+{
+  "sounds": [
+    {
+      "name": "ui_move",
+      "path": "assets/audio/ui_move.wav",
+      "loop": false,
+      "stream": false,
+      "is3D": false
+    },
+    {
+      "name": "ui_select",
+      "path": "assets/audio/ui_select.wav",
+      "loop": false,
+      "stream": false,
+      "is3D": false
+    },
+    {
+      "name": "menu_bgm",
+      "path": "assets/audio/menu_bgm.wav",
+      "loop": true,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "fs_tiles_01",
+      "path": "assets/audio/fs/Tiles/tiles_1.ogg",
+      "loop": false,
+      "stream": false,
+      "is3D": false
+    },
+    {
+      "name": "fs_tiles_02",
+      "path": "assets/audio/fs/Tiles/tiles_2.ogg",
+      "loop": false,
+      "stream": false,
+      "is3D": false
+    }
+  ]
+}

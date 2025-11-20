@@ -79,7 +79,7 @@ namespace Core {
 		// Inside namespace Platform
 		std::unique_ptr<Platform::WindowManager> m_window;
 		std::unique_ptr<Platform::InputManager>  m_input;
-		std::unique_ptr<Platform::LevelEditor>		 m_editor;
+		std::unique_ptr<Platform::LevelEditor>   m_editor;
 
 		// Inside namespace Graphics
 		std::unique_ptr<Graphics::GraphicsManager>   m_gfx;
@@ -89,11 +89,11 @@ namespace Core {
 
 
 		// Inside namespace Audio
-		std::unique_ptr<Audio::AudioManager> m_audio;
-		std::unique_ptr<Audio::SurfaceAudioSystem> m_sfAudio; // separate SFX audio manager for surface audio system
+		std::unique_ptr<Audio::AudioManager>         m_audio;
+		std::unique_ptr<Audio::SurfaceAudioSystem>   m_sfAudio; // separate SFX audio manager for surface audio system
 
 		// Inside namespace Runtime
-		std::unique_ptr<Runtime::GameStateManager> m_gsm;
+		std::unique_ptr<Runtime::GameStateManager>   m_gsm;
 
 	private: // simple data member
 		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}

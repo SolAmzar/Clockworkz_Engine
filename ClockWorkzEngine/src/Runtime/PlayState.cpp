@@ -25,6 +25,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Platform/WindowManager.hpp"
 #include "Runtime/PlayState.hpp"
 #include "Audio/AudioManager.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Graphics/ParticleSystem.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
@@ -159,6 +160,7 @@ namespace Runtime
 		s.colorStart = { 1.f, 0.6f, 0.1f, 1.f };
 		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
 		s.rate = 120.f;
+
 
 		// Syafiq -
 		Core::Engine &engine = Core::Engine::Get();

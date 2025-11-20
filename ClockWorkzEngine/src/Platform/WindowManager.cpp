@@ -39,6 +39,17 @@ WindowManager::~WindowManager() {
 	glfwTerminate();
 }
 
+static void GLFWDropCallback(GLFWwindow* window, int count, const char** paths) {
+    auto* wm = static_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+    if (!wm) return;
+	auto& files = wm->droppedFilesMutable();
+	std::cout << "[Drop] Got " << count << " file(s):\n";
+    for (int i = 0; i < count; ++i) {
+		std::cout << "  " << paths[i] << "\n";
+        files.emplace_back(paths[i]);
+    }
+}
+
 bool WindowManager::create(const Core::Config& cfg) {
 	glfwSetErrorCallback(glfw_error_cb);
 	if (!glfwInit()) return false;
@@ -52,6 +63,10 @@ bool WindowManager::create(const Core::Config& cfg) {
 
 	m_width = cfg.width; m_height = cfg.height;
 	m_window = glfwCreateWindow(m_width, m_height, cfg.title.c_str(), nullptr, nullptr);
+
+	glfwSetWindowUserPointer(m_window, this);
+	glfwSetDropCallback(m_window, GLFWDropCallback);;
+
 	if (!m_window) return false;
 	glfwMakeContextCurrent(m_window);
 	if (glewInit() != GLEW_OK) {
@@ -60,6 +75,12 @@ bool WindowManager::create(const Core::Config& cfg) {
 	}
 	glfwSwapInterval(cfg.vsync ? 1 : 0);
 	return true;
+}
+
+std::vector<std::string> WindowManager::consumeDroppedFiles() {
+	std::vector<std::string> out;
+	out.swap(m_droppedFiles); // clear internal list
+	return out;
 }
 
 void WindowManager::setTitle(const std::string& title) {

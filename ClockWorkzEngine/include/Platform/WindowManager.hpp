@@ -23,6 +23,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #pragma once
 #include <string>
+#include <vector>
 struct GLFWwindow;
 namespace Core { class Config; }
 namespace Platform {
@@ -39,8 +40,13 @@ namespace Platform {
 		int width() const { return m_width; }
 		int height() const { return m_height; }
 		GLFWwindow* getWindow() const { return m_window; }
+		const std::vector<std::string>& droppedFiles() const { return m_droppedFiles; }
+		std::vector<std::string>& droppedFilesMutable() { return m_droppedFiles; }
+		void clearDroppedFiles() { m_droppedFiles.clear(); }
+		std::vector<std::string> consumeDroppedFiles();
 	private:
 		GLFWwindow* m_window = nullptr;
 		int m_width = 0, m_height = 0;
+		std::vector<std::string> m_droppedFiles;
 	};
 }
