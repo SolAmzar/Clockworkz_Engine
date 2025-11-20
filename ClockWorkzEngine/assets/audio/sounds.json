@@ -16,7 +16,7 @@
     },
     {
       "name": "menu_bgm",
-      "path": "assets/audio/menu_bgm.mp3",
+      "path": "assets/audio/menu_bgm.wav",
       "loop": true,
       "stream": true,
       "is3D": false

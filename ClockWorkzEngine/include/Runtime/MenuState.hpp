@@ -79,7 +79,7 @@ namespace Runtime {
         bool m_debug{ false };
         int m_bgmChannel = 0;
         bool m_bgmPaused = false;
-        float m_bgmVol = 0.7f;
+        float m_bgmVol = 1.4f;
         bool m_loaded = false;
     };
 

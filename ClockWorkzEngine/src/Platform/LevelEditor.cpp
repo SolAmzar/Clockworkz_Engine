@@ -24,6 +24,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
 #include "math/VecCompatGLM.hpp"
+#include "Assets/SoundManager.hpp"
 
 #include <IMGUI/imgui.h>
 #include <GLFW/glfw3.h>
@@ -200,6 +201,14 @@ namespace Platform {
 
     void LevelEditor::update(double dt) {
         m_frameTime = dt;
+
+        if (m_windowManager) {
+            auto dropped = m_windowManager->consumeDroppedFiles();
+            if (!dropped.empty()) {
+                std::cout << "[Editor] Consuming " << dropped.size() << " dropped file(s)\n";
+                handleFileDrop(dropped);
+            }
+        }
 
         // Update scene based on mode
         if (m_mode == EditorMode::Play) {
@@ -1191,7 +1200,7 @@ void LevelEditor::updateGizmoScale() {
             return;
         }
 
-        std::cout << "Rendering to framebuffer...\n";
+        //std::cout << "Rendering to framebuffer...\n";
         m_sceneFramebuffer.bind();
 
         // Clear the framebuffer (this is your blue background!)
@@ -1224,7 +1233,7 @@ void LevelEditor::updateGizmoScale() {
         }
 
         m_sceneFramebuffer.unbind();
-            std::cout << "Framebuffer render complete\n";
+            //std::cout << "Framebuffer render complete\n";
 
         glViewport(0, 0, static_cast<int>(m_windowWidth),
             static_cast<int>(m_windowHeight));
@@ -1683,6 +1692,42 @@ void LevelEditor::updateGizmoScale() {
                 }
                 else {
                     // Optionally: log or alert about failure
+                }
+            }
+            else if (filePath.extension() == ".wav"
+                || filePath.extension() == ".mp3"
+                || filePath.extension() == ".ogg")
+            {
+                std::string name = filePath.stem().string(); // e.g. "menu_bgm"
+
+                // simple heuristic: streamed for music, non-streamed for sfx
+                bool stream = (filePath.extension() == ".mp3" || filePath.extension() == ".ogg");
+                bool loop = false;   // you can tweak per use-case
+                bool is3D = false;   // your game is 2D, so false is fine
+
+
+                std::cout << "[Editor] Loading audio: " << name
+                    << " from " << path << "\n";
+
+                auto clip = Assets::SoundManager::LoadSound(
+                    name,
+                    path,
+                    loop,
+                    stream,
+                    is3D
+                );
+
+                if (clip) {
+                    std::cout << "[Editor] Loaded audio clip OK: " << name << "\n";
+                }
+                else {
+                    std::cout << "[Editor] FAILED to load audio clip: " << name << "\n";
+                }
+
+                auto names = Assets::SoundManager::GetLoadedSoundNames();
+                std::cout << "[Editor] Loaded sounds:\n";
+                for (auto const& n : names) {
+                    std::cout << "  - " << n << "\n";
                 }
             }
         }

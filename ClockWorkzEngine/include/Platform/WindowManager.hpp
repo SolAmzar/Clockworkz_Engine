@@ -41,7 +41,9 @@ namespace Platform {
 		int height() const { return m_height; }
 		GLFWwindow* getWindow() const { return m_window; }
 		const std::vector<std::string>& droppedFiles() const { return m_droppedFiles; }
+		std::vector<std::string>& droppedFilesMutable() { return m_droppedFiles; }
 		void clearDroppedFiles() { m_droppedFiles.clear(); }
+		std::vector<std::string> consumeDroppedFiles();
 	private:
 		GLFWwindow* m_window = nullptr;
 		int m_width = 0, m_height = 0;
