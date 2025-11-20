@@ -124,7 +124,7 @@ namespace Core
 			return false;
 		}
 
-		if (!Assets::SoundManager::LoadFromConfig("assets/audio/sounds.json")) {
+		if (!Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json")) {
 			m_logger->fatal("Failed to load sounds from config");
 			return false;
 		}

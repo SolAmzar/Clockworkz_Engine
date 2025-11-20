@@ -25,6 +25,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Time.hpp"
 #include "math/VecCompatGLM.hpp"
 #include "Assets/SoundManager.hpp"
+#include "Core/json.hpp"
 
 #include <IMGUI/imgui.h>
 #include <GLFW/glfw3.h>
@@ -1695,40 +1696,104 @@ void LevelEditor::updateGizmoScale() {
                 }
             }
             else if (filePath.extension() == ".wav"
-                || filePath.extension() == ".mp3"
-                || filePath.extension() == ".ogg")
+                || filePath.extension() == ".ogg"
+                || filePath.extension() == ".mp3")
             {
-                std::string name = filePath.stem().string(); // e.g. "menu_bgm"
+                using nlohmann::json;
 
-                // simple heuristic: streamed for music, non-streamed for sfx
+                // logical sound id based on filename (e.g. "door_open")
+                std::string name = filePath.stem().string();
+
+                // Decide where to store inside your project
+                fs::path dstDir = fs::path("assets") / "audio" / "imported";
+                fs::create_directories(dstDir);
+
+                fs::path dstPath = dstDir / filePath.filename();  // e.g. assets/audio/imported/door_open.ogg
+
+                // Copy from original location into assets folder
+                std::error_code ec;
+                fs::copy_file(filePath, dstPath,
+                    fs::copy_options::overwrite_existing, ec);
+                if (ec) {
+                    std::cout << "[LevelEditor] Failed to copy audio file: "
+                        << filePath << " -> " << dstPath
+                        << " (" << ec.message() << ")\n";
+                    continue;
+                }
+
+                // Build the path string as used by the engine (forward slashes)
+                std::string enginePath = dstPath.generic_string();
+
+                // Simple heuristic: stream long formats (mp3/ogg), sample wav
                 bool stream = (filePath.extension() == ".mp3" || filePath.extension() == ".ogg");
-                bool loop = false;   // you can tweak per use-case
-                bool is3D = false;   // your game is 2D, so false is fine
+                bool loop = false;
+                bool is3D = false;
 
-
-                std::cout << "[Editor] Loading audio: " << name
-                    << " from " << path << "\n";
-
+                // 4a) Load immediately into SoundManager/AudioManager
                 auto clip = Assets::SoundManager::LoadSound(
                     name,
-                    path,
+                    enginePath,
                     loop,
                     stream,
                     is3D
                 );
 
-                if (clip) {
-                    std::cout << "[Editor] Loaded audio clip OK: " << name << "\n";
-                }
-                else {
-                    std::cout << "[Editor] FAILED to load audio clip: " << name << "\n";
+                if (!clip) {
+                    std::cout << "[LevelEditor] Failed to load audio clip: " << name << "\n";
+                    continue;
                 }
 
-                auto names = Assets::SoundManager::GetLoadedSoundNames();
-                std::cout << "[Editor] Loaded sounds:\n";
-                for (auto const& n : names) {
-                    std::cout << "  - " << n << "\n";
+                std::cout << "[LevelEditor] Imported audio '" << name
+                    << "' from '" << path
+                    << "' to '" << enginePath << "'\n";
+
+                // 4b) Append entry to assets/configs/sounds.json so it persists
+                const std::string configPath = "assets/configs/sounds.json";
+
+                json j;
+                {
+                    std::ifstream in(configPath);
+                    if (in) {
+                        try {
+                            in >> j;
+                        }
+                        catch (...) {
+                            // if file is corrupt, fall back to empty
+                            j = json::object();
+                        }
+                    }
+                    else {
+                        // file did not exist yet
+                        j = json::object();
+                    }
                 }
+
+                if (!j.contains("sounds") || !j["sounds"].is_array()) {
+                    j["sounds"] = json::array();
+                }
+
+                json entry;
+                entry["name"] = name;
+                entry["path"] = enginePath;
+                entry["loop"] = loop;
+                entry["stream"] = stream;
+                entry["is3D"] = is3D;
+
+                j["sounds"].push_back(entry);
+
+                {
+                    std::ofstream out(configPath);
+                    if (!out) {
+                        std::cout << "[LevelEditor] Failed to open sounds.json for writing\n";
+                    }
+                    else {
+                        out << j.dump(4);
+                        std::cout << "[LevelEditor] Updated sounds.json with entry '" << name << "'\n";
+                    }
+                }
+
+                // optional: mark editor dirty if you treat audio as part of level data
+                // markLevelDirty();
             }
         }
     }
