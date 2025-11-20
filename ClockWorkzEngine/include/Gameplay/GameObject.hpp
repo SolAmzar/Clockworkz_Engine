@@ -96,6 +96,10 @@ namespace Gameplay {
         virtual void debugRender(Graphics::RenderingManager& renderer);
         virtual void render(Graphics::RenderingManager& renderer); // hook into Graphics later
 
+        //deep copy
+        // Clone this GameObject (deep copy)
+        std::unique_ptr<GameObject> clone() const;
+
         // Interactions
        // virtual void onCollision(GameObject& other);
 

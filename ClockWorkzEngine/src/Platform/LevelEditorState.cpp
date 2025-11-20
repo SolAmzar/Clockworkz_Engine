@@ -3,7 +3,7 @@
 \file           LevelEditorState.cpp
 \project        Lights Out - Level Editor
 \author(s)      [Yusuf], 100%
-\brief          
+\brief          MODIFIED: Now supports loading scenes from PlayState
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
@@ -12,6 +12,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Platform/LevelEditorState.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Runtime/GameStateManager.hpp"
+#include "Runtime/SceneManager.hpp"
+#include "Runtime/Scene.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include "Platform/InputManager.hpp"
@@ -25,7 +27,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 
 namespace Runtime {
 
-    EditorState::EditorState(Platform::InputManager& input, GameStateManager& gsm)
+    EditorState::EditorState(Platform::InputManager& input,
+        GameStateManager& gsm,
+        Runtime::SceneManager* existingSceneManager)
         : m_editor(nullptr)
         , m_input(input)
         , m_gsm(gsm)
@@ -33,6 +37,7 @@ namespace Runtime {
         , m_windowManager(nullptr)
         , m_imguiManager(nullptr)
         , m_initialized(false)
+        , m_playStateSceneManager(existingSceneManager)
     {
     }
 
@@ -71,11 +76,21 @@ namespace Runtime {
             return;
         }
 
+        if (m_playStateSceneManager && m_playStateSceneManager->current()) {
+            m_editor->loadSceneFromPlayState(m_playStateSceneManager->current());
+            engine.logger().info("Loaded existing scene from PlayState into editor");
+        }
+
         m_initialized = true;
         engine.logger().info("Level Editor initialized successfully");
     }
 
     void EditorState::onExit() {
+        if (m_playStateSceneManager && m_playStateSceneManager->current() && m_editor) {
+            m_editor->syncSceneBackToPlayState(m_playStateSceneManager->current());
+            Core::Engine::Get().logger().info("Synced editor changes back to PlayState");
+        }
+
         if (m_editor) {
             m_editor->shutdown();
             m_editor.reset();

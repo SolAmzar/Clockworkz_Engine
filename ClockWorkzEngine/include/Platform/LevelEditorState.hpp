@@ -5,8 +5,9 @@
 \author(s)      Yusuf,[100%]
 \brief          Game state for the level editor, integrating it into the
                 game's state machine. Compatible with existing GameState interface.
+                MODIFIED: Now supports loading scenes from PlayState
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -32,6 +33,7 @@ namespace Graphics {
 
 namespace Runtime {
     class GameStateManager;
+    class SceneManager;  // Forward declare SceneManager
 
     /******************************************************************************/
     /*!
@@ -41,8 +43,10 @@ namespace Runtime {
     /******************************************************************************/
     class EditorState : public GameState {
     public:
-        // Constructor matching PlayState pattern
-        explicit EditorState(Platform::InputManager& input, GameStateManager& gsm);
+        // Constructor matching PlayState pattern, with optional SceneManager for loading existing scene
+        explicit EditorState(Platform::InputManager& input,
+            GameStateManager& gsm,
+            Runtime::SceneManager* existingSceneManager = nullptr);
         ~EditorState() override;
 
         // GameState interface (matching your existing GameState.hpp)
@@ -71,6 +75,9 @@ namespace Runtime {
         Graphics::ImGuiManager* m_imguiManager;
 
         bool m_initialized;
+
+        // NEW: Store reference to PlayState's SceneManager if provided
+        Runtime::SceneManager* m_playStateSceneManager;
     };
 
 } // namespace Runtime

@@ -125,6 +125,15 @@ namespace Platform {
 
         void shutdown();
 
+        // NEW: Load scene from PlayState
+        void loadSceneFromPlayState(Runtime::Scene* playStateScene);
+
+        // NEW: Sync changes back to PlayState
+        void syncSceneBackToPlayState(Runtime::Scene* playStateScene);
+
+        // NEW: Get play mode state
+        bool isInPlayMode() const { return m_mode == EditorMode::Play; }
+
         // Main loop functions
         void update(double dt);
         void renderSaveDialog();
@@ -139,11 +148,31 @@ namespace Platform {
         void togglePlayMode();
 
         // Level management
+        // 
+        // NEW: Play mode simulation
+        void updatePlayMode(double dt);
+        void updatePhysicsAndGameplay(Runtime::Scene* scene, double dt);
+
+        // NEW: Store gameplay state for play mode
+        Gameplay::GameObject* m_playModePlayer;
+        float m_playModeLeftBound;
+        float m_playModeRightBound;
+        float m_playModeBallSpeed;
+        int m_playModeBallDir;
+        float m_playModeDistanceSinceStep;
+        float m_playModeStepDistance;
+        float m_playModeTimeSinceStep;
+        float m_playModeMinStepInterval;
+        vec2 m_playModeLastFootPos;
+        bool m_playModeHaveLastFootPos;
+
+        // NEW: Flag to indicate scene was loaded from PlayState
+        bool m_loadedFromPlayState;
         bool newLevel(const std::string& name);
         bool saveLevel();
         bool saveLevel(const std::string& filepath);
         bool loadLevel(const std::string& filepath);
-        bool saveLevelAs(const std::string& filepath);
+        //bool saveLevelAs(const std::string& filepath);
         std::vector<std::string> getRecentLevels() const;
         const LevelMetadata& getCurrentLevelMetadata() const { return m_currentLevelMetadata; }
 
@@ -187,7 +216,7 @@ namespace Platform {
         void renderLevelSettings();
         void renderCameraControls();
         void renderAssetBrowser();
-        void handleAssetFileWatch();
+        //void handleAssetFileWatch();
         void renderGrid();
 
         // Object manipulation

@@ -61,6 +61,32 @@ namespace Gameplay {
         
     }
 
+    std::unique_ptr<GameObject> GameObject::clone() const {
+        auto copy = std::make_unique<GameObject>(m_type, m_name, m_shapeid);
+
+        // Copy all properties
+        copy->m_transform = m_transform;
+        copy->m_size = m_size;
+        copy->m_velocity = m_velocity;
+        copy->m_moveSpeed = m_moveSpeed;
+        copy->m_lastHitNormal = m_lastHitNormal;
+        copy->m_textureId = m_textureId;
+        copy->m_layer = m_layer;
+        copy->m_active = m_active;
+        copy->m_collisionMask = m_collisionMask;
+        copy->m_collisionCategory = m_collisionCategory;
+        copy->m_isSolid = m_isSolid;
+        copy->m_isHazard = m_isHazard;
+        copy->m_blocksLight = m_blocksLight;
+        copy->m_moveable = m_moveable;
+        copy->m_chase = m_chase;
+
+        // Copy components (add logic for each component type)
+        // TODO: Implement component cloning
+
+        return copy;
+    }
+
     void GameObject::debugRender(Graphics::RenderingManager& renderer) {
         // Need to segment out this rendering of debug draw somewhere else, cannot do it here. too expensive.
         glm::vec3 color(1.0f, 1.0f, 1.0f);
