@@ -581,62 +581,104 @@ namespace Runtime
 		m_renderer->endScenePass();
 
 		// ==================== Torch Light Rendering ====================
-		auto *scene = m_scenes.current();
+		auto scene = m_scenes.current();
 		if (!scene)
 			return;
 
-		auto *physics = scene->getPhysics();
+		auto* physics = scene->getPhysics();
+
 		if (m_flashlightOn && physics && m_player && m_player->active())
 		{
+			// Check battery level
+			if (m_player->checkBatt() <= 0.0f) {
+				m_flashlightOn = false;
+				return;
+			}
+
+			// Drain battery
+			float dt = timer->delta();
+			m_player->setBatt(m_player->checkBatt() - m_player->checkDrain() * dt);
+
+			// Compute flashlight origin from PLAYER position
 			glm::vec2 torchOffsetLocal(35.0f, -20.0f);
 			vec2 origin = m_player->transform().position;
+
+			// Use PLAYER rotation (should be set from mouse input elsewhere)
 			float angle = m_player->transform().rotationRad;
+
 			glm::vec2 torchOffsetWorld(
 				torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
 				torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
 			);
 			glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
-			std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+			std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 			vec2 originVec2 = { originGLM.x, originGLM.y };
 			std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
 				originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-			//glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
+
 			std::vector<glm::vec2> lightPolyGLM;
-			for (const auto &point : lightPoly)
+			for (const auto& point : lightPoly)
 			{
 				lightPolyGLM.emplace_back(point.x, point.y);
 			}
 
 			m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
-			m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
+			m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
 			m_renderer->endLightPass();
-
-			// need refactor, something like EntityManager.GetAll<PlayerComponent>();
-			// Another way is to cache the player gameobject when LoadScene from file.
-			/*for (auto& o : objs)
-			{
-				if (o->type() == Gameplay::GameObjectType::Player)
-				{
-
-					vec2 origin = o->transform().position;
-					float angle = o->transform().rotationRad;
-					std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-						origin, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-						glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
-						std::vector<glm::vec2> lightPolyGLM;
-						for (const auto& point : lightPoly) {
-							lightPolyGLM.emplace_back(point.x, point.y);
-						}
-
-
-						m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
-						m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
-						m_renderer->endLightPass();
-						break;
-				}
-			}*/
 		}
+		else if (m_player) {
+			// Charge battery when flashlight is off
+			float dt = timer->delta();
+			m_player->setBatt(std::min(100.0f, m_player->checkBatt() + m_player->checkCharge() * dt));
+		}
+
+
+		//// ==================== Torch Light Rendering ====================
+		//if (!scene)
+		//	return;
+
+		//auto* physics = scene->getPhysics();
+
+		//// Find the torch in the scene object list
+		//Gameplay::GameObject* torchObj = nullptr;
+		//for (auto& objPtr : scene->objects())
+		//{
+		//	if (objPtr && objPtr->type() == Gameplay::GameObjectType::Torch)
+		//	{
+		//		torchObj = objPtr.get();
+		//		break;
+		//	}
+		//}
+
+		//// Only render if torch exists and is active
+		//if (torchObj && torchObj->active())
+		//{
+		//	glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+		//	vec2 origin = torchObj->transform().position;
+		//	float angle = torchObj->transform().rotationRad;
+		//	glm::vec2 torchOffsetWorld(
+		//		torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+		//		torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
+		//	);
+		//	glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
+
+		//	std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+		//	vec2 originVec2 = { originGLM.x, originGLM.y };
+		//	std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+		//		originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+
+		//	std::vector<glm::vec2> lightPolyGLM;
+		//	for (const auto& point : lightPoly)
+		//	{
+		//		lightPolyGLM.emplace_back(point.x, point.y);
+		//	}
+
+		//	m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+		//	m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
+		//	m_renderer->endLightPass();
+		//}
+
 
 		// std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 		// m_renderer->beginDebugPass(engine.camera().viewProj());

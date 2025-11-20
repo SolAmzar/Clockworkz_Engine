@@ -82,7 +82,7 @@ namespace Gameplay {
         copy->m_chase = m_chase;
 
         // Copy components (add logic for each component type)
-        // TODO: Implement component cloning
+        // TODO: Implement component cloning not fully working yet
 
         return copy;
     }

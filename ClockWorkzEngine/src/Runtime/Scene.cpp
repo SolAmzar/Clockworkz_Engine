@@ -33,7 +33,6 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Core/Engine.hpp"
 #include <Core/Profiler.hpp>
 #include <Assets/TextureManager.hpp>
-#include <filesystem>
 
 using namespace Runtime;
 using namespace Gameplay;

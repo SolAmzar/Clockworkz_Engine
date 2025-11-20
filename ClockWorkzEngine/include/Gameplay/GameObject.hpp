@@ -43,7 +43,7 @@ namespace Gameplay {
 	class LayerManager;
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box , Torch};
 
 	// To disguish between different collision shapes
     enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown}; 
@@ -131,6 +131,8 @@ namespace Gameplay {
         void                  setLastHitNormal(vec2 n) { m_lastHitNormal = n; }
         vec2                  lastHitNormal() const { return m_lastHitNormal; }
 
+
+
         // Collision + rendering layers
         uint32_t              layer() const { return m_layer; }
         void                  setLayer(uint32_t l) {m_layer = l; if (m_onLayerChanged) m_onLayerChanged(this);}
@@ -149,7 +151,11 @@ namespace Gameplay {
         void setBlocksLight(bool v) { m_blocksLight = v; }
         void setName(const std::string& newName); 
         void setChase(bool v) { m_chase = v; }
-        bool checkChase() { return m_chase; }
+        bool checkChase() const { return m_chase; }
+        void setBatt(f32 v) { m_battery = v; }
+        float checkBatt() const { return m_battery; }
+        float checkDrain() const { return drainRate; }
+        float checkCharge() const { return chargeRate; }
 
         // Rendering handle for now (swap to Sprite component later)
         std::string const& textureId() const { return m_textureId; }
@@ -234,6 +240,10 @@ namespace Gameplay {
         bool            m_blocksLight{ true };
 		bool 		    m_moveable{ false };
         bool            m_chase{ false };
+        // Battery field
+        float           m_battery = 10.0f;
+        const float     drainRate = 2.0f;   // battery units per second
+        const float     chargeRate = 1.0f;  // battery units per second
 
         mutable bool    m_boundsDirty{ true };
         mutable AABB    m_cachedAABB{};
