@@ -2911,8 +2911,8 @@ void LevelEditor::updateGizmoScale() {
 
         if (Gameplay::GameObjectSerializer::loadSceneFromFile(tempFile, sceneName, objects)) {
             m_currentScene = std::make_unique<Runtime::Scene>(sceneName);
-            m_currentScene->load();
-            m_currentScene->objects().clear();
+            /*m_currentScene->load();
+            m_currentScene->objects().clear();*/
             for (auto& obj : objects) {
                 m_currentScene->addObject(std::move(obj));
             }
@@ -3007,6 +3007,7 @@ void LevelEditor::updateGizmoScale() {
         if (m_sceneViewHovered) {
             return false;
         }
+        return anyWindowHovered || anyItemHovered;;
     }
 
     vec2 LevelEditor::snapToGrid(vec2 position) const {
