@@ -32,7 +32,7 @@
 		},
 		{
 			"name": "menu_bg_texture",
-			"path": "assets/textures/background.jpg",
+			"path": "assets/textures/background.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		},
