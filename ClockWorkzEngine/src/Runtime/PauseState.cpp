@@ -94,6 +94,53 @@ namespace Runtime {
     void PauseState::update(double dt)
     {
         (void)dt;
+        // Get window reference for mouse position
+        Core::Engine& engine = Core::Engine::Get();
+        Platform::WindowManager& window = engine.window();
+
+        // Mouse hover detection
+        double mouseX, mouseY;
+        glfwGetCursorPos(window.getWindow(), &mouseX, &mouseY);
+
+        int w = window.width();
+        int h = window.height();
+        float glMouseY = h - static_cast<float>(mouseY);  // Convert to OpenGL coordinates
+
+        // Check if mouse is hovering over any menu item
+        bool isHover = false;
+        float startY = h / 2.0f + 80.0f;  // Same as render function
+
+        for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
+        {
+            float scale = 0.55f;
+            float yPos = startY - (i * 55.0f);  // Same as render function
+            float textWidth = m_items[i].length() * 48.0f * scale * 0.55f;  // Same calculation as render
+            float xPos = (w / 2.0f) - (textWidth / 2.0f);
+
+            float textHeight = 48.0f * scale;  // Approximate height based on font size and scale
+
+            // Check if mouse is within this menu item's bounds
+            if (mouseX >= xPos && mouseX <= (xPos + textWidth) &&
+                glMouseY >= yPos && glMouseY <= (yPos + textHeight))
+            {
+                isHover = true;
+                if (m_selected != i)
+                {
+                    m_selected = i;
+                    // Optional: Add sound effect here if you have audio manager
+                    // m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+                }
+                break;
+            }
+        }
+
+        // Mouse click to select
+        if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
+        {
+            // Optional: Add sound effect here
+            // m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+            select();
+        }
 
         // ESC to resume
         if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
