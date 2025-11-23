@@ -53,7 +53,12 @@
 			"path": "assets/textures/pause.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
-
+		},
+		{
+			"name": "logo_texture",
+			"path": "assets/textures/logo.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
 	]
 }

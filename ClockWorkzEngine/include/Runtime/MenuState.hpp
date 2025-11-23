@@ -65,6 +65,7 @@ namespace Runtime {
         std::function<void()>   m_quitFn;
 
         Gameplay::GameObject m_background;
+        Gameplay::GameObject m_logo;
 
         std::vector<std::string> m_items{
           "Start Game",
