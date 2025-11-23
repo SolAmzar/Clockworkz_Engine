@@ -10,6 +10,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 /******************************************************************************/
 #pragma once
 #include "Runtime/GameState.hpp"
+#include "Gameplay/GameObject.hpp"
 #include <vector>
 #include <string>
 
@@ -40,6 +41,8 @@ namespace Runtime {
         Platform::InputManager& m_input;
         Graphics::RenderingManager* m_renderer{ nullptr };
         Graphics::Camera2D* m_cam{ nullptr };
+
+        Gameplay::GameObject m_background;
 
         std::vector<std::string> m_items{
             "Resume Game",

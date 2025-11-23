@@ -21,6 +21,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Core/Engine.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Camera2D.hpp"
+#include <Gameplay/Components/SpriteRenderer.hpp>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -29,11 +30,14 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
 
 using Assets::ResourceManager;
 using Graphics::Shader;
+using namespace Gameplay;
 
 namespace Runtime {
 
-    PauseState::PauseState(GameStateManager& gsm,Platform::InputManager& input)
-        : m_gsm(gsm), m_input(input)
+    PauseState::PauseState(GameStateManager& gsm, Platform::InputManager& input)
+        : m_gsm(gsm),
+        m_input(input),
+        m_background(GameObjectType::Unknown, "PauseBG", GameObjectShape::Rectangle)
     {
     }
 
@@ -46,7 +50,9 @@ namespace Runtime {
         m_renderer = &engine.rendering();
         m_cam = &engine.camera();
 
-
+        m_background.addComponent<SpriteRendererComponent>("pause_bg_texture");
+        m_background.setSize({ 1.f, 1.f });                    // Proper dimensions
+        m_background.transform().scale = { 1920.0f, 1080.0f }; // Keep scale neutral
         std::cout << "[PauseState] Ready\n";
     }
 
@@ -124,6 +130,10 @@ namespace Runtime {
         Platform::WindowManager& window = engine.window();
         Graphics::RenderingManager& renderer = engine.rendering();
 
+        m_renderer->beginScenePass(m_cam->viewProj());
+        m_background.render(*m_renderer);
+        m_renderer->endScenePass();
+
         int w = window.width();
         int h = window.height();
 
@@ -143,16 +153,21 @@ namespace Runtime {
             pauseFont = ResourceManager<Assets::FontManager>::Get("PauseMenu");
         }
 
+        // Colors matching the scribble/sticky note aesthetic
+        glm::vec3 normalCol(0.7f, 0.5f, 0.5f);      // Medium brown (unselected)
+        glm::vec3 selectedCol(0.20f, 0.15f, 0.12f);    // Dark brown (selected - like pen ink)
+
         if (pauseFont) {
-            pauseFont->RenderText("PAUSED", w / 2.0f - 100.0f, h - 150.0f,
-                1.0f, glm::vec3(1.0f, 1.0f, 0.0f), *shader);
+            // "PAUSED" title - brown color to match scribbles, smaller and centered
+            std::string title = "PAUSED";
+            float titleScale = 1.0f;
+            float titleWidth = title.length() * 48.0f * titleScale * 0.55f;  // Better estimation
+            float titleX = (w / 2.0f) - (titleWidth / 2.0f)- 10.0f;
+            pauseFont->RenderText(title, titleX, h - 150.0f, titleScale, glm::vec3(0.5f, 0.4f, 0.3f), *shader);
         }
 
-        // Render menu options
-        glm::vec3 normalCol(0.6f, 0.6f, 0.6f);
-        glm::vec3 selectedCol(1.0f, 1.0f, 1.0f);
-
-        float startY = h / 2.0f + 100.0f;
+        // Render menu options - smaller, centered, matching aesthetic
+        float startY = h / 2.0f + 80.0f;
 
         if (pauseFont) {
             for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
@@ -160,12 +175,12 @@ namespace Runtime {
                 const std::string& item = m_items[i];
                 glm::vec3 color = (i == m_selected) ? selectedCol : normalCol;
 
-                float yPos = startY - (i * 80.0f);
-                float textWidth = item.length() * 20.0f;
+                float scale = 0.55f;  // Smaller text
+                float yPos = startY - (i * 55.0f);
+                float textWidth = item.length() * 48.0f * scale * 0.55f;  // Better width estimation
                 float xPos = (w / 2.0f) - (textWidth / 2.0f);
 
-                // ACTUALLY RENDER THE TEXT
-                pauseFont->RenderText(item, xPos, yPos, 0.8f, color, *shader);
+                pauseFont->RenderText(item, xPos, yPos, scale, color, *shader);
             }
         }
 
