@@ -32,7 +32,7 @@
 		},
 		{
 			"name": "menu_bg_texture",
-			"path": "assets/textures/background.jpg",
+			"path": "assets/textures/background.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		},
@@ -45,6 +45,18 @@
 		{
 			"name": "monster_texture",
 			"path": "assets/textures/monster.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "pause_bg_texture",
+			"path": "assets/textures/pause.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "logo_texture",
+			"path": "assets/textures/logo.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		}

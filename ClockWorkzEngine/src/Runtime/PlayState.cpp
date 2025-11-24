@@ -564,7 +564,99 @@ namespace Runtime
 			}
 		}
 		m_scenes.update(dt);
+		updateLightExposure(dt);
 	}
+
+	// Helper: Check if point is inside polygon
+	bool isPointInPolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon) {
+		int intersections = 0;
+		size_t n = polygon.size();
+
+		for (size_t i = 0; i < n; i++) {
+			glm::vec2 p1 = polygon[i];
+			glm::vec2 p2 = polygon[(i + 1) % n];
+
+			if ((p1.y > point.y) != (p2.y > point.y)) {
+				float xIntersect = p1.x + (point.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
+				if (point.x < xIntersect) {
+					intersections++;
+				}
+			}
+		}
+
+		return (intersections % 2) == 1;
+	}
+
+	void PlayState::updateLightExposure(double dt) {
+		auto* scene = m_scenes.current();
+		if (!scene) return;
+
+		auto* physics = scene->getPhysics();
+
+		// Only check if flashlight is on
+		if (!m_flashlightOn || !physics || !m_player || !m_player->active() || m_player->checkBatt() <= 0.0f) {
+			// Flashlight is off - reset all enemy exposures
+			for (auto& obj : scene->objects()) {
+				if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+					obj->resetLightExposure();
+				}
+			}
+			return;
+		}
+
+		// Calculate flashlight position and angle
+		glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+		vec2 origin = m_player->transform().position;
+		float angle = m_player->transform().rotationRad;
+		glm::vec2 torchOffsetWorld(
+			torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+			torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
+		);
+		glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
+
+		// Compute visibility polygon
+		std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+		vec2 originVec2 = { originGLM.x, originGLM.y };
+		std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+			originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+
+		std::vector<glm::vec2> lightPolyGLM;
+		for (const auto& point : lightPoly) {
+			lightPolyGLM.emplace_back(point.x, point.y);
+		}
+
+		// ✓ Check enemies against light polygon
+		const float KILL_THRESHOLD = 0.5f;
+
+		for (auto& obj : objs) {
+			if (!obj || !obj->active()) continue;
+
+			if (obj->type() == Gameplay::GameObjectType::Enemy) {
+				glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
+
+				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
+					// Enemy is in light
+					obj->addLightExposure(dt);
+
+					std::cout << "Enemy '" << obj->name() << "' exposed: "
+						<< obj->lightExposureTime() << "s / " << KILL_THRESHOLD << "s" << std::endl;
+
+					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
+						std::cout << ">>> Enemy '" << obj->name() << "' KILLED!" << std::endl;
+						obj->setActive(false);
+					}
+				}
+				else {
+					// Enemy not in light - reset exposure
+					if (obj->lightExposureTime() > 0.0f) {
+						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
+					}
+					obj->resetLightExposure();
+				}
+			}
+		}
+	}
+
 
 	void PlayState::render(Core::Time *timer)
 	{
@@ -580,13 +672,37 @@ namespace Runtime
 		m_scenes.render(*m_renderer);
 		m_renderer->endScenePass();
 
-		// ==================== Torch Light Rendering ====================
-		auto *scene = m_scenes.current();
+
+		// ==================== Torch Light Rendering & Enemy Interaction ====================
+		auto* scene = m_scenes.current();
 		if (!scene)
 			return;
 
-		auto *physics = scene->getPhysics();
-		if (m_flashlightOn && physics && m_player && m_player->active())
+		auto* physics = scene->getPhysics();
+
+		// Battery management code (as before)...
+		if (m_player) {
+			float dt = timer->delta(); // Get your delta time
+
+			if (m_flashlightOn) {
+				float currentBattery = m_player->checkBatt();
+				currentBattery -= m_player->checkDrain() * dt;
+				m_player->setBatt(currentBattery);
+
+				if (currentBattery <= 0.0f) {
+					m_player->setBatt(0.0f);
+					m_flashlightOn = false;
+				}
+			}
+			else {
+				float currentBattery = m_player->checkBatt();
+				currentBattery += m_player->checkCharge() * dt;
+				m_player->setBatt(std::min(100.0f, currentBattery));
+			}
+		}
+
+		// Render flashlight
+		if (m_flashlightOn && physics && m_player && m_player->active() && m_player->checkBatt() > 0.0f)
 		{
 			glm::vec2 torchOffsetLocal(35.0f, -20.0f);
 			vec2 origin = m_player->transform().position;
@@ -597,46 +713,78 @@ namespace Runtime
 			);
 			glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
-			std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+			std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 			vec2 originVec2 = { originGLM.x, originGLM.y };
 			std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
 				originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-			//glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
+
 			std::vector<glm::vec2> lightPolyGLM;
-			for (const auto &point : lightPoly)
+			for (const auto& point : lightPoly)
 			{
 				lightPolyGLM.emplace_back(point.x, point.y);
 			}
 
+			// Render the light cone
 			m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
-			m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
+			m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
 			m_renderer->endLightPass();
-
-			// need refactor, something like EntityManager.GetAll<PlayerComponent>();
-			// Another way is to cache the player gameobject when LoadScene from file.
-			/*for (auto& o : objs)
-			{
-				if (o->type() == Gameplay::GameObjectType::Player)
-				{
-
-					vec2 origin = o->transform().position;
-					float angle = o->transform().rotationRad;
-					std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-						origin, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-						glm::vec2 originGLM = glm::vec2(origin.x, origin.y);
-						std::vector<glm::vec2> lightPolyGLM;
-						for (const auto& point : lightPoly) {
-							lightPolyGLM.emplace_back(point.x, point.y);
-						}
-
-
-						m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
-						m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
-						m_renderer->endLightPass();
-						break;
-				}
-			}*/
 		}
+		else {
+			// Flashlight is off - reset all enemy exposure times
+			for (auto& obj : scene->objects()) {
+				if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+					obj->resetLightExposure();
+				}
+			}
+		}
+
+
+
+		//// ==================== Torch Light Rendering ====================
+		//if (!scene)
+		//	return;
+
+		//auto* physics = scene->getPhysics();
+
+		//// Find the torch in the scene object list
+		//Gameplay::GameObject* torchObj = nullptr;
+		//for (auto& objPtr : scene->objects())
+		//{
+		//	if (objPtr && objPtr->type() == Gameplay::GameObjectType::Torch)
+		//	{
+		//		torchObj = objPtr.get();
+		//		break;
+		//	}
+		//}
+
+		//// Only render if torch exists and is active
+		//if (torchObj && torchObj->active())
+		//{
+		//	glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+		//	vec2 origin = torchObj->transform().position;
+		//	float angle = torchObj->transform().rotationRad;
+		//	glm::vec2 torchOffsetWorld(
+		//		torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+		//		torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
+		//	);
+		//	glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
+
+		//	std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
+		//	vec2 originVec2 = { originGLM.x, originGLM.y };
+		//	std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+		//		originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+
+		//	std::vector<glm::vec2> lightPolyGLM;
+		//	for (const auto& point : lightPoly)
+		//	{
+		//		lightPolyGLM.emplace_back(point.x, point.y);
+		//	}
+
+		//	m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+		//	m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
+		//	m_renderer->endLightPass();
+		//}
+
 
 		// std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 		// m_renderer->beginDebugPass(engine.camera().viewProj());

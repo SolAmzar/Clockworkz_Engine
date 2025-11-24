@@ -55,7 +55,8 @@ namespace Runtime
     }
 
     MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input, Platform::WindowManager &window, Audio::AudioManager &audio, std::function<void()> quitFn)
-        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn)), m_background(GameObjectType::Unknown, "MenuBG", GameObjectShape::Rectangle)
+        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn)),
+        m_background(GameObjectType::Unknown, "MenuBG", GameObjectShape::Rectangle), m_logo(GameObjectType::Unknown, "Logo", GameObjectShape::Rectangle)
     {
     }
 
@@ -74,7 +75,7 @@ namespace Runtime
                        "Load Game",
                        "Option",
                        "Credits",
-                       "Exit Game"};
+                       "Quit Game"};
         }
 
         // m_audio.stopGroup(Audio::Group::Music);
@@ -107,6 +108,11 @@ namespace Runtime
         m_background.addComponent<SpriteRendererComponent>("menu_bg_texture");
         m_background.setSize({1.f, 1.f});                    // Proper dimensions
         m_background.transform().scale = {1920.0f, 1080.0f}; // Keep scale neutral
+
+        m_logo.addComponent<SpriteRendererComponent>("logo_texture");
+        m_logo.setSize({ 1.f, 1.f });
+        m_logo.transform().position = { 0.0f, 250.0f };
+        m_logo.transform().scale = { 600.0f, 600.0f };
     }
 
     void MenuState::printMenu()
@@ -176,15 +182,27 @@ namespace Runtime
         int h = m_window.height();
         float glMouseY = h - static_cast<float>(mouseY);
 
-        // Hovering
         bool isHover = false;
+
+        struct MenuPosition {
+            float centerX, centerY, scale;
+        };
+
+        MenuPosition positions[5] = {
+            {390.0f, h - 340.0f, 1.f},
+            {200.0f, h - 480.0f, 1.f},
+            {230.0f, h - 660.0f, 1.f},
+            {500.0f, h - 700.0f, 0.6f},
+            {270.0f, h - 830.0f, 0.6f}
+        };
+
         for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
         {
-            float yPos = (h - 550.0f) - (i * 80.0f);
-            float textWidth = m_items[i].length() * 25.0f;
-            float xPos = (w / 2.0f) - (textWidth / 2.0f);
-
-            float textHeight = 60.0f;
+            float scale = positions[i].scale;
+            float textWidth = m_items[i].length() * 50.0f * scale * 0.5f;
+            float xPos = positions[i].centerX - (textWidth / 2.0f);  // Center calculation
+            float yPos = positions[i].centerY;
+            float textHeight = 48.0f * scale;
 
             if (mouseX >= xPos && mouseX <= (xPos + textWidth) &&
                 glMouseY >= yPos && glMouseY <= (yPos + textHeight))
@@ -269,6 +287,10 @@ namespace Runtime
         m_background.render(*m_renderer);
         m_renderer->endScenePass();
 
+        m_renderer->beginScenePass(m_cam->viewProj());
+        m_logo.render(*m_renderer);
+        m_renderer->endScenePass();
+
         // Later, retrieve them anywhere:
         int w = m_window.width();
         int h = m_window.height();
@@ -286,12 +308,12 @@ namespace Runtime
 
         if (titleFont)
         {
-            titleFont->RenderText("Lights Out", w / 2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f), *shader);
+            //titleFont->RenderText("Lights Out", w / 2.f - 250.f, h - 300.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f), *shader);
         }
 
         if (subFont)
         {
-            subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
+            //subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
         }
 
         if (debugFont)
@@ -307,23 +329,34 @@ namespace Runtime
         // Start: Syafiq
         if (selectFont)
         {
+            // Much darker colors for better visibility
+            glm::vec3 normalCol(0.25f, 0.20f, 0.15f);
+            glm::vec3 selectedCol(0.05f, 0.05f, 0.05f);
 
-            glm::vec3 normalCol(0.5f, 0.5f, 0.5f);
-            glm::vec3 selectedCol(1.0f, 1.0f, 1.0f);
+            // Individual positions for each sticky note
+            struct MenuPosition {
+                float centerX, centerY, scale;
+            };
+
+            MenuPosition positions[5] = {
+                {390.0f, h - 340.0f, 1.f},
+                {200.0f, h - 480.0f, 1.f},
+                {230.0f, h - 660.0f, 1.f},
+                {500.0f, h - 700.0f, 0.6f},
+                {270.0f, h - 830.0f, 0.6f}
+            };
 
             for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
             {
-                const std::string &item = m_items[i];
+                const std::string& item = m_items[i];
+                glm::vec3 color = (i == m_selected) ? selectedCol : normalCol;
 
-                glm::vec3 selCol = (i == m_selected) ? selectedCol : normalCol;
+                // Center the text on the sticky note
+                float scale = positions[i].scale;
+                float textWidth = item.length() * 50.0f * scale * 0.5f;
+                float xPos = positions[i].centerX - (textWidth / 2.0f);
 
-                // shader->setVec3("textColor", selCol);
-
-                float yPos = (h - 550.0f) - (i * 80.0f);
-                float textWidth = item.length() * 25.0f;
-                float xPos = (w / 2.0f) - (textWidth / 2.0f);
-
-                selectFont->RenderText(item, xPos, yPos, 0.8f, selCol, *shader);
+                selectFont->RenderText(item, xPos, positions[i].centerY, scale, color, *shader);
             }
         }
         m_renderer->endFontPass();

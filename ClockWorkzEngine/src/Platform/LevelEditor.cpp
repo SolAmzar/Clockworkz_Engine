@@ -24,13 +24,17 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
 #include "math/VecCompatGLM.hpp"
+#include "Gameplay/Physics2D.hpp"
+#include "Math/ps_math.hpp"
+#include <GLFW/glfw3.h>   
+#include <cmath>
+
 #include "Assets/SoundManager.hpp"
 #include "Core/json.hpp"
 #include "Gameplay/Components/AudioSource.hpp"
 #include "Assets/SoundManager.hpp"
 
 #include <IMGUI/imgui.h>
-#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
@@ -86,8 +90,24 @@ namespace Platform {
         , m_enableGridSnap(true)
         , m_showGrid(true)
         , m_isTransforming(false)
+        , m_playModePlayer(nullptr)
+        , m_playModeLeftBound(100.0f)
+        , m_playModeRightBound(700.0f)
+        , m_playModeBallSpeed(220.0f)
+        , m_playModeBallDir(1)
+        , m_playModeDistanceSinceStep(0.0f)
+        , m_playModeStepDistance(60.0f)
+        , m_playModeTimeSinceStep(0.0f)
+        , m_playModeMinStepInterval(0.22f)
+        , m_playModeLastFootPos(0.0f, 0.0f)
+        , m_playModeHaveLastFootPos(false)
+        , m_loadedFromPlayState(false)
     {
         m_fileDialogBuffer[0] = '\0';
+        mAssetNameBuffer[0] = '\0';
+        m_transformStartRotation = 0;
+
+
 
         // Initialize level metadata
         m_currentLevelMetadata.name = "Untitled";
@@ -205,20 +225,11 @@ namespace Platform {
     void LevelEditor::update(double dt) {
         m_frameTime = dt;
 
-        if (m_windowManager) {
-            auto dropped = m_windowManager->consumeDroppedFiles();
-            if (!dropped.empty()) {
-                std::cout << "[Editor] Consuming " << dropped.size() << " dropped file(s)\n";
-                handleFileDrop(dropped);
-            }
-        }
-
-        // Update scene based on mode
         if (m_mode == EditorMode::Play) {
-            // In play mode, just update the scene normally
-            if (m_currentScene) {
-                m_currentScene->update(dt);
-            }
+            updatePlayMode(dt);
+            // Still allow some editor input in play mode (like stopping)
+            handleKeyboardShortcuts();
+            return;
         }
         else {
             // In edit mode, handle editor-specific input and camera
@@ -229,6 +240,145 @@ namespace Platform {
         // Update object count for UI
         if (m_currentScene) {
             m_objectCount = static_cast<int>(m_currentScene->objects().size());
+        }
+    }
+
+
+    void LevelEditor::loadSceneFromPlayState(Runtime::Scene* playStateScene) {
+        if (!playStateScene) return;
+
+        m_loadedFromPlayState = true;
+        m_currentScene = std::make_unique<Runtime::Scene>(playStateScene->name());
+
+        for (auto& objPtr : playStateScene->objects()) {
+            if (!objPtr) continue;
+
+            auto newObj = std::make_unique<Gameplay::GameObject>(
+                objPtr->type(), objPtr->name()
+            );
+            newObj->transform().position = objPtr->transform().position;
+            newObj->transform().rotationRad = objPtr->transform().rotationRad;
+            newObj->transform().scale = objPtr->transform().scale;
+            newObj->setSize(objPtr->size());
+            newObj->setLayer(objPtr->layer());
+            newObj->setActive(objPtr->active());
+
+            m_currentScene->addObject(std::move(newObj));
+        }
+
+        m_currentLevelMetadata.name = playStateScene->name() + " (from PlayState)";
+
+        // DON'T call load() - just register to layers
+        if (m_currentScene) {
+            m_currentScene->registerExistingObjectsToLayers();
+        }
+    }
+
+    void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene) {
+        if (!playStateScene || !m_currentScene || !m_loadedFromPlayState) return;
+
+        // Clear PlayState scene objects
+        auto& playStateObjs = playStateScene->objects();
+        playStateObjs.clear();
+
+        // Copy all objects back from editor to PlayState
+        for (auto& objPtr : m_currentScene->objects()) {
+            if (!objPtr) continue;
+
+            auto newObj = std::make_unique<Gameplay::GameObject>(
+                objPtr->type(),
+                objPtr->name()
+            );
+
+            // Copy transform
+            newObj->transform().position = objPtr->transform().position;
+            newObj->transform().rotationRad = objPtr->transform().rotationRad;
+            newObj->transform().scale = objPtr->transform().scale;
+
+            // Copy size and other properties
+            newObj->setSize(objPtr->size());
+            newObj->setLayer(objPtr->layer());
+            newObj->setActive(objPtr->active());
+
+            // TODO: Copy components back if needed
+
+            // Add to PlayState scene
+            playStateScene->addObject(std::move(newObj));
+        }
+    }
+
+    void LevelEditor::updatePlayMode(double dt) {
+        if (!m_currentScene) {
+            m_logger->error("updatePlayMode: No current scene!");
+            setMode(EditorMode::Edit);
+            return;
+        }
+
+        // Update gameplay
+        updatePhysicsAndGameplay(m_currentScene.get(), dt);
+
+        // Update all game objects
+        for (auto& objPtr : m_currentScene->objects()) {
+            if (objPtr && objPtr->active()) {
+                objPtr->update(dt);
+            }
+        }
+
+        // Update physics with safety check
+        auto* physics = m_currentScene->getPhysics();
+        if (physics) {
+            physics->step(m_currentScene->objects(), dt);
+        }
+        else {
+            m_logger->warn("updatePlayMode: Scene has no physics system!");
+        }
+    }
+
+    void LevelEditor::updatePhysicsAndGameplay(Runtime::Scene* scene, double dt) {
+        if (!m_playModePlayer) {
+            for (auto& obj : scene->objects()) {
+                if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+                    m_playModePlayer = obj.get();
+                    break;
+                }
+            }
+        }
+
+        // Implement player movement (similar to PlayState)
+        if (m_playModePlayer && m_input) {
+            float moveSpeed = 200.0f;
+            float runMultiplier = 2.0f;
+
+            vec2 velocity{ 0.0f, 0.0f };
+
+            if (m_input->isKeyDown(GLFW_KEY_W)) velocity.y += 1.0f;
+            if (m_input->isKeyDown(GLFW_KEY_S)) velocity.y -= 1.0f;
+            if (m_input->isKeyDown(GLFW_KEY_A)) velocity.x -= 1.0f;
+            if (m_input->isKeyDown(GLFW_KEY_D)) velocity.x += 1.0f;
+
+            // Calculate magnitude manually (no length() function needed)
+            float magSquared = velocity.x * velocity.x + velocity.y * velocity.y;
+
+            if (magSquared > 0.0001f) {  // Use squared magnitude for comparison
+                // Normalize manually (no normalize() function needed)
+                float mag = sqrtf(magSquared);
+                velocity.x /= mag;
+                velocity.y /= mag;
+
+                // Apply speed
+                float finalSpeed = moveSpeed;
+                if (m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
+                    m_input->isKeyDown(GLFW_KEY_RIGHT_SHIFT)) {
+                    finalSpeed *= runMultiplier;
+                }
+
+                velocity.x *= finalSpeed;
+                velocity.y *= finalSpeed;
+
+                // Update position
+                m_playModePlayer->transform().position.x += velocity.x * static_cast<float>(dt);
+                m_playModePlayer->transform().position.y += velocity.y * static_cast<float>(dt);
+            }
         }
     }
 
@@ -1311,13 +1461,21 @@ void LevelEditor::updateGizmoScale() {
     }
 
     void LevelEditor::togglePlayMode() {
+
         if (m_mode == EditorMode::Edit) {
+
             setMode(EditorMode::Play);
+
         }
+
         else {
+
             setMode(EditorMode::Edit);
+
         }
+
     }
+
 
     /******************************************************************************/
     // Level Management
@@ -2057,9 +2215,9 @@ void LevelEditor::updateGizmoScale() {
             ImGui::Indent();
 
             // Show last 10 actions
-            int showCount = std::min(10, (int)m_undoStack.size());
+            int showCount = std::min(10, static_cast<int>(m_undoStack.size()));
             for (int i = 0; i < showCount; ++i) {
-                int index = m_undoStack.size() - 1 - i;
+                int index = static_cast<int>(m_undoStack.size()) - 1 - i;
                 ImGui::BulletText("%s", m_undoStack[index]->getName().c_str());
             }
 
@@ -3115,15 +3273,18 @@ void LevelEditor::updateGizmoScale() {
 
         if (Gameplay::GameObjectSerializer::loadSceneFromFile(tempFile, sceneName, objects)) {
             m_currentScene = std::make_unique<Runtime::Scene>(sceneName);
-            /*m_currentScene->load();
-            m_currentScene->objects().clear();*/
+            m_currentScene->load();
+            m_currentScene->objects().clear();
+
             for (auto& obj : objects) {
                 m_currentScene->addObject(std::move(obj));
             }
+            m_currentScene->registerExistingObjectsToLayers();
 
             m_selectedObject = nullptr;
         }
     }
+
 
     void LevelEditor::markLevelDirty() {
         m_levelDirty = true;

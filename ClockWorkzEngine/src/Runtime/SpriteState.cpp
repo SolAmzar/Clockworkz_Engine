@@ -368,6 +368,7 @@ namespace Runtime
 
 	void SpriteState::renderImGui(Core::Time* timer)
 	{
+
 		if (!m_debug || !m_sprite_obj) return;
 		using namespace Gameplay;
 		ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
@@ -605,15 +606,15 @@ namespace Runtime
 
 		ImGui::SameLine();
 		if (ImGui::Button("Reload JSON")) {
-			std::string folder = "assets/animations/";
-			std::string path = folder + std::string(jsonFileName);
-			std::ifstream f(path);
+			std::string folder1 = "assets/animations/";
+			std::string path1 = folder1 + std::string(jsonFileName);
+			std::ifstream f(path1);
 			if (f.is_open()) {
 				nlohmann::json j;
 				f >> j;
 				anim->loadFromJson(j);
 				std::cout << "[SpriteState] Reloaded animation from: "
-					<< std::filesystem::absolute(path) << std::endl;
+					<< std::filesystem::absolute(path1) << std::endl;
 			}
 		}
 
