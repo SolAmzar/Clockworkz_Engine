@@ -334,7 +334,7 @@ namespace Runtime
 					m_timeSinceStep += (float)dt;
 					auto surfaceType = getSurfaceUnder(obj.get());
 					vec2 curPos = obj->transform().position;
-					float speed = magnitude(obj->velocity());    // use your magnitude/length
+					float speed = magnitude(obj->velocity() * 0.3f);    // use your magnitude/length
 					bool  moving = speed > 5.0f;
 					
 					if (moving) {

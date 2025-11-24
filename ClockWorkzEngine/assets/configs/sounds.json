@@ -22,15 +22,22 @@
       "is3D": false
     },
     {
-      "name": "fs_tiles_01",
-      "path": "assets/audio/fs/Tiles/tiles_1.ogg",
+      "name": "fs_concrete_1",
+      "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
       "loop": false,
       "stream": false,
       "is3D": false
     },
     {
-      "name": "fs_tiles_02",
-      "path": "assets/audio/fs/Tiles/tiles_2.ogg",
+      "name": "fs_concrete_2",
+      "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
+      "loop": false,
+      "stream": false,
+      "is3D": false
+    },
+    {
+      "name": "fs_concrete_3",
+      "path": "assets/audio/fs/Concrete/fs_concrete_3.mp3",
       "loop": false,
       "stream": false,
       "is3D": false

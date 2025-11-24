@@ -26,6 +26,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "math/VecCompatGLM.hpp"
 #include "Assets/SoundManager.hpp"
 #include "Core/json.hpp"
+#include "Gameplay/Components/AudioSource.hpp"
+#include "Assets/SoundManager.hpp"
 
 #include <IMGUI/imgui.h>
 #include <GLFW/glfw3.h>
@@ -2305,8 +2307,100 @@ void LevelEditor::updateGizmoScale() {
             }
         }
         if (ImGui::CollapsingHeader("Components")) {
-            ImGui::TextDisabled("Component list would appear here");
+            //ImGui::TextDisabled("Component list would appear here");
             // In a real implementation, list and edit components
+                using Gameplay::AudioSourceComponent;
+
+                // Try to get an existing AudioSourceComponent on the selected object
+                auto* audio = m_selectedObject->getComponent<AudioSourceComponent>();
+
+                // If there is no audio component yet, allow adding one
+                if (!audio) {
+                    if (ImGui::Button("Add Audio Source Component")) {
+                        audio = m_selectedObject->addComponent<AudioSourceComponent>();
+                        markLevelDirty();
+                    }
+                }
+
+                // If we now have an audio component, show its controls
+                if (audio) {
+                    if (ImGui::TreeNode("Audio Source")) {
+
+                        // --- Sound ID dropdown using SoundManager ---
+                        auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
+                        if (!soundNames.empty()) {
+                            // Build an array of const char* for ImGui
+                            std::vector<const char*> items;
+                            items.reserve(soundNames.size());
+                            int currentIndex = 0;
+
+                            for (std::size_t i = 0; i < soundNames.size(); ++i) {
+                                items.push_back(soundNames[i].c_str());
+                                if (soundNames[i] == audio->soundId) {
+                                    currentIndex = static_cast<int>(i);
+                                }
+                            }
+
+                            if (ImGui::Combo("Sound", &currentIndex,
+                                items.data(),
+                                static_cast<int>(items.size()))) {
+                                audio->soundId = soundNames[currentIndex];
+                                markLevelDirty();
+                            }
+                        }
+                        else {
+                            ImGui::TextDisabled("No sounds loaded. Check sounds.json.");
+                        }
+
+                        // --- Volume slider ---
+                        float vol = audio->volume;
+                        if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f)) {
+                            audio->volume = vol;
+                            markLevelDirty();
+                        }
+
+                        // --- Loop checkbox ---
+                        bool loop = audio->loop;
+                        if (ImGui::Checkbox("Loop", &loop)) {
+                            audio->loop = loop;
+                            markLevelDirty();
+                        }
+
+                        // --- Play on start checkbox ---
+                        bool playOnStart = audio->playOnStart;
+                        if (ImGui::Checkbox("Play On Start", &playOnStart)) {
+                            audio->playOnStart = playOnStart;
+                            markLevelDirty();
+                        }
+
+                        // --- Optional: group selection (SFX/BGM) as ints or radio buttons ---
+                        int group = static_cast<int>(audio->group);
+                        if (ImGui::RadioButton("SFX", group == static_cast<int>(Audio::Group::SFX))) {
+                            group = static_cast<int>(Audio::Group::SFX);
+                        }
+                        ImGui::SameLine();
+                        if (ImGui::RadioButton("BGM", group == static_cast<int>(Audio::Group::BGM))) {
+                            group = static_cast<int>(Audio::Group::BGM);
+                        }
+                        if (group != static_cast<int>(audio->group)) {
+                            audio->group = static_cast<Audio::Group>(group);
+                            markLevelDirty();
+                        }
+
+                        // --- Preview button to test sound immediately ---
+                        if (ImGui::Button("Preview")) {
+                            if (!audio->soundId.empty()) {
+                                Core::Engine::Get().audio().playOneShot(
+                                    audio->soundId,
+                                    audio->group,
+                                    audio->volume
+                                );
+                            }
+                        }
+                        ImGui::TreePop();
+                    }
+            }
+
         }
 
         ImGui::Separator();

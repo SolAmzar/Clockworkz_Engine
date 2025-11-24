@@ -17,13 +17,14 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #pragma once
 #include <string>
 #include <fmod.hpp>
+#include <iostream>
 #include "Audio/AudioManager.hpp"
 
 namespace Audio {
     class AudioClip {
     public:
         AudioClip() = default;
-        ~AudioClip() { /*Unload();*/ }
+        ~AudioClip() = default;
 
         AudioClip(const AudioClip&) = delete;
         AudioClip& operator=(const AudioClip&) = delete;
@@ -42,7 +43,11 @@ namespace Audio {
         bool Load(AudioManager& audio, SoundDesc file) {
             Unload();
             FMOD::System* system = audio.getSystem();   // <-- you'll add this getter
-            if (!system) return false;
+            if (!system) {
+                std::cout << "[AudioClip] No FMOD system when loading '"
+                    << file.path << "'\n";
+                return false;
+            }
 
             FMOD_MODE mode = FMOD_DEFAULT;
             if (file.loop)   mode |= FMOD_LOOP_NORMAL; else mode |= FMOD_LOOP_OFF;
@@ -51,6 +56,8 @@ namespace Audio {
 
             FMOD_RESULT result = system->createSound(file.path.c_str(), mode, nullptr, &m_sound);
             if (result != FMOD_OK) {
+                std::cout << "[AudioClip] Failed to create sound for '"
+                    << file.path << "' (FMOD error " << result << ")\n";
                 m_sound = nullptr;
                 return false;
             }
@@ -60,8 +67,17 @@ namespace Audio {
         // Free FMOD resources if loaded
         inline void Unload() {
             if (m_sound) {
-                m_sound->release();   // free FMOD sound
+                // Only try to release if we still have a system pointer
+                // (i.e., AudioManager hasn’t been shut down yet).
+                if (m_system) {
+                    FMOD_RESULT r = m_sound->release();
+                    if (r != FMOD_OK) {
+                        std::cout << "[AudioClip] FMOD::Sound::release failed ("
+                            << (int)r << ")\n";
+                    }
+                }
                 m_sound = nullptr;
+                m_system = nullptr;
             }
         }
 
@@ -70,7 +86,7 @@ namespace Audio {
 
     private:
         FMOD::Sound* m_sound = nullptr;  // owned FMOD sound resource
-
+        FMOD::System* m_system = nullptr;
     };
 
 } // namespace Audio

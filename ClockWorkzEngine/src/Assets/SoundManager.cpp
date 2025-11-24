@@ -39,9 +39,9 @@ namespace Assets {
         desc.stream = stream;
         desc.is3D = is3D;
 
-        if (!s_audio) {
-            // Audio system not initialised – you might want an assert or log here
-            std::cout << "SoundManager::Init must be called before LoadSound\n";
+        if (!s_audio || !s_audio->isReady()) {
+            std::cout << "[SoundManager] AudioManager not ready while loading '"
+                << name << "' (" << path << ")\n";
             return nullptr;
         }
 
@@ -50,9 +50,12 @@ namespace Assets {
             *s_audio,   // AudioManager&
             desc        // SoundDesc
         );
-        if (clip) {
-            s_loadedNames.insert(name);
+        if (!clip) {
+            std::cout << "[SoundManager] Failed to load sound '"
+                << name << "' from '" << path << "'\n";
+            return nullptr;
         }
+        s_loadedNames.insert(name);
         return clip;
     }
 
@@ -77,6 +80,7 @@ namespace Assets {
     void SoundManager::Clear() {
         ResourceManager<Audio::AudioClip>::Clear();
         s_loadedNames.clear();
+        s_audio = nullptr;
     }
 
     bool SoundManager::IsLoaded(const std::string& name) {

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include <Gameplay/Components/SpriteAnimator.hpp>
+#include <Gameplay/Components/AudioSource.hpp>
 
 
 
@@ -85,6 +86,18 @@ namespace Gameplay {
             return j;
         }
         return json();
+    }
+
+    json GameObjectSerializer::serializeAudioSource(const GameObject& obj) {
+        json j;
+        if (auto* audio = obj.getComponent<AudioSourceComponent>()) {
+            j["soundId"] = audio->soundId;
+            j["volume"] = audio->volume;
+            j["loop"] = audio->loop;
+            j["playOnStart"] = audio->playOnStart;
+            j["group"] = static_cast<int>(audio->group);
+        }
+        return j;
     }
 
     // ========================================================================
@@ -211,6 +224,19 @@ namespace Gameplay {
         }
     }
 
+    void GameObjectSerializer::deserializeAudioSource(GameObject& obj, const json& j) {
+        if (!j.is_object()) return;
+
+        auto* audio = obj.addComponent<AudioSourceComponent>();
+        audio->soundId = j.value("soundId", "");
+        audio->volume = j.value("volume", 1.0f);
+        audio->loop = j.value("loop", false);
+        audio->playOnStart = j.value("playOnStart", false);
+        audio->group = static_cast<Audio::Group>(
+            j.value("group", static_cast<int>(Audio::Group::SFX))
+            );
+    }
+
     // ========================================================================
     // GAMEOBJECT SERIALIZATION
     // ========================================================================
@@ -256,12 +282,19 @@ namespace Gameplay {
         if (obj.getComponent<SpriteAnimatorComponent>()) {
             components["spriteAnimator"] = serializeSpriteAnimator(obj);
         }
+
+        if (obj.getComponent<AudioSourceComponent>()) {
+            components["audio"] = serializeAudioSource(obj);
+        }
             
 
         j["components"] = components;
 
         return j;
     }
+
+ 
+
 
 
 
@@ -301,6 +334,9 @@ namespace Gameplay {
                 if (comps.contains("spriteAnimator")) {
                     spriteAnimatorFileName = comps["spriteAnimator"].value("filename", "");
                 }
+                if (comps.contains("audio")) {
+                    deserializeAudioSource(*obj, comps["audio"]);
+                }   
 
                 if (comps.contains("health"))
                     hp = comps["health"].value("hp", 3);
@@ -401,6 +437,8 @@ namespace Gameplay {
                 std::string spriteAnimatorFilePath = comps["spriteAnimator"].value("filename", "");
                 deserializeSpriteAnimator(*obj, spriteAnimatorFilePath);
             }
+            if (comps.contains("audio"))
+                deserializeAudioSource(*obj, comps["audio"]);
         }
 
 

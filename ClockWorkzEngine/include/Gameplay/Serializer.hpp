@@ -68,6 +68,9 @@ namespace Gameplay {
         static void deserializePatrol(GameObject& obj, const json& j);
         static void deserializeSpriteRenderer(GameObject& obj, const json& j);
         static void deserializeSpriteAnimator(GameObject& obj, const std::string& j);
+		// Audio Source component serialization/deserialization
+        static json serializeAudioSource(const GameObject& obj);
+        static void deserializeAudioSource(GameObject& obj, const json& j);
     };
 
 } // namespace Gameplay

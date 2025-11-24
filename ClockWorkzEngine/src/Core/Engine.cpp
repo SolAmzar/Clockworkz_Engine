@@ -125,9 +125,11 @@ namespace Core
 		}
 
 		if (!Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json")) {
-			m_logger->fatal("Failed to load sounds from config");
-			return false;
+			m_logger->error("Some sounds failed to load from sounds.json. "
+				"Game will still run; check log for details.");
+			// Do NOT return false here.
 		}
+
 
 		// 1️ Register all prefab blueprints
 		const std::string prefabFile = "assets/configs/Prefab.json";
@@ -195,7 +197,10 @@ namespace Core
 		m_logger.reset();
 		m_config.reset();
 		m_camera.reset();
-		m_audio.reset();
+		if (m_audio) {
+			Assets::SoundManager::Clear();  // clears clips while FMOD system is still alive
+			m_audio.reset();                   // now ~AudioManager runs and closes FMOD safely
+		}
 		m_sfAudio.reset();
 
 		Assets::TextureManager::Clear();
