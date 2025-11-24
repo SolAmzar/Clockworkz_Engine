@@ -23,6 +23,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/GameStateManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
+#include "Platform/LevelEditor.hpp"
 #include "Runtime/PlayState.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Assets/SoundManager.hpp"
@@ -96,11 +97,17 @@ namespace Runtime
 	}
 
 
-	PlayState::PlayState(std::string initialSceneId, Platform::InputManager &input, GameStateManager &gsm)
-		: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm), m_player(nullptr)
+	PlayState::PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm)
+		: m_initialSceneId(std::move(initialSceneId))
+		, m_input(input)
+		, m_gsm(gsm)
+		, m_player(nullptr)
+		, m_editorInitialized(false)
 	{
 	}
-
+	PlayState::~PlayState()
+	{
+	}
 	const char *PlayState::name() const { return "PlayState"; }
 
 	const char * PlayState::toString(Gameplay::GameObjectType t)
@@ -161,9 +168,31 @@ namespace Runtime
 		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
 		s.rate = 120.f;
 
+		// Initialize level editor
+		Core::Engine& engine = Core::Engine::Get();
+
+		m_levelEditor = std::make_unique<Platform::LevelEditor>();
+
+		if (m_levelEditor->init(
+			engine.window().handle(),
+			engine.rendering(),
+			m_input,
+			engine.window())) {
+
+			// Load current scene into editor
+			if (auto* scene = m_scenes.current()) {
+				m_levelEditor->loadSceneFromPlayState(scene);
+			}
+
+			m_levelEditor->setActive(false); // Start inactive
+			m_editorInitialized = true;
+			std::cout << "[PlayState] Level editor initialized\n";
+		}
+		else {
+			std::cerr << "[PlayState] Failed to initialize level editor\n";
+		}
 
 		// Syafiq -
-		Core::Engine &engine = Core::Engine::Get();
 		m_renderer = &engine.rendering();
 
 		auto textureShader = ResourceManager<Shader>::Load(
@@ -231,7 +260,17 @@ namespace Runtime
 
 	void PlayState::onExit()
 	{
-		// Only unload if a scene was actually loaded successfully
+		// Shutdown level editor FIRST
+		if (m_levelEditor && m_editorInitialized) {
+			if (auto* scene = m_scenes.current()) {
+				m_levelEditor->syncSceneBackToPlayState(scene);
+			}
+			m_levelEditor->shutdown();
+			m_levelEditor.reset();
+			m_editorInitialized = false;
+		}
+
+		// Then unload scene
 		if (m_loaded)
 		{
 			m_scenes.unloadCurrent();
@@ -241,6 +280,34 @@ namespace Runtime
 
 	void PlayState::update(double dt)
 	{
+		// ESC = Exit editor (or pause if not in editor)
+		if (m_input.wasKeyPressed(GLFW_KEY_Z) && m_levelEditor->isActive()) {
+			if (m_levelEditor && m_levelEditor->isActive()) {
+				// Close editor
+				m_levelEditor->setActive(false);
+				if (auto* scene = m_scenes.current()) {
+					m_levelEditor->syncSceneBackToPlayState(scene);
+					scene->registerExistingObjectsToLayers();
+				}
+				return;
+			}
+			else {
+				// Normal pause
+				m_pauseRequested = true;
+				return;
+			}
+		}
+
+		// F10 = Open editor
+		if (m_input.wasKeyPressed(GLFW_KEY_F10)) {
+			if (m_levelEditor && !m_levelEditor->isActive()) {
+				m_levelEditor->setActive(true);
+				if (auto* scene = m_scenes.current()) {
+					m_levelEditor->loadSceneFromPlayState(scene);
+				}
+			}
+		}
+
 		if (m_returnToMenuRequested)
 		{
 			std::cout << "[PlayState] Return to menu requested\n";
@@ -312,7 +379,26 @@ namespace Runtime
 
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))
 		{
-			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
+			if (m_levelEditor && m_editorInitialized) {
+				bool newState = !m_levelEditor->isActive();
+				m_levelEditor->setActive(newState);
+				std::cout << "[PlayState] Level editor "
+					<< (newState ? "activated" : "deactivated") << "\n";
+
+				if (auto* scene = m_scenes.current()) {
+					if (newState) {
+						m_levelEditor->loadSceneFromPlayState(scene);
+					}
+					else {
+						m_levelEditor->syncSceneBackToPlayState(scene);
+					}
+				}
+			}
+		}
+
+		if (m_levelEditor && m_levelEditor->isActive()) {
+			m_levelEditor->update(dt);
+			return; // Don't update game while editor is active
 		}
 
 		// Syafiq - Player movement
@@ -515,10 +601,28 @@ namespace Runtime
 				em->burst(80);
 		}
 
-		if (m_input.isKeyDown(GLFW_KEY_Z))
+		if (m_input.wasKeyPressed(GLFW_KEY_Z))
 		{
-			m_gsm.push(std::make_shared<EditorState>(m_input, m_gsm));
+			if (m_levelEditor && m_editorInitialized) {
+				bool newState = !m_levelEditor->isActive();
+				m_levelEditor->setActive(newState);
+				std::cout << "[PlayState] Level editor "
+					<< (newState ? "activated" : "deactivated") << "\n";
+
+				// Sync scene data when toggling
+				if (auto* scene = m_scenes.current()) {
+					if (newState) {
+						// Activating: load current state
+						m_levelEditor->loadSceneFromPlayState(scene);
+					}
+					else {
+						// Deactivating: save changes back
+						m_levelEditor->syncSceneBackToPlayState(scene);
+					}
+				}
+			}
 		}
+
 		if (m_input.isKeyDown(GLFW_KEY_Q))
 		{
 			cam.setZoom(cam.zoom() * 1.02f);
@@ -526,6 +630,12 @@ namespace Runtime
 		if (m_input.isKeyDown(GLFW_KEY_E))
 		{
 			cam.setZoom(cam.zoom() / 1.02f);
+		}
+
+		// Update level editor if active
+		if (m_levelEditor && m_levelEditor->isActive()) {
+			m_levelEditor->update(dt);
+			return; // Don't update game while editor is active
 		}
 
 		if (m_spawning && m_spawnedCount < 2500)
@@ -657,21 +767,50 @@ namespace Runtime
 		}
 	}
 
+	void PlayState::renderImGui(Core::Time* timer)
+	{
+		// Only render editor UI if editor is active
+		if (m_levelEditor && m_levelEditor->isActive()) {
+			Core::Engine& engine = Core::Engine::Get();
+			Graphics::ImGuiManager& imgui = engine.imguiManager();
 
-	void PlayState::render(Core::Time *timer)
+			imgui.beginDockspace();
+			m_levelEditor->renderUI();
+			imgui.endDockspace();
+		}
+
+		(void)timer;
+	}
+
+	void PlayState::render(Core::Time* timer)
 	{
 		if (!m_loaded || !m_renderer)
 			return;
 
-		Core::Engine &engine = Core::Engine::Get();
+		Core::Engine& engine = Core::Engine::Get();
 
-		// Use SceneManager's render to render the current scene
-		// --- Pass: Scene ---
-		// Batch rendering
+		// Editor rendering mode
+		if (m_levelEditor && m_levelEditor->isActive()) {
+			Graphics::FrameBuffer& editorFB = m_levelEditor->getFramebuffer();
+			editorFB.bind();
+
+			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			m_renderer->beginScenePass(m_levelEditor->getCamera().viewProj());
+			m_scenes.render(*m_renderer);
+			m_renderer->endScenePass();
+
+			editorFB.unbind();
+
+			m_levelEditor->render();
+			return;
+		}
+
+		// Normal game rendering (keep all your existing code below)
 		m_renderer->beginScenePass(engine.camera().viewProj());
 		m_scenes.render(*m_renderer);
 		m_renderer->endScenePass();
-
 
 		// ==================== Torch Light Rendering & Enemy Interaction ====================
 		auto* scene = m_scenes.current();
@@ -680,9 +819,9 @@ namespace Runtime
 
 		auto* physics = scene->getPhysics();
 
-		// Battery management code (as before)...
+		// Battery management code (keep all existing flashlight code)
 		if (m_player) {
-			float dt = timer->delta(); // Get your delta time
+			float dt = timer->delta();
 
 			if (m_flashlightOn) {
 				float currentBattery = m_player->checkBatt();
@@ -701,7 +840,7 @@ namespace Runtime
 			}
 		}
 
-		// Render flashlight
+		// Render flashlight (keep all existing flashlight rendering code)
 		if (m_flashlightOn && physics && m_player && m_player->active() && m_player->checkBatt() > 0.0f)
 		{
 			glm::vec2 torchOffsetLocal(35.0f, -20.0f);
@@ -738,62 +877,6 @@ namespace Runtime
 			}
 		}
 
-
-
-		//// ==================== Torch Light Rendering ====================
-		//if (!scene)
-		//	return;
-
-		//auto* physics = scene->getPhysics();
-
-		//// Find the torch in the scene object list
-		//Gameplay::GameObject* torchObj = nullptr;
-		//for (auto& objPtr : scene->objects())
-		//{
-		//	if (objPtr && objPtr->type() == Gameplay::GameObjectType::Torch)
-		//	{
-		//		torchObj = objPtr.get();
-		//		break;
-		//	}
-		//}
-
-		//// Only render if torch exists and is active
-		//if (torchObj && torchObj->active())
-		//{
-		//	glm::vec2 torchOffsetLocal(35.0f, -20.0f);
-		//	vec2 origin = torchObj->transform().position;
-		//	float angle = torchObj->transform().rotationRad;
-		//	glm::vec2 torchOffsetWorld(
-		//		torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
-		//		torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
-		//	);
-		//	glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
-
-		//	std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-		//	vec2 originVec2 = { originGLM.x, originGLM.y };
-		//	std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-		//		originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-
-		//	std::vector<glm::vec2> lightPolyGLM;
-		//	for (const auto& point : lightPoly)
-		//	{
-		//		lightPolyGLM.emplace_back(point.x, point.y);
-		//	}
-
-		//	m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
-		//	m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
-		//	m_renderer->endLightPass();
-		//}
-
-
-		// std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-		// m_renderer->beginDebugPass(engine.camera().viewProj());
-		// for (auto& o : objs)
-		//{
-		//	if (o->active())
-		//		o->debugRender(*m_renderer);
-		// }
-		// m_renderer->endDebugPass();
 		(void)timer;
 	}
 
@@ -805,355 +888,355 @@ namespace Runtime
 			"assets/textures/floor.png",
 			"assets/textures/trap.png"};
 
-	void PlayState::renderImGui(Core::Time *timer)
-	{
-		if (!m_debug)
-			return;
+	//void PlayState::renderImGui(Core::Time *timer)
+	//{
+	//	if (!m_debug)
+	//		return;
 
-		if (m_debug)
-		{
-			ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
-			ImGui::Begin("Game State", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	//	if (m_debug)
+	//	{
+	//		ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
+	//		ImGui::Begin("Game State", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-			// ******* Object Creation **********
-			static int selectedType = 0;
-			const char *types[] = {"Player", "Enemy", "Wall", "Floor", "Trap"};
-			ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
+	//		// ******* Object Creation **********
+	//		static int selectedType = 0;
+	//		const char *types[] = {"Player", "Enemy", "Wall", "Floor", "Trap"};
+	//		ImGui::Combo("Type", &selectedType, types, IM_ARRAYSIZE(types));
 
-			static float pos[2] = {0, 0};
-			static float size[2] = {1, 1};
-			ImGui::InputFloat2("Position", pos);
-			ImGui::InputFloat2("Size", size);
+	//		static float pos[2] = {0, 0};
+	//		static float size[2] = {1, 1};
+	//		ImGui::InputFloat2("Position", pos);
+	//		ImGui::InputFloat2("Size", size);
 
-			static int hp = 10, damage = 1;
-			static float ms = 100.0f;
-			if (selectedType == 0 || selectedType == 1) { // if its enemy or player, set health
-				ImGui::InputInt("HP", &hp);
-			}
+	//		static int hp = 10, damage = 1;
+	//		static float ms = 100.0f;
+	//		if (selectedType == 0 || selectedType == 1) { // if its enemy or player, set health
+	//			ImGui::InputInt("HP", &hp);
+	//		}
 
-			if (selectedType == 1 || selectedType == 4) { // if its enemy or trap, set damage
-				ImGui::InputInt("Damage", &damage);
-			}
+	//		if (selectedType == 1 || selectedType == 4) { // if its enemy or trap, set damage
+	//			ImGui::InputInt("Damage", &damage);
+	//		}
 
-			static char texture[64] = "";
-			ImGui::InputText("Texture", texture, IM_ARRAYSIZE(texture));
+	//		static char texture[64] = "";
+	//		ImGui::InputText("Texture", texture, IM_ARRAYSIZE(texture));
 
-			if (ImGui::Button("Create Object"))
-			{
+	//		if (ImGui::Button("Create Object"))
+	//		{
 
-				const char *texToUse = texture[0] ? texture : defaultTextures[selectedType];
-				std::unique_ptr<Gameplay::GameObject> obj = nullptr;
+	//			const char *texToUse = texture[0] ? texture : defaultTextures[selectedType];
+	//			std::unique_ptr<Gameplay::GameObject> obj = nullptr;
 
-				// Supposedly spawn the corresponding gameobject (texture and logic not fixed)
-				if (selectedType == 0)
-				{
-					obj = Gameplay::PrefabFactory::get().create("Player");
-					if (obj)
-					{
-						obj->setMoveSpeed(ms);
-						obj->setPosition(vec2(pos[0], pos[1]));
-						obj->setSize(vec2(size[0], size[1]));
-						obj->autoUpdateCollisionBaseOnScale();
-						obj->setTextureId(texToUse);
-						auto scene = m_scenes.current();
-						if (scene)
-						{
-							obj->setLayer(Gameplay::DrawLayer::Actors);
-							scene->addObject(std::move(obj)); 
-						}
-						std::cout << "Player created\n";
-					}
-				}
-				else if (selectedType == 1)
-				{
-					obj = Gameplay::PrefabFactory::get().create("Enemy");
-					if (obj)
-					{
-						obj->setMoveSpeed(ms);
-						obj->setPosition(vec2(pos[0], pos[1]));
-						obj->setSize(vec2(size[0], size[1]));
-						obj->autoUpdateCollisionBaseOnScale();
-						auto scene = m_scenes.current();
-						if (scene)
-						{
-							obj->setLayer(Gameplay::DrawLayer::Actors);
-							scene->addObject(std::move(obj)); 
-						}
-						std::cout << "Enemy created\n";
-					}
-				}
-				else if (selectedType == 2)
-				{
-					obj = Gameplay::PrefabFactory::get().create("Wall");
-					if (obj)
-					{
-						obj->setPosition(vec2(pos[0], pos[1]));
-						obj->setSize(vec2(size[0], size[1]));
-						obj->autoUpdateCollisionBaseOnScale();
-						auto scene = m_scenes.current();
-						if (scene)
-						{
-							obj->setLayer(Gameplay::DrawLayer::Background);
-							scene->addObject(std::move(obj)); 
-						}
-						std::cout << "Wall created\n";
-					}
-				}
-				else if (selectedType == 3)
-				{
-					obj = Gameplay::PrefabFactory::get().create("Floor");
-					if (obj)
-					{
-						obj->setPosition(vec2(pos[0], pos[1]));
-						obj->setSize(vec2(size[0], size[1]));
-						auto scene = m_scenes.current();
-						if (scene)
-						{
-							obj->setLayer(Gameplay::DrawLayer::World);
-							scene->addObject(std::move(obj)); 
-						}
-						std::cout << "Floor created\n";
-					}
-				}
-				else if (selectedType == 4)
-				{
-					obj = Gameplay::PrefabFactory::get().create("Trap");
-					if (obj)
-					{
-						obj->setPosition(vec2(pos[0], pos[1]));
-					obj->setSize(vec2(size[0], size[1]));
-						gameObjects.push_back(std::move(obj));
-					}
-				}
-			}
+	//			// Supposedly spawn the corresponding gameobject (texture and logic not fixed)
+	//			if (selectedType == 0)
+	//			{
+	//				obj = Gameplay::PrefabFactory::get().create("Player");
+	//				if (obj)
+	//				{
+	//					obj->setMoveSpeed(ms);
+	//					obj->setPosition(vec2(pos[0], pos[1]));
+	//					obj->setSize(vec2(size[0], size[1]));
+	//					obj->autoUpdateCollisionBaseOnScale();
+	//					obj->setTextureId(texToUse);
+	//					auto scene = m_scenes.current();
+	//					if (scene)
+	//					{
+	//						obj->setLayer(Gameplay::DrawLayer::Actors);
+	//						scene->addObject(std::move(obj)); 
+	//					}
+	//					std::cout << "Player created\n";
+	//				}
+	//			}
+	//			else if (selectedType == 1)
+	//			{
+	//				obj = Gameplay::PrefabFactory::get().create("Enemy");
+	//				if (obj)
+	//				{
+	//					obj->setMoveSpeed(ms);
+	//					obj->setPosition(vec2(pos[0], pos[1]));
+	//					obj->setSize(vec2(size[0], size[1]));
+	//					obj->autoUpdateCollisionBaseOnScale();
+	//					auto scene = m_scenes.current();
+	//					if (scene)
+	//					{
+	//						obj->setLayer(Gameplay::DrawLayer::Actors);
+	//						scene->addObject(std::move(obj)); 
+	//					}
+	//					std::cout << "Enemy created\n";
+	//				}
+	//			}
+	//			else if (selectedType == 2)
+	//			{
+	//				obj = Gameplay::PrefabFactory::get().create("Wall");
+	//				if (obj)
+	//				{
+	//					obj->setPosition(vec2(pos[0], pos[1]));
+	//					obj->setSize(vec2(size[0], size[1]));
+	//					obj->autoUpdateCollisionBaseOnScale();
+	//					auto scene = m_scenes.current();
+	//					if (scene)
+	//					{
+	//						obj->setLayer(Gameplay::DrawLayer::Background);
+	//						scene->addObject(std::move(obj)); 
+	//					}
+	//					std::cout << "Wall created\n";
+	//				}
+	//			}
+	//			else if (selectedType == 3)
+	//			{
+	//				obj = Gameplay::PrefabFactory::get().create("Floor");
+	//				if (obj)
+	//				{
+	//					obj->setPosition(vec2(pos[0], pos[1]));
+	//					obj->setSize(vec2(size[0], size[1]));
+	//					auto scene = m_scenes.current();
+	//					if (scene)
+	//					{
+	//						obj->setLayer(Gameplay::DrawLayer::World);
+	//						scene->addObject(std::move(obj)); 
+	//					}
+	//					std::cout << "Floor created\n";
+	//				}
+	//			}
+	//			else if (selectedType == 4)
+	//			{
+	//				obj = Gameplay::PrefabFactory::get().create("Trap");
+	//				if (obj)
+	//				{
+	//					obj->setPosition(vec2(pos[0], pos[1]));
+	//				obj->setSize(vec2(size[0], size[1]));
+	//					gameObjects.push_back(std::move(obj));
+	//				}
+	//			}
+	//		}
 
-			if (ImGui::Button("Delete Object"))
-			{
-				auto scene = m_scenes.current();
-				auto& v = scene->objects();
-				if (!v.empty())
-				{
-					Gameplay::GameObject* doomed = v.back().get();
-					scene->destroyObject(doomed);   
-				}
-			}
-			ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
+	//		if (ImGui::Button("Delete Object"))
+	//		{
+	//			auto scene = m_scenes.current();
+	//			auto& v = scene->objects();
+	//			if (!v.empty())
+	//			{
+	//				Gameplay::GameObject* doomed = v.back().get();
+	//				scene->destroyObject(doomed);   
+	//			}
+	//		}
+	//		ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
 
-			ImGui::Separator();
+	//		ImGui::Separator();
 
-			// ******* Testing Window **********
-			ImGui::Text("Testing Window");
+	//		// ******* Testing Window **********
+	//		ImGui::Text("Testing Window");
 
-			if (timer)
-			{
-				double fps = timer->fps();
-				;
-				double frameTime = timer->delta() * 1000.0;
+	//		if (timer)
+	//		{
+	//			double fps = timer->fps();
+	//			;
+	//			double frameTime = timer->delta() * 1000.0;
 
-				ImGui::Text("FPS: %.1f", fps);
-				ImGui::Text("Frame Time: %.2f ms", frameTime);
-			}
-			ImGui::Separator();
+	//			ImGui::Text("FPS: %.1f", fps);
+	//			ImGui::Text("Frame Time: %.2f ms", frameTime);
+	//		}
+	//		ImGui::Separator();
 
-			ImGui::Text("Performance Profiler (Live)");
-			ImGui::Spacing();
+	//		ImGui::Text("Performance Profiler (Live)");
+	//		ImGui::Spacing();
 
-			auto &profiler = Core::Profiler::Get();
-			const auto &data = profiler.data();
+	//		auto &profiler = Core::Profiler::Get();
+	//		const auto &data = profiler.data();
 
-			if (data.empty())
-			{
-				ImGui::TextDisabled("No profiling data recorded yet...");
-			}
-			else
-			{
-				for (const auto &[scope, info] : data)
-				{
-					double avg = info.avgTime();
-					double total = info.totalTime;
-					int count = info.callCount;
+	//		if (data.empty())
+	//		{
+	//			ImGui::TextDisabled("No profiling data recorded yet...");
+	//		}
+	//		else
+	//		{
+	//			for (const auto &[scope, info] : data)
+	//			{
+	//				double avg = info.avgTime();
+	//				double total = info.totalTime;
+	//				int count = info.callCount;
 
-					// Color code performance (green=fast, red=slow)
-					ImVec4 color;
-					if (avg < 1.0)
-						color = ImVec4(0.3f, 1.0f, 0.3f, 1.0f); // fast (<1ms)
-					else if (avg < 8.0)
-						color = ImVec4(1.0f, 1.0f, 0.3f, 1.0f); // moderate
-					else
-						color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // slow
+	//				// Color code performance (green=fast, red=slow)
+	//				ImVec4 color;
+	//				if (avg < 1.0)
+	//					color = ImVec4(0.3f, 1.0f, 0.3f, 1.0f); // fast (<1ms)
+	//				else if (avg < 8.0)
+	//					color = ImVec4(1.0f, 1.0f, 0.3f, 1.0f); // moderate
+	//				else
+	//					color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // slow
 
-					ImGui::TextColored(color, "%-18s | Avg: %.3f ms | Calls: %d | Total: %.2f ms",
-														 scope.c_str(), avg, count, total);
-				}
-			}
+	//				ImGui::TextColored(color, "%-18s | Avg: %.3f ms | Calls: %d | Total: %.2f ms",
+	//													 scope.c_str(), avg, count, total);
+	//			}
+	//		}
 
-			ImGui::Spacing();
+	//		ImGui::Spacing();
 
-			if (ImGui::Button("Show Performance Profile"))
-			{
-				Core::Profiler::Get().print();
-			}
+	//		if (ImGui::Button("Show Performance Profile"))
+	//		{
+	//			Core::Profiler::Get().print();
+	//		}
 
-			if (ImGui::Button("Reset Profiler"))
-			{
-				Core::Profiler::Get().reset();
-			}
+	//		if (ImGui::Button("Reset Profiler"))
+	//		{
+	//			Core::Profiler::Get().reset();
+	//		}
 
-			if (ImGui::CollapsingHeader("Layers Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
-				auto* scene = m_scenes.current();
-				if (scene) {
-					// 1) Count objects per DrawLayer bit from the scene's objects()
-					std::size_t counts[5] = { 0,0,0,0,0 };
-					static const uint32_t bits[5] = {
-						Gameplay::DrawLayer::Background,
-						Gameplay::DrawLayer::World,
-						Gameplay::DrawLayer::Actors,
-						Gameplay::DrawLayer::FX,
-						Gameplay::DrawLayer::UI
-					};
-					static const char* names[5] = { "Background (1)","World (2)","Actors (4)","FX (8)","UI (16)" };
+	//		if (ImGui::CollapsingHeader("Layers Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+	//			auto* scene = m_scenes.current();
+	//			if (scene) {
+	//				// 1) Count objects per DrawLayer bit from the scene's objects()
+	//				std::size_t counts[5] = { 0,0,0,0,0 };
+	//				static const uint32_t bits[5] = {
+	//					Gameplay::DrawLayer::Background,
+	//					Gameplay::DrawLayer::World,
+	//					Gameplay::DrawLayer::Actors,
+	//					Gameplay::DrawLayer::FX,
+	//					Gameplay::DrawLayer::UI
+	//				};
+	//				static const char* names[5] = { "Background (1)","World (2)","Actors (4)","FX (8)","UI (16)" };
 
-					auto& objs = scene->objects();
-					for (auto& u : objs) {
-						if (!u) continue;
-						uint32_t L = u->layer();
-						for (int i = 0; i < 5; ++i) {
-							if (L & bits[i]) { counts[i]++; }
-						}
-					}
+	//				auto& objs = scene->objects();
+	//				for (auto& u : objs) {
+	//					if (!u) continue;
+	//					uint32_t L = u->layer();
+	//					for (int i = 0; i < 5; ++i) {
+	//						if (L & bits[i]) { counts[i]++; }
+	//					}
+	//				}
 
 
-					ImGui::TextDisabled("Per-layer object counts:");
-					for (int i = 0; i < 5; ++i) {
-						ImGui::BulletText("%s : %zu", names[i], counts[i]);
-					}
+	//				ImGui::TextDisabled("Per-layer object counts:");
+	//				for (int i = 0; i < 5; ++i) {
+	//					ImGui::BulletText("%s : %zu", names[i], counts[i]);
+	//				}
 
-					ImGui::Separator();
+	//				ImGui::Separator();
 
-					// 2) Pick an object (by index) and move it to another layer live
-					static int chosen = 0;                       // object index in scene->objects()
-					static int targetLayerIdx = 2;               // default "Actors"
+	//				// 2) Pick an object (by index) and move it to another layer live
+	//				static int chosen = 0;                       // object index in scene->objects()
+	//				static int targetLayerIdx = 2;               // default "Actors"
 
-					if (!objs.empty() && ImGui::Button("Delete Chosen Object"))
-					{
-						if (auto scene1 = m_scenes.current())
-						{
-							Gameplay::GameObject* doomed = objs[chosen].get();
-							scene1->destroyObject(doomed);
-							if (chosen >= (int)scene1->objects().size()) chosen = (int)scene1->objects().size() - 1;
-						}
-					}
+	//				if (!objs.empty() && ImGui::Button("Delete Chosen Object"))
+	//				{
+	//					if (auto scene1 = m_scenes.current())
+	//					{
+	//						Gameplay::GameObject* doomed = objs[chosen].get();
+	//						scene1->destroyObject(doomed);
+	//						if (chosen >= (int)scene1->objects().size()) chosen = (int)scene1->objects().size() - 1;
+	//					}
+	//				}
 
-					// clamp if list shrank
-					if (chosen < 0) chosen = 0;
-					if (chosen >= (int)objs.size()) chosen = (int)objs.size() - 1;
+	//				// clamp if list shrank
+	//				if (chosen < 0) chosen = 0;
+	//				if (chosen >= (int)objs.size()) chosen = (int)objs.size() - 1;
 
-					
+	//				
 
-					ImGui::TextDisabled("Move one object to a new draw layer:");
-					ImGui::SliderInt("Object Index", &chosen, 0, (int)objs.size() > 0 ? (int)objs.size() - 1 : 0);
+	//				ImGui::TextDisabled("Move one object to a new draw layer:");
+	//				ImGui::SliderInt("Object Index", &chosen, 0, (int)objs.size() > 0 ? (int)objs.size() - 1 : 0);
 
-					if (!objs.empty()) {
-						auto* o = objs[chosen].get();
-						ImGui::Text("Chosen: id=%u name=\"%s\" type=%d currentBit=%u",
-							o->id(), o->name().c_str(), (int)o->type(), o->layer());
+	//				if (!objs.empty()) {
+	//					auto* o = objs[chosen].get();
+	//					ImGui::Text("Chosen: id=%u name=\"%s\" type=%d currentBit=%u",
+	//						o->id(), o->name().c_str(), (int)o->type(), o->layer());
 
-						ImGui::RadioButton("Background", &targetLayerIdx, 0); ImGui::SameLine();
-						ImGui::RadioButton("World", &targetLayerIdx, 1); ImGui::SameLine();
-						ImGui::RadioButton("Actors", &targetLayerIdx, 2); ImGui::SameLine();
-						ImGui::RadioButton("FX", &targetLayerIdx, 3); ImGui::SameLine();
-						ImGui::RadioButton("UI", &targetLayerIdx, 4);
+	//					ImGui::RadioButton("Background", &targetLayerIdx, 0); ImGui::SameLine();
+	//					ImGui::RadioButton("World", &targetLayerIdx, 1); ImGui::SameLine();
+	//					ImGui::RadioButton("Actors", &targetLayerIdx, 2); ImGui::SameLine();
+	//					ImGui::RadioButton("FX", &targetLayerIdx, 3); ImGui::SameLine();
+	//					ImGui::RadioButton("UI", &targetLayerIdx, 4);
 
-						if (ImGui::Button("Apply New Layer")) {
-							o->setLayer(bits[targetLayerIdx]);   // IMPORTANT: use setter so Scene’s callback re-buckets
-						}
-					}
+	//					if (ImGui::Button("Apply New Layer")) {
+	//						o->setLayer(bits[targetLayerIdx]);   // IMPORTANT: use setter so Scene’s callback re-buckets
+	//					}
+	//				}
 
-					ImGui::Separator();
+	//				ImGui::Separator();
 
-					// 3) Optional: assert pass ordering once per frame (toggleable)
-					static bool assertOrder = false;
-					ImGui::Checkbox("Assert render order (debug)", &assertOrder);
-					if (assertOrder) {
-						// Lightweight check: next frame Scene::render will hit the assert if order regresses.
-						// (Put the actual assert in Scene::render as shown earlier.)
-					}
-				}
-				else {
-					ImGui::TextDisabled("No scene loaded.");
-				}
-			}
+	//				// 3) Optional: assert pass ordering once per frame (toggleable)
+	//				static bool assertOrder = false;
+	//				ImGui::Checkbox("Assert render order (debug)", &assertOrder);
+	//				if (assertOrder) {
+	//					// Lightweight check: next frame Scene::render will hit the assert if order regresses.
+	//					// (Put the actual assert in Scene::render as shown earlier.)
+	//				}
+	//			}
+	//			else {
+	//				ImGui::TextDisabled("No scene loaded.");
+	//			}
+	//		}
 
-			ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
+	//		ImGui::Checkbox("Activate OnClickSpawn", &m_spawnonclick);
 
-			// Add button to spawn 2500 objects
-			if (ImGui::Button("Spawn 2500 Objects"))
-			{
-				// Get the current scene using the existing method
-				auto &factory = Gameplay::PrefabFactory::get();
-				auto currentScene = m_scenes.currentScene(); // Returns std::shared_ptr<Scene>
-				if (currentScene)
-				{
-					// Spawn objects in a grid pattern
-					int gridSize = 50; // 50x50 = 2500 objects
-					float spacing = 20.f;
-					float startX = -gridSize * spacing / 2.0f;
-					float startY = -gridSize * spacing / 2.0f;
+	//		// Add button to spawn 2500 objects
+	//		if (ImGui::Button("Spawn 2500 Objects"))
+	//		{
+	//			// Get the current scene using the existing method
+	//			auto &factory = Gameplay::PrefabFactory::get();
+	//			auto currentScene = m_scenes.currentScene(); // Returns std::shared_ptr<Scene>
+	//			if (currentScene)
+	//			{
+	//				// Spawn objects in a grid pattern
+	//				int gridSize = 50; // 50x50 = 2500 objects
+	//				float spacing = 20.f;
+	//				float startX = -gridSize * spacing / 2.0f;
+	//				float startY = -gridSize * spacing / 2.0f;
 
-					for (int i = 0; i < gridSize; ++i)
-					{
-						for (int j = 0; j < gridSize; ++j)
-						{
-							float x = startX + i * spacing;
-							float y = startY + j * spacing;
+	//				for (int i = 0; i < gridSize; ++i)
+	//				{
+	//					for (int j = 0; j < gridSize; ++j)
+	//					{
+	//						float x = startX + i * spacing;
+	//						float y = startY + j * spacing;
 
-							// Create an object using your prefab system
-							auto obj = factory.createAt("Floor", vec2(x, y));
-							if (obj)
-							{
-								obj->setLayer(Gameplay::DrawLayer::Background);
-								currentScene->addObject(std::move(obj)); 
-							}
-						}
-					}
-					std::cout << "Spawned 2500 objects!\n";
-				}
-			}
+	//						// Create an object using your prefab system
+	//						auto obj = factory.createAt("Floor", vec2(x, y));
+	//						if (obj)
+	//						{
+	//							obj->setLayer(Gameplay::DrawLayer::Background);
+	//							currentScene->addObject(std::move(obj)); 
+	//						}
+	//					}
+	//				}
+	//				std::cout << "Spawned 2500 objects!\n";
+	//			}
+	//		}
 
-			if (ImGui::Button("Spawn 2500 Objects Gradually"))
-			{
-				m_spawning = true;
-				m_spawnedCount = 0;
-			}
+	//		if (ImGui::Button("Spawn 2500 Objects Gradually"))
+	//		{
+	//			m_spawning = true;
+	//			m_spawnedCount = 0;
+	//		}
 
-			if (ImGui::Button("Back to Menu (ESC)"))
-			{
-				m_gsm.pop();
-			}
+	//		if (ImGui::Button("Back to Menu (ESC)"))
+	//		{
+	//			m_gsm.pop();
+	//		}
 
-			if (ImGui::Button("Reset Scene"))
-			{
-				resetScene();
-			}
+	//		if (ImGui::Button("Reset Scene"))
+	//		{
+	//			resetScene();
+	//		}
 
-			ImGui::Separator();
+	//		ImGui::Separator();
 
-			ImGui::Text("Press [W][A][S][D] to move!");
-			ImGui::Text("Press [Shift] to run!");
-			ImGui::Text("Press [Z] to open the level editor!");
+	//		ImGui::Text("Press [W][A][S][D] to move!");
+	//		ImGui::Text("Press [Shift] to run!");
+	//		ImGui::Text("Press [Z] to open the level editor!");
 
-			ImGui::End();
-		}
+	//		ImGui::End();
+	//	}
 
-		// ImDrawList* dl = ImGui::GetForegroundDrawList();
+	//	// ImDrawList* dl = ImGui::GetForegroundDrawList();
 
-		// const ImVec2 center{ 640.0f, 360.0f };
-		// const float radius = 60.0f;
-		// const int segments = 48; // More segments = smoother circle
-		// const float thickness = 3.0f;
+	//	// const ImVec2 center{ 640.0f, 360.0f };
+	//	// const float radius = 60.0f;
+	//	// const int segments = 48; // More segments = smoother circle
+	//	// const float thickness = 3.0f;
 
-		// dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
-	}
+	//	// dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
+	//}
 
 	void PlayState::resetScene()
 	{

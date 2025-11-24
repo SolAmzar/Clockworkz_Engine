@@ -133,11 +133,26 @@ namespace Platform {
         // NEW: Sync changes back to PlayState
         void syncSceneBackToPlayState(Runtime::Scene* playStateScene);
 
+        // Editor activation
+        void setActive(bool active);
+        bool isPointInPolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon);
+        bool isActive() const { return m_editorActive; }
+
+        // Access to framebuffer for external rendering
+        Graphics::FrameBuffer& getFramebuffer() { return m_sceneFramebuffer; }
+        const Graphics::FrameBuffer& getFramebuffer() const { return m_sceneFramebuffer; }
+
+        Graphics::Camera2D& getCamera() { return m_editorCamera; }
+        const Graphics::Camera2D& getCamera() const { return m_editorCamera; }
+
+        void handlePlayerInput(Gameplay::GameObject* player, double dt);
+
         // NEW: Get play mode state
         bool isInPlayMode() const { return m_mode == EditorMode::Play; }
 
         // Main loop functions
         void update(double dt);
+        void initializePlayMode();
         void renderSaveDialog();
         void renderLoadDialog();
         void render();
@@ -212,12 +227,15 @@ namespace Platform {
         void renderToolbar();
         void renderHierarchy();
         void renderProperties();
+        void copyComponents(Gameplay::GameObject* source, Gameplay::GameObject* dest);
         void renderPrefabPalette();
         void renderSceneView();
         void renderSceneViewDropZone();
         void renderLevelSettings();
         void renderCameraControls();
         void renderAssetBrowser();
+        void renderTextureAssets();
+        void renderAudioAssets();
         //void handleAssetFileWatch();
         void renderGrid();
 
@@ -421,6 +439,13 @@ namespace Platform {
         bool m_sceneViewHovered = false;
         bool m_sceneViewFocused = false;
         ImVec2 m_sceneViewPosition = ImVec2(0, 0);
+
+        bool m_editorActive = false;
+
+        bool m_flashlightOn{ true };
+        float m_playerBattery{ 100.0f };
+        void updateLightExposure(double dt);
+        void renderFlashlight();
     };
 
 } // namespace Platform

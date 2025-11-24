@@ -195,7 +195,7 @@
     {
       "name": "Box",
       "active": true,
-      "prefab": "Box",
+      "prefab": "Wall",
       "components": {
         "collider": {
           "type": "AABB",
