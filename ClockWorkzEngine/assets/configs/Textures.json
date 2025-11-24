@@ -13,14 +13,8 @@
 			"alphaOnlyIsRed": false
 		},
 		{
-			"name": "floor_texture",
-			"path": "assets/textures/floor.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
 			"name": "wall_texture",
-			"path": "assets/textures/wall.png",
+			"path": "assets/textures/wall_atlas.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		},
@@ -57,6 +51,12 @@
 		{
 			"name": "logo_texture",
 			"path": "assets/textures/logo.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "floor_texture",
+			"path": "assets/textures/corridorfloor.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		}

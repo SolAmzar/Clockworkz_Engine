@@ -44,6 +44,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <Assets/ResourceManager.hpp>
 #include <Assets/TextureManager.hpp>
 #include <IMGUI/imgui_internal.h>
+#include <Gameplay/WallTiles.hpp>
+#include <Gameplay/Components/SpriteRenderer.hpp>
 
 namespace fs = std::filesystem;
 
@@ -381,6 +383,124 @@ namespace Platform {
             }
         }
     }
+
+// ============================================================================
+// Wall Auto-Tiling
+// ============================================================================
+
+    void LevelEditor::autoTileWalls() {
+        if (!m_currentScene) return;
+
+        auto& objects = m_currentScene->objects();
+
+        // Collect all wall objects with sprite renderers using wall texture
+        struct WallCell {
+            Gameplay::GameObject* obj;
+            glm::ivec2 cell;
+        };
+
+        std::vector<WallCell> walls;
+        walls.reserve(objects.size());
+
+        // Determine a base cell size from the first wall
+        vec2 cellSize(1.0f, 1.0f);
+        bool cellSizeSet = false;
+
+        for (auto& u : objects) {
+            auto* obj = u.get();
+            if (!obj) continue;
+            if (obj->type() != Gameplay::GameObjectType::Wall) continue;
+
+            auto* sr = obj->getComponent<Gameplay::SpriteRendererComponent>();
+            if (!sr) continue;
+
+            if (!cellSizeSet) {
+                cellSize = obj->size();
+                if (cellSize.x == 0) cellSize.x = 1.0f;
+                if (cellSize.y == 0) cellSize.y = 1.0f;
+                cellSizeSet = true;
+            }
+
+            glm::vec2 p = glm::vec2(obj->transform().position.x,
+                obj->transform().position.y);
+            glm::ivec2 cell{
+                static_cast<int>(std::round(p.x / cellSize.x)),
+                static_cast<int>(std::round(p.y / cellSize.y))
+            };
+
+            walls.push_back({ obj, cell });
+        }
+
+        if (walls.empty()) return;
+
+        struct Vec2Hash {
+            std::size_t operator()(const glm::ivec2& v) const noexcept {
+                return (std::hash<int>()(v.x) * 73856093) ^ (std::hash<int>()(v.y) * 19349663);
+            }
+        };
+
+        std::unordered_map<glm::ivec2, Gameplay::GameObject*, Vec2Hash> wallMap;
+        wallMap.reserve(walls.size());
+        for (auto& w : walls) {
+            wallMap[w.cell] = w.obj;
+        }
+
+        auto hasWallAt = [&](int x, int y) -> bool {
+            return wallMap.find(glm::ivec2{ x, y }) != wallMap.end();
+            };
+
+        // Decide tile per wall based on 4-neighbour connectivity
+        for (auto& w : walls) {
+            glm::ivec2 c = w.cell;
+            bool up = hasWallAt(c.x, c.y + 1);
+            bool down = hasWallAt(c.x, c.y - 1);
+            bool left = hasWallAt(c.x - 1, c.y);
+            bool right = hasWallAt(c.x + 1, c.y);
+
+            Gameplay::WallTile tile = Gameplay::WallTile::EdgeLeft;
+
+            // Fully surrounded = center
+            if (up && down && left && right) {
+                tile = Gameplay::WallTile::Center;
+            }
+            // Edges
+            else if (!up && !down && left && right) {
+                tile = Gameplay::WallTile::EdgeTop;
+            }
+            else if (!up && !down && left && right) {
+                tile = Gameplay::WallTile::EdgeBottom;
+            }
+            else if (up && down && !left && !right) {
+                tile = Gameplay::WallTile::EdgeLeft;
+            }
+            else if (up && down && !left && !right) {
+                tile = Gameplay::WallTile::EdgeRight;
+            }
+            // Corners
+            else if (!up && down && !left && right) {
+                tile = Gameplay::WallTile::CornerTL;
+            }
+            else if (!up && down && left && !right) {
+                tile = Gameplay::WallTile::CornerTR;
+            }
+            else if (up && !down && !left && right) {
+                tile = Gameplay::WallTile::CornerBL;
+            }
+            else if (up && !down && left && !right) {
+                tile = Gameplay::WallTile::CornerBR;
+            }
+            else {
+                //tile = Gameplay::WallTile::Center;
+            }
+
+            if (auto* sr = w.obj->getComponent<Gameplay::SpriteRendererComponent>()) {
+                sr->setUV(compat::to_glm(Gameplay::GetWallTileUV(tile)));
+            }
+        }
+
+        markLevelDirty();
+    }
+
 
 // ============================================================================
 // Undo/redo Implementation
@@ -1768,6 +1888,11 @@ void LevelEditor::updateGizmoScale() {
             "", Gameplay::GameObjectType::Wall
             });
 
+      /*  m_prefabPalette.push_back({
+           "Wall", "Wall", "Terrain",
+           "", Gameplay::GameObjectType::WallCornerBL
+            });*/
+
         m_prefabPalette.push_back({
             "Player", "Player Character", "Characters",
             "", Gameplay::GameObjectType::Player
@@ -2272,13 +2397,16 @@ void LevelEditor::updateGizmoScale() {
                 // Determine icon based on type
                 const char* icon = "?";
                 switch (obj->type()) {
-                case Gameplay::GameObjectType::Floor: icon = "F"; break;
-                case Gameplay::GameObjectType::Wall: icon = "W"; break;
+                case Gameplay::GameObjectType::Floor:  icon = "F"; break;
+                case Gameplay::GameObjectType::Wall:   icon = "W"; break;
                 case Gameplay::GameObjectType::Player: icon = "P"; break;
-                case Gameplay::GameObjectType::Enemy: icon = "E"; break;
-                case Gameplay::GameObjectType::Trap: icon = "T"; break;
-                default: icon = "?"; break;
+                case Gameplay::GameObjectType::Enemy:  icon = "E"; break;
+                case Gameplay::GameObjectType::Trap:   icon = "T"; break;
+                case Gameplay::GameObjectType::Ball:   icon = "B"; break;
+                case Gameplay::GameObjectType::Box:    icon = "B"; break;
+                default:                               icon = "?"; break;
                 }
+
 
                 ImGui::PushID(static_cast<int>(i));
 
@@ -2339,7 +2467,7 @@ void LevelEditor::updateGizmoScale() {
         }
 
         // Object type (read-only)
-        const char* typeNames[] = { "Floor", "Wall", "Player", "Enemy", "Trap", "Unknown", "Ball" };
+        const char* typeNames[] = { "Floor", "Wall", "Player", "Enemy", "Trap", "Unknown", "Ball"};
         int typeIndex = static_cast<int>(m_selectedObject->type());
         ImGui::Text("Type: %s", typeNames[typeIndex]);
 
@@ -2557,9 +2685,83 @@ void LevelEditor::updateGizmoScale() {
                         }
                         ImGui::TreePop();
                     }
-            }
+                }
+                using Gameplay::SpriteRendererComponent;
 
+                // Sprite Renderer inspector
+                if (auto* sr = m_selectedObject->getComponent<SpriteRendererComponent>()) {
+                    if (ImGui::TreeNode("Sprite Renderer")) {
+                        // Show / edit texture alias
+                        char texAlias[256];
+                        std::strncpy(texAlias, sr->textureAlias().c_str(), sizeof(texAlias));
+                        if (ImGui::InputText("Texture Alias", texAlias, sizeof(texAlias))) {
+                            sr->setTexture(texAlias);
+                            m_selectedObject->setTextureId(texAlias);
+                            markLevelDirty();
+                        }
+
+                        // Show current UV
+                        glm::vec4 uv = sr->uv();
+                        ImGui::Text("UV: (%.3f, %.3f, %.3f, %.3f)", uv.x, uv.y, uv.z, uv.w);
+
+                        // --- Wall tile dropdown, only if this is a wall ---
+                        if (m_selectedObject->type() == Gameplay::GameObjectType::Wall) {
+                            static const char* tileNames[] = {
+                                "CornerTL", "EdgeTop", "CornerTR",
+                                "EdgeLeft", "Center", "EdgeRight",
+                                "CornerBL", "EdgeBottom", "CornerBR"
+                            };
+
+                            // Try to detect current tile from UV
+                            int currentIndex = 4; // default Center
+                            auto epsEqual = [](float a, float b) {
+                                return std::abs(a - b) < 0.0005f;
+                                };
+                            auto uvEquals = [&](const glm::vec4& a, const glm::vec4& b) {
+                                return epsEqual(a.x, b.x) && epsEqual(a.y, b.y) &&
+                                    epsEqual(a.z, b.z) && epsEqual(a.w, b.w);
+                                };
+
+                            Gameplay::WallTile allTiles[] = {
+                                Gameplay::WallTile::CornerTL,
+                                Gameplay::WallTile::EdgeTop,
+                                Gameplay::WallTile::CornerTR,
+                                Gameplay::WallTile::EdgeLeft,
+                                Gameplay::WallTile::Center,
+                                Gameplay::WallTile::EdgeRight,
+                                Gameplay::WallTile::CornerBL,
+                                Gameplay::WallTile::EdgeBottom,
+                                Gameplay::WallTile::CornerBR
+                            };
+
+                            for (int i = 0; i < 9; ++i) {
+                                if (uvEquals(uv, compat::to_glm(Gameplay::GetWallTileUV(allTiles[i])))) {
+                                    currentIndex = i;
+                                    break;
+                                }
+                            }
+
+                            int selectedIndex = currentIndex;
+                            if (ImGui::Combo("Wall Tile", &selectedIndex, tileNames, IM_ARRAYSIZE(tileNames))) {
+                                Gameplay::WallTile chosen = allTiles[selectedIndex];
+                                sr->setUV(compat::to_glm(Gameplay::GetWallTileUV(chosen)));
+                                markLevelDirty();
+                            }
+
+                            if (ImGui::Button("Auto-tile all walls")) {
+                                autoTileWalls();
+                            }
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+                else {
+                    ImGui::TextDisabled("No SpriteRendererComponent on this object");
+                }
         }
+
+        
 
         ImGui::Separator();
         if (ImGui::Button("Duplicate")) {

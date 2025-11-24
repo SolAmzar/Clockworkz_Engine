@@ -55,7 +55,8 @@ if(MSVC)
   add_compile_options(/W4 /permissive- /Zc:preprocessor /Zc:__cplusplus)
   add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 else()
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-
+  -Wextra -Wpedantic)
 endif()
 
 # --- Silence deprecation warnings for 3rd-party libs ---

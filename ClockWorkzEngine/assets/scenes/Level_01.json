@@ -133,7 +133,7 @@
     {
       "name": "WallLeft",
       "active": true,
-      "prefab": "Wall",
+      "prefab": "WallEdgeTop",
       "components": {
         "collider": {
           "type": "AABB",
@@ -164,7 +164,7 @@
     {
       "name": "WallRight",
       "active": true,
-      "prefab": "Wall",
+      "prefab": "WallCornerTL",
       "components": {
         "collider": {
           "type": "AABB",
@@ -220,6 +220,34 @@
         },
         "spriteRenderer": {
           "textureId": "wall_texture"
+        }
+      }
+    },
+    {
+      "name": "CorridorFloor",
+      "active": true,
+      "prefab": "CorridorFloor",
+      "components": {
+        "collider": {
+          "type": "AABB",
+          "width": 100.0,
+          "height": 100.0,
+          "isSolid": false,
+          "layer": 1,
+          "collisionCategory": 0,
+          "collisionMask": 0,
+          "blocksLight": false,
+          "isHazard": false
+        },
+        "transform": {
+          "position": {
+            "x": -100,
+            "y": 100
+          },
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
         }
       }
     }

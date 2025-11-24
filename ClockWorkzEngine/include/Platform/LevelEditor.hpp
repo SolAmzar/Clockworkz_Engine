@@ -351,6 +351,9 @@ namespace Platform {
         void recordRotateCommand(Gameplay::GameObject* obj, float oldRot, float newRot);
         void recordScaleCommand(Gameplay::GameObject* obj, vec2 oldScale, vec2 newScale);
 
+		// Auto-tiling for walls
+        void autoTileWalls();
+
         // ====================================================================
         // INTEGRATED GIZMO SYSTEM - Member Variables
         // ====================================================================
