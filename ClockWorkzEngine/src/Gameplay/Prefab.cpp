@@ -47,7 +47,16 @@ namespace Gameplay
             return GameObjectType::Player;
         if (name == "Enemy")
             return GameObjectType::Enemy;
-        if (name == "Wall")
+        if (name == "Wall"
+            || name == "WallCornerTL"
+            || name == "WallCornerTR"
+            || name == "WallCornerBL"
+            || name == "WallCornerBR"
+            || name == "WallEdgeTop"
+            || name == "WallEdgeBottom"
+            || name == "WallEdgeLeft"
+            || name == "WallEdgeRight"
+            || name == "WallCenter")
             return GameObjectType::Wall;
         if (name == "Floor")
             return GameObjectType::Floor;

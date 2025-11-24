@@ -35,6 +35,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Graphics/Shader.hpp"
+#include <Gameplay/WallTiles.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -52,6 +53,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <Platform/LevelEditorState.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include "Gameplay/Components/chase.hpp"
+#include <Math/VecCompatGLM.hpp>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -236,6 +238,14 @@ namespace Runtime
 							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
 						}
 					}
+
+				/*	if (u->type() == Gameplay::GameObjectType::Wall) {
+						auto* sprite = u->getComponent<Gameplay::SpriteRendererComponent>();
+						if (sprite) {
+							sprite->setUV(compat::to_glm(Gameplay::GetWallTileUV(Gameplay::WallTile::CornerTL)));
+						}
+
+					}*/
 				}
 				// ******** Chase function to be implemented in M3 ********
 				if (m_player) {

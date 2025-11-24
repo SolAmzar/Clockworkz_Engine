@@ -2,87 +2,87 @@
   "prefabs": [
     {
       "prefabName": "Player",
-        "components": {
-            "transform": {
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0
-                },
-                "rotation": 0.0,
-                "scale": {
-                    "x": 100.0,
-                    "y": 100.0
-                }
-            },
-            "collider": {
-                "type": "AABB",
-                "width": 1.0,
-                "height": 1.0,
-                "isSolid": true,
-                "layer": 4,
-                "collisionMask": 7,
-                "collisionCategory": 2,
-                "blocksLight": false,
-                "isHazard": false
-            },
-            "health": {
-                "hp": 10
-            },
-            "spriteRenderer": {
-                "textureId": "player_texture"
-            },
-            "spriteAnimator": {
-                "filename": "player.json"
-            }
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 4,
+          "collisionMask": 7,
+          "collisionCategory": 2,
+          "blocksLight": false,
+          "isHazard": false
+        },
+        "health": {
+          "hp": 10
+        },
+        "spriteRenderer": {
+          "textureId": "player_texture"
+        },
+        "spriteAnimator": {
+          "filename": "player.json"
         }
+      }
     },
     {
       "prefabName": "Enemy",
-        "components": {
-            "transform": {
-                "position": {
-                    "x": 0.0,
-                    "y": 0.0
-                },
-                "rotation": 0.0,
-                "scale": {
-                    "x": 100.0,
-                    "y": 100.0
-                }
-            },
-            "collider": {
-                "width": 0.9,
-                "height": 0.9,
-                "isSolid": true,
-                "layer": 4,
-                "collisionMask": 7,
-                "collisionCategory": 4
-            },
-            "health": {
-                "hp": 3
-            },
-            "damage": {
-                "damage": 2
-            },
-            "spriteRenderer": {
-                "textureId": "monster_texture"
-            },
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "width": 0.9,
+          "height": 0.9,
+          "isSolid": true,
+          "layer": 4,
+          "collisionMask": 7,
+          "collisionCategory": 4
+        },
+        "health": {
+          "hp": 3
+        },
+        "damage": {
+          "damage": 2
+        },
+        "spriteRenderer": {
+          "textureId": "monster_texture"
+        },
 
-            "spriteAnimator": {
-                "filename": "enemy.json"
-            },
-            "patrol": {
-                "a": {
-                    "x": 200,
-                    "y": 300
-                },
-                "b": {
-                    "x": 500,
-                    "y": 300
-                },
-                "speed": 120.0
-            }
+        "spriteAnimator": {
+          "filename": "enemy.json"
+        },
+        "patrol": {
+          "a": {
+            "x": 200,
+            "y": 300
+          },
+          "b": {
+            "x": 500,
+            "y": 300
+          },
+          "speed": 120.0
         }
+      }
     },
     {
       "prefabName": "Wall",
@@ -115,6 +115,285 @@
       }
     },
     {
+      "prefabName": "WallCornerTL",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.0, 0.6666667, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallCornerTR",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.6666667, 0.6666667, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallEdgeLeft",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.0, 0.3333333, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallEdgeRight",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.6666667, 0.3333333, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallCornerBL",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.0, 0.0, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallEdgeTop",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.3333333, 0.6666667, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallEdgeBottom",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.3333333, 0.0, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallCornerBR",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.6666667, 0.0, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
+      "prefabName": "WallCenter",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 7,
+          "blocksLight": true,
+          "isHazard": false,
+          "collisionCategory": 1
+        },
+        "spriteRenderer": {
+          "textureId": "wall_texture",
+          "uv": [ 0.0, 0.0, 0.3333333, 0.3333333 ]
+        }
+      }
+    },
+    {
       "prefabName": "Floor",
       "components": {
         "transform": {
@@ -142,6 +421,37 @@
       }
     },
     {
+      "prefabName": "CorridorFloor",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "AABB",
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": false, 
+          "layer": 4, 
+          "collisionMask": 0, 
+          "blocksLight": false,
+          "isHazard": false,
+          "collisionCategory": 0
+        },
+        "spriteRenderer": {
+          "textureId": "floor_texture",
+          "uv": [ 0.0, 0.0, 1.0, 1.0 ] 
+        }
+      }
+    },
+    {
       "prefabName": "Box",
       "components": {
         "transform": {
@@ -164,7 +474,7 @@
           "collisionCategory": 0
         },
         "spriteRenderer": {
-          "textureId": "floor_texture"
+          "textureId": "wall_texture"
         }
       }
     }

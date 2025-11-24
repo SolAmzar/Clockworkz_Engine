@@ -75,7 +75,16 @@ namespace Gameplay {
 
     json GameObjectSerializer::serializeSpriteRenderer(const GameObject& obj) {
         json j;
-        j["textureId"] = obj.textureId();
+        //j["textureId"] = obj.textureId();
+        if (auto* sr = obj.getComponent<SpriteRendererComponent>()) {
+            j["textureId"] = obj.textureId(); // or sr->textureAlias if you store it there
+
+            auto uv = sr->uv();
+            j["uv"] = { uv.x, uv.y, uv.z, uv.w };
+            // (optionally tint too)
+        }
+
+
         return j;
     }
 
@@ -181,8 +190,18 @@ namespace Gameplay {
             std::string texId = j["textureId"].get<std::string>();
             obj.setTextureId(texId);
 
-            obj.addComponent<SpriteRendererComponent>(texId);
+            auto* sr = obj.addComponent<SpriteRendererComponent>(texId);
+
+            if (j.contains("uv") && j["uv"].is_array() && j["uv"].size() == 4) {
+                auto arr = j["uv"];
+                glm::vec4 uv{ arr[0].get<float>(), arr[1].get<float>(),
+                              arr[2].get<float>(), arr[3].get<float>() };
+               
+                sr->setUV(uv);
+            }
         }
+     
+
     }
 
     void GameObjectSerializer::deserializePatrol(GameObject& obj, const json& j) {

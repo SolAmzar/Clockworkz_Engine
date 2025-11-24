@@ -24,7 +24,8 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 namespace Gameplay {
 
     namespace {
-        // Helper: project vector v onto plane with normal n (remove into-wall component)
+        // Helper: project vector v onto plane with normal n (remove into-
+        // component)
             inline vec2 slideAgainst(vec2 v, vec2 n) {
             float intoWall = dot(v, n);
             if (intoWall > 0.0f) return v;        // moving away from wall already
