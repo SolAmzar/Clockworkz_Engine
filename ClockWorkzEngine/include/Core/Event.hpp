@@ -24,10 +24,15 @@ namespace Core
 
     struct QuitGameEvent : BaseEvent {};
 
+    struct WindowFocusLostEvent : public BaseEvent {};
+    struct WindowFocusGainedEvent : public BaseEvent {};
+
+
     struct PlayerDiedEvent : BaseEvent
     {
         int id;
         PlayerDiedEvent(int id) : id(id) {}
     };
+
 
 }

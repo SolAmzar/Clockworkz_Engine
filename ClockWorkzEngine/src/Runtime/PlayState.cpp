@@ -308,6 +308,7 @@ namespace Runtime
 			}
 		}
 
+#ifdef _DEBUG
 		// F10 = Open editor
 		if (m_input.wasKeyPressed(GLFW_KEY_F10)) {
 			if (m_levelEditor && !m_levelEditor->isActive()) {
@@ -317,6 +318,7 @@ namespace Runtime
 				}
 			}
 		}
+#endif
 
 		if (m_returnToMenuRequested)
 		{
@@ -369,7 +371,7 @@ namespace Runtime
 			m_gsm.pop();
 			return;
 		}
-
+#ifdef _DEBUG
 		if (m_input.wasKeyPressed(GLFW_KEY_P))
 		{
 			m_debug = !m_debug;
@@ -379,7 +381,7 @@ namespace Runtime
 			}
 			return;
 		}
-
+#endif
 		// Havign issue with the camera
 		if (m_input.wasKeyPressed(GLFW_KEY_R))
 		{
@@ -779,6 +781,7 @@ namespace Runtime
 
 	void PlayState::renderImGui(Core::Time* timer)
 	{
+#ifdef _DEBUG
 		// Only render editor UI if editor is active
 		if (m_levelEditor && m_levelEditor->isActive()) {
 			Core::Engine& engine = Core::Engine::Get();
@@ -790,6 +793,7 @@ namespace Runtime
 		}
 
 		(void)timer;
+#endif
 	}
 
 	void PlayState::render(Core::Time* timer)

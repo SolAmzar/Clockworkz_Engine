@@ -147,11 +147,13 @@ void WindowManager::onFocusLost()
 	// asking hasFocus() each frame.
 	InputManager& input = Core::Engine::Get().input();
 	input.clearState();
+	Core::Engine::Get().events().publish(Core::WindowFocusLostEvent());
 }
 
 void WindowManager::onFocusGained()
 {
 	// same, but you *could* put logging here if you want
+	Core::Engine::Get().events().publish(Core::WindowFocusGainedEvent());
 }
 
 

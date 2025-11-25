@@ -5,7 +5,7 @@
 \author(s)      [Syafiq], 100%
 \brief          Basic pause menu implementation
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -164,11 +164,12 @@ namespace Runtime {
         {
             select();
         }
-
+#ifdef _DEBUG
         if (m_input.wasKeyPressed(GLFW_KEY_F1))
         {
             m_debug = !m_debug;
         }
+#endif
     }
 
     void PauseState::render(Core::Time* timer)
@@ -238,6 +239,7 @@ namespace Runtime {
 
     void PauseState::renderImGui(Core::Time* timer)
     {
+#ifdef _DEBUG
         if (!m_debug) return;
 
         ImGui::Begin("Pause State Debug");
@@ -246,6 +248,7 @@ namespace Runtime {
         ImGui::End();
 
         (void)timer;
+#endif
     }
 
     void PauseState::onExit()

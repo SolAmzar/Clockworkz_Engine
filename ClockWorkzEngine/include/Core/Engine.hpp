@@ -102,5 +102,6 @@ namespace Core {
 		bool m_running{ false }; // Is the engine running?
 		static Engine* s_instance;
 		double m_accuml;
+		bool m_pausedByFocus;
 	};
 }

@@ -62,7 +62,6 @@ namespace Runtime
 
     void MenuState::onEnter()
     {
-
         m_selected = 0;
         m_dirty = true;
 
@@ -289,24 +288,28 @@ namespace Runtime
             m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f), /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
             select();
         }
-
+#ifdef _DEBUG
         if (m_input.wasKeyPressed(GLFW_KEY_P))
         {
+
             m_debug = !m_debug;
             if (m_debug)
             {
                 std::cout << "Debug is pressed\n";
             }
+
             return;
         }
+
 
         if (m_input.wasKeyTriggered(GLFW_KEY_M)) {
             m_gsm.push(std::make_shared<Runtime::SpriteState>(
                 "SpriteEditor",
                 m_input,
                 m_gsm));
-        }
 
+        }
+#endif
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
         if (m_input.wasKeyTriggered(GLFW_KEY_P))
@@ -366,7 +369,7 @@ namespace Runtime
         {
             //subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
         }
-
+#ifdef _DEBUG
         if (debugFont)
         {
             if (timer)
@@ -377,6 +380,7 @@ namespace Runtime
 
             }
         }
+#endif
 
         // Start: Syafiq
         if (selectFont)
@@ -417,7 +421,7 @@ namespace Runtime
     // Implementation of ImGui
     void Runtime::MenuState::renderImGui(Core::Time *timer)
     {
-
+#ifdef _DEBUG
         if (!m_debug)
             return;
 
@@ -430,6 +434,7 @@ namespace Runtime
             ImGui::End();
         }
         (void)timer;
+#endif
     }
 
     void MenuState::onExit()

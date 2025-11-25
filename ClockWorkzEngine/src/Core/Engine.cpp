@@ -51,6 +51,7 @@ namespace Core
 	Engine::Engine() {
 		s_instance = this;  // register singleton instance
 		m_accuml = 0.0;
+		m_pausedByFocus = false;
 	}
 
 	Engine::~Engine() {
@@ -168,6 +169,26 @@ namespace Core
 				this->m_window->requestClose();
 			}
 		);
+
+		events().subscribe<WindowFocusLostEvent>(
+			this,
+			[this](const WindowFocusLostEvent&) {
+				// pause audio & gameplay
+				this->audio().setGroupPaused(Audio::Group::BGM, true);
+				this->audio().setGroupPaused(Audio::Group::SFX, true);
+				this->m_pausedByFocus = true;
+			}
+		);
+
+		events().subscribe<WindowFocusGainedEvent>(
+			this,
+			[this](const WindowFocusGainedEvent&) {
+				// resume audio
+				this->audio().setGroupPaused(Audio::Group::BGM, false);
+				this->audio().setGroupPaused(Audio::Group::SFX, false);
+				this->m_pausedByFocus = false;
+			}
+		);
 		return true;
 	}
 
@@ -177,10 +198,16 @@ namespace Core
 		if (m_logger)
 			m_logger->info("Engine shutdown.");
 
-		// ADD THIS: Clean up game state manager (which will unload scenes)
+		// 1. First destroy IMGUI (UI layer)
+		if (m_imgui)
+		{
+			m_imgui->shutdown();
+			m_imgui.reset();
+		}
+
+		// 2. Cleanup Game States (they may use ImGui in onExit)
 		if (m_gsm)
 		{
-			// Pop all states, which triggers their onExit() methods
 			while (m_gsm->top())
 			{
 				m_gsm->pop();
@@ -189,30 +216,58 @@ namespace Core
 			m_gsm.reset();
 		}
 
-		if (m_imgui)
+		// 3. Camera must die BEFORE renderer + graphics
+		if (m_camera)
 		{
-			m_imgui->shutdown();
-			m_imgui.reset();
+			m_camera.reset();
 		}
 
-		m_renderer.reset();
-		m_gfx.reset();
-		m_input.reset();
-		m_window.reset();
+		// 4. RenderingManager (OpenGL buffers)
+		if (m_renderer)
+		{
+			m_renderer.reset();
+		}
+
+		// 5. GraphicsManager (viewport, GL state)
+		if (m_gfx)
+		{
+			m_gfx.reset();
+		}
+
+		// 6. Input must die BEFORE window
+		if (m_input)
+		{
+			m_input.reset();
+		}
+
+		// 7. WindowManager (destroys GLFW window + context)
+		if (m_window)
+		{
+			m_window.reset();
+		}
+
+		// 8. Audio shutdown
+		if (m_audio)
+		{
+			Assets::SoundManager::Clear();
+			m_audio.reset();
+		}
+		if (m_sfAudio)
+		{
+			m_sfAudio.reset();
+		}
+
+		// 9. TextureManager cleanup
+		Assets::TextureManager::Clear();
+
+		// 10. Basic engine services (safe anywhere below)
 		m_time.reset();
 		m_logger.reset();
 		m_config.reset();
-		m_camera.reset();
-		if (m_audio) {
-			Assets::SoundManager::Clear();  // clears clips while FMOD system is still alive
-			m_audio.reset();                   // now ~AudioManager runs and closes FMOD safely
-		}
-		m_sfAudio.reset();
-
-		Assets::TextureManager::Clear();
 
 		std::cout << "Shutdown done" << std::endl;
 	}
+
 
 	/** Function header comment
 	 * @brief Engine::update(double dt) is called once per frame in the game loop.
@@ -327,7 +382,13 @@ namespace Core
 
 				{
 					PROFILE_SCOPE("Update");
-					update(m_time->delta());
+					if (!m_pausedByFocus) {
+						update(m_time->delta());
+					}
+					else {
+						//update(0.f);
+					}
+					
 				}
 
 	/*
@@ -358,9 +419,11 @@ namespace Core
 					m_accuml = 0.0;
 					double fps = m_time->fps();
 					double frameTime = m_time->frameTimeMs();
-
-					std::string title = "Lights Out  |  FPS: " + std::to_string((int)fps) +
+					std::string title = "Lights Out";
+#ifdef _DEBUG
+					title = "Lights Out  |  FPS: " + std::to_string((int)fps) +
 						"  (" + std::to_string(frameTime).substr(0, 5) + " ms)";
+#endif
 					m_window->setTitle(title);
 				}
 			}
