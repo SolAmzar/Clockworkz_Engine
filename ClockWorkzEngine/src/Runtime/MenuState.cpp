@@ -54,8 +54,8 @@ namespace Runtime
         std::cout << "\x1B[2J\x1B[H"; // ANSI clear + home
     }
 
-    MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input, Platform::WindowManager &window, Audio::AudioManager &audio, std::function<void()> quitFn)
-        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_quitFn(std::move(quitFn)),
+    MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input, Platform::WindowManager &window, Audio::AudioManager &audio)
+        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio),
         m_background(GameObjectType::Unknown, "MenuBG", GameObjectShape::Rectangle), m_logo(GameObjectType::Unknown, "Logo", GameObjectShape::Rectangle)
     {
     }
@@ -82,17 +82,17 @@ namespace Runtime
         // printMenu();
 
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Title", "assets/fonts/ANUNE___.TTF", 48);
+            "Title", "assets/fonts/MANIC1.ttf", 48);
 
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Subtitle", "assets/fonts/ANUNEDW_.TTF", 72);
+            "Subtitle", "assets/fonts/MANIC2.TTF", 72);
 
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Debug", "assets/fonts/ANUNEDW_.TTF", 24);
+            "Debug", "assets/fonts/MANIC1.TTF", 24);
 
         /* Syafiq*/
         Assets::ResourceManager<Assets::FontManager>::Load(
-            "Selection", "assets/fonts/ANUNEDW_.TTF", 50);
+            "Selection", "assets/fonts/MANIC1.TTF", 60);
 
         auto textShader = ResourceManager<Shader>::Load(
             "text",
@@ -106,13 +106,27 @@ namespace Runtime
         // Amzar
         m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
         m_background.addComponent<SpriteRendererComponent>("menu_bg_texture");
+        SpriteRendererComponent* bgSprite = m_background.getComponent<SpriteRendererComponent>();
+        bgSprite->setIsUI(true);
         m_background.setSize({1.f, 1.f});                    // Proper dimensions
-        m_background.transform().scale = {1920.0f, 1080.0f}; // Keep scale neutral
 
         m_logo.addComponent<SpriteRendererComponent>("logo_texture");
+        SpriteRendererComponent* logoSprite = m_logo.getComponent<SpriteRendererComponent>();
+        logoSprite->setIsUI(true);
         m_logo.setSize({ 1.f, 1.f });
-        m_logo.transform().position = { 0.0f, 250.0f };
-        m_logo.transform().scale = { 600.0f, 600.0f };
+
+
+        updateLayout(m_window.width(), m_window.height());
+
+        // Update layout when window size change
+        Core::Engine::Get().events().subscribe<Core::WindowResizeEvent>(
+            this,
+            [this](const Core::WindowResizeEvent& e) {
+                if (e.width > 0 && e.height > 0) {
+                    updateLayout(e.width, e.height);
+                }
+            }
+        );
     }
 
     void MenuState::printMenu()
@@ -152,13 +166,12 @@ namespace Runtime
             m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
             return;
         }
-        if (choice == "Quit Game")
+        if (choice == "Exit Game")
         {
             std::cout << "Quiting game...\n";
 
             //**** Exit game needs work *****
-            if (m_quitFn)
-                m_quitFn();
+            Core::Engine::Get().events().publish(Core::QuitGameEvent());
             return;
         }
         // yusuf
@@ -170,6 +183,49 @@ namespace Runtime
         }
 
         std::cout << "[" << choice << "] selected (no state change).\n";
+    }
+
+    void MenuState::updateLayout(int w, int h)
+    {
+        // Resize background to fill screen
+        float targetW = (float)w;
+        float targetH = (float)h;
+
+        float scaleX = (float)w / 1920.0f;
+        float scaleY = (float)h / 1080.0f;
+
+        m_positions[0] = { 390.0f * scaleX, h - (340.0f * scaleY), scaleX * 1.f };
+        m_positions[1] = { 200.0f * scaleX, h - (480.0f * scaleY), scaleX * 1.f };
+        m_positions[2] = { 230.0f * scaleX, h - (660.0f * scaleY), scaleX * 1.f };
+        m_positions[3] = { 520.0f * scaleX, h - (700.0f * scaleY), scaleX * 0.6f };
+        m_positions[4] = { 270.0f * scaleX, h - (830.0f * scaleY), scaleX * 0.6f };
+
+
+
+        // center it (optional)
+        m_background.transform().position = {
+            0.0f,
+            0.0f
+        };
+
+        m_background.transform().scale.x = targetW;
+        m_background.transform().scale.y = targetH;
+        std::cout << "bgX: " << m_background.transform().scale.x << ", bgY: " << m_background.transform().scale.y << std::endl;
+
+        // === LOGO SCALING ===
+        float desiredLogoHeight = 400.0f;      // You can change this anytime
+        float desiredLogoWidth = desiredLogoHeight; // square logo
+
+        // Center horizontally
+        float logoX = (w * 0.5f) - (desiredLogoWidth * 0.5f);
+
+        // Place near top
+        float topPadding = -50.0f; // distance from top edge
+        float logoY = h - desiredLogoHeight - topPadding;
+
+        // Apply transform
+        m_logo.transform().position = { logoX, logoY };
+        m_logo.transform().scale = { desiredLogoWidth, desiredLogoHeight };
     }
 
     void MenuState::update(double /*dt*/)
@@ -184,24 +240,14 @@ namespace Runtime
 
         bool isHover = false;
 
-        struct MenuPosition {
-            float centerX, centerY, scale;
-        };
 
-        MenuPosition positions[5] = {
-            {390.0f, h - 340.0f, 1.f},
-            {200.0f, h - 480.0f, 1.f},
-            {230.0f, h - 660.0f, 1.f},
-            {500.0f, h - 700.0f, 0.6f},
-            {270.0f, h - 830.0f, 0.6f}
-        };
 
         for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
         {
-            float scale = positions[i].scale;
+            float scale = m_positions[i].scale;
             float textWidth = m_items[i].length() * 50.0f * scale * 0.5f;
-            float xPos = positions[i].centerX - (textWidth / 2.0f);  // Center calculation
-            float yPos = positions[i].centerY;
+            float xPos = m_positions[i].centerX - (textWidth / 2.0f);  // Center calculation
+            float yPos = m_positions[i].centerY;
             float textHeight = 48.0f * scale;
 
             if (mouseX >= xPos && mouseX <= (xPos + textWidth) &&
@@ -282,22 +328,27 @@ namespace Runtime
 
     void MenuState::render(Core::Time *timer)
     {
-
-        m_renderer->beginScenePass(m_cam->viewProj());
+        int w = m_window.width();
+        int h = m_window.height();
+        //glm::mat4 projection = glm::ortho(
+        //    0.0f, (float)w,
+        //    0.0f, (float)h);
+        //m_renderer->beginScenePass(m_cam->viewProj());
+        //m_background.render(*m_renderer);
+        //m_renderer->endScenePass();
+        glm::mat4 uiProj = glm::ortho(0.f, (float)w, 0.f, (float)h);
+        m_renderer->beginScenePass(uiProj);
         m_background.render(*m_renderer);
-        m_renderer->endScenePass();
-
-        m_renderer->beginScenePass(m_cam->viewProj());
         m_logo.render(*m_renderer);
         m_renderer->endScenePass();
 
+        //m_renderer->beginScenePass(m_cam->viewProj());
+        //m_logo.render(*m_renderer);
+        //m_renderer->endScenePass();
+
         // Later, retrieve them anywhere:
-        int w = m_window.width();
-        int h = m_window.height();
-        glm::mat4 projection = glm::ortho(
-            0.0f, (float)w,
-            0.0f, (float)h);
-        m_renderer->beginFontPass(projection);
+
+        m_renderer->beginFontPass(uiProj);
 
         auto shader = Assets::ResourceManager<Shader>::Get("text");
         auto titleFont = Assets::ResourceManager<Assets::FontManager>::Get("Title");
@@ -321,8 +372,9 @@ namespace Runtime
             if (timer)
             {
                 std::stringstream ss{};
-                ss << "FPS: " << timer->fps();
+                ss << " screenW: "  << m_window.width() << " screenH: " << m_window.height() << " FPS: " << timer->fps();
                 debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
+
             }
         }
 
@@ -330,21 +382,21 @@ namespace Runtime
         if (selectFont)
         {
             // Much darker colors for better visibility
-            glm::vec3 normalCol(0.25f, 0.20f, 0.15f);
-            glm::vec3 selectedCol(0.05f, 0.05f, 0.05f);
+            glm::vec3 normalCol(0.01f, 0.01f, 0.01f);
+            glm::vec3 selectedCol(1.f, 1.f, 1.f);
 
-            // Individual positions for each sticky note
-            struct MenuPosition {
-                float centerX, centerY, scale;
-            };
+            //// Individual positions for each sticky note
+            //struct MenuPosition {
+            //    float centerX, centerY, scale;
+            //};
 
-            MenuPosition positions[5] = {
-                {390.0f, h - 340.0f, 1.f},
-                {200.0f, h - 480.0f, 1.f},
-                {230.0f, h - 660.0f, 1.f},
-                {500.0f, h - 700.0f, 0.6f},
-                {270.0f, h - 830.0f, 0.6f}
-            };
+            //MenuPosition positions[5] = {
+            //    {390.0f, h - 340.0f, 1.f},
+            //    {200.0f, h - 480.0f, 1.f},
+            //    {230.0f, h - 660.0f, 1.f},
+            //    {500.0f, h - 700.0f, 0.6f},
+            //    {270.0f, h - 830.0f, 0.6f}
+            //};
 
             for (int i = 0; i < static_cast<int>(m_items.size()); ++i)
             {
@@ -352,11 +404,11 @@ namespace Runtime
                 glm::vec3 color = (i == m_selected) ? selectedCol : normalCol;
 
                 // Center the text on the sticky note
-                float scale = positions[i].scale;
+                float scale = m_positions[i].scale;
                 float textWidth = item.length() * 50.0f * scale * 0.5f;
-                float xPos = positions[i].centerX - (textWidth / 2.0f);
+                float xPos = m_positions[i].centerX - (textWidth / 2.0f);
 
-                selectFont->RenderText(item, xPos, positions[i].centerY, scale, color, *shader);
+                selectFont->RenderText(item, xPos, m_positions[i].centerY, scale, color, *shader);
             }
         }
         m_renderer->endFontPass();

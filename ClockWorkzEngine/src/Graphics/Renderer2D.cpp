@@ -150,40 +150,115 @@ void Renderer2D::beginBatch() {
 //    return slot;
 //}
 
+//void Renderer2D::submitQuad(
+//    const glm::vec2& pos, const glm::vec2& size, unsigned texId,
+//    const glm::vec4& color, float angleRad, const glm::vec4& uvRect, Anchor anchor)
+//{
+//    // --- Compute quad corners like before ---
+//    glm::vec2 half = (anchor == Anchor::Center) ? size * 0.5f : glm::vec2(0.0f);
+//    glm::vec2 p0 = { -half.x, -half.y };
+//    glm::vec2 p1 = { size.x - half.x, -half.y };
+//    glm::vec2 p2 = { size.x - half.x,  size.y - half.y };
+//    glm::vec2 p3 = { -half.x,  size.y - half.y };
+//
+//    auto rot = [angleRad](glm::vec2 v) {
+//        if (angleRad == 0.0f) return v;
+//        float c = std::cos(angleRad), s = std::sin(angleRad);
+//        return glm::vec2(c * v.x - s * v.y, s * v.x + c * v.y);
+//        };
+//    p0 = rot(p0) + pos;
+//    p1 = rot(p1) + pos;
+//    p2 = rot(p2) + pos;
+//    p3 = rot(p3) + pos;
+//
+//    float u0 = uvRect.x, v0 = uvRect.y, du = uvRect.z, dv = uvRect.w;
+//
+//    Vertex verts[4] = {
+//        { {p0.x, p0.y, 0.f}, {u0,      v0     }, color, 0.f },
+//        { {p1.x, p1.y, 0.f}, {u0 + du, v0     }, color, 0.f },
+//        { {p2.x, p2.y, 0.f}, {u0 + du, v0 + dv}, color, 0.f },
+//        { {p3.x, p3.y, 0.f}, {u0,      v0 + dv}, color, 0.f },
+//    };
+//
+//    unsigned idx[6] = { 0, 1, 2, 2, 3, 0 };
+//
+//    // --- Draw immediately ---
+//    glBindVertexArray(m_vao);
+//    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+//
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_DYNAMIC_DRAW);
+//
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, texId ? texId : m_whiteTex);
+//
+//    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+//    glBindVertexArray(0);
+//}
+
 void Renderer2D::submitQuad(
     const glm::vec2& pos, const glm::vec2& size, unsigned texId,
     const glm::vec4& color, float angleRad, const glm::vec4& uvRect, Anchor anchor)
 {
-    // --- Compute quad corners like before ---
-    glm::vec2 half = (anchor == Anchor::Center) ? size * 0.5f : glm::vec2(0.0f);
-    glm::vec2 p0 = { -half.x, -half.y };
-    glm::vec2 p1 = { size.x - half.x, -half.y };
-    glm::vec2 p2 = { size.x - half.x,  size.y - half.y };
-    glm::vec2 p3 = { -half.x,  size.y - half.y };
+    glm::vec2 p0, p1, p2, p3;
 
-    auto rot = [angleRad](glm::vec2 v) {
-        if (angleRad == 0.0f) return v;
-        float c = std::cos(angleRad), s = std::sin(angleRad);
-        return glm::vec2(c * v.x - s * v.y, s * v.x + c * v.y);
-        };
-    p0 = rot(p0) + pos;
-    p1 = rot(p1) + pos;
-    p2 = rot(p2) + pos;
-    p3 = rot(p3) + pos;
+    // -----------------------------
+    //     UI MODE (Bottom-left)
+    // -----------------------------
+    if (anchor == Anchor::BottomLeft)
+    {
+        // UI quad directly in pixel space
+        p0 = { pos.x,          pos.y };
+        p1 = { pos.x + size.x, pos.y };
+        p2 = { pos.x + size.x, pos.y + size.y };
+        p3 = { pos.x,          pos.y + size.y };
+    }
+    else
+    {
+        // -----------------------------
+        //   WORLD MODE (Center anchor)
+        // -----------------------------
+        glm::vec2 half = size * 0.5f;
 
+        glm::vec2 local0 = { -half.x, -half.y };
+        glm::vec2 local1 = { half.x, -half.y };
+        glm::vec2 local2 = { half.x,  half.y };
+        glm::vec2 local3 = { -half.x,  half.y };
+
+        // Optional rotation
+        auto rot = [angleRad](glm::vec2 v) {
+            if (angleRad == 0.0f) return v;
+            float c = std::cos(angleRad), s = std::sin(angleRad);
+            return glm::vec2(c * v.x - s * v.y, s * v.x + c * v.y);
+            };
+
+        // Add world position
+        p0 = rot(local0) + pos;
+        p1 = rot(local1) + pos;
+        p2 = rot(local2) + pos;
+        p3 = rot(local3) + pos;
+    }
+
+    // ----------------------------------
+    // UV + Vertex buffer
+    // ----------------------------------
     float u0 = uvRect.x, v0 = uvRect.y, du = uvRect.z, dv = uvRect.w;
 
     Vertex verts[4] = {
         { {p0.x, p0.y, 0.f}, {u0,      v0     }, color, 0.f },
-        { {p1.x, p1.y, 0.f}, {u0 + du, v0     }, color, 0.f },
-        { {p2.x, p2.y, 0.f}, {u0 + du, v0 + dv}, color, 0.f },
-        { {p3.x, p3.y, 0.f}, {u0,      v0 + dv}, color, 0.f },
+        { {p1.x, p1.y, 0.f}, {u0 + du,   v0     }, color, 0.f },
+        { {p2.x, p2.y, 0.f}, {u0 + du, v0 + dv }, color, 0.f },
+        { {p3.x, p3.y, 0.f}, {u0,    v0 + dv }, color, 0.f },
     };
 
-    unsigned idx[6] = { 0, 1, 2, 2, 3, 0 };
+    unsigned idx[6] = { 0,1,2, 2,3,0 };
 
-    // --- Draw immediately ---
+    // ----------------------------------
+    // Send to GPU (immediate mode)
+    // ----------------------------------
     glBindVertexArray(m_vao);
+
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
 
@@ -194,8 +269,10 @@ void Renderer2D::submitQuad(
     glBindTexture(GL_TEXTURE_2D, texId ? texId : m_whiteTex);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
     glBindVertexArray(0);
 }
+
 
 // Do not remove
 //void Renderer2D::submitQuad(

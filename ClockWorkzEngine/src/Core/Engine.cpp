@@ -17,7 +17,7 @@
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
-
+#include "Core/EventBus.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Config.hpp"
 #include "Core/Logger.hpp"
@@ -147,9 +147,8 @@ namespace Core
 			return false;
 
 		//m_camera->setViewport((float)m_window->width(), (float)m_window->height());
-		m_camera->setViewport((int)m_window->width(), (int)m_window->height());
-		m_camera->setPosition(glm::vec2{ 0,0 });
-		m_camera->setZoom(1.0f);
+		m_camera->init((int)m_window->width(), (int)m_window->height());
+	
 
 		m_gsm = std::make_unique<Runtime::GameStateManager>();
 
@@ -162,6 +161,13 @@ namespace Core
 		m_audio->load({"menu_bgm", "assets/audio/menu_bgm.mp3", true, true, false});
 		*/
 		m_running = true;
+		events().subscribe<QuitGameEvent>(
+			this,
+			[this](const QuitGameEvent&) {
+				this->m_running = false;
+				this->m_window->requestClose();
+			}
+		);
 		return true;
 	}
 
@@ -230,14 +236,15 @@ namespace Core
 				*m_gsm,
 				*m_input,
 				*m_window,
-				this->audio(),
-				[this]()
-				{ m_running = false; }));
+				this->audio()));
 
 			m_booted = true;
 		}
 		m_audio->update(); // Update the audio manager class
 		m_input->update(); // Update the input manager class
+		if (m_input->wasKeyPressed(GLFW_KEY_F11)) {
+			m_window->toggleFullscreen();
+		}
 
 		m_gsm->update(dt);
 		//int steps = m_time->currentSteps();

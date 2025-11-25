@@ -5,7 +5,7 @@
 \author(s)      [Syafiq] 50%, [Wei An] 50%
 \brief          Implementation of Framebuffer for rendering game view to texture
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #include "Graphics/Framebuffer.hpp"

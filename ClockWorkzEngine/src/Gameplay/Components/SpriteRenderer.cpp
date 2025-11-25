@@ -49,7 +49,7 @@ namespace Gameplay {
             pos,
             size * scale, owner.transform().rotationRad,
             m_uv,
-            m_tint);
+            m_tint, m_isUI);
     }
 
     void SpriteRendererComponent::resetAll() {
