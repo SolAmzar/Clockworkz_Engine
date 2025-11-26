@@ -1887,17 +1887,13 @@ void LevelEditor::updateGizmoScale() {
     void LevelEditor::deleteSelectedObject() {
         if (!m_selectedObject || !m_currentScene) return;
 
-
-        // Create delete command
+        // Create delete command (this will handle the soft delete via setActive(false))
         auto cmd = std::make_unique<Platform::DeleteCommand>(m_selectedObject, m_currentScene.get());
         executeCommand(std::move(cmd));
 
-        // Deselect
+        // Deselect after command is executed
         m_selectedObject = nullptr;
 
-        m_currentScene->destroyObject(m_selectedObject);
-
-        m_selectedObject = nullptr;
         markLevelDirty();
 
         if (Core::Engine::IsInitialized()) {
@@ -2515,6 +2511,10 @@ void LevelEditor::updateGizmoScale() {
 
             for (size_t i = 0; i < objects.size(); ++i) {
                 auto& obj = objects[i];
+
+                if (!obj->active()) {
+                    continue;
+                }
 
                 // Apply search filter
                 if (searchBuffer[0] != '\0') {
