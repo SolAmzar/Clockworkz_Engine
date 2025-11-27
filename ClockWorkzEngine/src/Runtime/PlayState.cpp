@@ -58,6 +58,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <vector>
 #include <string>
 #include <Gameplay/Components/SpriteAnimator.hpp>
+#include <Assets/TextureManager.hpp>
 
 using namespace Graphics;
 using namespace Assets;
@@ -105,6 +106,8 @@ namespace Runtime
 		, m_gsm(gsm)
 		, m_player(nullptr)
 		, m_editorInitialized(false)
+		,currentBattery(100.0f)
+		,maxBattery(100.0f)
 	{
 	}
 	PlayState::~PlayState()
@@ -194,50 +197,9 @@ namespace Runtime
 			std::cerr << "[PlayState] Failed to initialize level editor\n";
 		}
 
-		auto batteryUI = std::make_unique<Gameplay::GameObject>(
-			Gameplay::GameObjectType::Unknown,
-			"BatteryUI"
-		);
-		// Start at player position (will update every frame)
-		if (m_player) {
-			batteryUI->transform().position = m_player->transform().position;
-		}
-
-		batteryUI->setSize(vec2(64.0f, 32.0f));  // Battery icon size
-		batteryUI->setLayer(Gameplay::DrawLayer::UI);
-		batteryUI->setTextureId("battery_spritesheet");
-		batteryUI->setSolid(false);  // Don't collide
-		batteryUI->setBlocksLight(false);  // Don't block light
-
-		// Add sprite renderer
-		auto* renderer = batteryUI->addComponent<Gameplay::SpriteRendererComponent>();
-		renderer->setTexture("battery_spritesheet");
-
-		// Optional: Add animator for animations
-		auto* animator = batteryUI->addComponent<Gameplay::SpriteAnimatorComponent>();
-
-		// Create battery level animations
-		// Full battery (frames 0-1)
-		auto& fullClip = animator->createClip("full", false);
-		fullClip.frames.push_back({ glm::vec4(0.0f, 0.0f, 0.25f, 1.0f), 1.0f });
-
-		// Medium battery (frames 2-3)
-		auto& medClip = animator->createClip("medium", false);
-		medClip.frames.push_back({ glm::vec4(0.25f, 0.0f, 0.25f, 1.0f), 1.0f });
-
-		// Low battery - blinking (frames 4-5)
-		auto& lowClip = animator->createClip("low", true);
-		lowClip.frames.push_back({ glm::vec4(0.5f, 0.0f, 0.25f, 1.0f), 0.3f });
-		lowClip.frames.push_back({ glm::vec4(0.75f, 0.0f, 0.25f, 1.0f), 0.3f });
-
-		animator->setSpriteRenderer(renderer);
-		animator->play("full", true);
-
-		m_batteryUI = batteryUI.get();
-
-		if (auto* scene = m_scenes.current()) {
-			scene->addObject(std::move(batteryUI));
-		}
+		currentBattery = 100.0f;
+		maxBattery = 100.0f;
+		currentBatteryTexture = "battery_full";
 
 		// Syafiq -
 		m_renderer = &engine.rendering();
@@ -771,6 +733,28 @@ namespace Runtime
 
 		//m_scenes.update(dt);
 		updateLightExposure(dt);
+		updateBatteryDisplay();
+	}
+
+	void PlayState::updateBatteryDisplay() {
+		float batteryPercent = currentBattery / maxBattery;
+
+		// Select appropriate texture based on battery level
+		if (batteryPercent > 0.875f) {
+			currentBatteryTexture = "battery_full";
+		}
+		else if (batteryPercent > 0.625f) {
+			currentBatteryTexture = "battery_3/4";
+		}
+		else if (batteryPercent > 0.375f) {
+			currentBatteryTexture = "battery_2/4";
+		}
+		else if (batteryPercent > 0.125f) {
+			currentBatteryTexture = "battery_1/4";
+		}
+		else {
+			currentBatteryTexture = "battery_empty";
+		}
 	}
 
 	// Helper: Check if point is inside polygon
@@ -905,34 +889,6 @@ namespace Runtime
 			return;
 		}
 
-		// Battery UI - Always visible (not just in debug)
-		ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(200, 80), ImGuiCond_Always);
-		ImGui::Begin("Battery", nullptr,
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoScrollbar);
-
-		float batteryPercent = m_player ? m_player->checkBatt() / 100.0f : 0.0f;
-
-		// Draw battery bar
-		ImGui::Text("Battery:");
-		ImGui::ProgressBar(batteryPercent, ImVec2(150, 30));
-
-		// Color-code based on level
-		if (batteryPercent > 0.6f) {
-			ImGui::Text("FULL");
-		}
-		else if (batteryPercent > 0.3f) {
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "LOW");
-		}
-		else {
-			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "CRITICAL!");
-		}
-
-		ImGui::End();
-
 		// Normal game rendering (keep all your existing code below)
 		m_renderer->beginScenePass(engine.camera().viewProj());
 		m_scenes.render(*m_renderer);
@@ -1000,6 +956,59 @@ namespace Runtime
 				if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
 					obj->resetLightExposure();
 				}
+			}
+		}
+
+		// ==================== Battery UI Rendering ====================
+		if (m_player) {
+			// Update battery display based on current battery level
+			float batteryPercent = m_player->checkBatt() / 100.0f; // Assuming max battery is 100
+
+			// Select appropriate texture based on battery level
+			if (batteryPercent > 0.875f) {
+				currentBatteryTexture = "battery_full";
+			}
+			else if (batteryPercent > 0.625f) {
+				currentBatteryTexture = "battery_3/4";
+			}
+			else if (batteryPercent > 0.375f) {
+				currentBatteryTexture = "battery_2/4";
+			}
+			else if (batteryPercent > 0.125f) {
+				currentBatteryTexture = "battery_1/4";
+			}
+			else {
+				currentBatteryTexture = "battery_empty";
+			}
+
+			// Get the texture from TextureManager
+			auto batteryTex = Assets::TextureManager::Get(currentBatteryTexture);
+
+			if (batteryTex) {
+				// Get the OpenGL texture ID
+				unsigned int batteryTexId = batteryTex->id();
+
+				// Get window size from engine
+				int windowWidth = engine.window().width();
+				int windowHeight = engine.window().height();
+
+				glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+				glm::vec2 batteryPos(screenSize.x - 100.0f, screenSize.y - 100.0f); // Top-right corner
+				glm::vec2 batterySize(64.0f, 64.0f); // Adjust to your texture size
+
+				// Use an orthographic projection for UI (screen space)
+				glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);
+
+				m_renderer->beginScenePass(uiProjection);
+				m_renderer->drawSprite(
+					batteryTexId,
+					batteryPos,
+					batterySize,
+					0.0f, // no rotation
+					glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), // full UV rect
+					glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)  // white tint, full opacity
+				);
+				m_renderer->endScenePass();
 			}
 		}
 
