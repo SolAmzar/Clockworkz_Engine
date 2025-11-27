@@ -16,6 +16,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 */
 /******************************************************************************/
 #include "Graphics/GraphicsManager.hpp"
+#include "Core/Engine.hpp"
 #include "Platform/WindowManager.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -36,6 +37,15 @@ bool GraphicsManager::init(Platform::WindowManager& window) {
 	setClearColor(0.07f, 0.07f, 0.1f, 1.0f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// I love to listen to WindowResizeEvent, when broadcasted, i will do this.
+	Core::Engine::Get().events().subscribe<Core::WindowResizeEvent>(
+		this,
+		[this](const Core::WindowResizeEvent& e) {
+			this->setViewport(e.width, e.height);
+		}
+	);
+
 	return true;
 }
 void GraphicsManager::setViewport(int w, int h) {

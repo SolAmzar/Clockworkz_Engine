@@ -44,6 +44,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <Assets/ResourceManager.hpp>
 #include <Assets/TextureManager.hpp>
 #include <IMGUI/imgui_internal.h>
+#include <Gameplay/Components/Chase.hpp>
+#include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/WallTiles.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 
@@ -104,6 +106,7 @@ namespace Platform {
         , m_playModeLastFootPos(0.0f, 0.0f)
         , m_playModeHaveLastFootPos(false)
         , m_loadedFromPlayState(false)
+        , m_editorActive(false)
     {
         m_fileDialogBuffer[0] = '\0';
         mAssetNameBuffer[0] = '\0';
@@ -229,6 +232,7 @@ namespace Platform {
 
         if (m_mode == EditorMode::Play) {
             updatePlayMode(dt);
+            renderFlashlight();
             // Still allow some editor input in play mode (like stopping)
             handleKeyboardShortcuts();
             return;
@@ -243,6 +247,40 @@ namespace Platform {
         if (m_currentScene) {
             m_objectCount = static_cast<int>(m_currentScene->objects().size());
         }
+    }
+
+    void LevelEditor::initializePlayMode() {
+        if (!m_currentScene) return;
+
+        auto* physics = m_currentScene->getPhysics();
+        if (!physics) {
+            std::cerr << "  ✗ No physics system - collisions won't work!\n";
+        }
+        else {
+            std::cout << "  ✓ Physics ready\n";
+        }
+
+        // Find player
+        Gameplay::GameObject* player = nullptr;
+        for (auto& obj : m_currentScene->objects()) {
+            if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+                player = obj.get();
+                m_playModePlayer = player;
+                break;
+            }
+        }
+
+        // Add Chase components to enemies
+        if (player) {
+            for (auto& obj : m_currentScene->objects()) {
+                if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+                    obj->addComponent<Gameplay::Chase>(*obj, player, 150.0f, 300.0f);
+                    std::cout << "  Added Chase to: " << obj->name() << "\n";
+                }
+            }
+        }
+
+        std::cout << "[LevelEditor] Play Mode initialized\n";
     }
 
 
@@ -264,6 +302,19 @@ namespace Platform {
             newObj->setSize(objPtr->size());
             newObj->setLayer(objPtr->layer());
             newObj->setActive(objPtr->active());
+            newObj->setTextureId(objPtr->textureId());
+
+
+            if (!objPtr->textureId().empty()) {
+                newObj->addComponent<Gameplay::SpriteRendererComponent>();
+            }
+
+            newObj->setVelocity(objPtr->velocity());
+            newObj->setMoveSpeed(objPtr->moveSpeed());
+
+            // ⭐ COPY COMPONENTS
+            copyComponents(objPtr.get(), newObj.get());
+
 
             m_currentScene->addObject(std::move(newObj));
         }
@@ -279,34 +330,84 @@ namespace Platform {
     void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene) {
         if (!playStateScene || !m_currentScene || !m_loadedFromPlayState) return;
 
-        // Clear PlayState scene objects
         auto& playStateObjs = playStateScene->objects();
-        playStateObjs.clear();
+        auto& editorObjs = m_currentScene->objects();
 
-        // Copy all objects back from editor to PlayState
-        for (auto& objPtr : m_currentScene->objects()) {
-            if (!objPtr) continue;
+        std::cout << "[LevelEditor] Syncing scene changes...\n";
+        std::cout << "  Editor has " << editorObjs.size() << " objects\n";
+        std::cout << "  PlayState has " << playStateObjs.size() << " objects\n";
 
-            auto newObj = std::make_unique<Gameplay::GameObject>(
-                objPtr->type(),
-                objPtr->name()
-            );
+        // Step 1: Update existing objects in-place (no deletion!)
+        int updatedCount = 0;
+        for (auto& editorObj : editorObjs) {
+            if (!editorObj) continue;
 
-            // Copy transform
-            newObj->transform().position = objPtr->transform().position;
-            newObj->transform().rotationRad = objPtr->transform().rotationRad;
-            newObj->transform().scale = objPtr->transform().scale;
+            // Find corresponding object in PlayState by name
+            bool found = false;
+            for (auto& playObj : playStateObjs) {
+                if (playObj && playObj->name() == editorObj->name()) {
+                    // Update properties IN-PLACE (object stays at same memory address)
+                    playObj->transform().position = editorObj->transform().position;
+                    playObj->transform().rotationRad = editorObj->transform().rotationRad;
+                    playObj->transform().scale = editorObj->transform().scale;
+                    playObj->setSize(editorObj->size());
+                    playObj->setLayer(editorObj->layer());
+                    playObj->setActive(editorObj->active());
+                    playObj->setTextureId(editorObj->textureId());
 
-            // Copy size and other properties
-            newObj->setSize(objPtr->size());
-            newObj->setLayer(objPtr->layer());
-            newObj->setActive(objPtr->active());
+                    found = true;
+                    updatedCount++;
+                    break;
+                }
+            }
 
-            // TODO: Copy components back if needed
+            // Step 2: If object is new (doesn't exist in PlayState), add it
+            if (!found) {
+                auto newObj = std::make_unique<Gameplay::GameObject>(
+                    editorObj->type(), editorObj->name()
+                );
+                newObj->transform().position = editorObj->transform().position;
+                newObj->transform().rotationRad = editorObj->transform().rotationRad;
+                newObj->transform().scale = editorObj->transform().scale;
+                newObj->setSize(editorObj->size());
+                newObj->setLayer(editorObj->layer());
+                newObj->setActive(editorObj->active());
 
-            // Add to PlayState scene
-            playStateScene->addObject(std::move(newObj));
+                std::cout << "  + Adding new object: " << editorObj->name() << "\n";
+                playStateScene->addObject(std::move(newObj));
+            }
         }
+
+        // Step 3: Remove objects that were deleted in editor
+        int removedCount = 0;
+        playStateObjs.erase(
+            std::remove_if(playStateObjs.begin(), playStateObjs.end(),
+                [&](const std::unique_ptr<Gameplay::GameObject>& playObj) {
+                    if (!playObj) return true;
+
+                    // Check if this object still exists in editor
+                    bool existsInEditor = false;
+                    for (auto& editorObj : editorObjs) {
+                        if (editorObj && editorObj->name() == playObj->name()) {
+                            existsInEditor = true;
+                            break;
+                        }
+                    }
+
+                    if (!existsInEditor) {
+                        std::cout << "  - Removing object: " << playObj->name() << "\n";
+                        removedCount++;
+                        return true;  // Remove it
+                    }
+                    return false;  // Keep it
+                }),
+            playStateObjs.end()
+        );
+
+        std::cout << "[LevelEditor] ✓ Sync complete:\n";
+        std::cout << "  Updated: " << updatedCount << " objects\n";
+        std::cout << "  Removed: " << removedCount << " objects\n";
+        std::cout << "  Final count: " << playStateObjs.size() << " objects\n";
     }
 
     void LevelEditor::updatePlayMode(double dt) {
@@ -316,24 +417,52 @@ namespace Platform {
             return;
         }
 
-        // Update gameplay
-        updatePhysicsAndGameplay(m_currentScene.get(), dt);
-
-        // Update all game objects
-        for (auto& objPtr : m_currentScene->objects()) {
-            if (objPtr && objPtr->active()) {
-                objPtr->update(dt);
+        // Find player
+        if (!m_playModePlayer) {
+            for (auto& obj : m_currentScene->objects()) {
+                if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+                    m_playModePlayer = obj.get();
+                    break;
+                }
             }
         }
 
-        // Update physics with safety check
-        auto* physics = m_currentScene->getPhysics();
-        if (physics) {
-            physics->step(m_currentScene->objects(), dt);
+        // Handle player input BEFORE scene update
+        if (m_playModePlayer) {
+            handlePlayerInput(m_playModePlayer, dt);
+        }
+
+        m_currentScene->update(dt);
+
+        // Camera follow player
+        if (m_playModePlayer) {
+            vec2 pos = m_playModePlayer->transform().position;
+            m_editorCamera.setPosition(glm::vec2(pos.x, pos.y));
+        }
+
+        // Handle flashlight toggle
+        if (m_input->wasKeyPressed(GLFW_KEY_R)) {
+            m_flashlightOn = !m_flashlightOn;
+        }
+
+        // Update battery
+        if (m_flashlightOn) {
+            m_playerBattery -= 10.0f * dt;  // drain
+            if (m_playerBattery <= 0.0f) {
+                m_playerBattery = 0.0f;
+                m_flashlightOn = false;
+            }
         }
         else {
-            m_logger->warn("updatePlayMode: Scene has no physics system!");
+            m_playerBattery += 5.0f * dt;  // recharge
+            m_playerBattery = std::min(100.0f, m_playerBattery);
         }
+
+        // Scene update
+        m_currentScene->update(dt);
+
+        // Update enemy light exposure
+        updateLightExposure(dt);
     }
 
     void LevelEditor::updatePhysicsAndGameplay(Runtime::Scene* scene, double dt) {
@@ -1571,7 +1700,7 @@ void LevelEditor::updateGizmoScale() {
         if (mode == EditorMode::Play) {
             // Entering play mode - backup current scene
             saveEditorState();
-            // TODO: Core::Engine::Get().logger().info("Entering Play Mode");
+            initializePlayMode();
         }
         else {
             // Exiting play mode - restore scene
@@ -2775,6 +2904,42 @@ void LevelEditor::updateGizmoScale() {
         ImGui::End();
     }
 
+    void LevelEditor::copyComponents(Gameplay::GameObject* source, Gameplay::GameObject* dest) {
+        if (!source || !dest) return;
+
+        // Copy SpriteRenderer FIRST
+        Gameplay::SpriteRendererComponent* destRenderer = nullptr;
+        if (auto* srcRenderer = source->getComponent<Gameplay::SpriteRendererComponent>()) {
+            destRenderer = dest->addComponent<Gameplay::SpriteRendererComponent>();
+            destRenderer->setTint(srcRenderer->tint());
+            destRenderer->setUV(srcRenderer->uv());
+
+            if (!srcRenderer->textureAlias().empty()) {
+                destRenderer->setTexture(srcRenderer->textureAlias());
+            }
+        }
+
+        // Copy SpriteAnimator
+        if (auto* srcAnimator = source->getComponent<Gameplay::SpriteAnimatorComponent>()) {
+            std::string filename = srcAnimator->getFilename();
+
+            if (!filename.empty()) {
+                auto* destAnimator = dest->addComponent<Gameplay::SpriteAnimatorComponent>();
+
+                std::ifstream file(filename);
+                if (file.is_open()) {
+                    nlohmann::json j;
+                    file >> j;
+                    destAnimator->loadFromJson(j);
+
+                    if (destRenderer) {
+                        destAnimator->setSpriteRenderer(destRenderer);
+                    }
+                }
+            }
+        }
+    }
+
     void LevelEditor::renderPrefabPalette() {
         ImGui::Begin("Prefab Palette");
 
@@ -2987,19 +3152,42 @@ void LevelEditor::updateGizmoScale() {
 
     void LevelEditor::renderAssetBrowser()
     {
-        ImGui::Begin("Texture Assets Browser");
+        ImGui::Begin("Assets Browser");
+
+        // Create tabs for different asset types
+        if (ImGui::BeginTabBar("AssetTabs")) {
+
+            // Texture Assets Tab
+            if (ImGui::BeginTabItem("Textures")) {
+                renderTextureAssets();
+                ImGui::EndTabItem();
+            }
+
+            // Audio Assets Tab
+            if (ImGui::BeginTabItem("Audio")) {
+                renderAudioAssets();
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+        }
+
+        ImGui::End();
+    }
+
+    void LevelEditor::renderTextureAssets()
+    {
         std::vector<std::string> names = Assets::TextureManager::GetLoadedTextureNames();
         static std::string selectedTextureName;
 
         for (const auto& name : names) {
-            ImGui::PushID(name.c_str());  // Ensure all widgets in this loop have unique ID scope
-
+            ImGui::PushID(name.c_str());
             bool isSelected = (selectedTextureName == name);
-            // Selectable - show name, allow context menu
+
             if (ImGui::Selectable(name.c_str(), isSelected)) {
                 selectedTextureName = name;
             }
-            // Context menu for selectable (right-click name)
+
             if (ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("Replace")) {
                     showReplaceDialog = true;
@@ -3017,12 +3205,10 @@ void LevelEditor::updateGizmoScale() {
 
             auto tex = Assets::TextureManager::Get(name);
             if (tex && tex->id() != 0) {
-                // Show texture preview as an ImageButton.
-                // The label ("##thumb") ensures a unique widget, but 'PushID' already ensures uniqueness, so label doesn't need to be unique.
                 if (ImGui::ImageButton("##thumb", (ImTextureID)(intptr_t)tex->id(), ImVec2(64, 64))) {
-                    // You can implement click-to-select or preview here.
+                    // Click-to-select or preview
                 }
-                // Context menu for the image thumbnail (right-click thumbnail)
+
                 if (ImGui::BeginDragDropSource()) {
                     ImGui::SetDragDropPayload("TEXTURE_ID", name.c_str(), name.length() + 1);
                     ImGui::Text("Drag: %s", name.c_str());
@@ -3031,7 +3217,69 @@ void LevelEditor::updateGizmoScale() {
             }
             ImGui::PopID();
         }
-        ImGui::End();
+    }
+
+    void LevelEditor::renderAudioAssets()
+    {
+        std::vector<std::string> names = Assets::SoundManager::GetLoadedSoundNames();
+        static std::string selectedSoundName;
+
+        for (const auto& name : names) {
+            ImGui::PushID(name.c_str());
+            bool isSelected = (selectedSoundName == name);
+
+            // Selectable - show name
+            if (ImGui::Selectable(name.c_str(), isSelected)) {
+                selectedSoundName = name;
+            }
+
+            // Context menu
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Play")) {
+                    auto clip = Assets::SoundManager::Get(name);
+                    if (clip) {
+                        // Play the sound (you'll need access to AudioManager)
+                        // audioManager->PlaySound(clip);
+                    }
+                }
+                if (ImGui::MenuItem("Stop")) {
+                    // Stop the sound if playing
+                }
+                if (ImGui::MenuItem("Delete")) {
+                    Assets::SoundManager::Unload(name);
+                }
+                ImGui::EndPopup();
+            }
+
+            // Show audio icon or info
+            auto clip = Assets::SoundManager::Get(name);
+            if (clip) {
+                ImGui::SameLine();
+                ImGui::TextDisabled("(Audio)");
+
+                // Optionally show audio properties
+                if (ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    ImGui::Text("Name: %s", name.c_str());
+                    // Add more properties if available
+                    ImGui::EndTooltip();
+                }
+            }
+
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                ImGui::SetDragDropPayload("AUDIO_CLIP", name.c_str(), name.length() + 1);
+                ImGui::Text("Drag: %s", name.c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            ImGui::PopID();
+        }
+
+        // Button to load new audio
+        if (ImGui::Button("Load Audio File...")) {
+            // Open file dialog and load new audio
+            // This would be similar to your texture loading logic
+        }
     }
 
 
@@ -3376,6 +3624,52 @@ void LevelEditor::updateGizmoScale() {
         selectObject(obj);
     }
 
+    void LevelEditor::handlePlayerInput(Gameplay::GameObject* player, double dt) {
+        if (!player || !m_input) return;
+
+        float moveSpeed = player->moveSpeed();
+        float maxSpeed = moveSpeed;
+        float maxRunSpeed = maxSpeed * 2.0f;
+        bool isRunning = m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT);
+
+        if (isRunning) moveSpeed *= 2.0f;
+
+        // Vertical
+        if (m_input->isKeyDown(GLFW_KEY_W)) {
+            player->velocity().y += moveSpeed * (float)dt;
+            player->velocity().y = std::min(player->velocity().y, isRunning ? maxRunSpeed : maxSpeed);
+        }
+        else if (m_input->isKeyDown(GLFW_KEY_S)) {
+            player->velocity().y -= moveSpeed * (float)dt;
+            player->velocity().y = std::max(player->velocity().y, isRunning ? -maxRunSpeed : -maxSpeed);
+        }
+        else {
+            player->velocity().y = 0.0f;
+        }
+
+        // Horizontal
+        if (m_input->isKeyDown(GLFW_KEY_A)) {
+            player->velocity().x -= moveSpeed * (float)dt;
+            player->velocity().x = std::max(player->velocity().x, isRunning ? -maxRunSpeed : -maxSpeed);
+        }
+        else if (m_input->isKeyDown(GLFW_KEY_D)) {
+            player->velocity().x += moveSpeed * (float)dt;
+            player->velocity().x = std::min(player->velocity().x, isRunning ? maxRunSpeed : maxSpeed);
+        }
+        else {
+            player->velocity().x = 0.0f;
+        }
+
+        // Mouse look
+        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+        vec2 dir = vec2(mouseWorld.x - player->transform().position.x,
+            mouseWorld.y - player->transform().position.y);
+        float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+        if (dist > 10.0f) {
+            player->transform().rotationRad = std::atan2(dir.y, dir.x);
+        }
+    }
+
     void LevelEditor::handleObjectPlacement() {
         if (isMouseOverUI()) {
             std::cout << "[DEBUG] Mouse over UI - blocked\n";
@@ -3587,6 +3881,122 @@ void LevelEditor::updateGizmoScale() {
         float snappedY = std::floor(position.y / m_gridSize) * m_gridSize;
 
         return vec2(snappedX, snappedY);
+    }
+
+    void LevelEditor::setActive(bool active) {
+        m_editorActive = active;
+
+        if (active) {
+            std::cout << "[LevelEditor] Editor activated\n";
+        }
+        else {
+            // ⭐ RESTORE FULL WINDOW VIEWPORT
+            if (m_windowManager) {
+                int fullWidth = m_windowManager->width();
+                int fullHeight = m_windowManager->height();
+                glViewport(0, 0, fullWidth, fullHeight);
+
+                std::cout << "[LevelEditor] Viewport restored to "
+                    << fullWidth << "x" << fullHeight << "\n";
+            }
+
+            m_selectedObject = nullptr;
+        }
+    }
+
+    bool LevelEditor::isPointInPolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon) {
+        int intersections = 0;
+        size_t n = polygon.size();
+        for (size_t i = 0; i < n; i++) {
+            glm::vec2 p1 = polygon[i];
+            glm::vec2 p2 = polygon[(i + 1) % n];
+            if ((p1.y > point.y) != (p2.y > point.y)) {
+                float xIntersect = p1.x + (point.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
+                if (point.x < xIntersect) intersections++;
+            }
+        }
+        return (intersections % 2) == 1;
+    }
+
+    void LevelEditor::updateLightExposure(double dt) {
+        if (m_mode != EditorMode::Play || !m_currentScene) return;
+
+        auto* physics = m_currentScene->getPhysics();
+        if (!physics || !m_flashlightOn || !m_playModePlayer || m_playerBattery <= 0.0f) {
+            for (auto& obj : m_currentScene->objects()) {
+                if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+                    obj->resetLightExposure();
+                }
+            }
+            return;
+        }
+
+        // Calculate flashlight position
+        vec2 origin = m_playModePlayer->transform().position;
+        float angle = m_playModePlayer->transform().rotationRad;
+        glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+        glm::vec2 torchOffsetWorld(
+            torchOffsetLocal.x * std::cos(angle) - torchOffsetLocal.y * std::sin(angle),
+            torchOffsetLocal.x * std::sin(angle) + torchOffsetLocal.y * std::cos(angle)
+        );
+        glm::vec2 originGLM(origin.x + torchOffsetWorld.x, origin.y + torchOffsetWorld.y);
+
+        // Get visibility polygon
+        vec2 originVec2{ originGLM.x, originGLM.y };
+        std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+            originVec2, angle, glm::radians(60.0f), 300.0f, *physics, m_currentScene->objects()
+        );
+
+        std::vector<glm::vec2> lightPolyGLM;
+        for (const auto& p : lightPoly) lightPolyGLM.emplace_back(p.x, p.y);
+
+        // Check enemies
+        for (auto& obj : m_currentScene->objects()) {
+            if (obj && obj->active() && obj->type() == Gameplay::GameObjectType::Enemy) {
+                glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
+                if (isPointInPolygon(enemyPos, lightPolyGLM)) {
+                    obj->addLightExposure(dt);
+                    if (obj->lightExposureTime() >= 0.5f) {
+                        obj->setActive(false);
+                    }
+                }
+                else {
+                    obj->resetLightExposure();
+                }
+            }
+        }
+    }
+
+    void LevelEditor::renderFlashlight() {
+        if (!m_flashlightOn || !m_playModePlayer || m_playerBattery <= 0.0f) return;
+
+        auto* physics = m_currentScene->getPhysics();
+        if (!physics) return;
+
+        // Calculate position
+        vec2 origin = m_playModePlayer->transform().position;
+        float angle = m_playModePlayer->transform().rotationRad;
+        glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+        glm::vec2 torchOffsetWorld(
+            torchOffsetLocal.x * std::cos(angle) - torchOffsetLocal.y * std::sin(angle),
+            torchOffsetLocal.x * std::sin(angle) + torchOffsetLocal.y * std::cos(angle)
+        );
+        glm::vec2 originGLM(origin.x + torchOffsetWorld.x, origin.y + torchOffsetWorld.y);
+
+        // Get polygon
+        vec2 originVec2{ originGLM.x, originGLM.y };
+        std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+            originVec2, angle, glm::radians(60.0f), 300.0f, *physics, m_currentScene->objects()
+        );
+
+        std::vector<glm::vec2> lightPolyGLM;
+        for (const auto& p : lightPoly) lightPolyGLM.emplace_back(p.x, p.y);
+
+        // Render
+        m_renderer->beginLightPass(m_editorCamera.viewProj(), originGLM,
+            glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+        m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
+        m_renderer->endLightPass();
     }
 
     //void LevelEditor::setupDefaultDockLayout() {

@@ -22,7 +22,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <memory>
 #include "Graphics/ImGuiManager.hpp"
 #include "Core/Logger.hpp"
-
+#include "Core/EventBus.hpp"
+#include "Core/Event.hpp"
 namespace Runtime { class GameStateManager; class MenuState; }
 
 namespace Audio { class AudioManager; class SurfaceAudioSystem; }
@@ -52,6 +53,7 @@ namespace Core {
 		static bool IsInitialized() { return s_instance != nullptr; }
 
 		// Subsystem accessors
+		EventBus& events() { return m_events; }
 		Graphics::RenderingManager& rendering() { return *m_renderer; }
 		Graphics::GraphicsManager& graphics() { return *m_gfx; }
 		Graphics::Camera2D& camera() { return *m_camera; }
@@ -94,11 +96,12 @@ namespace Core {
 
 		// Inside namespace Runtime
 		std::unique_ptr<Runtime::GameStateManager>   m_gsm;
-
+		EventBus m_events;
 	private: // simple data member
 		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}
 		bool m_running{ false }; // Is the engine running?
 		static Engine* s_instance;
 		double m_accuml;
+		bool m_pausedByFocus;
 	};
 }

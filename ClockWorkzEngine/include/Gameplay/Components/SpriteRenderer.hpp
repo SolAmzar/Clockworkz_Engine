@@ -43,6 +43,9 @@ namespace Gameplay
     void setUV(const glm::vec4 &uvRect) { m_uv = uvRect; }
     const glm::vec4 &uv() const { return m_uv; }
 
+    void setIsUI(const bool& isUI) { m_isUI = isUI; }
+    const bool& IsUI() const { return m_isUI; }
+
     void onRender(GameObject &owner) override;
 
     void resetAll();
@@ -50,6 +53,7 @@ namespace Gameplay
     std::string m_textureAlias;
     glm::vec4 m_tint{1.0f, 1.0f, 1.0f, 1.0f};
     glm::vec4 m_uv{0.0f, 0.0f, 1.0f, 1.0f}; // (x,y,w,h); -1 means full texture
+    bool m_isUI = false;
   };
 
 } // namespace Gameplay

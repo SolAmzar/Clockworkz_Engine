@@ -59,6 +59,8 @@ namespace Platform {
         trackKey(GLFW_KEY_SPACE);
         trackKey(GLFW_KEY_L);
 
+        trackKey(GLFW_KEY_F11);
+
 
         trackKey(GLFW_KEY_R); //For Flashlight
         trackKey(GLFW_KEY_Z); //
@@ -71,6 +73,9 @@ namespace Platform {
 
         trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
         trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
+
+
+
 
         // Seed mouse pos
         glfwGetCursorPos(m_window, &m_mouseX, &m_mouseY);
@@ -233,6 +238,15 @@ namespace Platform {
         glm::vec4 world = invVP * clipCoords;
 
         return vec2(world.x, world.y);
+    }
+
+    void InputManager::clearState() {
+        m_prevKeys.clear();
+        m_currKeys.clear();
+        m_prevMouse.clear();
+        m_currMouse.clear();
+        m_mouseClickedThisFrame.clear();
+        m_mousePressInfo.clear();
     }
 
 } // namespace Platform

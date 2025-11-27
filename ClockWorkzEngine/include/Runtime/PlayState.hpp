@@ -28,6 +28,10 @@ namespace Core {
 	class Logger; class Time;
 }
 
+namespace Platform {
+	class LevelEditor;
+}
+
 namespace Graphics {
 	class RenderingManager;
 }
@@ -37,6 +41,7 @@ namespace Runtime {
 	class PlayState final : public GameState {
 	public:
 		explicit PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm);
+		~PlayState();
 
 		const char* name() const override;
 
@@ -83,6 +88,9 @@ namespace Runtime {
 
 		bool m_pauseRequested{ false };
 		bool m_returnToMenuRequested{ false };
+
+		std::unique_ptr<Platform::LevelEditor> m_levelEditor;
+		bool m_editorInitialized{ false };
 
 	};
 
