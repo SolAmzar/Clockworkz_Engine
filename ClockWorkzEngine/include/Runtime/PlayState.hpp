@@ -92,6 +92,8 @@ namespace Runtime {
 		std::unique_ptr<Platform::LevelEditor> m_levelEditor;
 		bool m_editorInitialized{ false };
 
+		void initializeEnemyAI(Runtime::Scene* scene);
+
 	};
 
 } // namespace Runtime

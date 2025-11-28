@@ -150,8 +150,6 @@ namespace Gameplay {
         void setHazard(bool v) { m_isHazard = v; }
         void setBlocksLight(bool v) { m_blocksLight = v; }
         void setName(const std::string& newName); 
-        void setChase(bool v) { m_chase = v; }
-        bool checkChase() const { return m_chase; }
         void setBatt(f32 v) { m_battery = v; }
         float checkBatt() const { return m_battery; }
         float checkDrain() const { return drainRate; }
@@ -242,7 +240,6 @@ namespace Gameplay {
         bool            m_isHazard{ false };
         bool            m_blocksLight{ true };
 		bool 		    m_moveable{ false };
-        bool            m_chase{ false };
         // Battery field
         float           m_battery = 10.0f;
         const float     drainRate = 2.0f;   // battery units per second

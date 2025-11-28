@@ -247,16 +247,9 @@ namespace Runtime
 
 					}*/
 				}
-				// ******** Chase function to be implemented in M3 ********
-				if (m_player) {
-					for (auto& u : objs) {
-						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
-							// Add Chase: speed=150, engageRadius=300 (chase when player within 300 units)
-							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 300.0f);
-							std::cout << "Added Chase component to enemy: " << u->name() << "\n";
-						}
-					}
-				}
+
+				initializeEnemyAI(scene);
+
 				std::cout.flush();
 			}
 		}
@@ -683,8 +676,9 @@ namespace Runtime
 				}
 			}
 		}
-		m_scenes.update(dt);
 		updateLightExposure(dt);
+		m_scenes.update(dt);
+
 	}
 
 	// Helper: Check if point is inside polygon
@@ -753,6 +747,29 @@ namespace Runtime
 
 			if (obj->type() == Gameplay::GameObjectType::Enemy) {
 				glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
+
+				// FORCE TRUE for testing
+				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
+
+				std::cout << "[Light Check] Enemy '" << obj->name()
+					<< "' at (" << enemyPos.x << ", " << enemyPos.y << ")"
+					<< " | isPointInPolygon ACTUAL: " << inLight
+					<< " | polygon size: " << lightPolyGLM.size() << std::endl;
+
+				if (inLight) {
+					obj->addLightExposure(dt);
+					std::cout << "  ✓ ADDING EXPOSURE! Now: " << obj->lightExposureTime() << std::endl;
+				}
+				else {
+					if (obj->lightExposureTime() > 0.0f) {
+						std::cout << "  ✗ RESETTING EXPOSURE! Was: " << obj->lightExposureTime() << std::endl;
+					}
+					obj->resetLightExposure();
+				}
+
+				std::cout << "[Light Check] Enemy '" << obj->name()
+					<< "' at (" << enemyPos.x << ", " << enemyPos.y << ")"
+					<< " | In polygon: " << inLight << std::endl;
 
 				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
 					// Enemy is in light
@@ -898,6 +915,26 @@ namespace Runtime
 			"assets/textures/floor.png",
 			"assets/textures/trap.png"};
 
+	void PlayState::initializeEnemyAI(Runtime::Scene* scene) {
+		if (!scene || !m_player) {
+			std::cout << "[PlayState] Cannot initialize enemy AI: scene or player missing\n";
+			return;
+		}
+
+		auto& objs = scene->objects();
+		for (auto& obj : objs) {
+			if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+				// Check if Chase component already exists
+				if (!obj->getComponent<Gameplay::Chase>()) {
+					constexpr float CHASE_SPEED = 150.0f;
+					constexpr float ENGAGE_RADIUS = 300.0f;
+
+					obj->addComponent<Gameplay::Chase>(*obj, m_player, CHASE_SPEED, ENGAGE_RADIUS);
+					std::cout << "[PlayState] Added Chase to enemy: " << obj->name() << "\n";
+				}
+			}
+		}
+	}
 	//void PlayState::renderImGui(Core::Time *timer)
 	//{
 	//	if (!m_debug)
@@ -1260,16 +1297,7 @@ namespace Runtime
 				scene->registerExistingObjectsToLayers(); 
 				m_player = findFirstPlayer(scene);
 
-
-				// ******** Chase function to be implemented in M3 ********
-				auto& objs = scene->objects();
-				if (m_player) {
-					for (auto& u : objs) {
-						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
-							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 100.0f);
-						}
-					}
-				}
+				initializeEnemyAI(scene);
 			}
 
 		}
@@ -1281,16 +1309,7 @@ namespace Runtime
 				scene->registerExistingObjectsToLayers();
 				m_player = findFirstPlayer(scene);
 
-				// ******** Chase function to be implemented in M3 ********
-				auto& objs = scene->objects();
-				if (m_player) {
-					for (auto& u : objs) {
-						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
-							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 100.0f);
-							std::cout << "Re-added Chase to: " << u->name() << "\n";
-						}
-					}
-				}
+				initializeEnemyAI(scene);
 			}
 		}
 	}

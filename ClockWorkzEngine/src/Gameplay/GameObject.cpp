@@ -43,22 +43,15 @@ namespace Gameplay {
 
     void GameObject::update(double dt)
     {
-
+        // PHASE 1: Pre-Physics
         for (auto& c : m_components) c->onBeforePhysics(*this, dt);
 
-        if(m_chase){
-            for (auto& c : m_components) c->onUpdate(*this, dt);
-            m_transform.position += m_velocity * static_cast<float>(dt);
-            markDirty();
-        }
-        else {
-            // basic top-down integration
-            m_transform.position += m_velocity * static_cast<float>(dt);
-            markDirty();
-            for (auto& c : m_components) c->onUpdate(*this, dt);
-        }
+        // PHASE 2: Component Updates
+        for (auto& c : m_components) c->onUpdate(*this, dt);
 
-        
+        // PHASE 3: Physics Integration
+        m_transform.position += m_velocity * static_cast<float>(dt);
+        markDirty();
     }
 
     std::unique_ptr<GameObject> GameObject::clone() const {
@@ -79,7 +72,6 @@ namespace Gameplay {
         copy->m_isHazard = m_isHazard;
         copy->m_blocksLight = m_blocksLight;
         copy->m_moveable = m_moveable;
-        copy->m_chase = m_chase;
 
         // Copy components (add logic for each component type)
         // TODO: Implement component cloning not fully working yet
