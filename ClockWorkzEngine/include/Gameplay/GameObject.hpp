@@ -158,6 +158,8 @@ namespace Gameplay {
         void addLightExposure(float dt) { m_lightExposureTime += dt; }
         void resetLightExposure() { m_lightExposureTime = 0.0f; }
 
+        void decreaseLightExposure(float amount) {m_lightExposureTime = std::max(0.0f, m_lightExposureTime - amount);}
+
         // Rendering handle for now (swap to Sprite component later)
         std::string const& textureId() const { return m_textureId; }
         void setTextureId(std::string id) { m_textureId = std::move(id); }
@@ -257,6 +259,7 @@ namespace Gameplay {
 
         LayerChangedFn m_onLayerChanged{ nullptr };
         uint32_t m_layer{ DrawLayer::World }; // default
+
     };
 
    

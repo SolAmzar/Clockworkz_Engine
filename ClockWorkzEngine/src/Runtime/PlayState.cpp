@@ -728,19 +728,29 @@ namespace Runtime
 		);
 		glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
+		// Calculate light direction vector
+		glm::vec2 lightDir(cos(angle), sin(angle));
+
 		// Compute visibility polygon
 		std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 		vec2 originVec2 = { originGLM.x, originGLM.y };
 		std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
 			originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
 
+
 		std::vector<glm::vec2> lightPolyGLM;
 		for (const auto& point : lightPoly) {
 			lightPolyGLM.emplace_back(point.x, point.y);
 		}
 
+		if (lightPolyGLM.size() > 0) {
+			for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
+				std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
+			}
+		}
 		// ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 0.5f;
+		const float DECAY_RATE = 2.0f;
 
 		for (auto& obj : objs) {
 			if (!obj || !obj->active()) continue;
@@ -788,7 +798,19 @@ namespace Runtime
 					if (obj->lightExposureTime() > 0.0f) {
 						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
 					}
-					obj->resetLightExposure();
+					float oldExposure = obj->lightExposureTime();
+					obj->decreaseLightExposure(dt * DECAY_RATE);
+					float newExposure = obj->lightExposureTime();
+
+					if (oldExposure > 0.0f && newExposure > 0.0f) {
+						std::cout << "[Light] Enemy '" << obj->name()
+							<< "' DECAYING | Exposure: " << newExposure
+							<< "s (was " << oldExposure << "s)" << std::endl;
+					}
+					else if (oldExposure > 0.0f && newExposure == 0.0f) {
+						std::cout << "[Light] Enemy '" << obj->name()
+							<< "' DECAY COMPLETE | Exposure reset" << std::endl;
+					}
 				}
 			}
 		}

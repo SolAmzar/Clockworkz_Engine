@@ -69,21 +69,13 @@ namespace Gameplay {
         // Check if enemy is exposed to light
         float lightExposure = m_enemy.lightExposureTime();
 
-        // DEBUG: Always log this calculation
-        std::cout << "[Chase DEBUG] calculateEffectiveSpeed() for '" << m_enemy.name() << "'"
-            << " | lightExposure: " << lightExposure
-            << " | m_speed: " << m_speed
-            << " | m_lightSlowdownFactor: " << m_lightSlowdownFactor;
-
         if (lightExposure > 0.0f) {
             // Enemy is in light - apply slowdown
             float slowedSpeed = m_speed * m_lightSlowdownFactor;
-            std::cout << " | SLOWING: " << slowedSpeed << " u/s" << std::endl;
             return slowedSpeed;
         }
 
         // Not in light - full speed
-        std::cout << " | FULL SPEED: " << m_speed << " u/s" << std::endl;
         return m_speed;
     }
 
@@ -104,42 +96,29 @@ namespace Gameplay {
         // Calculate desired velocity with effective speed (considering light slowdown)
         float effectiveSpeed = calculateEffectiveSpeed();
 
-        // DEBUG: Log the velocity calculation
-        std::cout << "[Chase DEBUG] calculateDesiredVelocity() for '" << m_enemy.name() << "'"
-            << " | effectiveSpeed: " << effectiveSpeed
-            << " | direction: (" << dir.x << ", " << dir.y << ")";
-
         vec2 desiredVel = dir * effectiveSpeed;
         desiredVel.x = cleanFloat(desiredVel.x);
         desiredVel.y = cleanFloat(desiredVel.y);
-
-        std::cout << " | desiredVel: (" << desiredVel.x << ", " << desiredVel.y << ")" << std::endl;
 
         // Respect collision normal - slide along walls
         vec2 hitNormal = m_enemy.lastHitNormal();
         if (hitNormal.x != 0.0f || hitNormal.y != 0.0f) {
             desiredVel = slideAgainst(desiredVel, hitNormal);
-            std::cout << "[Chase DEBUG] Wall slide applied for '" << m_enemy.name() << "'" << std::endl;
         }
 
         return desiredVel;
     }
 
     void Chase::applyVelocity(GameObject& enemy, const vec2& velocity, double dt) {
-        std::cout << "[Chase DEBUG] applyVelocity() for '" << m_enemy.name() << "'"
-            << " | velocity: (" << velocity.x << ", " << velocity.y << ")"
-            << " | hasVelocity: " << enemy.hasVelocity() << std::endl;
 
         if (enemy.hasVelocity()) {
             // Use velocity-based movement (integrated by physics system)
             enemy.velocity() = velocity;
-            std::cout << "[Chase DEBUG] Set enemy.velocity() to (" << velocity.x << ", " << velocity.y << ")" << std::endl;
         }
         else {
             // Fallback: direct kinematic movement
             enemy.transform().position += velocity * static_cast<f32>(dt);
             enemy.markDirty();
-            std::cout << "[Chase DEBUG] Applied kinematic movement" << std::endl;
         }
     }
 
@@ -177,14 +156,12 @@ namespace Gameplay {
     }
 
     void Chase::onUpdate(GameObject& enemy, double dt) {
-        std::cout << "\n[Chase DEBUG] ===== onUpdate START for '" << m_enemy.name() << "' =====" << std::endl;
 
         // Validate target exists
         if (!m_player) {
             m_isChasing = false;
             m_isSlowedByLight = false;
             m_currentSpeed = 0.0f;
-            std::cout << "[Chase DEBUG] No player target!" << std::endl;
             return;
         }
 
@@ -195,7 +172,6 @@ namespace Gameplay {
         float distSquared = dot(d, d);
         m_lastDistance = std::sqrt(distSquared);
 
-        std::cout << "[Chase DEBUG] Distance to player: " << m_lastDistance << std::endl;
 
         // Check if too close - stop to avoid jitter
         if (distSquared <= m_stopDist * m_stopDist) {
@@ -203,7 +179,6 @@ namespace Gameplay {
             m_isSlowedByLight = false;
             m_currentSpeed = 0.0f;
 
-            std::cout << "[Chase DEBUG] Too close to player - stopping" << std::endl;
 
             if (m_enemy.hasVelocity()) {
                 m_enemy.velocity() = { 0.0f, 0.0f };
@@ -213,16 +188,11 @@ namespace Gameplay {
 
         // Determine if should engage target
         m_isChasing = shouldEngageTarget(m_lastDistance);
-        std::cout << "[Chase DEBUG] Should engage: " << m_isChasing << std::endl;
 
         // Check if slowed by light - THIS IS THE KEY CHECK
         float currentLightExposure = m_enemy.lightExposureTime();
         m_isSlowedByLight = (currentLightExposure > 0.0f);
         m_currentSpeed = calculateEffectiveSpeed();
-
-        std::cout << "[Chase DEBUG] Light exposure: " << currentLightExposure
-            << " | isSlowedByLight: " << m_isSlowedByLight
-            << " | currentSpeed: " << m_currentSpeed << std::endl;
 
         // Update animation if sprite animator exists
         if (auto* spriteAnimator = enemy.getComponent<SpriteAnimatorComponent>()) {
@@ -233,17 +203,14 @@ namespace Gameplay {
 
         // Stop movement if not chasing - switch to wander behavior
         if (!m_isChasing) {
-            std::cout << "[Chase DEBUG] Not chasing - wandering" << std::endl;
             updateWanderBehavior(enemy, dt);
             return;
         }
 
         // Calculate and apply chase movement (with light slowdown applied)
-        std::cout << "[Chase DEBUG] Chasing - calculating velocity..." << std::endl;
         vec2 desiredVel = calculateDesiredVelocity(from, to);
         applyVelocity(enemy, desiredVel, dt);
 
-        std::cout << "[Chase DEBUG] ===== onUpdate END for '" << m_enemy.name() << "' =====\n" << std::endl;
     }
 
 } // namespace Gameplay
