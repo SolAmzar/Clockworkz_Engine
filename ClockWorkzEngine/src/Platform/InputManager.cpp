@@ -66,6 +66,7 @@ namespace Platform {
         trackKey(GLFW_KEY_Z); //
         trackKey(GLFW_KEY_X);
         trackKey(GLFW_KEY_P); //For debugging
+        trackKey(GLFW_KEY_V);
         trackKey(GLFW_KEY_N); //Mute BGM
 		trackKey(GLFW_KEY_B); //Unmute BGM
         trackKey(GLFW_KEY_M); //Sprite Editor from Menu Screen

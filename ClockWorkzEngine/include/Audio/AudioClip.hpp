@@ -48,7 +48,7 @@ namespace Audio {
                     << file.path << "'\n";
                 return false;
             }
-
+			m_system = system;
             FMOD_MODE mode = FMOD_DEFAULT;
             if (file.loop)   mode |= FMOD_LOOP_NORMAL; else mode |= FMOD_LOOP_OFF;
             if (file.stream) mode |= FMOD_CREATESTREAM; else mode |= FMOD_CREATESAMPLE;
@@ -66,19 +66,8 @@ namespace Audio {
 
         // Free FMOD resources if loaded
         inline void Unload() {
-            if (m_sound) {
-                // Only try to release if we still have a system pointer
-                // (i.e., AudioManager hasn’t been shut down yet).
-                if (m_system) {
-                    FMOD_RESULT r = m_sound->release();
-                    if (r != FMOD_OK) {
-                        std::cout << "[AudioClip] FMOD::Sound::release failed ("
-                            << (int)r << ")\n";
-                    }
-                }
-                m_sound = nullptr;
-                m_system = nullptr;
-            }
+            m_sound = nullptr;
+            m_system = nullptr;
         }
 
         // Low-level access if needed

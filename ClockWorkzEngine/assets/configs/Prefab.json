@@ -477,6 +477,34 @@
           "textureId": "wall_texture"
         }
       }
+    },
+    {
+      "prefabName": "Pot",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        "collider": {
+          "type": "Circle",
+          "radius": 1.0,
+          "height": 1.0,
+          "isSolid": true,
+          "layer": 2,
+          "collisionMask": 0,
+          "collisionCategory": 0
+        },
+        "spriteRenderer": {
+          "textureId": "pot_texture"
+        }
+      }
     }
   ]
 }

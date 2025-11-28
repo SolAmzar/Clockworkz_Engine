@@ -173,6 +173,7 @@ namespace Runtime
 		// Initialize level editor
 		Core::Engine& engine = Core::Engine::Get();
 
+
 		m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
 		if (m_levelEditor->init(

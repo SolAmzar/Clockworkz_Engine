@@ -103,7 +103,7 @@ namespace Assets {
                 std::cerr << "[SoundManager] Failed to load: " << cfg.name << std::endl;
             } else
             {
-                std::cout << "[TextureManager] Successfully loaded: " << cfg.name
+                std::cout << "[SoundManager] Successfully loaded: " << cfg.name
                     << " ( Loop: " << cfg.loop << ", Stream: " << cfg.stream << " Is3D: " << cfg.is3D << ")" << std::endl;
             }
         }

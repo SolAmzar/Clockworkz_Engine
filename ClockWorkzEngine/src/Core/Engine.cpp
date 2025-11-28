@@ -108,6 +108,7 @@ namespace Core
 
 		if (!m_audio->init())
 		{
+			std::cerr << "Failed to load AudioManager" << "\n";
 			return false;
 		}
 		// m_sfAudio->init(*m_audio);
@@ -117,7 +118,7 @@ namespace Core
 		m_input->init(*m_window);
 		if (!m_gfx->init(*m_window))
 			return false;
-
+		
 		Assets::SoundManager::Init(*m_audio);
 
 		if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json")) {

@@ -53,6 +53,12 @@
 			"path": "assets/textures/corridorfloor.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "pot_texture",
+			"path": "assets/textures/pot.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
 	]
 }
