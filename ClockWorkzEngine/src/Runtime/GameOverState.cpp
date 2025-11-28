@@ -73,10 +73,12 @@ namespace Runtime {
             m_gsm.pop(); // Remove GameOverState
             m_gsm.pop(); // Remove PlayState
             m_gsm.push(std::make_shared<PlayState>(m_sceneId, m_input, m_gsm));
+            return;
         }
         else if (m_menuRequested) {
             m_gsm.pop(); // Remove GameOverState
             m_gsm.pop(); // Remove PlayState
+            return;
         }
     }
 
