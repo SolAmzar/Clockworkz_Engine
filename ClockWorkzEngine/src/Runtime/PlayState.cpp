@@ -426,6 +426,15 @@ namespace Runtime
 
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
+					// ---- CAMERA FOLLOW ----
+					if (m_player && m_player->active()) {
+						vec2 p = m_player->transform().position;
+
+						// Instantly follow
+						cam.setPosition(glm::vec2(p.x, p.y));
+					}
+
+					// ---- Movement FOLLOW ----
 					float moveSpeed = obj->moveSpeed();
 					bool isRunning = false;
 					float maxSpeed = obj->moveSpeed();
