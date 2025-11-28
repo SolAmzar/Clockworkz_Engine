@@ -43,6 +43,7 @@ namespace Gameplay {
 
     void GameObject::update(double dt)
     {
+        m_lastHitNormal = { 0.0f, 0.0f };
         // PHASE 1: Pre-Physics
         for (auto& c : m_components) c->onBeforePhysics(*this, dt);
 
