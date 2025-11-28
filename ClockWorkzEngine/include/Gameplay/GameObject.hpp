@@ -131,6 +131,8 @@ namespace Gameplay {
         void                  setLastHitNormal(vec2 n) { m_lastHitNormal = n; }
         vec2                  lastHitNormal() const { return m_lastHitNormal; }
 
+        void                  setShape(GameObjectShape s) { m_shapeid = s; };
+
 
 
         // Collision + rendering layers
@@ -198,6 +200,12 @@ namespace Gameplay {
 
         template <typename T, typename... Args>
         T* addCollider(Args&&... args);
+
+        template<typename T>
+        T* getCollider();
+
+        template<typename T>
+        T const* GameObject::getCollider() const;
 
         const std::vector<std::unique_ptr<Collider>>& colliders() const { return m_colliders; }
         std::vector<std::unique_ptr<Collider>>& colliders() { return m_colliders; }
@@ -301,5 +309,27 @@ namespace Gameplay {
         m_colliders.emplace_back(std::move(ptr));
         return raw;
     }
+    // Return the first collider of type T attached to this GameObject, or nullptr
+    template<typename T>
+    T* GameObject::getCollider() {
+        for (auto& c : m_colliders) {
+            if (auto* casted = dynamic_cast<T*>(c.get())) {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+    template<typename T>
+    T const* GameObject::getCollider() const {
+        for (auto const& c : m_colliders) {
+            if (auto const* casted = dynamic_cast<T const*>(c.get())) {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+
 
 } // namespace Gameplay
