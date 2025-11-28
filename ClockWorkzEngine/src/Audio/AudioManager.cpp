@@ -42,9 +42,15 @@ static bool isChannelAlive(FMOD::Channel* ch) {
     return playing;
 }
 
-AudioManager::~AudioManager() { shutdown(); }
+AudioManager::~AudioManager() {}
+
+AudioManager& AudioManager::get() {
+    static AudioManager instance;       // <--- created once, destroyed once
+    return instance;
+}
 
 bool AudioManager::init(int maxChannels) {
+    std::cout << "[DEBUG] AudioManager::init called\n";
     if (m_system) return true;
     if (!FMOD_CHECK(FMOD::System_Create(&m_system), "System_Create")) return false;
     if (!FMOD_CHECK(m_system->init(maxChannels, FMOD_INIT_NORMAL, nullptr), "System::init")) return false;
@@ -58,6 +64,7 @@ bool AudioManager::init(int maxChannels) {
 }
 
 void AudioManager::shutdown() {
+    std::cout << "[DEBUG] AudioManager::shutdown called\n";
     unloadAll();
     if (m_bgm) { m_bgm->release(); m_bgm = nullptr; }
     if (m_sfx) { m_sfx->release(); m_sfx = nullptr; }
@@ -139,8 +146,12 @@ int AudioManager::play(const std::string& id, Group g, float volume, bool paused
     }
 
     FMOD::Channel* ch = nullptr;
-    if (!FMOD_CHECK(m_system->playSound(sound, groupHandle(g), true, &ch), "playSound"))
+    FMOD_RESULT r = m_system->playSound(sound, groupHandle(g), true, &ch);
+    if (r != FMOD_OK) {
+        std::cerr << "[FMOD] playSound('" << id << "') failed: "
+            << FMOD_ErrorString(r) << "\n";
         return 0;
+    }
 
     if (ch) {
         ch->setVolume(volume);

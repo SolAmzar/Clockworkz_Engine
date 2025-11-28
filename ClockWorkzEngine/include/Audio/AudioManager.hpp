@@ -78,6 +78,7 @@ namespace Audio {
         bool isReady() const noexcept { return m_system != nullptr; }
 
         FMOD::System* getSystem() const { return m_system; }
+        static AudioManager& get();
 
     private:
         struct ChannelHandle { 

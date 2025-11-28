@@ -32,15 +32,35 @@ namespace Gameplay {
 
     json GameObjectSerializer::serializeCollider(const GameObject& obj) {
         json j;
-        j["width"] = obj.size().x;
-        j["height"] = obj.size().y;
+
+        // Common fields
         j["isSolid"] = obj.isSolid();
         j["layer"] = obj.layer();
         j["collisionMask"] = obj.collisionMask();
         j["moveable"] = obj.ismoveable();
         j["collisionCategory"] = obj.collisionCategory();
+        j["blocksLight"] = obj.blocksLight();
+
+        // Shape-specific: ask the colliders directly
+        if (auto* circle = obj.getCollider<CircleCollider>()) {
+            j["type"] = "Circle";
+            j["radius"] = circle->radius();
+
+            j["width"] = obj.size().x;   // optional, for editor display
+            j["height"] = obj.size().y;
+        }
+        else if (auto* aabb = obj.getCollider<AABBCollider>()) {
+            j["type"] = "AABB";
+            j["width"] = obj.size().x;
+            j["height"] = obj.size().y;
+        }
+        else {
+            j["type"] = "None";
+        }
+
         return j;
     }
+
 
     json GameObjectSerializer::serializeHealth(const GameObject& obj) {
         auto* health = obj.getComponent<HealthComponent>();
@@ -158,18 +178,33 @@ namespace Gameplay {
                     collide->blocksLight=((j["blocksLight"].get<bool>()));
                 }
             }
-            else if (s == "Circle") { 
+            else if (s == "Circle") {
                 auto* collide = obj.addCollider<CircleCollider>();
                 collide->type = ColliderType::Circle;
-                if (j.contains("blocksLight")) {
-                    collide->blocksLight = ((j["blocksLight"].get<bool>()));
+
+                // Optional: read radius from JSON (with a default)
+                float radius = obj.size().x * 0.5f;
+                collide->radius(radius);
+                if (j.contains("radius")) {
+                    radius = j["radius"].get<float>();
                 }
+                collide->radius(radius);  // assuming CircleCollider has a radius field
+
+                if (j.contains("blocksLight")) {
+                    collide->blocksLight = j["blocksLight"].get<bool>();
+                }
+
+                // Keep size/shape in sync for debug + other systems
+                obj.setShape(Gameplay::GameObjectShape::Circle);
+                obj.setSize(vec2(radius * 2.0f, radius * 2.0f));
             }
             else if (s == "None") {
                 auto* collide = obj.addCollider<Collider>();
                 collide->type = ColliderType::None;
             }
         }
+
+
       
     }
 
@@ -267,6 +302,11 @@ namespace Gameplay {
         j["name"] = obj.name();
         j["active"] = obj.active();
         j["type"] = static_cast<int>(obj.type());
+
+        // Save prefab name if the object was created from a prefab
+        if (!obj.prefabName().empty()) {
+            j["prefab"] = obj.prefabName();
+        }
 
         // Components object
         json components;

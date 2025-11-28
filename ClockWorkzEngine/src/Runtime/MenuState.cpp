@@ -104,6 +104,9 @@ namespace Runtime
             "assets/shaders/texture.frag");
         // Amzar
         m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
+        
+  
+        
         m_background.addComponent<SpriteRendererComponent>("menu_bg_texture");
         SpriteRendererComponent* bgSprite = m_background.getComponent<SpriteRendererComponent>();
         bgSprite->setIsUI(true);
@@ -312,9 +315,9 @@ namespace Runtime
 #endif
         // Optional: mouse click to select as well
         // if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) select();
-        if (m_input.wasKeyTriggered(GLFW_KEY_P))
+        if (m_input.wasKeyTriggered(GLFW_KEY_V))
         {
-            std::cout << "P pressed -> toggling BGM\n";
+            std::cout << "V pressed -> toggling BGM\n";
             m_bgmPaused = !m_bgmPaused;
             if (m_bgmChannel)
                 m_audio.setPaused(m_bgmChannel, m_bgmPaused);
@@ -449,6 +452,7 @@ namespace Runtime
             m_audio.stop(m_bgmChannel);
             m_bgmChannel = 0;
         }
+        // m_audio.stopAll();
     }
 
 } // namespace Runtime

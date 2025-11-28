@@ -131,6 +131,8 @@ namespace Gameplay {
         void                  setLastHitNormal(vec2 n) { m_lastHitNormal = n; }
         vec2                  lastHitNormal() const { return m_lastHitNormal; }
 
+        void                  setShape(GameObjectShape s) { m_shapeid = s; };
+
 
 
         // Collision + rendering layers
@@ -163,6 +165,9 @@ namespace Gameplay {
         // Rendering handle for now (swap to Sprite component later)
         std::string const& textureId() const { return m_textureId; }
         void setTextureId(std::string id) { m_textureId = std::move(id); }
+
+        std::string const& prefabName() const { return m_prefabName; }
+        void setPrefabName(const std::string& name) { m_prefabName = name; }
 
         void autoUpdateCollisionBaseOnScale();
         AABB aabbWorld() const;
@@ -198,6 +203,12 @@ namespace Gameplay {
 
         template <typename T, typename... Args>
         T* addCollider(Args&&... args);
+
+        template<typename T>
+        T* getCollider();
+
+        template<typename T>
+        T const* GameObject::getCollider() const;
 
         const std::vector<std::unique_ptr<Collider>>& colliders() const { return m_colliders; }
         std::vector<std::unique_ptr<Collider>>& colliders() { return m_colliders; }
@@ -254,6 +265,8 @@ namespace Gameplay {
 
         std::string     m_textureId{};
 
+        std::string     m_prefabName{};
+
         std::vector<std::unique_ptr<Collider>> m_colliders;
         std::vector<std::unique_ptr<Component>> m_components;
 
@@ -301,5 +314,27 @@ namespace Gameplay {
         m_colliders.emplace_back(std::move(ptr));
         return raw;
     }
+    // Return the first collider of type T attached to this GameObject, or nullptr
+    template<typename T>
+    T* GameObject::getCollider() {
+        for (auto& c : m_colliders) {
+            if (auto* casted = dynamic_cast<T*>(c.get())) {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+    template<typename T>
+    T const* GameObject::getCollider() const {
+        for (auto const& c : m_colliders) {
+            if (auto const* casted = dynamic_cast<T const*>(c.get())) {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+
 
 } // namespace Gameplay

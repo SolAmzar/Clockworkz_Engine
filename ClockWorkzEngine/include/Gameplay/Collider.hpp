@@ -70,6 +70,7 @@ namespace Gameplay
         CircleCollider() { type = ColliderType::Circle; }
 
         float radius() const override { return r; }
+		float radius(float newR) { r = newR; return r * 0.5; }
     };
 
 }
