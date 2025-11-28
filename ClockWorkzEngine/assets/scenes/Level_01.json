@@ -4799,6 +4799,30 @@
       "name": "Enemy",
       "prefab": "Enemy",
       "type": 3
+    },
+    {
+      "name": "Pot1",
+      "active": true,
+      "prefab": "Pot",
+      "components": {
+        "collider": {
+          "collisionCategory": 4,
+          "collisionMask": 7,
+          "type": "Circle",
+          "radius": 20.0,
+          "isSolid": true
+        },
+        "transform": {
+          "position": {
+            "x": -100,
+            "y": -100
+          },
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      }
     }
   ],
   "sceneName": "Level_01 (from PlayState)"

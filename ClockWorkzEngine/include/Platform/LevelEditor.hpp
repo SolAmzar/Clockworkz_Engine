@@ -295,6 +295,8 @@ namespace Platform {
 
         bool isMouseOverGizmo(const vec2& mouseWorldPos) const;
 
+       
+
     private:
         // Core systems
         std::unique_ptr<Core::Logger> m_logger;
@@ -371,6 +373,14 @@ namespace Platform {
 
 		// Auto-tiling for walls
         void autoTileWalls();
+
+        // -- audio error popup state-- 
+        bool m_showErrorPopup = false;
+        std::string m_errorPopupTitle;
+        std::string m_errorPopupMessage;
+
+        void queueErrorPopup(const std::string& title, const std::string& message);
+        void renderErrorPopup();
 
         // ====================================================================
         // INTEGRATED GIZMO SYSTEM - Member Variables
