@@ -462,76 +462,100 @@ namespace Runtime
 						m_haveLastFootPos = false;
 					}
 
+					vec2 move{ 0,0 };
 
-					//not used
-					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
-					{
-						moveSpeed *= 2;
+					// WASD input → movement vector
+					if (m_input.isKeyDown(GLFW_KEY_W)) move.y += 1;
+					if (m_input.isKeyDown(GLFW_KEY_S)) move.y -= 1;
+					if (m_input.isKeyDown(GLFW_KEY_A)) move.x -= 1;
+					if (m_input.isKeyDown(GLFW_KEY_D)) move.x += 1;
+
+					// normalize diagonal
+					if (move.x != 0 || move.y != 0)
+						move = normalize(move);
+
+					// apply speed
+					float speedMove = obj->moveSpeed();
+
+					// shift to run
+					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+						speedMove *= 2.0f;
 						isRunning = true;
 					}
 
-					//Gameplay::GameObject* fx = nullptr;
-					//for (auto& up : gameObjects) {
-					//	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					// final velocity
+					obj->velocity() = move * speedMove;
+
+
+					////not used
+					//if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+					//{
+					//	moveSpeed *= 2;
+					//	isRunning = true;
 					//}
-					//if (fx) {
-					//	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
-					//		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
-					//			em->burst(80); // 80-particle puff
+
+					////Gameplay::GameObject* fx = nullptr;
+					////for (auto& up : gameObjects) {
+					////	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					////}
+					////if (fx) {
+					////	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
+					////		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
+					////			em->burst(80); // 80-particle puff
+					////	}
+					////}
+					////float moveAmount = moveSpeed * static_cast<float>(dt);
+
+					//if (m_input.isKeyDown(GLFW_KEY_W))
+					//{
+					//	obj->velocity().y += moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
+					//		obj->velocity().y = maxSpeed;
+					//	}
+					//	else if (obj->velocity().y > maxRunSpeed){
+					//		obj->velocity().y = maxRunSpeed;
+					//	}
+
+					//}
+					//else if (m_input.isKeyDown(GLFW_KEY_S))
+					//{
+					//	obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
+					//		obj->velocity().y = -maxSpeed;
+					//	}
+					//	else if (obj->velocity().y > -maxRunSpeed) {
+					//		obj->velocity().y = -maxRunSpeed;
 					//	}
 					//}
-					//float moveAmount = moveSpeed * static_cast<float>(dt);
+					//else
+					//{
+					//	obj->velocity().y = 0;
+					//}
 
-					if (m_input.isKeyDown(GLFW_KEY_W))
-					{
-						obj->velocity().y += moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
-							obj->velocity().y = maxSpeed;
-						}
-						else if (obj->velocity().y > maxRunSpeed){
-							obj->velocity().y = maxRunSpeed;
-						}
-
-					}
-					else if (m_input.isKeyDown(GLFW_KEY_S))
-					{
-						obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
-							obj->velocity().y = -maxSpeed;
-						}
-						else if (obj->velocity().y > -maxRunSpeed) {
-							obj->velocity().y = -maxRunSpeed;
-						}
-					}
-					else
-					{
-						obj->velocity().y = 0;
-					}
-
-					if (m_input.isKeyDown(GLFW_KEY_A))
-					{
-						obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
-							obj->velocity().x = -maxSpeed;
-						}
-						else if (obj->velocity().x > -maxRunSpeed) {
-							obj->velocity().x = -maxRunSpeed;
-						}
-					}
-					else if (m_input.isKeyDown(GLFW_KEY_D))
-					{
-						obj->velocity().x += moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
-							obj->velocity().x = maxSpeed;
-						}
-						else if (obj->velocity().y > maxRunSpeed) {
-							obj->velocity().x = maxRunSpeed;
-						}
-					}
-					else
-					{
-						obj->velocity().x = 0;
-					}
+					//if (m_input.isKeyDown(GLFW_KEY_A))
+					//{
+					//	obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
+					//		obj->velocity().x = -maxSpeed;
+					//	}
+					//	else if (obj->velocity().x > -maxRunSpeed) {
+					//		obj->velocity().x = -maxRunSpeed;
+					//	}
+					//}
+					//else if (m_input.isKeyDown(GLFW_KEY_D))
+					//{
+					//	obj->velocity().x += moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
+					//		obj->velocity().x = maxSpeed;
+					//	}
+					//	else if (obj->velocity().y > maxRunSpeed) {
+					//		obj->velocity().x = maxRunSpeed;
+					//	}
+					//}
+					//else
+					//{
+					//	obj->velocity().x = 0;
+					//}
 
 					if (m_input.isKeyDown(GLFW_KEY_G))
 					{
@@ -565,12 +589,13 @@ namespace Runtime
 
 					// --- Player Animation Control ---
 					Gameplay::SpriteAnimatorComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
+
 					if (playerSpriteComp)
 					{
 						// Determine animation state
 						std::string animState = m_flashlightOn ? "idle_torch" : "idle";
 						//std::string animState = m_flashlightOn ? "idle" : "idle";
-						bool isMoving = (obj->velocity().x != 0 || obj->velocity().y != 0);
+						bool isMoving = (move.x != 0 || move.y != 0);
 
 						if (isMoving)
 						{
@@ -831,32 +856,19 @@ namespace Runtime
 				// FORCE TRUE for testing
 				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
 
-				std::cout << "[Light Check] Enemy '" << obj->name()
-					<< "' at (" << enemyPos.x << ", " << enemyPos.y << ")"
-					<< " | isPointInPolygon ACTUAL: " << inLight
-					<< " | polygon size: " << lightPolyGLM.size() << std::endl;
-
 				if (inLight) {
 					obj->addLightExposure(dt);
-					std::cout << "  ✓ ADDING EXPOSURE! Now: " << obj->lightExposureTime() << std::endl;
 				}
 				else {
 					if (obj->lightExposureTime() > 0.0f) {
-						std::cout << "  ✗ RESETTING EXPOSURE! Was: " << obj->lightExposureTime() << std::endl;
 					}
 					obj->resetLightExposure();
 				}
-
-				std::cout << "[Light Check] Enemy '" << obj->name()
-					<< "' at (" << enemyPos.x << ", " << enemyPos.y << ")"
-					<< " | In polygon: " << inLight << std::endl;
 
 				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
 					// Enemy is in light
 					obj->addLightExposure(dt);
 
-					std::cout << "Enemy '" << obj->name() << "' exposed: "
-						<< obj->lightExposureTime() << "s / " << KILL_THRESHOLD << "s" << std::endl;
 
 					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
 						std::cout << ">>> Enemy '" << obj->name() << "' KILLED!" << std::endl;
@@ -871,16 +883,6 @@ namespace Runtime
 					float oldExposure = obj->lightExposureTime();
 					obj->decreaseLightExposure(dt * DECAY_RATE);
 					float newExposure = obj->lightExposureTime();
-
-					if (oldExposure > 0.0f && newExposure > 0.0f) {
-						std::cout << "[Light] Enemy '" << obj->name()
-							<< "' DECAYING | Exposure: " << newExposure
-							<< "s (was " << oldExposure << "s)" << std::endl;
-					}
-					else if (oldExposure > 0.0f && newExposure == 0.0f) {
-						std::cout << "[Light] Enemy '" << obj->name()
-							<< "' DECAY COMPLETE | Exposure reset" << std::endl;
-					}
 				}
 			}
 		}

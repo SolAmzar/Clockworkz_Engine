@@ -129,6 +129,11 @@ namespace Gameplay {
     }
 
     void Chase::updateWanderBehavior(GameObject& enemy, double dt) {
+
+        if (auto* anim = enemy.getComponent<SpriteAnimatorComponent>()) {
+            if (anim->hasClip("walk"))
+                anim->play("walk");
+        }
         // Update wander timer
         m_wanderTimer += static_cast<float>(dt);
 
