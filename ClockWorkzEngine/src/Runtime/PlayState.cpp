@@ -58,6 +58,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <vector>
 #include <string>
 #include <Gameplay/Components/SpriteAnimator.hpp>
+#include <Assets/TextureManager.hpp>
 
 using namespace Graphics;
 using namespace Assets;
@@ -105,6 +106,8 @@ namespace Runtime
 		, m_gsm(gsm)
 		, m_player(nullptr)
 		, m_editorInitialized(false)
+		,currentBattery(100.0f)
+		,maxBattery(100.0f)
 	{
 	}
 	PlayState::~PlayState()
@@ -194,6 +197,10 @@ namespace Runtime
 		else {
 			std::cerr << "[PlayState] Failed to initialize level editor\n";
 		}
+
+		currentBattery = 100.0f;
+		maxBattery = 100.0f;
+		currentBatteryTexture = "battery_full";
 
 		// Syafiq -
 		m_renderer = &engine.rendering();
@@ -308,6 +315,7 @@ namespace Runtime
 				return;
 			}
 		}
+
 
 #ifdef _DEBUG
 		// F10 = Open editor
@@ -686,8 +694,68 @@ namespace Runtime
 				}
 			}
 		}
-		m_scenes.update(dt);
+
+		if (m_player && m_player->active()) {
+			auto* scene = m_scenes.current();
+			for (auto& obj : scene->objects()) {
+				if (!obj || !obj->active()) continue;
+
+				if (obj->type() == Gameplay::GameObjectType::Enemy) {
+					// Simple AABB collision check
+					vec2 playerPos = m_player->transform().position;
+					vec2 enemyPos = obj->transform().position;
+					vec2 playerHalf = m_player->size() * 0.5f;
+					vec2 enemyHalf = obj->size() * 0.5f;
+
+					// Check if bounding boxes overlap
+					if (abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
+						abs(playerPos.y - enemyPos.y) < (playerHalf.y + enemyHalf.y)) {
+
+						std::cout << "Player hit by enemy: " << obj->name() << "!\n";
+
+						// Kill the player
+						m_player->setActive(false);
+
+						// Optional: Reset scene after a delay or show game over
+						// resetScene();
+						break;
+					}
+				}
+			}
+			if (!m_player->active())
+			{
+				m_player->setActive(true);
+				{
+					//TODO change to spawn location and reset scene
+					m_player->setPosition(0);
+				}
+			}
+		}
+
+		//m_scenes.update(dt);
 		updateLightExposure(dt);
+		updateBatteryDisplay();
+	}
+
+	void PlayState::updateBatteryDisplay() {
+		float batteryPercent = currentBattery / maxBattery;
+
+		// Select appropriate texture based on battery level
+		if (batteryPercent > 0.875f) {
+			currentBatteryTexture = "battery_full";
+		}
+		else if (batteryPercent > 0.625f) {
+			currentBatteryTexture = "battery_3/4";
+		}
+		else if (batteryPercent > 0.375f) {
+			currentBatteryTexture = "battery_2/4";
+		}
+		else if (batteryPercent > 0.125f) {
+			currentBatteryTexture = "battery_1/4";
+		}
+		else {
+			currentBatteryTexture = "battery_empty";
+		}
 	}
 
 	// Helper: Check if point is inside polygon
@@ -889,6 +957,59 @@ namespace Runtime
 				if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
 					obj->resetLightExposure();
 				}
+			}
+		}
+
+		// ==================== Battery UI Rendering ====================
+		if (m_player) {
+			// Update battery display based on current battery level
+			float batteryPercent = m_player->checkBatt() / 100.0f; // Assuming max battery is 100
+
+			// Select appropriate texture based on battery level
+			if (batteryPercent > 0.875f) {
+				currentBatteryTexture = "battery_full";
+			}
+			else if (batteryPercent > 0.625f) {
+				currentBatteryTexture = "battery_3/4";
+			}
+			else if (batteryPercent > 0.375f) {
+				currentBatteryTexture = "battery_2/4";
+			}
+			else if (batteryPercent > 0.125f) {
+				currentBatteryTexture = "battery_1/4";
+			}
+			else {
+				currentBatteryTexture = "battery_empty";
+			}
+
+			// Get the texture from TextureManager
+			auto batteryTex = Assets::TextureManager::Get(currentBatteryTexture);
+
+			if (batteryTex) {
+				// Get the OpenGL texture ID
+				unsigned int batteryTexId = batteryTex->id();
+
+				// Get window size from engine
+				int windowWidth = engine.window().width();
+				int windowHeight = engine.window().height();
+
+				glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+				glm::vec2 batteryPos(screenSize.x - 100.0f, screenSize.y - 100.0f); // Top-right corner
+				glm::vec2 batterySize(64.0f, 64.0f); // Adjust to your texture size
+
+				// Use an orthographic projection for UI (screen space)
+				glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);
+
+				m_renderer->beginScenePass(uiProjection);
+				m_renderer->drawSprite(
+					batteryTexId,
+					batteryPos,
+					batterySize,
+					0.0f, // no rotation
+					glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), // full UV rect
+					glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)  // white tint, full opacity
+				);
+				m_renderer->endScenePass();
 			}
 		}
 

@@ -252,9 +252,9 @@ namespace Gameplay {
 		bool 		    m_moveable{ false };
         bool            m_chase{ false };
         // Battery field
-        float           m_battery = 10.0f;
+        float           m_battery = 100.0f;
         const float     drainRate = 2.0f;   // battery units per second
-        const float     chargeRate = 1.0f;  // battery units per second
+        const float     chargeRate = 2.0f;  // battery units per second
 
         float           m_lightExposureTime{ 0.0f };  // Time exposed to light
 

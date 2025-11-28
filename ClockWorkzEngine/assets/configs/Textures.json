@@ -59,6 +59,37 @@
 			"path": "assets/textures/pot.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "battery_full",
+			"path": "assets/textures/energy 4.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "battery_3/4",
+			"path": "assets/textures/energy 3.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "battery_2/4",
+			"path": "assets/textures/energy 2.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "battery_1/4",
+			"path": "assets/textures/energy 1.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "battery_empty",
+			"path": "assets/textures/energy flat.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
+
 	]
 }

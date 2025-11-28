@@ -31,6 +31,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Physics/Collision.hpp"
 #include "Gameplay/Collider.hpp" 
 #include "Math/Vec3.hpp"
+#include <Gameplay/Components/SpriteRenderer.hpp>
+#include <Gameplay/Components/SpriteAnimator.hpp>
+#include <fstream>
 
 namespace Gameplay {
 
@@ -64,7 +67,7 @@ namespace Gameplay {
     std::unique_ptr<GameObject> GameObject::clone() const {
         auto copy = std::make_unique<GameObject>(m_type, m_name, m_shapeid);
 
-        // Copy all properties
+        // Copy all properties (existing code - lines 68-82)
         copy->m_transform = m_transform;
         copy->m_size = m_size;
         copy->m_velocity = m_velocity;
@@ -81,8 +84,56 @@ namespace Gameplay {
         copy->m_moveable = m_moveable;
         copy->m_chase = m_chase;
 
-        // Copy components (add logic for each component type)
-        // TODO: Implement component cloning not fully working yet
+        // ✓ ADD THIS: Copy colliders
+        for (const auto& collider : m_colliders) {
+            if (auto* aabb = dynamic_cast<AABBCollider*>(collider.get())) {
+                auto* newAabb = copy->addCollider<AABBCollider>();
+                newAabb->type = aabb->type;
+                newAabb->halfExtents = aabb->halfExtents;
+                newAabb->offset = aabb->offset;
+                newAabb->blocksLight = aabb->blocksLight;
+                newAabb->solid = aabb->solid;
+            }
+            else if (auto* circle = dynamic_cast<CircleCollider*>(collider.get())) {
+                auto* newCircle = copy->addCollider<CircleCollider>();
+                newCircle->type = circle->type;
+                newCircle->r = circle->r;
+                newCircle->offset = circle->offset;
+                newCircle->blocksLight = circle->blocksLight;
+                newCircle->solid = circle->solid;
+            }
+        }
+
+        // ✓ ADD THIS: Copy components
+        for (const auto& component : m_components) {
+            // SpriteRenderer
+            if (auto* srcRenderer = dynamic_cast<SpriteRendererComponent*>(component.get())) {
+                auto* destRenderer = copy->addComponent<SpriteRendererComponent>();
+                destRenderer->setTint(srcRenderer->tint());
+                destRenderer->setUV(srcRenderer->uv());
+                if (!srcRenderer->textureAlias().empty()) {
+                    destRenderer->setTexture(srcRenderer->textureAlias());
+                }
+            }
+            // SpriteAnimator
+            else if (auto* srcAnimator = dynamic_cast<SpriteAnimatorComponent*>(component.get())) {
+                std::string filename = srcAnimator->getFilename();
+                if (!filename.empty()) {
+                    auto* destAnimator = copy->addComponent<SpriteAnimatorComponent>();
+                    std::ifstream file(filename);
+                    if (file.is_open()) {
+                        nlohmann::json j;
+                        file >> j;
+                        destAnimator->loadFromJson(j);
+                        // Link to SpriteRenderer if exists
+                        if (auto* renderer = copy->getComponent<SpriteRendererComponent>()) {
+                            destAnimator->setSpriteRenderer(renderer);
+                        }
+                    }
+                }
+            }
+            // Add other component types as needed
+        }
 
         return copy;
     }
