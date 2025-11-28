@@ -1014,7 +1014,7 @@ namespace Runtime
 				// Check if Chase component already exists
 				if (!obj->getComponent<Gameplay::Chase>()) {
 					constexpr float CHASE_SPEED = 150.0f;
-					constexpr float ENGAGE_RADIUS = 300.0f;
+					constexpr float ENGAGE_RADIUS = 350.0f;
 
 					obj->addComponent<Gameplay::Chase>(*obj, m_player, CHASE_SPEED, ENGAGE_RADIUS);
 					std::cout << "[PlayState] Added Chase to enemy: " << obj->name() << "\n";
