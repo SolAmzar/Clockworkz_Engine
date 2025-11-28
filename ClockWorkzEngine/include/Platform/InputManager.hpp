@@ -87,6 +87,9 @@ namespace Platform {
             float windowWidth,
             float windowHeight) const;
 
+
+        void clearState();
+
     private:
         // Internals
         void ensureKeySlot(int key);

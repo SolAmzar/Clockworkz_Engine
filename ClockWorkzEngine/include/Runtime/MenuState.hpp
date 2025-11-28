@@ -33,12 +33,18 @@ namespace Graphics {
 }
 
 
+
+
 namespace Runtime {
+
+    struct MenuPosition {
+        float centerX, centerY, scale;
+    };
 
     class MenuState final : public GameState {
     public:
         // quitFn is called when "Exit Game" is selected (Engine sets a flag / stops loop)
-        MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, Audio::AudioManager& audio, std::function<void()> quitFn);                
+        MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, Audio::AudioManager& audio);                
 
         const char* name() const override{ return "MenuState"; }
         void onEnter() override;
@@ -47,7 +53,7 @@ namespace Runtime {
         void render(Core::Time* timer) override;
 
         void renderImGui(Core::Time* timer) override;
-
+       
 
     private:
         void printMenu();
@@ -62,7 +68,7 @@ namespace Runtime {
         //SceneManager m_scenes;
         Graphics::RenderingManager* m_renderer{ nullptr };
         Graphics::Camera2D* m_cam{ nullptr };
-        std::function<void()>   m_quitFn;
+        //std::function<void()>   m_quitFn;
 
         Gameplay::GameObject m_background;
         Gameplay::GameObject m_logo;
@@ -82,6 +88,8 @@ namespace Runtime {
         bool m_bgmPaused = false;
         float m_bgmVol = 1.4f;
         bool m_loaded = false;
+        MenuPosition m_positions[5];
+        void updateLayout(int w, int h);
     };
 
 } // namespace Runtime

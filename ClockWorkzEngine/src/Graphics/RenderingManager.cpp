@@ -138,10 +138,10 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawSprite(unsigned texId, const glm::vec2& pos,
-		const glm::vec2& size, float angleRad, const glm::vec4& uv, const glm::vec4& color)
+		const glm::vec2& size, float angleRad, const glm::vec4& uv, const glm::vec4& color, bool isUI)
 	{
 		/*std::cout << "draw Sprite: " << texId << std::endl;*/
-		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, uv, Graphics::Anchor::Center);
+		m_renderer2D.submitQuad(pos, size, texId, color, angleRad, uv, ((isUI)? Graphics::Anchor::BottomLeft:Graphics::Anchor::Center));
 	}
 
 

@@ -48,6 +48,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/WallTiles.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
+#include <Gameplay/Collider.hpp>
 
 namespace fs = std::filesystem;
 
@@ -186,6 +187,9 @@ namespace Platform {
             return false;
         }
 
+        m_editorCamera.setViewport(width, height);  // Initially full window
+        m_editorCamera.setPosition(glm::vec2(0.0f, 0.0f));
+        m_editorCamera.setZoom(1.0f);
 
         // Load prefabs from directory
         loadPrefabs();
@@ -232,7 +236,6 @@ namespace Platform {
 
         if (m_mode == EditorMode::Play) {
             updatePlayMode(dt);
-            renderFlashlight();
             // Still allow some editor input in play mode (like stopping)
             handleKeyboardShortcuts();
             return;
@@ -293,38 +296,12 @@ namespace Platform {
         for (auto& objPtr : playStateScene->objects()) {
             if (!objPtr) continue;
 
-            auto newObj = std::make_unique<Gameplay::GameObject>(
-                objPtr->type(), objPtr->name()
-            );
-            newObj->transform().position = objPtr->transform().position;
-            newObj->transform().rotationRad = objPtr->transform().rotationRad;
-            newObj->transform().scale = objPtr->transform().scale;
-            newObj->setSize(objPtr->size());
-            newObj->setLayer(objPtr->layer());
-            newObj->setActive(objPtr->active());
-            newObj->setTextureId(objPtr->textureId());
-
-
-            if (!objPtr->textureId().empty()) {
-                newObj->addComponent<Gameplay::SpriteRendererComponent>();
-            }
-
-            newObj->setVelocity(objPtr->velocity());
-            newObj->setMoveSpeed(objPtr->moveSpeed());
-
-            // ⭐ COPY COMPONENTS
-            copyComponents(objPtr.get(), newObj.get());
-
-
-            m_currentScene->addObject(std::move(newObj));
+            auto clonedObj = objPtr->clone();
+            m_currentScene->addObject(std::move(clonedObj));
         }
 
         m_currentLevelMetadata.name = playStateScene->name() + " (from PlayState)";
-
-        // DON'T call load() - just register to layers
-        if (m_currentScene) {
-            m_currentScene->registerExistingObjectsToLayers();
-        }
+        m_currentScene->registerExistingObjectsToLayers();
     }
 
     void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene) {
@@ -1617,6 +1594,10 @@ void LevelEditor::updateGizmoScale() {
         m_currentScene->render(*m_renderer); 
         m_renderer->endScenePass();
 
+        if (m_mode == EditorMode::Play) {
+            renderFlashlight();
+        }
+
         // Render debug/editor elements (only in Edit mode)
         if (m_mode == EditorMode::Edit) {
             m_renderer->beginDebugPass(viewProj);
@@ -1808,7 +1789,7 @@ void LevelEditor::updateGizmoScale() {
                 m_recentLevels.resize(MAX_RECENT_LEVELS);
             }
 
-            std::cout << "[LevelEditor] Successfully saved level: " << filepath << "\n";
+            std::cout << "[LevelEditor] Successfully saved level: " << std::filesystem::absolute(filepath) << "\n";
         }
         else {
             std::cout << "[LevelEditor] Failed to save level: " << filepath << "\n";
@@ -1887,17 +1868,13 @@ void LevelEditor::updateGizmoScale() {
     void LevelEditor::deleteSelectedObject() {
         if (!m_selectedObject || !m_currentScene) return;
 
-
-        // Create delete command
+        // Create delete command (this will handle the soft delete via setActive(false))
         auto cmd = std::make_unique<Platform::DeleteCommand>(m_selectedObject, m_currentScene.get());
         executeCommand(std::move(cmd));
 
-        // Deselect
+        // Deselect after command is executed
         m_selectedObject = nullptr;
 
-        m_currentScene->destroyObject(m_selectedObject);
-
-        m_selectedObject = nullptr;
         markLevelDirty();
 
         if (Core::Engine::IsInitialized()) {
@@ -2516,6 +2493,10 @@ void LevelEditor::updateGizmoScale() {
             for (size_t i = 0; i < objects.size(); ++i) {
                 auto& obj = objects[i];
 
+                if (!obj->active()) {
+                    continue;
+                }
+
                 // Apply search filter
                 if (searchBuffer[0] != '\0') {
                     if (obj->name().find(searchBuffer) == std::string::npos) {
@@ -3002,6 +2983,7 @@ void LevelEditor::updateGizmoScale() {
 
     void LevelEditor::renderSceneView() {
         // Remove padding for clean scene view
+
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Scene View");
         ImGui::PopStyleVar();
@@ -3956,7 +3938,7 @@ void LevelEditor::updateGizmoScale() {
                 glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
                 if (isPointInPolygon(enemyPos, lightPolyGLM)) {
                     obj->addLightExposure(dt);
-                    if (obj->lightExposureTime() >= 0.5f) {
+                    if (obj->lightExposureTime() >= 2.0f) {
                         obj->setActive(false);
                     }
                 }

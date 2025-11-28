@@ -25,6 +25,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 namespace Graphics {
   class Camera2D {
   public:
+      void init(int width, int height);
       void setViewport(int width, int height);
       void setPosition(glm::vec2 p);
       void setZoom(float z); 

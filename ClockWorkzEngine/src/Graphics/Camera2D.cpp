@@ -19,9 +19,24 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 
 #include "Graphics/Camera2D.hpp"
+#include "Core/Engine.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 using namespace Graphics;
+
+void Camera2D::init(int width, int height) {
+
+    setViewport(width, height);
+    setPosition(glm::vec2{ 0,0 });
+    setZoom(1.0f);
+
+    Core::Engine::Get().events().subscribe<Core::WindowResizeEvent>(
+        this,
+        [this](const Core::WindowResizeEvent& e) {
+            this->setViewport(e.width, e.height);
+        }
+    );
+}
 
 void Camera2D::recalcProj() {
   const float halfW = (m_viewW * 0.5f)/ m_zoom;

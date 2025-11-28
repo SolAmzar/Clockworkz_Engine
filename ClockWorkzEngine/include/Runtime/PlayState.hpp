@@ -86,6 +86,12 @@ namespace Runtime {
 		Gameplay::GameObject* m_player;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
 
+		float currentBattery;
+		float maxBattery;
+		std::string currentBatteryTexture;
+
+		void updateBatteryDisplay();
+
 		bool m_pauseRequested{ false };
 		bool m_returnToMenuRequested{ false };
 

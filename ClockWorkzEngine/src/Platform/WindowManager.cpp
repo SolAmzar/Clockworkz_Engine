@@ -22,10 +22,14 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 
 #include "Platform/WindowManager.hpp"
+#include "Platform/InputManager.hpp"
 #include "Core/Config.hpp"
+#include "Graphics/Camera2D.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include <GL/glew.h> 
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <Core/Engine.hpp>
 
 using namespace Platform;
 
@@ -50,6 +54,46 @@ static void GLFWDropCallback(GLFWwindow* window, int count, const char** paths) 
     }
 }
 
+
+void WindowManager::GLFWFocusCallback(GLFWwindow* window, int focused)
+{
+	auto* wm = static_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+	if (!wm) return;
+
+	wm->m_focused = (focused == GLFW_TRUE);
+	if (wm->m_focused)
+		wm->onFocusGained();
+	else
+		wm->onFocusLost();
+}
+
+void WindowManager::GLFWIconifyCallback(GLFWwindow* window, int iconified)
+{
+	auto* wm = static_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+	if (!wm) return;
+	wm->m_iconified = (iconified == GLFW_TRUE);
+}
+
+void WindowManager::GLFWResizeCallback(GLFWwindow* window, int w, int h) {
+	auto* wm = static_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+	if (!wm) return;
+
+	wm->m_width = w;
+	wm->m_height = h;
+
+	//// Automatically resize camera viewport - Before messaaging event
+	// WindowManager have to go and interact with camera (update projection/view matrix) and graphics (update the viewport to GPU)
+	//Core::Engine::Get().camera().setViewport(w, h);
+	//Core::Engine::Get().graphics().setViewport(w, h);
+	
+	// Window Manager, broadcast out to everyone like HEY IM RESIZING, DO WHATEVER YOU WANT
+	// Im giving you width and height.
+	// Publish event to engine-wide system
+	Core::Engine::Get().events().publish(Core::WindowResizeEvent(w, h));
+}
+
+
+
 bool WindowManager::create(const Core::Config& cfg) {
 	glfwSetErrorCallback(glfw_error_cb);
 	if (!glfwInit()) return false;
@@ -65,8 +109,11 @@ bool WindowManager::create(const Core::Config& cfg) {
 	m_window = glfwCreateWindow(m_width, m_height, cfg.title.c_str(), nullptr, nullptr);
 
 	glfwSetWindowUserPointer(m_window, this);
-	glfwSetDropCallback(m_window, GLFWDropCallback);;
+	glfwSetDropCallback(m_window, GLFWDropCallback);
 
+	glfwSetWindowFocusCallback(m_window, GLFWFocusCallback);
+	glfwSetWindowIconifyCallback(m_window, GLFWIconifyCallback);
+	glfwSetWindowSizeCallback(m_window, GLFWResizeCallback);
 	if (!m_window) return false;
 	glfwMakeContextCurrent(m_window);
 	if (glewInit() != GLEW_OK) {
@@ -91,3 +138,75 @@ void WindowManager::poll() { glfwPollEvents(); }
 void WindowManager::swap() { glfwSwapBuffers(m_window); }
 bool WindowManager::shouldClose() const { return glfwWindowShouldClose(m_window); }
 void WindowManager::requestClose() { glfwSetWindowShouldClose(m_window, 1); }
+
+
+
+void WindowManager::onFocusLost()
+{
+	// nothing here yet – Engine / InputManager will react by
+	// asking hasFocus() each frame.
+	InputManager& input = Core::Engine::Get().input();
+	input.clearState();
+	Core::Engine::Get().events().publish(Core::WindowFocusLostEvent());
+}
+
+void WindowManager::onFocusGained()
+{
+	// same, but you *could* put logging here if you want
+	Core::Engine::Get().events().publish(Core::WindowFocusGainedEvent());
+}
+
+
+void WindowManager::toggleFullscreen() {
+	setFullscreen(!m_fullscreen);
+}
+
+void WindowManager::setFullscreen(bool enable) {
+	if (!m_window) return;
+
+	// Already in desired mode
+	if (enable == m_fullscreen)
+		return;
+
+	m_fullscreen = enable;
+
+	if (enable) {
+		// Save size & position of windowed mode
+		glfwGetWindowPos(m_window, &m_windowedX, &m_windowedY);
+		glfwGetWindowSize(m_window, &m_windowedWidth, &m_windowedHeight);
+
+		// Switch to REAL fullscreen (monitor native resolution)
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+		glfwSetWindowMonitor(
+			m_window,
+			monitor,
+			0, 0,
+			mode->width,
+			mode->height,
+			mode->refreshRate
+		);
+
+		// Update stored current dimensions
+		m_width = mode->width;
+		m_height = mode->height;
+	}
+	else {
+		// Restore windowed mode to its exact previous size & position
+		glfwSetWindowMonitor(
+			m_window,
+			nullptr,
+			m_windowedX,
+			m_windowedY,
+			m_windowedWidth,
+			m_windowedHeight,
+			0
+		);
+
+		// Update stored size to windowed size
+		m_width = m_windowedWidth;
+		m_height = m_windowedHeight;
+	}
+}
+
