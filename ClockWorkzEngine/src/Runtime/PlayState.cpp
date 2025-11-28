@@ -749,7 +749,7 @@ namespace Runtime
 			}
 		}
 		// ✓ Check enemies against light polygon
-		const float KILL_THRESHOLD = 0.5f;
+		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;
 
 		for (auto& obj : objs) {
