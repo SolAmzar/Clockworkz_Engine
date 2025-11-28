@@ -711,6 +711,7 @@ namespace Runtime
 			if (m_deathTimer >= m_deathDelay) {
 				// Transition to game over state
 				std::cout << "[PlayState] Pushing GameOverState\n";
+				resetScene();
 				m_gsm.push(std::make_shared<GameOverState>(m_gsm, m_input, m_initialSceneId));
 				m_playerDead = false;
 				m_deathTimer = 0.0f;
