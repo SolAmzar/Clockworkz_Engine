@@ -449,6 +449,8 @@ namespace Platform {
         float m_playerBattery{ 100.0f };
         void updateLightExposure(double dt);
         void renderFlashlight();
+
+        vec2 m_lastPlacedGridPos = vec2(-999999.0f, -999999.0f);
     };
 
 } // namespace Platform
