@@ -160,6 +160,9 @@ namespace Graphics {
 		const std::vector<std::unique_ptr<Gameplay::GameObject>>& objs)
 	{
 		std::vector<vec2> points;
+
+		points.push_back(origin);
+
 		const int numRays = 200;
 		float halfFov = fov * 0.5f;
 
