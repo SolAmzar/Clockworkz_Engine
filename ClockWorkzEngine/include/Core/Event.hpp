@@ -1,3 +1,24 @@
+/******************************************************************************/
+/*!
+\file           Event.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares the event types and base event class used by the
+                game's event system. Provides:
+                - BaseEvent: common interface for all events
+                - Strongly-typed event structs (e.g., WindowResizeEvent,
+                  Focus events, QuitGameEvent, PlayerDiedEvent)
+                - EventID alias for runtime type identification via std::type_index
+
+                These events are dispatched through the engine’s event bus to
+                allow decoupled communication between systems such as Window,
+                Input, Renderer, and Game States.
+
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <string>
 #include <functional>

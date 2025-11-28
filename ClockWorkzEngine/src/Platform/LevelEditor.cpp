@@ -3380,12 +3380,12 @@ void LevelEditor::updateGizmoScale() {
         }
 
         // Handle object placement
-        if (m_currentTool == EditorTool::Place && m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (m_currentTool == EditorTool::Place && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectPlacement();
         }
 
         // Handle object deletion
-        if (m_currentTool == EditorTool::Erase && m_input->wasMousePressed(GLFW_MOUSE_BUTTON_LEFT)) {
+        if (m_currentTool == EditorTool::Erase && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
             handleObjectDeletion();
         }
 
@@ -3654,11 +3654,9 @@ void LevelEditor::updateGizmoScale() {
 
     void LevelEditor::handleObjectPlacement() {
         if (isMouseOverUI()) {
-            std::cout << "[DEBUG] Mouse over UI - blocked\n";
             return;
         }
         if (m_selectedPrefab.empty()) {
-            std::cout << "[DEBUG] No prefab selected\n";
             return;
         }
 
@@ -3668,8 +3666,15 @@ void LevelEditor::updateGizmoScale() {
         // Apply grid snapping - this snaps to the grid corner
         vec2 snappedWorld = snapToGrid(mouseWorld);
 
+        // Check if we're trying to place at the same grid position
+        if (snappedWorld.x == m_lastPlacedGridPos.x && snappedWorld.y == m_lastPlacedGridPos.y) {
+            return; // Already placed here, don't place again
+        }
+
+        // Update last placed position
+        m_lastPlacedGridPos = snappedWorld;
+
         // Center the object in the grid cell
-        // The offset should always be half the grid size regardless of zoom
         float halfGrid = 0.5f * m_gridSize;
         vec2 offsetPos = snappedWorld + vec2(halfGrid, halfGrid);
 

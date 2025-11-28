@@ -239,7 +239,11 @@ namespace Gameplay
 
 
         // Use the serializer to create the GameObject
-        return GameObjectSerializer::deserializeGameObject(objJson);
+        auto obj = GameObjectSerializer::deserializeGameObject(objJson);
+        if (obj) {
+            obj->setPrefabName(prefabName);  // Remember which prefab this came from
+        }
+        return obj;
     }
 
     std::unique_ptr<GameObject> PrefabFactory::createAt(const std::string& prefabName, vec2 position)
@@ -248,6 +252,7 @@ namespace Gameplay
         if (obj)
         {
             obj->transform().position = position;
+            obj->setPrefabName(prefabName);
         }
         return obj;
     }
@@ -295,7 +300,11 @@ namespace Gameplay
             };
         }
 
-        return GameObjectSerializer::deserializeGameObject(objJson);
+        auto obj = GameObjectSerializer::deserializeGameObject(objJson);
+        if (obj) {
+            obj->setPrefabName(prefabName);  // Add this line
+        }
+        return obj;
     }
 
     // ========================================================================
