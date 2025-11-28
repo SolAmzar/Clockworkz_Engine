@@ -261,13 +261,9 @@ void Scene::render(Graphics::RenderingManager& renderer)
     m_layers.for_each_layered_render([&](Gameplay::GameObject* o, uint32_t bit) {
         assert(bit >= lastBit && "LayerManager: render order regressed!");
         lastBit = bit;
-        if (o->active()) o->render(renderer); //o->debugRender(renderer);
+        if (o->active()) o->render(renderer); /*o->debugRender(renderer)*/;
         });
-}
-
-
-
-
+} 
 
 //void Scene::update(double dt)
 //{

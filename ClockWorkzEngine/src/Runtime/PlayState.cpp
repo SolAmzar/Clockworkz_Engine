@@ -594,26 +594,26 @@ namespace Runtime
 					}
 				}
 
-				if (obj->type() == Gameplay::GameObjectType::Ball)
-				{
-					obj->velocity().y = 0.0f;
-					obj->velocity().x += m_ballDir * m_ballSpeed;
+				//if (obj->type() == Gameplay::GameObjectType::Ball)
+				//{
+				//	obj->velocity().y = 0.0f;
+				//	obj->velocity().x += m_ballDir * m_ballSpeed;
 
-					// Predict next X and flip if we would cross a bound
-					float nextX = obj->transform().position.x + obj->velocity().x * static_cast<float>(dt);
-					if (nextX < m_leftBound)
-					{
-						nextX = m_leftBound;
-						m_ballDir = +1;
-					}
-					if (nextX > m_rightBound)
-					{
-						nextX = m_rightBound;
-						m_ballDir = -1;
-					}
+				//	// Predict next X and flip if we would cross a bound
+				//	float nextX = obj->transform().position.x + obj->velocity().x * static_cast<float>(dt);
+				//	if (nextX < m_leftBound)
+				//	{
+				//		nextX = m_leftBound;
+				//		m_ballDir = +1;
+				//	}
+				//	if (nextX > m_rightBound)
+				//	{
+				//		nextX = m_rightBound;
+				//		m_ballDir = -1;
+				//	}
 
-					obj->transform().position.x = nextX; // snap to keep within bounds (optional)
-				}
+				//	obj->transform().position.x = nextX; // snap to keep within bounds (optional)
+				//}
 			}
 		}
 

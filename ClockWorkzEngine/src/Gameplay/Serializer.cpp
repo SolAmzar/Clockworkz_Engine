@@ -182,19 +182,19 @@ namespace Gameplay {
                 auto* collide = obj.addCollider<CircleCollider>();
                 collide->type = ColliderType::Circle;
 
-                // Optional: read radius from JSON (with a default)
+                // Default: half of width
                 float radius = obj.size().x * 0.5f;
-                collide->radius(radius);
+
                 if (j.contains("radius")) {
                     radius = j["radius"].get<float>();
                 }
-                collide->radius(radius);  // assuming CircleCollider has a radius field
+
+                collide->setRadius(radius);
 
                 if (j.contains("blocksLight")) {
                     collide->blocksLight = j["blocksLight"].get<bool>();
                 }
 
-                // Keep size/shape in sync for debug + other systems
                 obj.setShape(Gameplay::GameObjectShape::Circle);
                 obj.setSize(vec2(radius * 2.0f, radius * 2.0f));
             }

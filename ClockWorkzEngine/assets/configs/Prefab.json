@@ -494,12 +494,12 @@
         },
         "collider": {
           "type": "Circle",
-          "radius": 1.0,
-          "height": 1.0,
+          "radius": 14.0, 
           "isSolid": true,
           "layer": 2,
-          "collisionMask": 0,
-          "collisionCategory": 0
+          "collisionMask": 7,
+          "collisionCategory": 1,
+          "blocksLight": false
         },
         "spriteRenderer": {
           "textureId": "pot_texture"

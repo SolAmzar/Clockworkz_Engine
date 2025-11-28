@@ -130,7 +130,12 @@ namespace Graphics {
 	}
 
 	void RenderingManager::drawAABB(const glm::vec2& min, const glm::vec2& max, const glm::vec3& color) {
-		drawRect(min.x, min.y, max.x - min.x, max.y - min.y, color.r, color.g, color.b);
+		// drawRect(min.x, min.y, max.x - min.x, max.y - min.y, color.r, color.g, color.b);
+
+		glm::vec2 size = max - min;
+		glm::vec2 center = min + size * 0.5f;   // middle of the AABB
+
+		drawRect(center.x, center.y, size.x, size.y, color.r, color.g, color.b);
 	}
 
 	void RenderingManager::drawVelocity(const glm::vec2& pos, const glm::vec2& vel, const glm::vec3& color) {
