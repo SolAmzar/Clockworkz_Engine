@@ -430,11 +430,10 @@ namespace Runtime
 					if (m_player && m_player->active()) {
 						vec2 p = m_player->transform().position;
 
-						// Instantly follow
 						cam.setPosition(glm::vec2(p.x, p.y));
 					}
 
-					// ---- Movement FOLLOW ----
+					// ---- Movement ----
 					float moveSpeed = obj->moveSpeed();
 					bool isRunning = false;
 					float maxSpeed = obj->moveSpeed();
@@ -443,7 +442,7 @@ namespace Runtime
 					m_timeSinceStep += (float)dt;
 					auto surfaceType = getSurfaceUnder(obj.get());
 					vec2 curPos = obj->transform().position;
-					float speed = magnitude(obj->velocity() * 0.3f);    // use your magnitude/length
+					float speed = magnitude(obj->velocity() * 0.3f);
 					bool  moving = speed > 5.0f;
 					
 					if (moving) {
@@ -494,77 +493,6 @@ namespace Runtime
 
 					// final velocity
 					obj->velocity() = move * speedMove;
-
-
-					////not used
-					//if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
-					//{
-					//	moveSpeed *= 2;
-					//	isRunning = true;
-					//}
-
-					////Gameplay::GameObject* fx = nullptr;
-					////for (auto& up : gameObjects) {
-					////	if (up->name() == "ParticleTest") { fx = up.get(); break; }
-					////}
-					////if (fx) {
-					////	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
-					////		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
-					////			em->burst(80); // 80-particle puff
-					////	}
-					////}
-					////float moveAmount = moveSpeed * static_cast<float>(dt);
-
-					//if (m_input.isKeyDown(GLFW_KEY_W))
-					//{
-					//	obj->velocity().y += moveSpeed * static_cast<f32>(dt);
-					//	if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
-					//		obj->velocity().y = maxSpeed;
-					//	}
-					//	else if (obj->velocity().y > maxRunSpeed){
-					//		obj->velocity().y = maxRunSpeed;
-					//	}
-
-					//}
-					//else if (m_input.isKeyDown(GLFW_KEY_S))
-					//{
-					//	obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
-					//	if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
-					//		obj->velocity().y = -maxSpeed;
-					//	}
-					//	else if (obj->velocity().y > -maxRunSpeed) {
-					//		obj->velocity().y = -maxRunSpeed;
-					//	}
-					//}
-					//else
-					//{
-					//	obj->velocity().y = 0;
-					//}
-
-					//if (m_input.isKeyDown(GLFW_KEY_A))
-					//{
-					//	obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
-					//	if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
-					//		obj->velocity().x = -maxSpeed;
-					//	}
-					//	else if (obj->velocity().x > -maxRunSpeed) {
-					//		obj->velocity().x = -maxRunSpeed;
-					//	}
-					//}
-					//else if (m_input.isKeyDown(GLFW_KEY_D))
-					//{
-					//	obj->velocity().x += moveSpeed * static_cast<f32>(dt);
-					//	if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
-					//		obj->velocity().x = maxSpeed;
-					//	}
-					//	else if (obj->velocity().y > maxRunSpeed) {
-					//		obj->velocity().x = maxRunSpeed;
-					//	}
-					//}
-					//else
-					//{
-					//	obj->velocity().x = 0;
-					//}
 
 					if (m_input.isKeyDown(GLFW_KEY_G))
 					{
@@ -728,6 +656,7 @@ namespace Runtime
 				if (!obj || !obj->active()) continue;
 
 				if (obj->type() == Gameplay::GameObjectType::Enemy) {
+
 					// Simple AABB collision check
 					vec2 playerPos = m_player->transform().position;
 					vec2 enemyPos = obj->transform().position;

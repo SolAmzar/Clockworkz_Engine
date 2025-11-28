@@ -21,6 +21,9 @@
             0.125
           ]
         },
+        "spriteAnimator": {
+          "filename": "player.json"
+        },
         "transform": {
           "position": {
             "x": -100.0,
@@ -56,6 +59,9 @@
             0.25,
             0.25
           ]
+        },
+        "spriteAnimator": {
+          "filename": "enemy.json"
         },
         "transform": {
           "position": {
@@ -93,6 +99,9 @@
             0.25
           ]
         },
+        "spriteAnimator": {
+          "filename": "enemy.json"
+        },
         "transform": {
           "position": {
             "x": 264.1977844238281,
@@ -128,6 +137,9 @@
             0.3333333134651184,
             0.3333333134651184
           ]
+        },
+        "spriteAnimator": {
+          "filename": "enemy.json"
         },
         "transform": {
           "position": {
