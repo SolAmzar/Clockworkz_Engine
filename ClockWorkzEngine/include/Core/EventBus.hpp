@@ -1,3 +1,21 @@
+/******************************************************************************/
+/*!
+\file           EventBus.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Implements the EventBus, a lightweight publish–subscribe system
+                used for decoupled communication across the engine. Provides:
+                - subscribe<T>(): register a callback for a specific event type
+                - publish<T>(): broadcast an event to all subscribed listeners
+                - unsubscribeOwner(): remove all callbacks tied to an owner
+
+                Each event type is identified by a std::type_index key,
+                allowing type-safe dispatch without manual IDs.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include "Event.hpp"
 #include <typeindex>
