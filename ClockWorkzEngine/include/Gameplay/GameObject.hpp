@@ -164,6 +164,9 @@ namespace Gameplay {
         std::string const& textureId() const { return m_textureId; }
         void setTextureId(std::string id) { m_textureId = std::move(id); }
 
+        std::string const& prefabName() const { return m_prefabName; }
+        void setPrefabName(const std::string& name) { m_prefabName = name; }
+
         void autoUpdateCollisionBaseOnScale();
         AABB aabbWorld() const;
         void respawnAt(vec2 spawn, bool resetVelocity = true, bool resetHealth = true);
@@ -254,6 +257,8 @@ namespace Gameplay {
         mutable AABB    m_cachedAABB{};
 
         std::string     m_textureId{};
+
+        std::string     m_prefabName{};
 
         std::vector<std::unique_ptr<Collider>> m_colliders;
         std::vector<std::unique_ptr<Component>> m_components;

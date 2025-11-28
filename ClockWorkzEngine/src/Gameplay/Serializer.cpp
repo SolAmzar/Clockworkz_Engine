@@ -268,6 +268,11 @@ namespace Gameplay {
         j["active"] = obj.active();
         j["type"] = static_cast<int>(obj.type());
 
+        // Save prefab name if the object was created from a prefab
+        if (!obj.prefabName().empty()) {
+            j["prefab"] = obj.prefabName();
+        }
+
         // Components object
         json components;
 
