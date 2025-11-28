@@ -326,7 +326,7 @@ namespace Gameplay {
         grid.clear();
         for (auto& u : objs) {
             if (!u->active()) continue;
-            u->setLastHitNormal({ 0.f, 0.f });
+            //u->setLastHitNormal({ 0.f, 0.f });
             grid.insert(u.get());
         }
 

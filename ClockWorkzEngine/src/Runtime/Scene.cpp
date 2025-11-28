@@ -239,6 +239,12 @@ const Gameplay::Physics2D *Scene::getPhysics() const
 
 void Scene::update(double dt)
 {
+    if (m_physics)
+    {
+        PROFILE_SCOPE("Physics");
+        m_physics->step(objects(), dt); // or m_layers.all_objects()
+    }
+
     {
         PROFILE_SCOPE("GameObjectUpdates");
         m_layers.for_each_layered_update([&](Gameplay::GameObject* o, uint32_t bit) {
@@ -247,11 +253,7 @@ void Scene::update(double dt)
             });
     }
 
-    if (m_physics)
-    {
-        PROFILE_SCOPE("Physics");
-        m_physics->step(objects(), dt); // or m_layers.all_objects()
-    }
+
 }
 
 void Scene::render(Graphics::RenderingManager& renderer)

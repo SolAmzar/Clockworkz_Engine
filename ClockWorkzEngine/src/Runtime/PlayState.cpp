@@ -255,16 +255,9 @@ namespace Runtime
 
 					}*/
 				}
-				// ******** Chase function to be implemented in M3 ********
-				if (m_player) {
-					for (auto& u : objs) {
-						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
-							// Add Chase: speed=150, engageRadius=300 (chase when player within 300 units)
-							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 300.0f);
-							std::cout << "Added Chase component to enemy: " << u->name() << "\n";
-						}
-					}
-				}
+
+				initializeEnemyAI(scene);
+
 				std::cout.flush();
 			}
 		}
@@ -469,76 +462,100 @@ namespace Runtime
 						m_haveLastFootPos = false;
 					}
 
+					vec2 move{ 0,0 };
 
-					//not used
-					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
-					{
-						moveSpeed *= 2;
+					// WASD input → movement vector
+					if (m_input.isKeyDown(GLFW_KEY_W)) move.y += 1;
+					if (m_input.isKeyDown(GLFW_KEY_S)) move.y -= 1;
+					if (m_input.isKeyDown(GLFW_KEY_A)) move.x -= 1;
+					if (m_input.isKeyDown(GLFW_KEY_D)) move.x += 1;
+
+					// normalize diagonal
+					if (move.x != 0 || move.y != 0)
+						move = normalize(move);
+
+					// apply speed
+					float speedMove = obj->moveSpeed();
+
+					// shift to run
+					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+						speedMove *= 2.0f;
 						isRunning = true;
 					}
 
-					//Gameplay::GameObject* fx = nullptr;
-					//for (auto& up : gameObjects) {
-					//	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					// final velocity
+					obj->velocity() = move * speedMove;
+
+
+					////not used
+					//if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+					//{
+					//	moveSpeed *= 2;
+					//	isRunning = true;
 					//}
-					//if (fx) {
-					//	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
-					//		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
-					//			em->burst(80); // 80-particle puff
+
+					////Gameplay::GameObject* fx = nullptr;
+					////for (auto& up : gameObjects) {
+					////	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+					////}
+					////if (fx) {
+					////	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
+					////		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
+					////			em->burst(80); // 80-particle puff
+					////	}
+					////}
+					////float moveAmount = moveSpeed * static_cast<float>(dt);
+
+					//if (m_input.isKeyDown(GLFW_KEY_W))
+					//{
+					//	obj->velocity().y += moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
+					//		obj->velocity().y = maxSpeed;
+					//	}
+					//	else if (obj->velocity().y > maxRunSpeed){
+					//		obj->velocity().y = maxRunSpeed;
+					//	}
+
+					//}
+					//else if (m_input.isKeyDown(GLFW_KEY_S))
+					//{
+					//	obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
+					//		obj->velocity().y = -maxSpeed;
+					//	}
+					//	else if (obj->velocity().y > -maxRunSpeed) {
+					//		obj->velocity().y = -maxRunSpeed;
 					//	}
 					//}
-					//float moveAmount = moveSpeed * static_cast<float>(dt);
+					//else
+					//{
+					//	obj->velocity().y = 0;
+					//}
 
-					if (m_input.isKeyDown(GLFW_KEY_W))
-					{
-						obj->velocity().y += moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
-							obj->velocity().y = maxSpeed;
-						}
-						else if (obj->velocity().y > maxRunSpeed){
-							obj->velocity().y = maxRunSpeed;
-						}
-
-					}
-					else if (m_input.isKeyDown(GLFW_KEY_S))
-					{
-						obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
-							obj->velocity().y = -maxSpeed;
-						}
-						else if (obj->velocity().y > -maxRunSpeed) {
-							obj->velocity().y = -maxRunSpeed;
-						}
-					}
-					else
-					{
-						obj->velocity().y = 0;
-					}
-
-					if (m_input.isKeyDown(GLFW_KEY_A))
-					{
-						obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
-							obj->velocity().x = -maxSpeed;
-						}
-						else if (obj->velocity().x > -maxRunSpeed) {
-							obj->velocity().x = -maxRunSpeed;
-						}
-					}
-					else if (m_input.isKeyDown(GLFW_KEY_D))
-					{
-						obj->velocity().x += moveSpeed * static_cast<f32>(dt);
-						if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
-							obj->velocity().x = maxSpeed;
-						}
-						else if (obj->velocity().y > maxRunSpeed) {
-							obj->velocity().x = maxRunSpeed;
-						}
-					}
-					else
-					{
-						obj->velocity().x = 0;
-					}
+					//if (m_input.isKeyDown(GLFW_KEY_A))
+					//{
+					//	obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
+					//		obj->velocity().x = -maxSpeed;
+					//	}
+					//	else if (obj->velocity().x > -maxRunSpeed) {
+					//		obj->velocity().x = -maxRunSpeed;
+					//	}
+					//}
+					//else if (m_input.isKeyDown(GLFW_KEY_D))
+					//{
+					//	obj->velocity().x += moveSpeed * static_cast<f32>(dt);
+					//	if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
+					//		obj->velocity().x = maxSpeed;
+					//	}
+					//	else if (obj->velocity().y > maxRunSpeed) {
+					//		obj->velocity().x = maxRunSpeed;
+					//	}
+					//}
+					//else
+					//{
+					//	obj->velocity().x = 0;
+					//}
 
 					if (m_input.isKeyDown(GLFW_KEY_G))
 					{
@@ -572,12 +589,13 @@ namespace Runtime
 
 					// --- Player Animation Control ---
 					Gameplay::SpriteAnimatorComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
+
 					if (playerSpriteComp)
 					{
 						// Determine animation state
 						std::string animState = m_flashlightOn ? "idle_torch" : "idle";
 						//std::string animState = m_flashlightOn ? "idle" : "idle";
-						bool isMoving = (obj->velocity().x != 0 || obj->velocity().y != 0);
+						bool isMoving = (move.x != 0 || move.y != 0);
 
 						if (isMoving)
 						{
@@ -805,19 +823,29 @@ namespace Runtime
 		);
 		glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
+		// Calculate light direction vector
+		glm::vec2 lightDir(cos(angle), sin(angle));
+
 		// Compute visibility polygon
 		std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
 		vec2 originVec2 = { originGLM.x, originGLM.y };
 		std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
 			originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
 
+
 		std::vector<glm::vec2> lightPolyGLM;
 		for (const auto& point : lightPoly) {
 			lightPolyGLM.emplace_back(point.x, point.y);
 		}
 
+		if (lightPolyGLM.size() > 0) {
+			for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
+				std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
+			}
+		}
 		// ✓ Check enemies against light polygon
-		const float KILL_THRESHOLD = 0.5f;
+		const float KILL_THRESHOLD = 3.0f;
+		const float DECAY_RATE = 2.0f;
 
 		for (auto& obj : objs) {
 			if (!obj || !obj->active()) continue;
@@ -825,12 +853,22 @@ namespace Runtime
 			if (obj->type() == Gameplay::GameObjectType::Enemy) {
 				glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
 
+				// FORCE TRUE for testing
+				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
+
+				if (inLight) {
+					obj->addLightExposure(dt);
+				}
+				else {
+					if (obj->lightExposureTime() > 0.0f) {
+					}
+					obj->resetLightExposure();
+				}
+
 				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
 					// Enemy is in light
 					obj->addLightExposure(dt);
 
-					std::cout << "Enemy '" << obj->name() << "' exposed: "
-						<< obj->lightExposureTime() << "s / " << KILL_THRESHOLD << "s" << std::endl;
 
 					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
 						std::cout << ">>> Enemy '" << obj->name() << "' KILLED!" << std::endl;
@@ -842,7 +880,9 @@ namespace Runtime
 					if (obj->lightExposureTime() > 0.0f) {
 						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
 					}
-					obj->resetLightExposure();
+					float oldExposure = obj->lightExposureTime();
+					obj->decreaseLightExposure(dt * DECAY_RATE);
+					float newExposure = obj->lightExposureTime();
 				}
 			}
 		}
@@ -1024,6 +1064,26 @@ namespace Runtime
 			"assets/textures/floor.png",
 			"assets/textures/trap.png"};
 
+	void PlayState::initializeEnemyAI(Runtime::Scene* scene) {
+		if (!scene || !m_player) {
+			std::cout << "[PlayState] Cannot initialize enemy AI: scene or player missing\n";
+			return;
+		}
+
+		auto& objs = scene->objects();
+		for (auto& obj : objs) {
+			if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+				// Check if Chase component already exists
+				if (!obj->getComponent<Gameplay::Chase>()) {
+					constexpr float CHASE_SPEED = 150.0f;
+					constexpr float ENGAGE_RADIUS = 300.0f;
+
+					obj->addComponent<Gameplay::Chase>(*obj, m_player, CHASE_SPEED, ENGAGE_RADIUS);
+					std::cout << "[PlayState] Added Chase to enemy: " << obj->name() << "\n";
+				}
+			}
+		}
+	}
 	//void PlayState::renderImGui(Core::Time *timer)
 	//{
 	//	if (!m_debug)
@@ -1386,16 +1446,7 @@ namespace Runtime
 				scene->registerExistingObjectsToLayers(); 
 				m_player = findFirstPlayer(scene);
 
-
-				// ******** Chase function to be implemented in M3 ********
-				auto& objs = scene->objects();
-				if (m_player) {
-					for (auto& u : objs) {
-						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
-							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 100.0f);
-						}
-					}
-				}
+				initializeEnemyAI(scene);
 			}
 
 		}
@@ -1407,16 +1458,7 @@ namespace Runtime
 				scene->registerExistingObjectsToLayers();
 				m_player = findFirstPlayer(scene);
 
-				// ******** Chase function to be implemented in M3 ********
-				auto& objs = scene->objects();
-				if (m_player) {
-					for (auto& u : objs) {
-						if (u && u->type() == Gameplay::GameObjectType::Enemy && u->active()) {
-							u->addComponent<Gameplay::Chase>(*u, m_player, 150.0f, 100.0f);
-							std::cout << "Re-added Chase to: " << u->name() << "\n";
-						}
-					}
-				}
+				initializeEnemyAI(scene);
 			}
 		}
 	}
