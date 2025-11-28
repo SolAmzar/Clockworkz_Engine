@@ -49,10 +49,6 @@ namespace Gameplay {
         , m_lastDistance(0.0f)
         , m_currentSpeed(speed)
     {
-        // DEBUG: Log construction
-        std::cout << "[Chase DEBUG] Created for '" << m_enemy.name()
-            << "' | Speed: " << m_speed
-            << " | Slowdown Factor: " << m_lightSlowdownFactor << std::endl;
     }
 
     bool Chase::shouldEngageTarget(float distance) const {
@@ -141,7 +137,6 @@ namespace Gameplay {
         if (m_wanderTimer >= m_wanderChangeInterval) {
             m_wanderDirection = generateRandomDirection();
             m_wanderTimer = 0.0f;
-            std::cout << "[Chase DEBUG] Wander direction changed for '" << m_enemy.name() << "'" << std::endl;
         }
 
         // Calculate wander velocity

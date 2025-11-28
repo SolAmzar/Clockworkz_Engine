@@ -100,6 +100,9 @@ namespace Runtime {
 
 		void initializeEnemyAI(Runtime::Scene* scene);
 
+		bool m_playerDead;
+		float m_deathTimer;
+		const float m_deathDelay = 2.0f;
 	};
 
 } // namespace Runtime

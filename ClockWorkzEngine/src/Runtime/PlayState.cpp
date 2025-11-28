@@ -16,15 +16,19 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/Scene.hpp"
-#include "Gameplay/GameObject.hpp"
 #include "Runtime/PauseState.hpp"
-#include "IMGUI/imgui.h"
 #include "Runtime/MenuState.hpp"
 #include "Runtime/GameStateManager.hpp"
+#include "Runtime/PlayState.hpp"
+#include "Runtime/GameOverState.hpp"
+#include "Gameplay/GameObject.hpp"
+
+#include "IMGUI/imgui.h"
+
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Platform/LevelEditor.hpp"
-#include "Runtime/PlayState.hpp"
+
 #include "Audio/AudioManager.hpp"
 #include "Assets/SoundManager.hpp"
 #include "Graphics/ParticleSystem.hpp"
@@ -108,6 +112,8 @@ namespace Runtime
 		, m_editorInitialized(false)
 		,currentBattery(100.0f)
 		,maxBattery(100.0f)
+		, m_playerDead(false)
+		, m_deathTimer(0.0f)
 	{
 	}
 	PlayState::~PlayState()
@@ -426,8 +432,13 @@ namespace Runtime
 
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
+					if (m_playerDead) {
+						// Player is dead - freeze them, skip all movement
+						obj->velocity() = vec2(0, 0);
+						continue;  // Skip to next object
+					}
 					// ---- CAMERA FOLLOW ----
-					if (m_player && m_player->active()) {
+					if (m_player && !m_playerDead) {
 						vec2 p = m_player->transform().position;
 
 						cam.setPosition(glm::vec2(p.x, p.y));
@@ -471,6 +482,7 @@ namespace Runtime
 					}
 
 					vec2 move{ 0,0 };
+
 
 					// WASD input → movement vector
 					if (m_input.isKeyDown(GLFW_KEY_W)) move.y += 1;
@@ -519,10 +531,10 @@ namespace Runtime
 						// Convert to degrees if your transform uses degrees
 						obj->transform().rotationRad = angleRad;
 					}
-					if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
+					/*if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
 					{
 						obj->respawnAt(vec2(0.0f, 0.0f), true, true);
-					}
+					}*/
 
 					// --- Player Animation Control ---
 					Gameplay::SpriteAnimatorComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
@@ -650,41 +662,59 @@ namespace Runtime
 			}
 		}
 
-		if (m_player && m_player->active()) {
+		if (m_player && !m_playerDead) {
+
 			auto* scene = m_scenes.current();
+
 			for (auto& obj : scene->objects()) {
 				if (!obj || !obj->active()) continue;
 
 				if (obj->type() == Gameplay::GameObjectType::Enemy) {
 
-					// Simple AABB collision check
 					vec2 playerPos = m_player->transform().position;
 					vec2 enemyPos = obj->transform().position;
-					vec2 playerHalf = m_player->size() * 0.5f;
-					vec2 enemyHalf = obj->size() * 0.5f;
 
-					// Check if bounding boxes overlap
-					if (abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
-						abs(playerPos.y - enemyPos.y) < (playerHalf.y + enemyHalf.y)) {
+					// Calculate distance between centers
+					vec2 diff = playerPos - enemyPos;
+					float distance = sqrt(diff.x * diff.x + diff.y * diff.y);
 
-						std::cout << "Player hit by enemy: " << obj->name() << "!\n";
+					// Use average of width and height as radius
+					float playerRadius = (m_player->size().x + m_player->size().y) * 0.25f;
+					float enemyRadius = (obj->size().x + obj->size().y) * 0.25f;
+
+					// Add a buffer to make it more forgiving
+					float collisionDistance = playerRadius + enemyRadius + 80.0f;
+
+					// Check if close enough for collision
+					if (distance < collisionDistance) {
+						std::cout << "Player hit by enemy: " << obj->name()
+							<< " (distance: " << distance << ")\n";
 
 						// Kill the player
-						m_player->setActive(false);
+						m_playerDead = true;
+						m_deathTimer = 0.0f;
 
-						// Optional: Reset scene after a delay or show game over
-						// resetScene();
 						break;
 					}
 				}
 			}
-			if (!m_player->active())
-			{
-				m_player->setActive(true);
-				{
-					//TODO change to spawn location and reset scene
-					m_player->setPosition(0);
-				}
+		}
+
+		// Handle death sequence
+		if (m_playerDead) {
+			m_deathTimer += static_cast<float>(dt);
+
+			if (m_player) {
+				m_player->velocity() = vec2(0, 0);
+			}
+
+			if (m_deathTimer >= m_deathDelay) {
+				// Transition to game over state
+				std::cout << "[PlayState] Pushing GameOverState\n";
+				m_gsm.push(std::make_shared<GameOverState>(m_gsm, m_input, m_initialSceneId));
+				m_playerDead = false;
+				m_deathTimer = 0.0f;
+				return;
 			}
 		}
 
