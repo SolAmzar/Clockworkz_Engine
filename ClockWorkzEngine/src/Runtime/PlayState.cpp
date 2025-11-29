@@ -446,16 +446,16 @@ namespace Runtime
 			m_flashlightOn = !m_flashlightOn;
 			std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
 
-			Audio::AudioManager& audio = Core::Engine::Get().audio();
+			Audio::AudioManager& sfx_audio = Core::Engine::Get().audio();
 			
 
 			if (m_flashlightOn == true)
 			{
-				audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+				sfx_audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
 			}
 			else
 			{
-				audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+				sfx_audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
 			}
 
 		}
