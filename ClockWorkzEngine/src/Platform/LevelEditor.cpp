@@ -752,47 +752,45 @@ void LevelEditor::resetScene()
 
     void LevelEditor::undo() {
         if (m_undoStack.empty()) {
-            std::cout << "Nothing to undo" << std::endl;
+            std::cout << "Nothing to undo\n";
             return;
         }
 
-        // Pop command from undo stack
-        auto&& cmd = std::move(m_undoStack.back());  // ✅ Changed: auto → auto&&
+        // 1. Take the command OUT of undo stack
+        std::unique_ptr<Platform::EditorCommand> cmd = std::move(m_undoStack.back());
         m_undoStack.pop_back();
 
-        // Undo it
+        // 2. Execute the undo
         cmd->undo();
 
-        // Move to redo stack
+        // 3. Move it to redo stack (so user can redo if they want)
         m_redoStack.push_back(std::move(cmd));
 
-        // Mark level as dirty
         markLevelDirty();
-
-        std::cout << "Undo successful" << std::endl;
+        std::cout << "Undo successful\n";
     }
 
     void LevelEditor::redo() {
         if (m_redoStack.empty()) {
-            std::cout << "Nothing to redo" << std::endl;
+            std::cout << "Nothing to redo\n";
             return;
         }
 
-        // Pop command from redo stack
-        auto&& cmd = std::move(m_redoStack.back());  // ✅ Changed: auto → auto&&
+        // 1. Take the command OUT of redo stack
+        std::unique_ptr<Platform::EditorCommand> cmd = std::move(m_redoStack.back());
         m_redoStack.pop_back();
 
-        // Execute it again
+        // 2. Execute it again (calls execute(), not undo())
         cmd->execute();
 
-        // Move back to undo stack
+        // 3. Move it back to undo stack (so user can undo again if they want)
         m_undoStack.push_back(std::move(cmd));
 
-        // Mark level as dirty
         markLevelDirty();
-
-        std::cout << "Redo successful" << std::endl;
+        std::cout << "Redo successful\n";
     }
+
+
 
 
     void LevelEditor::clearRedoStack() {
@@ -2065,15 +2063,24 @@ void LevelEditor::updateGizmoScale()
     void LevelEditor::createObjectFromPrefab(const std::string& prefabName, vec2 position) {
         if (!m_currentScene) return;
 
+        std::cout << "[LevelEditor] Creating: " << prefabName << " at ("
+            << position.x << ", " << position.y << ")\n";
+
+        // Create the object
         auto obj = Gameplay::PrefabFactory::get().createAt(prefabName, position);
-        if (obj) {
-            m_currentScene->addObject(std::move(obj));
-            markLevelDirty();
-            // TODO: Core::Engine::Get().logger().info("Created object from prefab: " + prefabName);
+        if (!obj) {
+            std::cout << "[LevelEditor] Failed to create prefab\n";
+            return;
         }
-        else {
-            // TODO: Core::Engine::Get().logger().error("Failed to create object from prefab: " + prefabName);
-        }
+
+        Gameplay::GameObject* objPtr = obj.get();
+        m_currentScene->addObject(std::move(obj));
+
+        // Record the creation as an undo command
+        auto cmd = std::make_unique<Platform::CreateCommand>(objPtr, m_currentScene.get());
+        executeCommand(std::move(cmd));
+
+        markLevelDirty();
     }
 
     bool LevelEditor::savePrefab(const std::string& name) {
@@ -3852,7 +3859,7 @@ void LevelEditor::updateGizmoScale()
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
         Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
 
-        if (obj && m_currentScene) {
+        if (obj && obj->active() && m_currentScene) {
             selectObject(obj);
             deleteSelectedObject();
         }
@@ -3936,6 +3943,7 @@ void LevelEditor::updateGizmoScale()
         auto& objects = m_currentScene->objects();
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             auto& obj = *it;
+            if (!obj || !obj->active()) continue;
 
             // Use the object's own AABB but make it larger for easier selection
             Gameplay::AABB aabb = obj->aabbWorld();
