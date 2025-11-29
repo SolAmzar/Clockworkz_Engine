@@ -578,36 +578,36 @@ namespace Platform {
         return Gameplay::SurfaceType::Default;
     }
 
-    void LevelEditor::resetScene()
-    {
-        if (!m_currentScene) return;
+void LevelEditor::resetScene()
+{
+    if (!m_currentScene) return;
 
-        // Reload the scene
-        m_currentScene->load();
+    // Reload the scene
+    m_currentScene->load();
 
-        // Reset player reference
-        m_playModePlayer = nullptr;
-        for (auto& obj : m_currentScene->objects()) {
-            if (obj && obj->type() == Gameplay::GameObjectType::Player) {
-                m_playModePlayer = obj.get();
-                break;
-            }
+    // Reset player reference
+    m_playModePlayer = nullptr;
+    for (auto& obj : m_currentScene->objects()) {
+        if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+            m_playModePlayer = obj.get();
+            break;
         }
-
-        // Re-register objects to layers
-        m_currentScene->registerExistingObjectsToLayers();
-
-        // Reinitialize enemy AI
-        if (m_playModePlayer) {
-            for (auto& obj : m_currentScene->objects()) {
-                if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
-                    obj->addComponent<Gameplay::Chase>(*obj, m_playModePlayer, 150.0f, 300.0f);
-                }
-            }
-        }
-
-        std::cout << "[LevelEditor] Scene reset complete\n";
     }
+
+    // Re-register objects to layers
+    m_currentScene->registerExistingObjectsToLayers();
+
+    // Reinitialize enemy AI
+    if (m_playModePlayer) {
+        for (auto& obj : m_currentScene->objects()) {
+            if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+                obj->addComponent<Gameplay::Chase>(*obj, m_playModePlayer, 150.0f, 300.0f);
+            }
+        }
+    }
+
+    std::cout << "[LevelEditor] Scene reset complete\n";
+}
 
 
 

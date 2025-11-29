@@ -905,11 +905,11 @@ namespace Runtime
 			lightPolyGLM.emplace_back(point.x, point.y);
 		}
 
-		if (lightPolyGLM.size() > 0) {
-			for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
-				std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
-			}
-		}
+		//if (lightPolyGLM.size() > 0) {
+		//	for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
+		//		std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
+		//	}
+		//}
 		// ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;

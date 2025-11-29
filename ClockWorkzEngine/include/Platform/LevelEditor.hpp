@@ -171,7 +171,7 @@ namespace Platform {
         // 
         // NEW: Play mode simulation
         void updatePlayMode(double dt);
-        void updatePhysicsAndGameplay(Runtime::Scene* scene, double dt);
+        //void updatePhysicsAndGameplay(Runtime::Scene* scene, double dt);
 
         // NEW: Store gameplay state for play mode
         Gameplay::GameObject* m_playModePlayer;

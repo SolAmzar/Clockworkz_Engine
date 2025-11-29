@@ -12,6 +12,7 @@
           "moveable": false,
           "width": 100.0
         },
+        "spriteAnimator": { "filename": "player.json" },
         "spriteRenderer": {
           "textureId": "player_texture",
           "uv": [
