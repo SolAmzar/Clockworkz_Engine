@@ -3,7 +3,10 @@
 \file           SpriteState.cpp
 \project        Lights Out
 \author(s)      [Lebon], 100%
-\brief          
+\brief          Provides the Sprite Editor state for previewing and editing animations.
+				Supports loading scenes, manipulating sprite sheets,
+				and saving/loading animation JSON files.
+
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */

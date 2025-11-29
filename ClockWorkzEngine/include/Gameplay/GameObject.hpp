@@ -3,7 +3,6 @@
 \file           GameObject.hpp
 \project        Lights Out
 \author(s)      [Lebon], 100% - Will be shared later once other features combine in.
-Serializer guy come in split the 100%
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data

@@ -2,7 +2,7 @@
 /*!
 \file           Chase.cpp (DEBUG VERSION)
 \project        Lights Out
-\author(s)      [Amzar], 70% [Syafiq] 40%
+\author(s)      [Amzar], 50% [Lebon], 30% [Syafiq], 20%
 \brief          DEBUG VERSION with extensive logging to diagnose light slowdown
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.

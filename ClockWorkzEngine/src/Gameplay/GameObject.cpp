@@ -2,7 +2,7 @@
 /*!
 \file           GameObject.cpp
 \project        Lights Out
-\author(s)      [Lebon], 10% - Will be shared later once other features combine in.
+\author(s)      [Lebon], 50% 
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
@@ -15,9 +15,7 @@
                 - Computing world-space bounding boxes for collision checks
                 - To hold Sprite (Texture/Animated frames + Mesh later)
 
-                Serves as the core building block for interactive entities in
-                the game world.
-
+      
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/

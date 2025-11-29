@@ -1,4 +1,19 @@
-﻿#include "Gameplay\Serializer.hpp"
+﻿/******************************************************************************/
+/*!
+\file           Serializer.hpp
+\project        Lights Out
+\author(s)      [Yusuf], 60% [Lebon], 40%
+\brief          Implements full JSON serialization/deserialization for GameObjects,
+                their components, and entire scenes, including prefab-based 
+                construction, transform/collider parsing, and animation/audio loading.
+
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
+#include "Gameplay\Serializer.hpp"
 #include "Gameplay\GameObject.hpp"
 #include "Gameplay\Components\Health.hpp"
 #include "Gameplay\Components\DamageDealer.hpp"
