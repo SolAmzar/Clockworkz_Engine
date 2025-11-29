@@ -204,28 +204,28 @@ namespace Runtime
 		m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
 		audio.play("level_ambience", Audio::Group::SFX, m_sfxVol, false);
 
-		//m_levelEditor = std::make_unique<Platform::LevelEditor>();
+		m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
-		//if (m_levelEditor->init(
-		//	engine.window().handle(),
-		//	engine.rendering(),
-		//	m_input,
-		//	engine.window())) {
+		if (m_levelEditor->init(
+			engine.window().handle(),
+			engine.rendering(),
+			m_input,
+			engine.window())) {
 
-		//	// Create level editor and this will load
-		//	// Scene 'level_01' loaded from : assets / scenes / EditorScene.json
-		//	// Load current scene into editor
-		//	if (auto* scene = m_scenes.current()) {
-		//		m_levelEditor->loadSceneFromPlayState(scene);
-		//	}
+			// Create level editor and this will load
+			// Scene 'level_01' loaded from : assets / scenes / EditorScene.json
+			// Load current scene into editor
+			if (auto* scene = m_scenes.current()) {
+				m_levelEditor->loadSceneFromPlayState(scene);
+			}
 
-		//	m_levelEditor->setActive(false); // Start inactive
-		//	m_editorInitialized = true;
-		//	std::cout << "[PlayState] Level editor initialized\n";
-		//}
-		//else {
-		//	std::cerr << "[PlayState] Failed to initialize level editor\n";
-		//}
+			m_levelEditor->setActive(false); // Start inactive
+			m_editorInitialized = true;
+			std::cout << "[PlayState] Level editor initialized\n";
+		}
+		else {
+			std::cerr << "[PlayState] Failed to initialize level editor\n";
+		}
 
 
 
