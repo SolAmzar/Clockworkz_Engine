@@ -27,6 +27,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <glm/gtc/matrix_transform.hpp>
 #include "IMGUI/imgui.h"
 #include <iostream>
+#include <Assets/TextureManager.hpp>
 
 using Assets::ResourceManager;
 using Graphics::Shader;
@@ -189,15 +190,34 @@ namespace Runtime {
         Platform::WindowManager& window = engine.window();
         Graphics::RenderingManager& renderer = engine.rendering();
 
-        m_renderer->beginScenePass(m_cam->viewProj());
-        m_background.render(*m_renderer);
-        m_renderer->endScenePass();
-
         int w = window.width();
         int h = window.height();
 
-        glm::mat4 projection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
+        //  UI orthographic projection
+        glm::mat4 uiProjection = glm::ortho(0.0f, static_cast<float>(w),
+            0.0f, static_cast<float>(h));
 
+        m_renderer->beginScenePass(uiProjection);
+
+        // Center it on screen, size it to fill the window
+        glm::vec2 bgPos(w * 0.5f, h * 0.5f);  // Center of screen
+        glm::vec2 bgSize(static_cast<float>(w), static_cast<float>(h));  // Full window size
+
+        // Get the texture ID for your pause background
+        unsigned int bgTexId = Assets::TextureManager::Get("pause_bg_texture")->id();
+
+        m_renderer->drawSprite(
+            bgTexId,
+            bgPos,
+            bgSize,
+            0.0f,  // rotation
+            glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),  // full UV rect
+            glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)   // white tint, 70% opacity so text shows
+        );
+
+        m_renderer->endScenePass();
+
+        glm::mat4 projection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
         m_renderer->beginFontPass(projection);
 
         auto shader = ResourceManager<Shader>::Get("text");

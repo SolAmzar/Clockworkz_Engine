@@ -353,6 +353,7 @@ namespace Gameplay
             components["health"]["hp"] = 10;
 
             components["spriteRenderer"]["textureId"] = "player_texture";
+            components["spriteAnimator"]["filename"] = "player_animations.json";
 
             factory.registerPrefab("Player", components);
         }

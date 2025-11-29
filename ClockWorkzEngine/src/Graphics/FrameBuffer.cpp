@@ -92,7 +92,7 @@ namespace Graphics {
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
 
-    void FrameBuffer::bind() {
+    void FrameBuffer::bind() const {
         glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
         glViewport(0, 0, m_width, m_height);
     }

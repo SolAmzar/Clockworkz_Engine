@@ -76,6 +76,7 @@ namespace Runtime {
 		float m_rightBound{ 700.f };
 		float m_ballSpeed{ 220.f };
 		int   m_ballDir{ +1 };
+		vec2 m_spawnPoint = vec2(0.0f, 0.0f);
 		float m_distanceSinceStep = 0.0f;
 		float m_stepDistance = 60.0f;
 		float m_timeSinceStep = 0.0f;
@@ -102,6 +103,8 @@ namespace Runtime {
 		int   m_bgmChannel = 0;
 		bool  m_bgmPlaying = false;
 		float m_bgmVol = 0.5f;
+
+		bool m_playerRespawning{ false };
 
 	};
 

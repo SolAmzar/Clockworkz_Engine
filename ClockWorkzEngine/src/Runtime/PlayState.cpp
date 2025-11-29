@@ -173,6 +173,7 @@ namespace Runtime
 		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
 		s.rate = 120.f;
 
+
 		// Initialize level editor
 		Core::Engine& engine = Core::Engine::Get();
 
@@ -202,6 +203,8 @@ namespace Runtime
 		else {
 			std::cerr << "[PlayState] Failed to initialize level editor\n";
 		}
+
+
 
 		currentBattery = 100.0f;
 		maxBattery = 100.0f;
@@ -244,11 +247,57 @@ namespace Runtime
 					if (u->type() == Gameplay::GameObjectType::Player)
 					{
 						m_player = &(*u);
-						Gameplay::SpriteRendererComponent *playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
+
+						
+						//// Add animator component if it doesn't exist
+						//auto* animator = u->getComponent<Gameplay::SpriteAnimatorComponent>();
+						//if (!animator) {
+						//	animator = u->addComponent<Gameplay::SpriteAnimatorComponent>();
+
+						//	// Set up animations
+						//	const float frameW = 1.0f / 8.0f; // 0.125
+						//	const float frameH = 1.0f / 8.0f; // 0.125
+
+						//	// IDLE - 
+						//	auto& idleClip = animator->createClip("idle", true);
+						//	for (int i = 0; i < 1; ++i) {  
+						//		int row = i / 8;
+						//		int col = i % 8;
+						//		glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+						//		idleClip.frames.push_back({ uv, 0.15f });
+						//	}
+
+						//	// WALK - frames 48-55 (8 frames, row 6)  
+						//	auto& walkClip = animator->createClip("walk", true);
+						//	for (int i = 5; i < 8; ++i) {  // Changed from 37-45 to 48-56
+						//		int row = i / 8;
+						//		int col = i % 8;
+						//		glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+						//		walkClip.frames.push_back({ uv, 0.1f });
+						//	}
+
+						//	// RUN - frames 32-39 (8 frames, row 4)
+						//	auto& runClip = animator->createClip("run", true);
+						//	for (int i = 25; i < 31; ++i) {  // Changed from 25-31 to 32-40
+						//		int row = i / 8;
+						//		int col = i % 8;
+						//		glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+						//		runClip.frames.push_back({ uv, 0.08f });
+						//	}
+
+						//	// Link to sprite renderer
+						//	if (auto* sr = u->getComponent<Gameplay::SpriteRendererComponent>()) {
+						//		animator->setSpriteRenderer(sr);
+						//	}
+
+						//	// Start with idle
+						//	animator->play("idle");
+						//}
+
+						Gameplay::SpriteRendererComponent* playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
 						if (playerSprite2)
 						{
-
-							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+							playerSprite2->setUV(glm::vec4{ 0, 0.875, 0.125, 0.125 });
 						}
 					}
 
@@ -259,6 +308,14 @@ namespace Runtime
 						}
 
 					}*/
+				}
+
+				for (auto& obj : scene->objects()) {
+					if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+						m_player = obj.get();
+						m_spawnPoint = m_player->transform().position;  // Save starting position
+						break;
+					}
 				}
 
 				initializeEnemyAI(scene);
@@ -461,10 +518,10 @@ namespace Runtime
 					}
 
 					// ---- Movement FOLLOW ----
-					float moveSpeed = obj->moveSpeed();
+					//float moveSpeed = static_cast<float>(obj->moveSpeed());
 					bool isRunning = false;
-					float maxSpeed = obj->moveSpeed();
-					float maxRunSpeed = maxSpeed*2;
+					//float maxSpeed = obj->moveSpeed();
+					//float maxRunSpeed = maxSpeed*2.0f;
 
 					m_timeSinceStep += (float)dt;
 					auto surfaceType = getSurfaceUnder(obj.get());
@@ -645,6 +702,7 @@ namespace Runtime
 
 						playerSpriteComp->play(animState);
 					}
+
 				}
 
 				//if (obj->type() == Gameplay::GameObjectType::Ball)
@@ -754,11 +812,11 @@ namespace Runtime
 				if (!obj || !obj->active()) continue;
 
 				if (obj->type() == Gameplay::GameObjectType::Enemy) {
-					// Simple AABB collision check
 					vec2 playerPos = m_player->transform().position;
 					vec2 enemyPos = obj->transform().position;
-					vec2 playerHalf = m_player->size() * 0.5f;
-					vec2 enemyHalf = obj->size() * 0.5f;
+
+					vec2 playerHalf = m_player->size() * 0.5f * 2.0f;
+					vec2 enemyHalf = obj->size() * 0.5f * 2.0f;
 
 					// Check if bounding boxes overlap
 					if (abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
@@ -768,24 +826,24 @@ namespace Runtime
 
 						// Kill the player
 						m_player->setActive(false);
-
-						// Optional: Reset scene after a delay or show game over
-						// resetScene();
 						break;
 					}
 				}
 			}
-			if (!m_player->active())
-			{
-				m_player->setActive(true);
-				{
-					//TODO change to spawn location and reset scene
-					m_player->setPosition(0);
-				}
-			}
 		}
 
-		//m_scenes.update(dt);
+		if (m_player && !m_player->active()) {
+			// Only respawn once
+			if (!m_playerRespawning) {
+				m_player->respawnAt(m_spawnPoint, true, true);
+				std::cout << "Player respawned!\n";
+				m_playerRespawning = true;  // ← Prevent repeated respawns
+				resetScene();
+			}
+			return;  // Don't continue updating
+		}
+
+		m_scenes.update(dt);
 		updateLightExposure(dt);
 		updateBatteryDisplay();
 	}
@@ -873,11 +931,11 @@ namespace Runtime
 			lightPolyGLM.emplace_back(point.x, point.y);
 		}
 
-		if (lightPolyGLM.size() > 0) {
-			for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
-				std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
-			}
-		}
+		//if (lightPolyGLM.size() > 0) {
+		//	for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
+		//		std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
+		//	}
+		//}
 		// ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;
@@ -892,7 +950,7 @@ namespace Runtime
 				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
 
 				if (inLight) {
-					obj->addLightExposure(dt);
+					obj->addLightExposure(static_cast<float>(dt));
 				}
 				else {
 					if (obj->lightExposureTime() > 0.0f) {
@@ -902,7 +960,7 @@ namespace Runtime
 
 				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
 					// Enemy is in light
-					obj->addLightExposure(dt);
+					obj->addLightExposure(static_cast<float>(dt));
 
 
 					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
@@ -915,9 +973,9 @@ namespace Runtime
 					if (obj->lightExposureTime() > 0.0f) {
 						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
 					}
-					float oldExposure = obj->lightExposureTime();
-					obj->decreaseLightExposure(dt * DECAY_RATE);
-					float newExposure = obj->lightExposureTime();
+					//float oldExposure = obj->lightExposureTime();
+					obj->decreaseLightExposure(static_cast<float>(dt) * DECAY_RATE);
+					//float newExposure = obj->lightExposureTime();
 				}
 			}
 		}
@@ -979,10 +1037,10 @@ namespace Runtime
 
 		// Battery management code (keep all existing flashlight code)
 		if (m_player) {
-			float dt = timer->delta();
+			float dt = static_cast<float>(timer->delta());
 
 			if (m_flashlightOn) {
-				float currentBattery = m_player->checkBatt();
+				currentBattery = m_player->checkBatt();
 				currentBattery -= m_player->checkDrain() * dt;
 				m_player->setBatt(currentBattery);
 
@@ -992,7 +1050,7 @@ namespace Runtime
 				}
 			}
 			else {
-				float currentBattery = m_player->checkBatt();
+				currentBattery = m_player->checkBatt();
 				currentBattery += m_player->checkCharge() * dt;
 				m_player->setBatt(std::min(100.0f, currentBattery));
 			}
@@ -1070,7 +1128,7 @@ namespace Runtime
 
 				glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
 				glm::vec2 batteryPos(screenSize.x - 100.0f, screenSize.y - 100.0f); // Top-right corner
-				glm::vec2 batterySize(64.0f, 64.0f); // Adjust to your texture size
+				glm::vec2 batterySize(200.0f, 200.0f); // Adjust to your texture size
 
 				// Use an orthographic projection for UI (screen space)
 				glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);
