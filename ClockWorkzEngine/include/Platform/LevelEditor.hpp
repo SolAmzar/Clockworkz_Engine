@@ -40,6 +40,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Platform/UndoSystem.hpp"
 #include "IMGUI/imgui.h"
 #include "Graphics/FrameBuffer.hpp"
+#include "Audio/AudioManager.hpp"
+#include "Audio/SurfaceAudioSystem.hpp"
+
 
 struct GLFWwindow;
 
@@ -459,6 +462,13 @@ namespace Platform {
         float m_playerBattery{ 100.0f };
         void updateLightExposure(double dt);
         void renderFlashlight();
+
+        Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject* player);
+
+        void resetScene();
+
+        bool m_playModePlayerRespawning{ false };
+
 
         vec2 m_lastPlacedGridPos = vec2(-999999.0f, -999999.0f);
     };

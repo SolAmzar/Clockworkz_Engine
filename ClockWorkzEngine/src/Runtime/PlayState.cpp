@@ -807,9 +807,14 @@ namespace Runtime
 		}
 
 		if (m_player && !m_player->active()) {
-			m_player->respawnAt(m_spawnPoint, true, true);
-			std::cout << "Player respawned!\n";
-			resetScene();
+			// Only respawn once
+			if (!m_playerRespawning) {
+				m_player->respawnAt(m_spawnPoint, true, true);
+				std::cout << "Player respawned!\n";
+				m_playerRespawning = true;  // ← Prevent repeated respawns
+				resetScene();
+			}
+			return;  // Don't continue updating
 		}
 
 		m_scenes.update(dt);
@@ -1097,7 +1102,7 @@ namespace Runtime
 
 				glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
 				glm::vec2 batteryPos(screenSize.x - 100.0f, screenSize.y - 100.0f); // Top-right corner
-				glm::vec2 batterySize(64.0f, 64.0f); // Adjust to your texture size
+				glm::vec2 batterySize(200.0f, 200.0f); // Adjust to your texture size
 
 				// Use an orthographic projection for UI (screen space)
 				glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);

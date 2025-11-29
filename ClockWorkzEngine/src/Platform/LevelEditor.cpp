@@ -393,12 +393,100 @@ namespace Platform {
             }
         }
 
-        // Handle player input BEFORE scene update
-        if (m_playModePlayer) {
-            handlePlayerInput(m_playModePlayer, dt);
-        }
-
+        // Update scene first
         m_currentScene->update(dt);
+
+        // ✅ PLAYER MOVEMENT (exactly like PlayState)
+        if (m_playModePlayer && m_playModePlayer->active()) {
+            Core::Engine& engine = Core::Engine::Get();
+            auto& audio = engine.audio();
+            auto& steps = engine.surfaceAudio();
+
+            m_playModeTimeSinceStep += static_cast<float>(dt);
+            auto surfaceType = getSurfaceUnder(m_playModePlayer);
+            vec2 curPos = m_playModePlayer->transform().position;
+            float speed = magnitude(m_playModePlayer->velocity() * 0.3f);
+            bool moving = speed > 5.0f;
+
+            if (moving) {
+                if (!m_playModeHaveLastFootPos) {
+                    m_playModeLastFootPos = curPos;
+                    m_playModeHaveLastFootPos = true;
+                }
+                vec2 delta = curPos - m_playModeLastFootPos;
+                float frameDist = magnitude(delta);
+                m_playModeDistanceSinceStep += frameDist;
+                m_playModeLastFootPos = curPos;
+
+                if (m_playModeDistanceSinceStep >= m_playModeStepDistance &&
+                    m_playModeTimeSinceStep >= m_playModeMinStepInterval) {
+                    // Time for exactly ONE footstep
+                    steps.playFootstep(audio, surfaceType, speed);
+
+                    m_playModeDistanceSinceStep = 0.0f;
+                    m_playModeTimeSinceStep = 0.0f;
+                }
+            }
+            else {
+                // Not moving → reset
+                m_playModeDistanceSinceStep = 0.0f;
+                m_playModeTimeSinceStep = 0.0f;
+                m_playModeHaveLastFootPos = false;
+            }
+
+            // WASD input → movement vector
+            vec2 move{ 0, 0 };
+            if (m_input->isKeyDown(GLFW_KEY_W)) move.y += 1;
+            if (m_input->isKeyDown(GLFW_KEY_S)) move.y -= 1;
+            if (m_input->isKeyDown(GLFW_KEY_A)) move.x -= 1;
+            if (m_input->isKeyDown(GLFW_KEY_D)) move.x += 1;
+
+            // Normalize diagonal
+            if (move.x != 0 || move.y != 0)
+                move = normalize(move);
+
+            // Apply speed
+            float speedMove = m_playModePlayer->moveSpeed();
+
+            // Shift to run
+            bool isRunning = false;
+            if (m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+                speedMove *= 2.0f;
+                isRunning = true;
+            }
+
+            // Final velocity
+            m_playModePlayer->velocity() = move * speedMove;
+
+            // ✅ Player animation
+            Gameplay::SpriteAnimatorComponent* playerSpriteComp = m_playModePlayer->getComponent<Gameplay::SpriteAnimatorComponent>();
+            if (playerSpriteComp) {
+                std::string animState = m_flashlightOn ? "idle_torch" : "idle";
+                bool isMoving = (move.x != 0 || move.y != 0);
+
+                if (isMoving) {
+                    animState = m_flashlightOn ? "walk_torch" : "walk";
+                    if (isRunning) {
+                        animState = m_flashlightOn ? "run_torch" : "run";
+                    }
+                }
+
+                playerSpriteComp->play(animState);
+            }
+
+            // ✅ Player rotation to face mouse
+            vec2 mouseScreen = m_input->mousePosition();
+            vec2 mouseWorld = screenToWorld(mouseScreen);
+            vec2 playerPos = m_playModePlayer->transform().position;
+            vec2 dir = mouseWorld - playerPos;
+            float dist = magnitude(dir);
+
+            if (dist > 10.0f) {
+                dir = normalize(dir);
+                float angleRad = std::atan2(dir.y, dir.x);
+                m_playModePlayer->transform().rotationRad = angleRad;
+            }
+        }
 
         // Camera follow player
         if (m_playModePlayer) {
@@ -413,71 +501,115 @@ namespace Platform {
 
         // Update battery
         if (m_flashlightOn) {
-            m_playerBattery -= 10.0f * dt;  // drain
+            m_playerBattery -= 10.0f * dt;
             if (m_playerBattery <= 0.0f) {
                 m_playerBattery = 0.0f;
                 m_flashlightOn = false;
             }
         }
         else {
-            m_playerBattery += 5.0f * dt;  // recharge
+            m_playerBattery += 5.0f * dt;
             m_playerBattery = std::min(100.0f, m_playerBattery);
         }
 
-        // Scene update
-        m_currentScene->update(dt);
+        // Enemy collision detection
+        if (m_playModePlayer && m_playModePlayer->active()) {
+            auto* scene = m_currentScene.get();
+            for (auto& obj : scene->objects()) {
+                if (!obj || !obj->active()) continue;
 
-        // Update enemy light exposure
+                if (obj->type() == Gameplay::GameObjectType::Enemy) {
+                    vec2 playerPos = m_playModePlayer->transform().position;
+                    vec2 enemyPos = obj->transform().position;
+
+                    vec2 playerHalf = m_playModePlayer->size() * 0.5f * 2.0f;
+                    vec2 enemyHalf = obj->size() * 0.5f * 2.0f;
+
+                    if (std::abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
+                        std::abs(playerPos.y - enemyPos.y) < (playerHalf.y + enemyHalf.y)) {
+
+                        std::cout << "Player hit by enemy: " << obj->name() << "!\n";
+                        m_playModePlayer->setActive(false);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Player respawn
+        if (m_playModePlayer && !m_playModePlayer->active()) {
+            if (!m_playModePlayerRespawning) {
+                m_playModePlayer->respawnAt(vec2(0.0f, 0.0f), true, true);
+                std::cout << "[LevelEditor] Player respawned!\n";
+                m_playModePlayerRespawning = true;
+                resetScene();
+            }
+            return;
+        }
+
+        // Reset flag when player is active again
+        if (m_playModePlayer && m_playModePlayer->active()) {
+            m_playModePlayerRespawning = false;
+        }
+
+        // Update light exposure
         updateLightExposure(dt);
     }
 
-    void LevelEditor::updatePhysicsAndGameplay(Runtime::Scene* scene, double dt) {
-        if (!m_playModePlayer) {
-            for (auto& obj : scene->objects()) {
-                if (obj && obj->type() == Gameplay::GameObjectType::Player) {
-                    m_playModePlayer = obj.get();
-                    break;
+    Gameplay::SurfaceType LevelEditor::getSurfaceUnder(Gameplay::GameObject* player)
+    {
+        auto* scene = m_currentScene.get();
+        if (!scene) return Gameplay::SurfaceType::Default;
+
+        vec2 pos = player->transform().position;
+
+        for (auto& obj : scene->objects()) {
+            if (!obj || !obj->active()) continue;
+
+            if (auto* surf = obj->getComponent<Gameplay::SurfaceComponent>()) {
+                vec2 half = obj->size() * 0.5f;
+                if (std::abs(pos.x - obj->transform().position.x) < half.x &&
+                    std::abs(pos.y - obj->transform().position.y) < half.y) {
+                    return surf->type();
                 }
             }
         }
 
-        // Implement player movement (similar to PlayState)
-        if (m_playModePlayer && m_input) {
-            float moveSpeed = 200.0f;
-            float runMultiplier = 2.0f;
-
-            vec2 velocity{ 0.0f, 0.0f };
-
-            if (m_input->isKeyDown(GLFW_KEY_W)) velocity.y += 1.0f;
-            if (m_input->isKeyDown(GLFW_KEY_S)) velocity.y -= 1.0f;
-            if (m_input->isKeyDown(GLFW_KEY_A)) velocity.x -= 1.0f;
-            if (m_input->isKeyDown(GLFW_KEY_D)) velocity.x += 1.0f;
-
-            // Calculate magnitude manually (no length() function needed)
-            float magSquared = velocity.x * velocity.x + velocity.y * velocity.y;
-
-            if (magSquared > 0.0001f) {  // Use squared magnitude for comparison
-                // Normalize manually (no normalize() function needed)
-                float mag = sqrtf(magSquared);
-                velocity.x /= mag;
-                velocity.y /= mag;
-
-                // Apply speed
-                float finalSpeed = moveSpeed;
-                if (m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
-                    m_input->isKeyDown(GLFW_KEY_RIGHT_SHIFT)) {
-                    finalSpeed *= runMultiplier;
-                }
-
-                velocity.x *= finalSpeed;
-                velocity.y *= finalSpeed;
-
-                // Update position
-                m_playModePlayer->transform().position.x += velocity.x * static_cast<float>(dt);
-                m_playModePlayer->transform().position.y += velocity.y * static_cast<float>(dt);
-            }
-        }
+        return Gameplay::SurfaceType::Default;
     }
+
+    void LevelEditor::resetScene()
+    {
+        if (!m_currentScene) return;
+
+        // Reload the scene
+        m_currentScene->load();
+
+        // Reset player reference
+        m_playModePlayer = nullptr;
+        for (auto& obj : m_currentScene->objects()) {
+            if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+                m_playModePlayer = obj.get();
+                break;
+            }
+        }
+
+        // Re-register objects to layers
+        m_currentScene->registerExistingObjectsToLayers();
+
+        // Reinitialize enemy AI
+        if (m_playModePlayer) {
+            for (auto& obj : m_currentScene->objects()) {
+                if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+                    obj->addComponent<Gameplay::Chase>(*obj, m_playModePlayer, 150.0f, 300.0f);
+                }
+            }
+        }
+
+        std::cout << "[LevelEditor] Scene reset complete\n";
+    }
+
+
 
 // ============================================================================
 // Wall Auto-Tiling

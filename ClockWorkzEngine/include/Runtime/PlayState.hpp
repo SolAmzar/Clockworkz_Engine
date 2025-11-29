@@ -101,6 +101,8 @@ namespace Runtime {
 
 		void initializeEnemyAI(Runtime::Scene* scene);
 
+		bool m_playerRespawning{ false };
+
 	};
 
 } // namespace Runtime
