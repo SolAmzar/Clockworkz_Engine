@@ -52,6 +52,7 @@ namespace Runtime {
 
         int m_selected{ 0 };
         bool m_debug{ false };
+        Audio::AudioManager& m_audio;
     };
 
 } // namespace Runtime

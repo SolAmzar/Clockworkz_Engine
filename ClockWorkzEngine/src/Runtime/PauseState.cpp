@@ -37,7 +37,8 @@ namespace Runtime {
     PauseState::PauseState(GameStateManager& gsm, Platform::InputManager& input)
         : m_gsm(gsm),
         m_input(input),
-        m_background(GameObjectType::Unknown, "PauseBG", GameObjectShape::Rectangle)
+        m_background(GameObjectType::Unknown, "PauseBG", GameObjectShape::Rectangle),
+		m_audio(Core::Engine::Get().audio())
     {
     }
 
@@ -53,6 +54,10 @@ namespace Runtime {
         m_background.addComponent<SpriteRendererComponent>("pause_bg_texture");
         m_background.setSize({ 1.f, 1.f });                    // Proper dimensions
         m_background.transform().scale = { 1920.0f, 1080.0f }; // Keep scale neutral
+        
+        if (m_audio.isPlaying("level_bgm"))
+            m_audio.setGroupPaused(Audio::Group::BGM, true);
+
         std::cout << "[PauseState] Ready\n";
     }
 
@@ -138,7 +143,7 @@ namespace Runtime {
         if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
         {
             // Optional: Add sound effect here
-            // m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+            m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
             select();
         }
 

@@ -80,6 +80,9 @@ namespace Audio {
         FMOD::System* getSystem() const { return m_system; }
         static AudioManager& get();
 
+        int  findChannel(const std::string& id);
+        bool isPlaying(const std::string& id);
+
     private:
         struct ChannelHandle { 
             FMOD::Channel* ch = nullptr;  
