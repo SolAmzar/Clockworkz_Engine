@@ -256,6 +256,14 @@ namespace Runtime
 					}*/
 				}
 
+				for (auto& obj : scene->objects()) {
+					if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+						m_player = obj.get();
+						m_spawnPoint = m_player->transform().position;  // Save starting position
+						break;
+					}
+				}
+
 				initializeEnemyAI(scene);
 
 				std::cout.flush();
@@ -722,17 +730,18 @@ namespace Runtime
 			}
 		}
 
+		// Handle player-enemy collision with LARGER hurtbox
 		if (m_player && m_player->active()) {
 			auto* scene = m_scenes.current();
 			for (auto& obj : scene->objects()) {
 				if (!obj || !obj->active()) continue;
 
 				if (obj->type() == Gameplay::GameObjectType::Enemy) {
-					// Simple AABB collision check
 					vec2 playerPos = m_player->transform().position;
 					vec2 enemyPos = obj->transform().position;
-					vec2 playerHalf = m_player->size() * 0.5f;
-					vec2 enemyHalf = obj->size() * 0.5f;
+
+					vec2 playerHalf = m_player->size() * 0.5f * 2.0f;
+					vec2 enemyHalf = obj->size() * 0.5f * 2.0f;
 
 					// Check if bounding boxes overlap
 					if (abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
@@ -742,21 +751,15 @@ namespace Runtime
 
 						// Kill the player
 						m_player->setActive(false);
-
-						// Optional: Reset scene after a delay or show game over
-						// resetScene();
 						break;
 					}
 				}
 			}
-			if (!m_player->active())
-			{
-				m_player->setActive(true);
-				{
-					//TODO change to spawn location and reset scene
-					m_player->setPosition(0);
-				}
-			}
+		}
+
+		if (m_player && !m_player->active()) {
+			m_player->respawnAt(m_spawnPoint, true, true);
+			std::cout << "Player respawned!\n";
 		}
 
 		//m_scenes.update(dt);

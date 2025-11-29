@@ -1626,8 +1626,13 @@ void LevelEditor::updateGizmoScale() {
         m_sceneFramebuffer.unbind();
             //std::cout << "Framebuffer render complete\n";
 
-        glViewport(0, 0, static_cast<int>(m_windowWidth),
-            static_cast<int>(m_windowHeight));
+        if (m_windowManager) {
+            glViewport(0, 0, m_windowManager->width(), m_windowManager->height());
+        }
+        else {
+            glViewport(0, 0, static_cast<int>(m_windowWidth),
+                static_cast<int>(m_windowHeight));
+        }
     }
 
 
