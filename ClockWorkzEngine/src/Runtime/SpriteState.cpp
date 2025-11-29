@@ -131,6 +131,15 @@ namespace Runtime
 			idleClip.frames.push_back({ uv, 0.1 });
 		}
 
+		Gameplay::AnimationClip& idleTorchClip = animatorComponent->createClip("idle_torch", true);
+		for (int i = 53; i < 57; ++i)  // Adjust frame indices based on your spritesheet
+		{
+			int row = i / 8;
+			int col = i % 8;
+			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+			idleTorchClip.frames.push_back({ uv, 0.1 });
+		}
+
 		Gameplay::AnimationClip& runClip = animatorComponent->createClip("run", true);
 		for (int i = 25; i < 31; ++i)
 		{

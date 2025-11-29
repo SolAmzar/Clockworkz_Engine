@@ -173,6 +173,7 @@ namespace Runtime
 		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
 		s.rate = 120.f;
 
+
 		// Initialize level editor
 		Core::Engine& engine = Core::Engine::Get();
 
@@ -197,6 +198,8 @@ namespace Runtime
 		else {
 			std::cerr << "[PlayState] Failed to initialize level editor\n";
 		}
+
+
 
 		currentBattery = 100.0f;
 		maxBattery = 100.0f;
@@ -239,11 +242,57 @@ namespace Runtime
 					if (u->type() == Gameplay::GameObjectType::Player)
 					{
 						m_player = &(*u);
-						Gameplay::SpriteRendererComponent *playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
+
+						
+						//// Add animator component if it doesn't exist
+						//auto* animator = u->getComponent<Gameplay::SpriteAnimatorComponent>();
+						//if (!animator) {
+						//	animator = u->addComponent<Gameplay::SpriteAnimatorComponent>();
+
+						//	// Set up animations
+						//	const float frameW = 1.0f / 8.0f; // 0.125
+						//	const float frameH = 1.0f / 8.0f; // 0.125
+
+						//	// IDLE - 
+						//	auto& idleClip = animator->createClip("idle", true);
+						//	for (int i = 0; i < 1; ++i) {  
+						//		int row = i / 8;
+						//		int col = i % 8;
+						//		glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+						//		idleClip.frames.push_back({ uv, 0.15f });
+						//	}
+
+						//	// WALK - frames 48-55 (8 frames, row 6)  
+						//	auto& walkClip = animator->createClip("walk", true);
+						//	for (int i = 5; i < 8; ++i) {  // Changed from 37-45 to 48-56
+						//		int row = i / 8;
+						//		int col = i % 8;
+						//		glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+						//		walkClip.frames.push_back({ uv, 0.1f });
+						//	}
+
+						//	// RUN - frames 32-39 (8 frames, row 4)
+						//	auto& runClip = animator->createClip("run", true);
+						//	for (int i = 25; i < 31; ++i) {  // Changed from 25-31 to 32-40
+						//		int row = i / 8;
+						//		int col = i % 8;
+						//		glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+						//		runClip.frames.push_back({ uv, 0.08f });
+						//	}
+
+						//	// Link to sprite renderer
+						//	if (auto* sr = u->getComponent<Gameplay::SpriteRendererComponent>()) {
+						//		animator->setSpriteRenderer(sr);
+						//	}
+
+						//	// Start with idle
+						//	animator->play("idle");
+						//}
+
+						Gameplay::SpriteRendererComponent* playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
 						if (playerSprite2)
 						{
-
-							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+							playerSprite2->setUV(glm::vec4{ 0, 0.875, 0.125, 0.125 });
 						}
 					}
 
@@ -627,6 +676,7 @@ namespace Runtime
 
 						playerSpriteComp->play(animState);
 					}
+
 				}
 
 				//if (obj->type() == Gameplay::GameObjectType::Ball)
@@ -730,7 +780,6 @@ namespace Runtime
 			}
 		}
 
-		// Handle player-enemy collision with LARGER hurtbox
 		if (m_player && m_player->active()) {
 			auto* scene = m_scenes.current();
 			for (auto& obj : scene->objects()) {
@@ -760,9 +809,10 @@ namespace Runtime
 		if (m_player && !m_player->active()) {
 			m_player->respawnAt(m_spawnPoint, true, true);
 			std::cout << "Player respawned!\n";
+			resetScene();
 		}
 
-		//m_scenes.update(dt);
+		m_scenes.update(dt);
 		updateLightExposure(dt);
 		updateBatteryDisplay();
 	}

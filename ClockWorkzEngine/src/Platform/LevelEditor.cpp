@@ -312,7 +312,8 @@ namespace Platform {
         m_currentScene->registerExistingObjectsToLayers();
     }
 
-    void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene) {
+    void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene)
+    {
         if (!playStateScene || !m_currentScene || !m_loadedFromPlayState) return;
 
         auto& playStateObjs = playStateScene->objects();
@@ -322,35 +323,33 @@ namespace Platform {
         std::cout << "  Editor has " << editorObjs.size() << " objects\n";
         std::cout << "  PlayState has " << playStateObjs.size() << " objects\n";
 
-        // Step 1: Update existing objects in-place (no deletion!)
-        int updatedCount = 0;
-        for (auto& editorObj : editorObjs) {
-            if (!editorObj) continue;
+        // Step 1 & 2: Sync by INDEX (not by name)
+        int minSize = std::min(editorObjs.size(), playStateObjs.size());
 
-            // Find corresponding object in PlayState by name
-            bool found = false;
-            for (auto& playObj : playStateObjs) {
-                if (playObj && playObj->name() == editorObj->name()) {
-                    // Update properties IN-PLACE (object stays at same memory address)
-                    playObj->transform().position = editorObj->transform().position;
-                    playObj->transform().rotationRad = editorObj->transform().rotationRad;
-                    playObj->transform().scale = editorObj->transform().scale;
-                    playObj->setSize(editorObj->size());
-                    playObj->setLayer(editorObj->layer());
-                    playObj->setActive(editorObj->active());
-                    playObj->setTextureId(editorObj->textureId());
+        for (int i = 0; i < minSize; i++) {
+            auto& editorObj = editorObjs[i];
+            auto& playObj = playStateObjs[i];
 
-                    found = true;
-                    updatedCount++;
-                    break;
-                }
-            }
+            if (!editorObj || !playObj) continue;
 
-            // Step 2: If object is new (doesn't exist in PlayState), add it
-            if (!found) {
+            // Update in-place (same memory address)
+            playObj->transform().position = editorObj->transform().position;
+            playObj->transform().rotationRad = editorObj->transform().rotationRad;
+            playObj->transform().scale = editorObj->transform().scale;
+            playObj->setSize(editorObj->size());
+            playObj->setLayer(editorObj->layer());
+            playObj->setActive(editorObj->active());
+            playObj->setTextureId(editorObj->textureId());
+        }
+
+        // Step 3: If editor has MORE objects, add them
+        if (editorObjs.size() > playStateObjs.size()) {
+            for (int i = minSize; i < editorObjs.size(); i++) {
+                auto& editorObj = editorObjs[i];
+                if (!editorObj) continue;
+
                 auto newObj = std::make_unique<Gameplay::GameObject>(
-                    editorObj->type(), editorObj->name()
-                );
+                    editorObj->type(), editorObj->name());
                 newObj->transform().position = editorObj->transform().position;
                 newObj->transform().rotationRad = editorObj->transform().rotationRad;
                 newObj->transform().scale = editorObj->transform().scale;
@@ -363,37 +362,19 @@ namespace Platform {
             }
         }
 
-        // Step 3: Remove objects that were deleted in editor
-        int removedCount = 0;
-        playStateObjs.erase(
-            std::remove_if(playStateObjs.begin(), playStateObjs.end(),
-                [&](const std::unique_ptr<Gameplay::GameObject>& playObj) {
-                    if (!playObj) return true;
-
-                    // Check if this object still exists in editor
-                    bool existsInEditor = false;
-                    for (auto& editorObj : editorObjs) {
-                        if (editorObj && editorObj->name() == playObj->name()) {
-                            existsInEditor = true;
-                            break;
-                        }
-                    }
-
-                    if (!existsInEditor) {
-                        std::cout << "  - Removing object: " << playObj->name() << "\n";
-                        removedCount++;
-                        return true;  // Remove it
-                    }
-                    return false;  // Keep it
-                }),
-            playStateObjs.end()
-        );
+        // Step 4: If PlayState has MORE objects, remove them
+        if (playStateObjs.size() > editorObjs.size()) {
+            int removeCount = playStateObjs.size() - editorObjs.size();
+            for (int i = 0; i < removeCount; i++) {
+                std::cout << "  - Removing extra object\n";
+                playStateObjs.pop_back();
+            }
+        }
 
         std::cout << "[LevelEditor] ✓ Sync complete:\n";
-        std::cout << "  Updated: " << updatedCount << " objects\n";
-        std::cout << "  Removed: " << removedCount << " objects\n";
         std::cout << "  Final count: " << playStateObjs.size() << " objects\n";
     }
+
 
     void LevelEditor::updatePlayMode(double dt) {
         if (!m_currentScene) {
@@ -871,7 +852,8 @@ void LevelEditor::renderGizmoScale() {
 void LevelEditor::updateGizmoTranslate() {
     if (!m_selectedObject) return;
 
-    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 mouseScreen = m_input->mousePosition();
+    vec2 mouseWorld = screenToWorld(mouseScreen);
 
     if (!m_isGizmoActive) {
         m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
@@ -939,7 +921,8 @@ void LevelEditor::updateGizmoTranslate() {
 void LevelEditor::updateGizmoRotate() {
     if (!m_selectedObject) return;
 
-    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 mouseScreen = m_input->mousePosition();
+    vec2 mouseWorld = screenToWorld(mouseScreen);
     vec2 center = getGizmoCenterPosition();
     float scaledSize = getGizmoScaledSize();
 
@@ -1013,10 +996,12 @@ void LevelEditor::updateGizmoRotate() {
 }
 
 // Modify updateGizmoScale():
-void LevelEditor::updateGizmoScale() {
+void LevelEditor::updateGizmoScale()
+{
     if (!m_selectedObject) return;
 
-    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 mouseScreen = m_input->mousePosition();
+    vec2 mouseWorld = screenToWorld(mouseScreen);
     vec2 center = getGizmoCenterPosition();
     float scaledSize = getGizmoScaledSize();
 
@@ -1030,8 +1015,6 @@ void LevelEditor::updateGizmoScale() {
             m_gizmoActiveAxis = m_gizmoHoveredAxis;
             m_gizmoDragStartWorld = mouseWorld;
             m_gizmoInitialScale = m_selectedObject->transform().scale;
-
-            // RECORD START SCALE FOR UNDO
             m_transformStartScale = m_selectedObject->transform().scale;
             m_isTransforming = true;
         }
@@ -1040,8 +1023,7 @@ void LevelEditor::updateGizmoScale() {
     if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
         vec2 dragDelta = vec2(
             mouseWorld.x - m_gizmoDragStartWorld.x,
-            mouseWorld.y - m_gizmoDragStartWorld.y
-        );
+            mouseWorld.y - m_gizmoDragStartWorld.y);
 
         vec2 newScale = m_gizmoInitialScale;
 
@@ -1061,18 +1043,18 @@ void LevelEditor::updateGizmoScale() {
         case GizmoAxis::Both: {
             float initialDist = std::sqrt(
                 (m_gizmoDragStartWorld.x - center.x) * (m_gizmoDragStartWorld.x - center.x) +
-                (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y)
-            );
+                (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y));
+
             float currentDist = std::sqrt(
                 (mouseWorld.x - center.x) * (mouseWorld.x - center.x) +
-                (mouseWorld.y - center.y) * (mouseWorld.y - center.y)
-            );
+                (mouseWorld.y - center.y) * (mouseWorld.y - center.y));
+
             float scaleFactor = currentDist / std::max(0.001f, initialDist);
 
             newScale = vec2(
                 m_gizmoInitialScale.x * scaleFactor,
-                m_gizmoInitialScale.y * scaleFactor
-            );
+                m_gizmoInitialScale.y * scaleFactor);
+
             newScale.x = std::max(0.1f, newScale.x);
             newScale.y = std::max(0.1f, newScale.y);
             break;
@@ -1091,11 +1073,9 @@ void LevelEditor::updateGizmoScale() {
     }
 
     if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-        // RECORD COMMAND WHEN RELEASING MOUSE
         if (m_isGizmoActive && m_isTransforming) {
             vec2 finalScale = m_selectedObject->transform().scale;
 
-            // Only record if scale actually changed
             if (std::abs(m_transformStartScale.x - finalScale.x) > 0.001f ||
                 std::abs(m_transformStartScale.y - finalScale.y) > 0.001f) {
                 recordScaleCommand(m_selectedObject, m_transformStartScale, finalScale);
@@ -1108,6 +1088,7 @@ void LevelEditor::updateGizmoScale() {
         m_gizmoActiveAxis = GizmoAxis::None;
     }
 }
+
 
 // ============================================================================
 // GIZMO render Implementation
@@ -3567,6 +3548,13 @@ void LevelEditor::updateGizmoScale() {
         if (isMouseOverUI()) return;
 
         vec2 mouseScreen = m_input->mousePosition();
+        vec2 localPos = mouseScreen - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
+
+        if (localPos.x < 0 || localPos.y < 0 ||
+            localPos.x > m_sceneViewportSize.x || localPos.y > m_sceneViewportSize.y) {
+            return;
+        }
+
         vec2 mouseWorld = screenToWorld(mouseScreen);
 
         if (m_selectedObject && isMouseOverGizmo(mouseWorld)) {
@@ -3634,6 +3622,9 @@ void LevelEditor::updateGizmoScale() {
     void LevelEditor::handlePlayerInput(Gameplay::GameObject* player, double dt) {
         if (!player || !m_input) return;
 
+        vec2 mouseScreen = m_input->mousePosition();
+        vec2 mouseWorld = screenToWorld(mouseScreen);
+
         float moveSpeed = player->moveSpeed();
         float maxSpeed = moveSpeed;
         float maxRunSpeed = maxSpeed * 2.0f;
@@ -3668,7 +3659,6 @@ void LevelEditor::updateGizmoScale() {
         }
 
         // Mouse look
-        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
         vec2 dir = vec2(mouseWorld.x - player->transform().position.x,
             mouseWorld.y - player->transform().position.y);
         float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
@@ -3686,6 +3676,12 @@ void LevelEditor::updateGizmoScale() {
         }
 
         vec2 mouseScreen = m_input->mousePosition();
+        vec2 localPos = mouseScreen - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
+
+        if (localPos.x < 0 || localPos.y < 0 ||
+            localPos.x > m_sceneViewportSize.x || localPos.y > m_sceneViewportSize.y) {
+            return;
+        }
         vec2 mouseWorld = screenToWorld(mouseScreen);
 
         // Apply grid snapping - this snaps to the grid corner
@@ -3827,27 +3823,24 @@ void LevelEditor::updateGizmoScale() {
 
 
 
-    vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+    vec2 LevelEditor::screenToWorld(vec2 screenPos) const
+    {
         // 1. Get the mouse position relative to the Top-Left of the Scene View panel
-            //    (Subtracts the position of the ImGui window itself)
         vec2 localPos = screenPos - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
 
-        // 2. Convert to coordinates relative to the CENTER of the viewport.
-        //    (0,0) is now the center of the screen. 
-        //    +X is Right, +Y is Down (because screen coordinates increase downwards)
-        vec2 centered = localPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        // 2. Convert to coordinates relative to the CENTER of the scene viewport
+        // ← Use m_sceneViewportSize, NOT m_windowWidth/m_windowHeight
+        vec2 centered = localPos - vec2(m_sceneViewportSize.x * 0.5f, m_sceneViewportSize.y * 0.5f);
 
         // 3. Scale by Camera Zoom to get World Units
         vec2 worldRel = centered / m_editorCamera.zoom();
 
-        // 4. FIX THE FLIP: Convert Screen Y (Down) to World Y (Up)
-        //    In your worldToScreen, you do: relative.y = -relative.y
-        //    So we must do the exact same negation here to reverse it.
+        // 4. Flip Y: Screen Y increases downward, World Y increases upward
         worldRel.y = -worldRel.y;
 
         // 5. Add the Camera Position to get the final World Coordinate
-        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-        return worldRel + m_editorCameraPos;
+        vec2 meditorCameraPos = compat::to_vec2(m_editorCamera.position());
+        return worldRel + meditorCameraPos;
     }
 
 
