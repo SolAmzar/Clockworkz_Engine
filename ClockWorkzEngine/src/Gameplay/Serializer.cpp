@@ -11,6 +11,7 @@
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/AudioSource.hpp>
+#include <Gameplay/Components/Fragment.hpp>
 
 
 
@@ -19,6 +20,26 @@ namespace Gameplay {
     // ========================================================================
     // COMPONENT SERIALIZATION
     // ========================================================================
+
+    json GameObjectSerializer::serializeFragment(const GameObject& obj) {
+        auto* fragment = obj.getComponent<FragmentComponent>();
+        if (!fragment) return json();
+
+        json j;
+        j["fragmentId"] = fragment->fragmentId();
+        j["value"] = fragment->value();
+        return j;
+    }
+
+    json GameObjectSerializer::serializeFragmentCollector(const GameObject& obj) {
+        auto* collector = obj.getComponent<FragmentCollectorComponent>();
+        if (!collector) return json();
+
+        json j;
+        j["requiredFragments"] = collector->requiredFragments();
+        j["collectedCount"] = collector->collectedCount();
+        return j;
+    }
 
     json GameObjectSerializer::serializeTransform(const GameObject& obj) {
         json j;
@@ -132,6 +153,24 @@ namespace Gameplay {
     // ========================================================================
     // COMPONENT DESERIALIZATION
     // ========================================================================
+
+    void GameObjectSerializer::deserializeFragment(GameObject& obj, const json& j) {
+        std::string fragmentId = j.value("fragmentId", "fragment");
+        int value = j.value("value", 1);
+
+        obj.addComponent<FragmentComponent>(fragmentId, value);
+    }
+
+    // Deserialize FragmentCollectorComponent
+    void GameObjectSerializer::deserializeFragmentCollector(GameObject& obj, const json& j) {
+        int requiredFragments = j.value("requiredFragments", 3);
+        int collectedCount = j.value("collectedCount", 0);
+        float pickupRadius = j.value("pickupRadius", 80.0f);  // Load pickup radius!
+
+        auto* collector = obj.addComponent<FragmentCollectorComponent>(requiredFragments);
+        collector->setCollectedCount(collectedCount);
+        collector->setPickupRadius(pickupRadius);
+    }
 
     void GameObjectSerializer::deserializeTransform(GameObject& obj, const json& j) {
         if (j.contains("position")) {
@@ -345,7 +384,14 @@ namespace Gameplay {
         if (obj.getComponent<AudioSourceComponent>()) {
             components["audio"] = serializeAudioSource(obj);
         }
-            
+         
+        if (auto* fragment = obj.getComponent<FragmentComponent>()) {
+            j["components"]["fragment"] = serializeFragment(obj);
+        }
+
+        if (auto* collector = obj.getComponent<FragmentCollectorComponent>()) {
+            j["components"]["fragmentCollector"] = serializeFragmentCollector(obj);
+        }
 
         j["components"] = components;
 
@@ -498,6 +544,14 @@ namespace Gameplay {
             }
             if (comps.contains("audio"))
                 deserializeAudioSource(*obj, comps["audio"]);
+
+            if (comps.contains("fragment")) {
+                deserializeFragment(*obj, comps["fragment"]);
+            }
+
+            if (comps.contains("fragmentCollector")) {
+                deserializeFragmentCollector(*obj, comps["fragmentCollector"]);
+            }
         }
 
 

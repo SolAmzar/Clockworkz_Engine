@@ -63,6 +63,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <string>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Assets/TextureManager.hpp>
+#include "Gameplay/Components/Fragment.hpp"
+
 
 using namespace Graphics;
 using namespace Assets;
@@ -138,6 +140,8 @@ namespace Runtime
 			return "Trap";
 		case T::Ball:
 			return "Ball";
+		case T::Fragment: 
+			return "Fragment";
 		default:
 			return "Unknown";
 		}
@@ -220,6 +224,23 @@ namespace Runtime
 				"light",
 				"assets/shaders/light.vert",
 				"assets/shaders/light.frag");
+
+		auto textShader = Assets::ResourceManager<Graphics::Shader>::Load(
+			"text",
+			"assets/shaders/text.vert",
+			"assets/shaders/text.frag");
+
+		Assets::ResourceManager<Assets::FontManager>::Load(
+			"FragmentUI", "assets/fonts/MANIC1.TTF", 32);
+
+		// Initialize fragment system
+		m_showFragmentNotification = false;
+		m_fragmentNotificationTimer = 0.0f;
+		m_lastCollectedFragmentId = "";
+		m_fragmentIconTexture = "fragment_texture";
+
+		std::cout << "[PlayState] Fragment system initialized\n";
+
 		if (m_scenes.loadScene(m_initialSceneId))
 		{
 			m_loaded = true;
@@ -273,6 +294,12 @@ namespace Runtime
 			std::cout << "[PlayState] Returning to menu...\n";
 			m_shouldReturnToMenu = true; // Returns to menu
 		}
+
+		m_showFragmentNotification = false;
+		m_fragmentNotificationTimer = 0.0f;
+		m_lastCollectedFragmentId = "";
+
+		std::cout << "[PlayState] Fragment system initialized\n";
 	}
 
 	void PlayState::onExit()
@@ -718,7 +745,7 @@ namespace Runtime
 				return;
 			}
 		}
-
+		updateFragmentCollection(dt);
 		//m_scenes.update(dt);
 		updateLightExposure(dt);
 		updateBatteryDisplay();
@@ -807,11 +834,11 @@ namespace Runtime
 			lightPolyGLM.emplace_back(point.x, point.y);
 		}
 
-		if (lightPolyGLM.size() > 0) {
-			for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
-				std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
-			}
-		}
+		//if (lightPolyGLM.size() > 0) {
+		//	for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
+		//		std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
+		//	}
+		//}
 		// ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;
@@ -1021,7 +1048,7 @@ namespace Runtime
 				m_renderer->endScenePass();
 			}
 		}
-
+		renderFragmentUI();
 		(void)timer;
 	}
 
@@ -1402,6 +1429,175 @@ namespace Runtime
 
 	//	// dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
 	//}
+
+	void PlayState::updateFragmentCollection(double dt) {
+		auto* scene = m_scenes.current();
+		if (!scene) { return; }
+
+		// Find player
+		Gameplay::GameObject* player = nullptr;
+		for (auto& obj : scene->objects()) {
+			if (obj && obj->type() == Gameplay::GameObjectType::Player && obj->active()) {
+				player = obj.get();
+				break;
+			}
+		}
+
+		if (!player) { return; }
+
+		// Get player's fragment collector component
+		auto* collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
+		if (!collector) {
+			return;
+		}
+
+		// Get pickup radius from collector (JSON-configurable!)
+		float pickupRadius = collector->pickupRadius();
+		float pickupRadiusSquared = pickupRadius * pickupRadius;
+
+		vec2 playerPos = player->transform().position;
+
+		// Check for fragment collisions
+		for (auto& obj : scene->objects()) {
+			if (!obj || !obj->active()) { continue; }
+
+			// Check if this is a Fragment GameObject
+			if (obj->type() != Gameplay::GameObjectType::Fragment) { continue; }
+
+			// Check if already collected
+			auto* fragmentComp = obj->getComponent<Gameplay::FragmentComponent>();
+			if (fragmentComp && fragmentComp->isCollected()) { continue; }
+
+			// Calculate distance
+			vec2 fragmentPos = obj->transform().position;
+			float dx = playerPos.x - fragmentPos.x;
+			float dy = playerPos.y - fragmentPos.y;
+			float distSquared = dx * dx + dy * dy;
+
+			// Check if within pickup radius
+			if (distSquared <= pickupRadiusSquared) {
+				handleFragmentPickup(player, obj.get());
+			}
+		}
+
+		// Update notification timer
+		if (m_showFragmentNotification) {
+			m_fragmentNotificationTimer -= static_cast<float>(dt);
+			if (m_fragmentNotificationTimer <= 0.0f) {
+				m_showFragmentNotification = false;
+			}
+		}
+	}
+
+	void PlayState::handleFragmentPickup(Gameplay::GameObject* player, Gameplay::GameObject* fragment) {
+
+		if (fragment->type() != Gameplay::GameObjectType::Fragment) {
+			return;
+		}
+
+		auto* collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
+		if (!collector) { return; }
+
+		// Get optional fragment component for metadata
+		auto* fragmentComp = fragment->getComponent<Gameplay::FragmentComponent>();
+
+		// Check if already collected
+		if (fragmentComp && fragmentComp->isCollected()) { return; }
+
+		// Get fragment value (default 1 if no component)
+		int value = fragmentComp ? fragmentComp->value() : 1;
+
+		// Get fragment ID for notification
+		std::string fragmentId = fragmentComp ? fragmentComp->fragmentId() : fragment->name();
+
+		// Mark as collected
+		if (fragmentComp) {
+			fragmentComp->markCollected();
+		}
+
+		// Update collector
+		collector->collectFragment(value);
+
+		// Deactivate the fragment
+		fragment->setActive(false);
+
+		// Show notification (3 seconds)
+		m_showFragmentNotification = true;
+		m_fragmentNotificationTimer = 3.0f;
+		m_lastCollectedFragmentId = fragmentId;
+
+		// Optional: Play sound
+		// auto& audio = Core::Engine::Get().audio();
+		// audio.playSound("fragment_collect");
+
+		// Check completion
+		if (collector->canEscape()) {
+			// Optional: Trigger escape door, next level, etc.
+		}
+	}
+
+	void PlayState::renderFragmentUI() {
+
+		auto* scene = m_scenes.current();
+		if (!scene) {
+			std::cout << "[FRAGMENT UI] No scene!\n";
+			return;
+		}
+
+		// Find player
+		Gameplay::GameObject* player = nullptr;
+		for (auto& obj : scene->objects()) {
+			if (obj && obj->type() == Gameplay::GameObjectType::Player && obj->active()) {
+				player = obj.get();
+				break;
+			}
+		}
+
+		if (!player) {
+			std::cout << "[FRAGMENT UI] No player found!\n";
+			return;
+		}
+
+		auto* collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
+		if (!collector) {
+			std::cout << "[FRAGMENT UI] !!! PLAYER HAS NO FragmentCollectorComponent !!!\n";
+			return;
+		}
+
+		Core::Engine& engine = Core::Engine::Get();
+		int windowWidth = engine.window().width();
+		int windowHeight = engine.window().height();
+		glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+		glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);
+
+		m_renderer->beginFontPass(uiProjection);
+
+		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+		auto font = Assets::ResourceManager<Assets::FontManager>::Get("Debug");
+
+		if (!shader) {
+			std::cout << "[FRAGMENT UI] Text shader not found!\n";
+		}
+		if (!font) {
+			std::cout << "[FRAGMENT UI] Debug font not found!\n";
+		}
+
+		if (font && shader) {
+
+			std::string text = std::to_string(collector->collectedCount()) +
+				" / " +
+				std::to_string(collector->requiredFragments());
+
+			font->RenderText("FRAGMENT TEST", 20.0f, screenSize.y - 80.0f, 1.0f,
+				glm::vec3(1.0f, 1.0f, 0.0f), *shader);
+
+			font->RenderText(text, 20.0f, screenSize.y - 120.0f, 1.0f,
+				glm::vec3(1.0f, 1.0f, 1.0f), *shader);
+		}
+
+		m_renderer->endFontPass();
+
+	}
 
 	void PlayState::resetScene()
 	{

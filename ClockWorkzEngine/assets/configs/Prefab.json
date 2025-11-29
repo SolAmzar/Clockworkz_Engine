@@ -33,6 +33,11 @@
         },
         "spriteAnimator": {
           "filename": "player.json"
+        },
+        "fragmentCollector": {
+          "requiredFragments": 3,
+          "collectedCount": 0,
+          "pickupRadius": 80.0
         }
       }
     },
@@ -67,7 +72,6 @@
         "spriteRenderer": {
           "textureId": "monster_texture"
         },
-
         "spriteAnimator": {
           "filename": "enemy.json"
         },
@@ -81,6 +85,41 @@
             "y": 300
           },
           "speed": 120.0
+        }
+      }
+    },
+    {
+      "prefabName": "Fragment",
+      "components": {
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 50.0,
+            "y": 50.0
+          }
+        },
+        "collider": {
+          "type": "Circle",
+          "radius": 0.5,
+          "width": 1.0,
+          "height": 1.0,
+          "isSolid": false,
+          "layer": 3,
+          "collisionMask": 0,
+          "collisionCategory": 0,
+          "blocksLight": false,
+          "isHazard": false
+        },
+        "fragment": {
+          "fragmentId": "fragment",
+          "value": 1
+        },
+        "spriteRenderer": {
+          "textureId": "fragment_texture"
         }
       }
     },
@@ -438,16 +477,16 @@
           "type": "AABB",
           "width": 1.0,
           "height": 1.0,
-          "isSolid": false, 
-          "layer": 4, 
-          "collisionMask": 0, 
+          "isSolid": false,
+          "layer": 4,
+          "collisionMask": 0,
           "blocksLight": false,
           "isHazard": false,
           "collisionCategory": 0
         },
         "spriteRenderer": {
           "textureId": "floor_texture",
-          "uv": [ 0.0, 0.0, 1.0, 1.0 ] 
+          "uv": [ 0.0, 0.0, 1.0, 1.0 ]
         }
       }
     },

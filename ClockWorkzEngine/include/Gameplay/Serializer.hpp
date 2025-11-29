@@ -60,6 +60,9 @@ namespace Gameplay {
         static json serializeSpriteRenderer(const GameObject& obj);
         static json serializeSpriteAnimator(const GameObject& obj);
 
+        static json serializeFragment(const GameObject& obj);
+        static json serializeFragmentCollector(const GameObject& obj);
+
         // Component deserialization helpers
         static void deserializeTransform(GameObject& obj, const json& j);
         static void deserializeCollider(GameObject& obj, const json& j);
@@ -68,6 +71,9 @@ namespace Gameplay {
         static void deserializePatrol(GameObject& obj, const json& j);
         static void deserializeSpriteRenderer(GameObject& obj, const json& j);
         static void deserializeSpriteAnimator(GameObject& obj, const std::string& j);
+
+        static void deserializeFragment(GameObject& obj, const json& j);
+        static void deserializeFragmentCollector(GameObject& obj, const json& j);
 		// Audio Source component serialization/deserialization
         static json serializeAudioSource(const GameObject& obj);
         static void deserializeAudioSource(GameObject& obj, const json& j);

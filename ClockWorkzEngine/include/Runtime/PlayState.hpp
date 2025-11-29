@@ -103,6 +103,17 @@ namespace Runtime {
 		bool m_playerDead;
 		float m_deathTimer;
 		const float m_deathDelay = 2.0f;
+
+		// Fragment system
+		void updateFragmentCollection(double dt);
+		void renderFragmentUI();
+		void handleFragmentPickup(Gameplay::GameObject* player, Gameplay::GameObject* fragment);
+		std::string m_fragmentIconTexture = "fragment_texture";
+
+		//Fragment tracking
+		bool m_showFragmentNotification = false;
+		float m_fragmentNotificationTimer = 0.0f;
+		std::string m_lastCollectedFragmentId;
 	};
 
 } // namespace Runtime

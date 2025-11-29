@@ -66,6 +66,8 @@ namespace Gameplay
 			return GameObjectType::Ball;
 		if (name == "Box")
 			return GameObjectType::Box;
+        if (name == "Fragment")
+            return GameObjectType::Fragment;
         return GameObjectType::Unknown;
     }
 
