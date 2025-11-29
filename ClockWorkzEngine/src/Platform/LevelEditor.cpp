@@ -32,7 +32,6 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Assets/SoundManager.hpp"
 #include "Core/json.hpp"
 #include "Gameplay/Components/AudioSource.hpp"
-#include "Assets/SoundManager.hpp"
 
 #include <IMGUI/imgui.h>
 #include <algorithm>
@@ -265,10 +264,10 @@ namespace Platform {
 
         auto* physics = m_currentScene->getPhysics();
         if (!physics) {
-            std::cerr << "  ✗ No physics system - collisions won't work!\n";
+            std::cerr << "  No physics system - collisions won't work!\n";
         }
         else {
-            std::cout << "  ✓ Physics ready\n";
+            std::cout << "  Physics ready\n";
         }
 
         // Find player
@@ -324,7 +323,7 @@ namespace Platform {
         std::cout << "  PlayState has " << playStateObjs.size() << " objects\n";
 
         // Step 1 & 2: Sync by INDEX (not by name)
-        int minSize = std::min(editorObjs.size(), playStateObjs.size());
+        int minSize = static_cast<int>(std::min(editorObjs.size(), playStateObjs.size()));
 
         for (int i = 0; i < minSize; i++) {
             auto& editorObj = editorObjs[i];
@@ -364,14 +363,14 @@ namespace Platform {
 
         // Step 4: If PlayState has MORE objects, remove them
         if (playStateObjs.size() > editorObjs.size()) {
-            int removeCount = playStateObjs.size() - editorObjs.size();
+            int removeCount = static_cast<int>(playStateObjs.size() - editorObjs.size());
             for (int i = 0; i < removeCount; i++) {
                 std::cout << "  - Removing extra object\n";
                 playStateObjs.pop_back();
             }
         }
 
-        std::cout << "[LevelEditor] ✓ Sync complete:\n";
+        std::cout << "[LevelEditor] Sync complete:\n";
         std::cout << "  Final count: " << playStateObjs.size() << " objects\n";
     }
 
@@ -501,14 +500,14 @@ namespace Platform {
 
         // Update battery
         if (m_flashlightOn) {
-            m_playerBattery -= 10.0f * dt;
+            m_playerBattery -= 10.0f * static_cast<float>(dt);
             if (m_playerBattery <= 0.0f) {
                 m_playerBattery = 0.0f;
                 m_flashlightOn = false;
             }
         }
         else {
-            m_playerBattery += 5.0f * dt;
+            m_playerBattery += 5.0f * static_cast<float>(dt);
             m_playerBattery = std::min(100.0f, m_playerBattery);
         }
 
@@ -758,7 +757,7 @@ void LevelEditor::resetScene()
         }
 
         // Pop command from undo stack
-        auto cmd = std::move(m_undoStack.back());
+        auto&& cmd = std::move(m_undoStack.back());  // ✅ Changed: auto → auto&&
         m_undoStack.pop_back();
 
         // Undo it
@@ -780,7 +779,7 @@ void LevelEditor::resetScene()
         }
 
         // Pop command from redo stack
-        auto cmd = std::move(m_redoStack.back());
+        auto&& cmd = std::move(m_redoStack.back());  // ✅ Changed: auto → auto&&
         m_redoStack.pop_back();
 
         // Execute it again
@@ -794,6 +793,7 @@ void LevelEditor::resetScene()
 
         std::cout << "Redo successful" << std::endl;
     }
+
 
     void LevelEditor::clearRedoStack() {
         m_redoStack.clear();
@@ -1248,7 +1248,7 @@ void LevelEditor::updateGizmoScale()
     // Save Dialog Implementation
     // ============================================================================
 
-    int promptSaveDiscardCancel() {
+    static int promptSaveDiscardCancel() {
         static bool showDialog = true;
         static int choice = -1; // 0=save, 1=discard, 2=cancel
 
@@ -4092,7 +4092,7 @@ void LevelEditor::updateGizmoScale()
             if (obj && obj->active() && obj->type() == Gameplay::GameObjectType::Enemy) {
                 glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
                 if (isPointInPolygon(enemyPos, lightPolyGLM)) {
-                    obj->addLightExposure(dt);
+                    obj->addLightExposure(static_cast<float>(dt));
                     if (obj->lightExposureTime() >= 2.0f) {
                         obj->setActive(false);
                     }

@@ -492,10 +492,10 @@ namespace Runtime
 					}
 
 					// ---- Movement FOLLOW ----
-					float moveSpeed = obj->moveSpeed();
+					//float moveSpeed = static_cast<float>(obj->moveSpeed());
 					bool isRunning = false;
-					float maxSpeed = obj->moveSpeed();
-					float maxRunSpeed = maxSpeed*2;
+					//float maxSpeed = obj->moveSpeed();
+					//float maxRunSpeed = maxSpeed*2.0f;
 
 					m_timeSinceStep += (float)dt;
 					auto surfaceType = getSurfaceUnder(obj.get());
@@ -924,7 +924,7 @@ namespace Runtime
 				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
 
 				if (inLight) {
-					obj->addLightExposure(dt);
+					obj->addLightExposure(static_cast<float>(dt));
 				}
 				else {
 					if (obj->lightExposureTime() > 0.0f) {
@@ -934,7 +934,7 @@ namespace Runtime
 
 				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
 					// Enemy is in light
-					obj->addLightExposure(dt);
+					obj->addLightExposure(static_cast<float>(dt));
 
 
 					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
@@ -947,9 +947,9 @@ namespace Runtime
 					if (obj->lightExposureTime() > 0.0f) {
 						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
 					}
-					float oldExposure = obj->lightExposureTime();
-					obj->decreaseLightExposure(dt * DECAY_RATE);
-					float newExposure = obj->lightExposureTime();
+					//float oldExposure = obj->lightExposureTime();
+					obj->decreaseLightExposure(static_cast<float>(dt) * DECAY_RATE);
+					//float newExposure = obj->lightExposureTime();
 				}
 			}
 		}
@@ -1011,10 +1011,10 @@ namespace Runtime
 
 		// Battery management code (keep all existing flashlight code)
 		if (m_player) {
-			float dt = timer->delta();
+			float dt = static_cast<float>(timer->delta());
 
 			if (m_flashlightOn) {
-				float currentBattery = m_player->checkBatt();
+				currentBattery = m_player->checkBatt();
 				currentBattery -= m_player->checkDrain() * dt;
 				m_player->setBatt(currentBattery);
 
@@ -1024,7 +1024,7 @@ namespace Runtime
 				}
 			}
 			else {
-				float currentBattery = m_player->checkBatt();
+				currentBattery = m_player->checkBatt();
 				currentBattery += m_player->checkCharge() * dt;
 				m_player->setBatt(std::min(100.0f, currentBattery));
 			}

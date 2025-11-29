@@ -236,7 +236,7 @@ namespace Runtime
         double mouseX, mouseY;
         glfwGetCursorPos(m_window.getWindow(), &mouseX, &mouseY);
 
-        int w = m_window.width();
+        //int w = m_window.width();
         int h = m_window.height();
         float glMouseY = h - static_cast<float>(mouseY);
 
