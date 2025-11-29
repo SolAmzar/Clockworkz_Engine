@@ -57,21 +57,22 @@ namespace Runtime {
         m_background.transform().scale = { 1920.0f, 1080.0f }; // Keep scale neutral
         
         if (m_audio.isPlaying("level_bgm"))
-            m_audio.setGroupVolume(Audio::Group::BGM, 0.3f);
+            m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeDuringPause);
+            m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeDuringPause);
 
         std::cout << "[PauseState] Ready\n";
     }
 
     void PauseState::moveUp()
     {
-        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+        m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
         if (--m_selected < 0)
             m_selected = static_cast<int>(m_items.size()) - 1;
     }
 
     void PauseState::moveDown()
     {
-        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+        m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
         if (++m_selected >= static_cast<int>(m_items.size()))
             m_selected = 0;
     }
@@ -79,11 +80,13 @@ namespace Runtime {
     void PauseState::select()
     {
         const std::string& choice = m_items[m_selected];
+        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
 
         if (choice == "Resume Game")
         {
-            std::cout << "[PauseState] Resuming...\n";
-            m_audio.setGroupVolume(Audio::Group::BGM, 0.5f);
+            std::cout << "[PauseState] Resuming...\n"; 
+            m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
+            m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
             m_gsm.pop();
             return;
         }
@@ -92,6 +95,9 @@ namespace Runtime {
         {
             std::cout << "[PauseState] Exiting...\n";
 			m_audio.stop("level_bgm");
+			m_audio.stop("level_ambience");
+            m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
+            m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
 			m_audio.play("menu_bgm", Audio::Group::BGM, 1.4f, false);
             m_gsm.pop();
             m_gsm.pop();
@@ -138,6 +144,7 @@ namespace Runtime {
                 if (m_selected != i)
                 {
                     m_selected = i;
+                    m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
                     // Optional: Add sound effect here if you have audio manager
                     // m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
                 }
@@ -149,7 +156,9 @@ namespace Runtime {
         if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
         {
             // Optional: Add sound effect here
-            m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+           //m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
+         
+          
             select();
         }
 
@@ -174,6 +183,7 @@ namespace Runtime {
 
         if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER))
         {
+
             select();
         }
 #ifdef _DEBUG

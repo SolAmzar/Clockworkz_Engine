@@ -103,6 +103,7 @@ namespace Runtime {
 		int   m_bgmChannel = 0;
 		bool  m_bgmPlaying = false;
 		float m_bgmVol = 0.5f;
+		float m_sfxVol = 0.05f;
 
 		bool m_playerRespawning{ false };
 

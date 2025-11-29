@@ -57,11 +57,31 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <random>
+#include <algorithm>
+#include <array>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Assets/TextureManager.hpp>
 
 using namespace Graphics;
 using namespace Assets;
+
+namespace
+{
+	// Shared RNG for all footsteps
+	std::mt19937& FootstepRng()
+	{
+		static std::mt19937 rng{ std::random_device{}() };
+		return rng;
+	}
+
+	template<std::size_t N>
+	const char* pickRandom(const std::array<const char*, N>& ids)
+	{
+		std::uniform_int_distribution<std::size_t> dist(0, N - 1);
+		return ids[dist(FootstepRng())];
+	}
+}
 
 namespace Runtime
 {
@@ -181,7 +201,7 @@ namespace Runtime
 
 		// play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
 		m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
-
+		audio.play("level_ambience", Audio::Group::SFX, m_sfxVol, false);
 
 		m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
@@ -939,6 +959,7 @@ namespace Runtime
 		// ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;
+		auto audio = Core::Engine::Get().audio();
 
 		for (auto& obj : objs) {
 			if (!obj || !obj->active()) continue;
@@ -965,6 +986,14 @@ namespace Runtime
 
 					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
 						std::cout << ">>> Enemy '" << obj->name() << "' KILLED!" << std::endl;
+						static const std::array<const char*, 3> defaultIds = {
+						"enemy_death_1",
+						"enemy_death_2",
+						"enemy_death_3"
+						};
+						std::string id = pickRandom(defaultIds);
+
+						audio.playOneShot(id, Audio::Group::SFX, 0.7f);
 						obj->setActive(false);
 					}
 				}
