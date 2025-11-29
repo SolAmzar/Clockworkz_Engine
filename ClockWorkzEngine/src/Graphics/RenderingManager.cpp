@@ -351,7 +351,7 @@ namespace Graphics {
 
 	}
 
-	void RenderingManager::beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle) {
+	void RenderingManager::beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle, const float& batteryFactor) {
 		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("light");
 		if (!shader) return;
 		glDisable(GL_DEPTH_TEST);
@@ -371,6 +371,24 @@ namespace Graphics {
 		shader->setFloat("uAngle", glm::radians(lightAngle));   // cone width ~60° total
 		shader->setFloat("uRadius", 300.0f);
 		shader->setVec3("uLightColor", glm::vec3(1.0f, 0.9f, 0.6f));
+
+		shader->setFloat("uBattery", batteryFactor);
+		float flicker = 1.0f;
+
+		// When battery ≤ 10%, flicker randomly
+		//if (batteryFactor <= 0.1f) {
+		//	float low = 0.6f;         // minimum brightness flicker
+		//	float high = 1.2f;        // maximum
+		//	flicker = low + static_cast<float>(rand()) / RAND_MAX * (high - low);
+		//}
+
+		if (batteryFactor <= 0.125f) {
+			float low = 0.3f;
+			float high = 1.4f;
+			flicker = low + static_cast<float>(rand()) / RAND_MAX * (high - low);
+		}
+
+		shader->setFloat("uFlicker", flicker);
 		(void)radius;
 		(void)color;
 	}

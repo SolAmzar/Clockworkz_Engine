@@ -3,7 +3,9 @@
 #include <vector>
 #include <memory>
 #include <glm/vec2.hpp>
-#include "Core/json.hpp"
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
 
 /******************************************************************************/
 /*!

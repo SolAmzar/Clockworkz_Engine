@@ -55,7 +55,7 @@ namespace Runtime
     }
 
     MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input, Platform::WindowManager &window, Audio::AudioManager &audio)
-        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio),
+        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_positions{0,0,0,0,0},
         m_background(GameObjectType::Unknown, "MenuBG", GameObjectShape::Rectangle), m_logo(GameObjectType::Unknown, "Logo", GameObjectShape::Rectangle)
     {
     }

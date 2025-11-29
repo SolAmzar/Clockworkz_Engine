@@ -3,7 +3,11 @@
 #include <string>
 #include "Gameplay/GameObject.hpp"
 #include "Audio/AudioManager.hpp"
-#include "core/json.hpp" // nlohmann::json
+
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
+
 
 namespace Gameplay {
 

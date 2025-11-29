@@ -30,7 +30,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <cmath>
 
 #include "Assets/SoundManager.hpp"
-#include "Core/json.hpp"
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
 #include "Gameplay/Components/AudioSource.hpp"
 
 #include <IMGUI/imgui.h>
@@ -1248,37 +1250,37 @@ void LevelEditor::updateGizmoScale()
     // Save Dialog Implementation
     // ============================================================================
 
-    static int promptSaveDiscardCancel() {
-        static bool showDialog = true;
-        static int choice = -1; // 0=save, 1=discard, 2=cancel
+    //static int promptSaveDiscardCancel() {
+    //    static bool showDialog = true;
+    //    static int choice = -1; // 0=save, 1=discard, 2=cancel
 
-        if (showDialog) {
-            ImGui::OpenPopup("Save Changes?");
-            showDialog = false;
-        }
-        if (ImGui::BeginPopupModal("Save Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("You have unsaved changes. Do you want to save before leaving?");
-            if (ImGui::Button("Save")) {
-                choice = 0;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Discard")) {
-                choice = 1;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
-                choice = 2;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-            if (choice != -1) {
-                return choice;
-            }
-        }
-        return -1; // no user choice yet
-    }
+    //    if (showDialog) {
+    //        ImGui::OpenPopup("Save Changes?");
+    //        showDialog = false;
+    //    }
+    //    if (ImGui::BeginPopupModal("Save Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    //        ImGui::Text("You have unsaved changes. Do you want to save before leaving?");
+    //        if (ImGui::Button("Save")) {
+    //            choice = 0;
+    //            ImGui::CloseCurrentPopup();
+    //        }
+    //        ImGui::SameLine();
+    //        if (ImGui::Button("Discard")) {
+    //            choice = 1;
+    //            ImGui::CloseCurrentPopup();
+    //        }
+    //        ImGui::SameLine();
+    //        if (ImGui::Button("Cancel")) {
+    //            choice = 2;
+    //            ImGui::CloseCurrentPopup();
+    //        }
+    //        ImGui::EndPopup();
+    //        if (choice != -1) {
+    //            return choice;
+    //        }
+    //    }
+    //    return -1; // no user choice yet
+    //}
 
     void LevelEditor::renderSaveDialog() {
         if (!m_showSaveDialog) return;
@@ -4131,7 +4133,7 @@ void LevelEditor::updateGizmoScale()
 
         // Render
         m_renderer->beginLightPass(m_editorCamera.viewProj(), originGLM,
-            glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+            glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f), m_playerBattery/100.f);
         m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
         m_renderer->endLightPass();
     }

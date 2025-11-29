@@ -88,7 +88,7 @@ namespace Runtime {
         bool m_bgmPaused = false;
         float m_bgmVol = 1.4f;
         bool m_loaded = false;
-        MenuPosition m_positions[5];
+        MenuPosition m_positions[5] = {0,0,0,0,0};
         void updateLayout(int w, int h);
     };
 

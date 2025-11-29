@@ -411,7 +411,7 @@
                     "w": 0.125
                 }
             ],
-            "loop": true,
+            "loop": false,
             "name": "death"
         },
         {

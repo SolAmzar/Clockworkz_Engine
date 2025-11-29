@@ -12,7 +12,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Assets/SoundManager.hpp"
 #include "Audio/AudioManager.hpp"
-#include <core/json.hpp> 
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
 #include <fstream>
 
 namespace Assets {

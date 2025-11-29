@@ -149,6 +149,7 @@ namespace Gameplay {
         bool isHazard() const { return m_isHazard; }
         bool blocksLight() const { return m_blocksLight; }
         void setSolid(bool v) { m_isSolid = v; }
+        void setMoveable(bool move) { m_moveable = move; }
         void setHazard(bool v) { m_isHazard = v; }
         void setBlocksLight(bool v) { m_blocksLight = v; }
         void setName(const std::string& newName); 

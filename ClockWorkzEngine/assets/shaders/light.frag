@@ -8,6 +8,8 @@ uniform vec2 uLightDir;     // normalized direction vector (cos,sin)
 uniform float uRadius;
 uniform float uAngle;       // half-angle of cone in radians
 uniform vec3 uLightColor;
+uniform float uBattery;   // 0.0 to 1.0
+uniform float uFlicker;   // 0.0 to 1.0 (time-based flicker)
 
 void main() {
     vec2 toFrag = FragWorldPos - uLightPos;
@@ -28,7 +30,16 @@ void main() {
     radial = pow(radial, 2.0);
 
     float intensity = coneFactor * radial;
+    // Apply battery fading
+    intensity = uBattery;
 
+    // Apply flicker near low battery
+    float lowBatteryMix = smoothstep(0.1, 0.0, uBattery);
+    intensity *= mix(1.0, uFlicker, lowBatteryMix); 
+    
+
+    //vec3 color = uLightColor * 0.5;
     vec3 color = uLightColor * 0.5;
-    FragColor = vec4(color, intensity);
+    //FragColor = vec4(color, intensity);
+    FragColor = vec4(uLightColor * intensity, 1.0);
 }

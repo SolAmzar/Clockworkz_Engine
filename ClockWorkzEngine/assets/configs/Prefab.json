@@ -23,7 +23,8 @@
           "collisionMask": 7,
           "collisionCategory": 2,
           "blocksLight": false,
-          "isHazard": false
+          "isHazard": false,
+          "moveable":  true
         },
         "health": {
           "hp": 10
@@ -51,12 +52,13 @@
           }
         },
         "collider": {
-          "width": 0.9,
-          "height": 0.9,
-          "isSolid": true,
-          "layer": 4,
-          "collisionMask": 7,
-          "collisionCategory": 4
+            "width": 0.9,
+            "height": 0.9,
+            "isSolid": true,
+            "layer": 4,
+            "collisionMask": 7,
+            "collisionCategory": 4,
+            "moveable": true
         },
         "health": {
           "hp": 3
@@ -99,15 +101,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture"
@@ -129,15 +132,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -160,15 +164,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -191,15 +196,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -222,15 +228,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -253,15 +260,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -284,15 +292,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -315,15 +324,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -346,15 +356,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -377,15 +388,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 7,
-          "blocksLight": true,
-          "isHazard": false,
-          "collisionCategory": 1
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 7,
+            "blocksLight": true,
+            "isHazard": false,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture",
@@ -408,12 +420,13 @@
           }
         },
         "collider": {
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": false,
-          "layer": 1,
-          "collisionMask": 0,
-          "collisionCategory": 0
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": false,
+            "layer": 1,
+            "collisionMask": 0,
+            "collisionCategory": 0,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "floor_texture"
@@ -435,15 +448,16 @@
           }
         },
         "collider": {
-          "type": "AABB",
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": false, 
-          "layer": 4, 
-          "collisionMask": 0, 
-          "blocksLight": false,
-          "isHazard": false,
-          "collisionCategory": 0
+            "type": "AABB",
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": false,
+            "layer": 4,
+            "collisionMask": 0,
+            "blocksLight": false,
+            "isHazard": false,
+            "collisionCategory": 0,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "floor_texture",
@@ -466,12 +480,13 @@
           }
         },
         "collider": {
-          "width": 1.0,
-          "height": 1.0,
-          "isSolid": false,
-          "layer": 1,
-          "collisionMask": 7,
-          "collisionCategory": 1
+            "width": 1.0,
+            "height": 1.0,
+            "isSolid": false,
+            "layer": 1,
+            "collisionMask": 7,
+            "collisionCategory": 1,
+            "moveable": false
         },
         "spriteRenderer": {
           "textureId": "wall_texture"
@@ -493,13 +508,14 @@
           }
         },
         "collider": {
-          "type": "Circle",
-          "radius": 1.0,
-          "height": 1.0,
-          "isSolid": true,
-          "layer": 2,
-          "collisionMask": 0,
-          "collisionCategory": 0
+            "type": "Circle",
+            "radius": 1.0,
+            "height": 1.0,
+            "isSolid": true,
+            "layer": 2,
+            "collisionMask": 0,
+            "moveable": false,
+            "collisionCategory": 0
         },
         "spriteRenderer": {
           "textureId": "pot_texture"
