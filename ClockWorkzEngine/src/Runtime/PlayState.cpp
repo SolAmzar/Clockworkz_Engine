@@ -176,6 +176,11 @@ namespace Runtime
 		// Initialize level editor
 		Core::Engine& engine = Core::Engine::Get();
 
+		auto& audio = engine.audio();
+
+		// play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
+		m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
+
 
 		m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
@@ -287,6 +292,14 @@ namespace Runtime
 			m_scenes.unloadCurrent();
 		}
 		m_loaded = false;
+		
+		if (m_bgmPlaying)
+		{
+			auto& audio = Core::Engine::Get().audio();
+			audio.stop(m_bgmChannel);
+			m_bgmPlaying = false;
+		}
+
 	}
 
 	void PlayState::update(double dt)
@@ -389,6 +402,19 @@ namespace Runtime
 		{
 			m_flashlightOn = !m_flashlightOn;
 			std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
+
+			Audio::AudioManager& audio = Core::Engine::Get().audio();
+			
+
+			if (m_flashlightOn == true)
+			{
+				audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+			}
+			else
+			{
+				audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+			}
+
 		}
 
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))

@@ -22,6 +22,27 @@
       "is3D": false
     },
     {
+      "name": "level_bgm",
+      "path": "assets/audio/level_bgm.wav",
+      "loop": true,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "flashlight_on",
+      "path": "assets/audio/flashlight_on.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "flashlight_off",
+      "path": "assets/audio/flashlight_off.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
       "name": "fs_concrete_1",
       "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
       "loop": false,

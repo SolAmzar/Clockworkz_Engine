@@ -165,6 +165,12 @@ namespace Runtime
             //*** DO NOT REMOVE! Working on SwitchTo GSM*****
             //m_gsm.switchTo(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
 
+            
+           
+          m_audio.stop(m_audio.findChannel("menu_bgm"));
+          m_bgmChannel = 0;
+          m_bgmPaused = true;
+
             m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
             return;
         }
@@ -241,6 +247,12 @@ namespace Runtime
         float glMouseY = h - static_cast<float>(mouseY);
 
         bool isHover = false;
+
+        if (m_bgmChannel != 0 && m_bgmPaused)
+        {
+            m_audio.setPaused(m_bgmChannel, false);
+            m_bgmPaused = false;
+        }
 
 
 

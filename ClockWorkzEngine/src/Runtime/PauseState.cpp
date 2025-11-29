@@ -56,19 +56,21 @@ namespace Runtime {
         m_background.transform().scale = { 1920.0f, 1080.0f }; // Keep scale neutral
         
         if (m_audio.isPlaying("level_bgm"))
-            m_audio.setGroupPaused(Audio::Group::BGM, true);
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.3f);
 
         std::cout << "[PauseState] Ready\n";
     }
 
     void PauseState::moveUp()
     {
+        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
         if (--m_selected < 0)
             m_selected = static_cast<int>(m_items.size()) - 1;
     }
 
     void PauseState::moveDown()
     {
+        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
         if (++m_selected >= static_cast<int>(m_items.size()))
             m_selected = 0;
     }
@@ -80,6 +82,7 @@ namespace Runtime {
         if (choice == "Resume Game")
         {
             std::cout << "[PauseState] Resuming...\n";
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.5f);
             m_gsm.pop();
             return;
         }
@@ -87,6 +90,8 @@ namespace Runtime {
         if (choice == "Main Menu")
         {
             std::cout << "[PauseState] Exiting...\n";
+			m_audio.stop("level_bgm");
+			m_audio.play("menu_bgm", Audio::Group::BGM, 1.4f, false);
             m_gsm.pop();
             m_gsm.pop();
         }
@@ -151,6 +156,7 @@ namespace Runtime {
         if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
         {
             std::cout << "[PauseState] ESC pressed - resuming\n";
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.5f);
             m_gsm.pop();
             return;
         }

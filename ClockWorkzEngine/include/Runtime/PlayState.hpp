@@ -99,6 +99,9 @@ namespace Runtime {
 		bool m_editorInitialized{ false };
 
 		void initializeEnemyAI(Runtime::Scene* scene);
+		int   m_bgmChannel = 0;
+		bool  m_bgmPlaying = false;
+		float m_bgmVol = 0.5f;
 
 	};
 

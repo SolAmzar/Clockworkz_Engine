@@ -63,6 +63,7 @@ int AudioManager::findChannel(const std::string& id) {
     }
 
     // 0 means "no live channel found" (consistent with play() failure)
+    std::cerr << "[Audio] Channel " << id << " not found" << "\n";
     return 0;
 }
 

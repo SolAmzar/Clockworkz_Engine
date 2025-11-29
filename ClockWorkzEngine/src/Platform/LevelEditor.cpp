@@ -4018,21 +4018,6 @@ void LevelEditor::updateGizmoScale() {
 
     void LevelEditor::renderErrorPopup()
     {
-        // Plan (pseudocode):
-        // 1. If there is no error to show, return early.
-        // 2. Open the ImGui popup with the same name as the modal.
-        // 3. Compute the center of the main viewport.
-        // 4. Use ImGui::SetNextWindowPos(...) with a 0.5,0.5 pivot BEFORE BeginPopupModal
-        //    because SetWindowPos does not accept a pivot parameter and will not match the
-        //    intended overload. SetNextWindowPos is the correct call when specifying a pivot.
-        // 5. Begin the modal with BeginPopupModal and render title, message and OK button.
-        // 6. Close the popup and clear the flag when OK is pressed.
-        //
-        // Rationale:
-        // - Replaces incorrect ImGui::SetWindowPos(center, cond, pivot) call with
-        //   ImGui::SetNextWindowPos(center, cond, pivot) placed before BeginPopupModal.
-        // - Keeps the rest of the modal intact.
-
         if (!m_showErrorPopup)
             return;
 
