@@ -16,7 +16,7 @@
                 Notes (REMOVE AFTER EDIT)
                 - Credit to Physics developer for foundational collision logic.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 

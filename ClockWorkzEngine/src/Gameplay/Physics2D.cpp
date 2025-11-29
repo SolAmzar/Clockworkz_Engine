@@ -211,20 +211,20 @@ namespace Gameplay {
         }
 
         inline bool canCollide(GameObject* a, GameObject* b);
-        inline bool movable(GameObject* g) {
-        using GT = Gameplay::GameObjectType;
-            switch (g->type()) {
-            case GT::Wall:    return false;        // <-- walls are static
-            case GT::Floor:   return false;        // optional: floors static too
-            case GT::Trap:    return false;        // traps as triggers (no push)
-            case GT::Box:	  return true;         // boxes are movable
-            case GT::Player:  return true;
-            case GT::Enemy:   return true;
-            case GT::Ball:    return false;        // dynamic bodies move
-            default:
-                return true;
-            }
-        } // hook to your solid/static flags
+        //inline bool movable(GameObject* g) {
+        //using GT = Gameplay::GameObjectType;
+        //    switch (g->type()) {
+        //    case GT::Wall:    return false;        // <-- walls are static
+        //    case GT::Floor:   return false;        // optional: floors static too
+        //    case GT::Trap:    return false;        // traps as triggers (no push)
+        //    case GT::Box:	  return true;         // boxes are movable
+        //    case GT::Player:  return true;
+        //    case GT::Enemy:   return true;
+        //    case GT::Ball:    return false;        // dynamic bodies move
+        //    default:
+        //        return true;
+        //    }
+        //} // hook to your solid/static flags
 
     } // anonymous
 
@@ -279,19 +279,23 @@ namespace Gameplay {
                 (bt == GT::Player && at == GT::Enemy))
             {
                 Gameplay::GameObject* player = at == GT::Player ? &a : &b;
-                Gameplay::GameObject* enemy = at == GT::Enemy ? &b : &a;
+                Gameplay::GameObject* enemy = at == GT::Enemy ? &a : &b;
                 // Your API has respawnAt(spawn, resetVel, resetHealth).
                 // You can store a player spawn point somewhere central; here, just reset & deactivate:
                 // player->setActive(false); // or:
                 //player->respawnAt(/*spawn=*/{ 0.f,0.f }, /*resetVel=*/true, /*resetHealth=*/true);
                 SpriteAnimatorComponent* spriteAnimatorPlayer = player->getComponent<SpriteAnimatorComponent>();
                 // There is no death for player/monster and no state for attack for enemy, code here will be overtaken by walk/idle
-                if (spriteAnimatorPlayer) {
-                    spriteAnimatorPlayer->play("death");
-                }
+              
+
                 SpriteAnimatorComponent* spriteAnimatorEnemy = enemy->getComponent<SpriteAnimatorComponent>();
-                if (spriteAnimatorEnemy) {
+                if (spriteAnimatorEnemy && spriteAnimatorPlayer->currentState() != "death") {
                     spriteAnimatorEnemy->play("attack");
+                }
+
+                if (spriteAnimatorPlayer && spriteAnimatorPlayer->currentState() != "death") {
+                  spriteAnimatorPlayer->play("death");
+                  player->setMoveable(false);
                 }
                 return;
             }
@@ -380,8 +384,13 @@ namespace Gameplay {
                 // 1) Decide if this pair should be *physically* non-passable
                 bool resolveSolid = shouldResolveAsSolid(a, b);
                 if (resolveSolid) {
-                    bool aMov = movable(a);
-                    bool bMov = movable(b);
+                       
+                    //WTF USE FROM LEVEL OBJECT Serialized FLAG PLEASE. NO HARD CODE.
+             /*       bool aMov = movable(a);
+                    bool bMov = movable(b);*/
+                    
+                    bool aMov = a->ismoveable();
+                    bool bMov = b->ismoveable();
                     positionalCorrection(*a, *b, best, aMov, bMov);
 
                     a->setLastHitNormal(best.n);

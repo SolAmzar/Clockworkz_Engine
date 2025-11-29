@@ -36,8 +36,22 @@ endif()
 
 add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp" "src/Platform/LevelEditor.cpp" "src/Platform/LevelEditorState.cpp")
 
-if(MSVC)
-  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus)
+if (MSVC)
+    # Strong warnings
+    target_compile_options(${PROJECT_NAME} PRIVATE 
+        /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus
+    )
+
+    # Enable Edit and Continue for Debug only
+    target_compile_options(${PROJECT_NAME} PRIVATE 
+        $<$<CONFIG:Debug>:/ZI /Od>
+    )
+
+    target_link_options(${PROJECT_NAME} PRIVATE 
+        $<$<CONFIG:Debug>:/INCREMENTAL>
+    )
+
+    add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 endif()
 
 # --- Optionally import FMOD ---
@@ -55,8 +69,7 @@ if(MSVC)
   add_compile_options(/W4 /permissive- /Zc:preprocessor /Zc:__cplusplus)
   add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 else()
-  add_compile_options(-
-  -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # --- Silence deprecation warnings for 3rd-party libs ---

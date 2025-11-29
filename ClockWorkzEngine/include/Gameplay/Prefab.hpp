@@ -10,7 +10,9 @@ Prefab.cpp by Amirul Syafiq (100%)
 #include <memory>
 #include <map>
 #include "Math/Vec2.hpp"
-#include "Core/json.hpp"
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
 
 namespace Gameplay
 {

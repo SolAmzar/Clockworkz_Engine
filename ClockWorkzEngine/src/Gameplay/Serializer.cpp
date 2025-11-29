@@ -177,6 +177,16 @@ namespace Gameplay {
                 if (j.contains("blocksLight")) {
                     collide->blocksLight=((j["blocksLight"].get<bool>()));
                 }
+        /*        if (obj.name() == "Enemy" || obj.name() == "Enemy1" || obj.name() == "Enemy2") {
+                    std::cout << "deserialize enemy" << std::endl;
+                }*/
+
+                if (obj.name() == "Wall") {
+                    std::cout << "deserialize wall" << std::endl;
+                }
+                if (j.contains("moveable")) {
+                    obj.setMoveable(j["moveable"].get<bool>());
+                }
             }
             else if (s == "Circle") {
                 auto* collide = obj.addCollider<CircleCollider>();
@@ -197,6 +207,16 @@ namespace Gameplay {
 
                 obj.setShape(Gameplay::GameObjectShape::Circle);
                 obj.setSize(vec2(radius * 2.0f, radius * 2.0f));
+   /*             if (obj.name() == "Enemy" || obj.name() == "Enemy1" || obj.name() == "Enemy2") {
+                    std::cout << "deserialize enemy" << std::endl;
+                }
+
+                if (obj.name() == "Wall") {
+                    std::cout << "deserialize wall" << std::endl;
+                }*/
+                if (j.contains("moveable")) {
+                    obj.setMoveable(j["moveable"].get<bool>());
+                }
             }
             else if (s == "None") {
                 auto* collide = obj.addCollider<Collider>();
@@ -468,7 +488,7 @@ namespace Gameplay {
             return obj;
         }
 
-        // 5️⃣ Fallback: Non-prefab legacy JSON
+        // 5️. Fallback: Non-prefab legacy JSON
         std::string name = j.value("name", "Unnamed");
         GameObjectType type = GameObjectType::Unknown;
         if (j.contains("type")) {
@@ -500,6 +520,20 @@ namespace Gameplay {
                 deserializeAudioSource(*obj, comps["audio"]);
         }
 
+        // Too many hard code below code to be remove later, the level json should have proper handling of the object colliders information.
+        // Serializing from level editor should have fix it. make it such that it loads attributes from prefab, but things like transform/level state u can overwrite.
+        using GT = Gameplay::GameObjectType;
+        switch (obj->type()) {
+        case GT::Wall:    obj->setMoveable(false); break;       // <-- walls are static
+        case GT::Floor:   obj->setMoveable(false); break;         // optional: floors static too
+        case GT::Trap:    obj->setMoveable(false); break;        // traps as triggers (no push)
+        case GT::Box:	  obj->setMoveable(true);  break;        // boxes are movable
+        case GT::Player:  obj->setMoveable(true);  break;
+        case GT::Enemy:   obj->setMoveable(true);  break;
+        case GT::Ball:    obj->setMoveable(false); break;        // dynamic bodies move
+        default:
+            obj->setMoveable(true);
+        }
 
             
 

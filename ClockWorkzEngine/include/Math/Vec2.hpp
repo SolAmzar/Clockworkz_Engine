@@ -12,7 +12,7 @@
 				- Including helper functions for linear interpolation, perpendicular vectors, projection, reflection, and rotation
 				- Serving as a lightweight, header-only math utility for 2D vector operations
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 
 

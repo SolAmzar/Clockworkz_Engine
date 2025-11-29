@@ -4815,7 +4815,7 @@
         },
         "transform": {
           "position": {
-            "x": -100,
+            "x": 0,
             "y": -100
           },
           "scale": {

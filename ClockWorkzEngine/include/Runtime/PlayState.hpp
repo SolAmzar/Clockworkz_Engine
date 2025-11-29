@@ -55,7 +55,7 @@ namespace Runtime {
 		const int SPAWN_PER_FRAME = 100;
 		bool m_shouldReturnToMenu{ false };
 		void rebindLightsAndPlayerAfterReload();
-		void InitPlayerSpriteUVs();
+		//void InitPlayerSpriteUVs();
 		const char* toString(Gameplay::GameObjectType t);
 		void renderImGui(Core::Time* timer) override; //Imgui for playstate
 		Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject* player);
@@ -105,8 +105,8 @@ namespace Runtime {
 		float m_bgmVol = 0.5f;
 		float m_sfxVol = 0.05f;
 
-		bool m_playerRespawning{ false };
-
+		float m_playerRespawning{ 5.f };
+		bool m_GameOver{ false };
 	};
 
 } // namespace Runtime
