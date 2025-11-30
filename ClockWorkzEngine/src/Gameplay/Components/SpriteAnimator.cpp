@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file           SpriteAnimator.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Handles 2D sprite animation playback, including updating frame timing,
+                switching animation clips, managing loop behavior, and syncing UV data
+                with the SpriteRenderer. Supports loading and saving animation clips
+                from JSON and provides full control over animation state.
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
 #include "Gameplay/Components/SpriteAnimator.hpp"
 #include "Gameplay/Components/SpriteRenderer.hpp"
 #include "Gameplay/GameObject.hpp"
