@@ -22,7 +22,7 @@ namespace Graphics {
 
         void resize(int width, int height);
 
-        void bind();
+        void bind() const;
 
         void unbind();
 

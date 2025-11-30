@@ -12,6 +12,7 @@
           "moveable": false,
           "width": 100.0
         },
+        "spriteAnimator": { "filename": "player.json" },
         "spriteRenderer": {
           "textureId": "player_texture",
           "uv": [ 0.75, 0.125, 0.125, 0.125 ]
@@ -4842,6 +4843,30 @@
       "name": "Enemy",
       "prefab": "Enemy",
       "type": 3
+    },
+    {
+      "name": "Pot1",
+      "active": true,
+      "prefab": "Pot",
+      "components": {
+        "collider": {
+          "collisionCategory": 4,
+          "collisionMask": 7,
+          "type": "Circle",
+          "radius": 20.0,
+          "isSolid": true
+        },
+        "transform": {
+          "position": {
+            "x": 0,
+            "y": -100
+          },
+          "scale": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      }
     }
   ],
   "sceneName": "Level_01 (from PlayState)"

@@ -40,6 +40,9 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Platform/UndoSystem.hpp"
 #include "IMGUI/imgui.h"
 #include "Graphics/FrameBuffer.hpp"
+#include "Audio/AudioManager.hpp"
+#include "Audio/SurfaceAudioSystem.hpp"
+
 
 struct GLFWwindow;
 
@@ -168,7 +171,7 @@ namespace Platform {
         // 
         // NEW: Play mode simulation
         void updatePlayMode(double dt);
-        void updatePhysicsAndGameplay(Runtime::Scene* scene, double dt);
+        //void updatePhysicsAndGameplay(Runtime::Scene* scene, double dt);
 
         // NEW: Store gameplay state for play mode
         Gameplay::GameObject* m_playModePlayer;
@@ -295,6 +298,8 @@ namespace Platform {
 
         bool isMouseOverGizmo(const vec2& mouseWorldPos) const;
 
+       
+
     private:
         // Core systems
         std::unique_ptr<Core::Logger> m_logger;
@@ -371,6 +376,14 @@ namespace Platform {
 
 		// Auto-tiling for walls
         void autoTileWalls();
+
+        // -- audio error popup state-- 
+        bool m_showErrorPopup = false;
+        std::string m_errorPopupTitle;
+        std::string m_errorPopupMessage;
+
+        void queueErrorPopup(const std::string& title, const std::string& message);
+        void renderErrorPopup();
 
         // ====================================================================
         // INTEGRATED GIZMO SYSTEM - Member Variables
@@ -449,6 +462,13 @@ namespace Platform {
         float m_playerBattery{ 100.0f };
         void updateLightExposure(double dt);
         void renderFlashlight();
+
+        Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject* player);
+
+        void resetScene();
+
+        bool m_playModePlayerRespawning{ false };
+
 
         vec2 m_lastPlacedGridPos = vec2(-999999.0f, -999999.0f);
     };

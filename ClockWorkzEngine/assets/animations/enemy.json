@@ -59,7 +59,7 @@
                     "w": 0.25
                 }
             ],
-            "loop": true,
+            "loop": false,
             "name": "attack"
         },
         {

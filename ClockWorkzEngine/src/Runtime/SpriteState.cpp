@@ -3,7 +3,10 @@
 \file           SpriteState.cpp
 \project        Lights Out
 \author(s)      [Lebon], 100%
-\brief          
+\brief          Provides the Sprite Editor state for previewing and editing animations.
+				Supports loading scenes, manipulating sprite sheets,
+				and saving/loading animation JSON files.
+
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
@@ -73,11 +76,11 @@ namespace Runtime
 	//	frameCount = 0;
 	//}
 
-	void SpriteState::rebindLightsAndPlayerAfterReload()
-	{
-		auto* scene = m_scenes.current();
-		
-	}
+	//void SpriteState::rebindLightsAndPlayerAfterReload()
+	//{
+	//	auto* scene = m_scenes.current();
+	//	
+	//}
 
 	/*std::vector<std::string> SpriteState::GetTextureList(const std::string& folder)
 	{
@@ -117,7 +120,7 @@ namespace Runtime
 			glm::vec4 uv = { col*frameW, (7-row) * frameH, frameW, frameH };
 			// for example group rows by animation name
 			//playerSprite["walk"].push_back(uv);
-			deathClip.frames.push_back({ uv, 0.2 });
+			deathClip.frames.push_back({ uv, 0.2f });
 		}
 
 		Gameplay::AnimationClip& idleClip = animatorComponent->createClip("idle", true);
@@ -128,7 +131,16 @@ namespace Runtime
 			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
 			// for example group rows by animation name
 			//playerSprite["idle"].push_back(uv);
-			idleClip.frames.push_back({ uv, 0.1 });
+			idleClip.frames.push_back({ uv, 0.1f });
+		}
+
+		Gameplay::AnimationClip& idleTorchClip = animatorComponent->createClip("idle_torch", true);
+		for (int i = 53; i < 57; ++i)  // Adjust frame indices based on your spritesheet
+		{
+			int row = i / 8;
+			int col = i % 8;
+			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
+			idleTorchClip.frames.push_back({ uv, 0.1f });
 		}
 
 		Gameplay::AnimationClip& runClip = animatorComponent->createClip("run", true);
@@ -139,7 +151,7 @@ namespace Runtime
 			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
 			// for example group rows by animation name
 			//playerSprite["run"].push_back(uv);
-			runClip.frames.push_back({ uv, 0.1 });
+			runClip.frames.push_back({ uv, 0.1f });
 		}
 
 		Gameplay::AnimationClip& runTorchClip = animatorComponent->createClip("run_torch", true);
@@ -150,7 +162,7 @@ namespace Runtime
 			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
 			// for example group rows by animation name
 			//playerSprite["run_torch"].push_back(uv);
-			runTorchClip.frames.push_back({ uv, 0.1 });
+			runTorchClip.frames.push_back({ uv, 0.1f });
 		}
 
 
@@ -163,7 +175,7 @@ namespace Runtime
 			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
 			// for example group rows by animation name
 			//playerSprite["walk"].push_back(uv);
-			walkClip.frames.push_back({ uv, 0.1 });
+			walkClip.frames.push_back({ uv, 0.1f });
 		}
 
 
@@ -175,7 +187,7 @@ namespace Runtime
 			glm::vec4 uv = { col * frameW, (7 - row) * frameH, frameW, frameH };
 			// for example group rows by animation name
 			//playerSprite["walk_torch"].push_back(uv);
-			walkTorchClip.frames.push_back({ uv, 0.1 });
+			walkTorchClip.frames.push_back({ uv, 0.1f });
 		}
 
 		
@@ -293,18 +305,18 @@ namespace Runtime
 		//	return;
 		//}
 
-		// Syafiq - Player movement
-		if (auto *scene = m_scenes.current())
-		{
+		//// Syafiq - Player movement
+		//if (auto *scene = m_scenes.current())
+		//{
 
-			// Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
-			// objMap["Player"][0] <- since only 1 player. index 0 will work.
-			for (auto &obj : scene->objects())
-			{
+		//	// Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
+		//	// objMap["Player"][0] <- since only 1 player. index 0 will work.
+		//	for (auto &obj : scene->objects())
+		//	{
 
-				
-			}
-		}
+		//		
+		//	}
+		//}
 
 
 		//if (m_input.isKeyDown(GLFW_KEY_Q))
@@ -477,6 +489,8 @@ namespace Runtime
 				ImGui::PopStyleColor();
 			}
 
+			(void)timer;
+
 		}
 
 		// --- Frame Editor ---
@@ -523,7 +537,7 @@ namespace Runtime
 
 			if (ImGui::Button("Generate Animation")) {
 				int cols = m_sheetWidth / m_cellWidth;
-				int rows = m_sheetHeight / m_cellHeight;
+				//int rows = m_sheetHeight / m_cellHeight;
 				AnimationClip& clip = anim->createClip(m_newAnimName, m_playLoop);
 
 				for (int i = m_startFrame; i <= m_endFrame; ++i) {

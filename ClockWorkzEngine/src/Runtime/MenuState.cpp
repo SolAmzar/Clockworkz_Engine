@@ -55,7 +55,7 @@ namespace Runtime
     }
 
     MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input, Platform::WindowManager &window, Audio::AudioManager &audio)
-        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio),
+        : m_gsm(gsm), m_input(input), m_window(window), m_audio(audio), m_positions{0,0,0,0,0},
         m_background(GameObjectType::Unknown, "MenuBG", GameObjectShape::Rectangle), m_logo(GameObjectType::Unknown, "Logo", GameObjectShape::Rectangle)
     {
     }
@@ -165,6 +165,12 @@ namespace Runtime
             //*** DO NOT REMOVE! Working on SwitchTo GSM*****
             //m_gsm.switchTo(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
 
+            
+           
+          m_audio.stop(m_audio.findChannel("menu_bgm"));
+          m_bgmChannel = 0;
+          m_bgmPaused = true;
+
             m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
             return;
         }
@@ -236,11 +242,17 @@ namespace Runtime
         double mouseX, mouseY;
         glfwGetCursorPos(m_window.getWindow(), &mouseX, &mouseY);
 
-        int w = m_window.width();
+        //int w = m_window.width();
         int h = m_window.height();
         float glMouseY = h - static_cast<float>(mouseY);
 
         bool isHover = false;
+
+        if (m_bgmChannel != 0 && m_bgmPaused)
+        {
+            m_audio.setPaused(m_bgmChannel, false);
+            m_bgmPaused = false;
+        }
 
 
 

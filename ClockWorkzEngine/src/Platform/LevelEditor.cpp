@@ -30,9 +30,10 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include <cmath>
 
 #include "Assets/SoundManager.hpp"
-#include "Core/json.hpp"
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
 #include "Gameplay/Components/AudioSource.hpp"
-#include "Assets/SoundManager.hpp"
 
 #include <IMGUI/imgui.h>
 #include <algorithm>
@@ -246,6 +247,14 @@ namespace Platform {
             handleKeyboardShortcuts();
         }
 
+        if (m_windowManager) {
+            auto dropped = m_windowManager->consumeDroppedFiles();
+            if (!dropped.empty()) {
+                std::cout << "[Editor] Consuming " << dropped.size() << " dropped file(s)\n";
+                handleFileDrop(dropped);
+            }
+        }
+
         // Update object count for UI
         if (m_currentScene) {
             m_objectCount = static_cast<int>(m_currentScene->objects().size());
@@ -257,10 +266,10 @@ namespace Platform {
 
         auto* physics = m_currentScene->getPhysics();
         if (!physics) {
-            std::cerr << "  ✗ No physics system - collisions won't work!\n";
+            std::cerr << "  No physics system - collisions won't work!\n";
         }
         else {
-            std::cout << "  ✓ Physics ready\n";
+            std::cout << "  Physics ready\n";
         }
 
         // Find player
@@ -304,7 +313,8 @@ namespace Platform {
         m_currentScene->registerExistingObjectsToLayers();
     }
 
-    void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene) {
+    void LevelEditor::syncSceneBackToPlayState(Runtime::Scene* playStateScene)
+    {
         if (!playStateScene || !m_currentScene || !m_loadedFromPlayState) return;
 
         auto& playStateObjs = playStateScene->objects();
@@ -314,35 +324,33 @@ namespace Platform {
         std::cout << "  Editor has " << editorObjs.size() << " objects\n";
         std::cout << "  PlayState has " << playStateObjs.size() << " objects\n";
 
-        // Step 1: Update existing objects in-place (no deletion!)
-        int updatedCount = 0;
-        for (auto& editorObj : editorObjs) {
-            if (!editorObj) continue;
+        // Step 1 & 2: Sync by INDEX (not by name)
+        int minSize = static_cast<int>(std::min(editorObjs.size(), playStateObjs.size()));
 
-            // Find corresponding object in PlayState by name
-            bool found = false;
-            for (auto& playObj : playStateObjs) {
-                if (playObj && playObj->name() == editorObj->name()) {
-                    // Update properties IN-PLACE (object stays at same memory address)
-                    playObj->transform().position = editorObj->transform().position;
-                    playObj->transform().rotationRad = editorObj->transform().rotationRad;
-                    playObj->transform().scale = editorObj->transform().scale;
-                    playObj->setSize(editorObj->size());
-                    playObj->setLayer(editorObj->layer());
-                    playObj->setActive(editorObj->active());
-                    playObj->setTextureId(editorObj->textureId());
+        for (int i = 0; i < minSize; i++) {
+            auto& editorObj = editorObjs[i];
+            auto& playObj = playStateObjs[i];
 
-                    found = true;
-                    updatedCount++;
-                    break;
-                }
-            }
+            if (!editorObj || !playObj) continue;
 
-            // Step 2: If object is new (doesn't exist in PlayState), add it
-            if (!found) {
+            // Update in-place (same memory address)
+            playObj->transform().position = editorObj->transform().position;
+            playObj->transform().rotationRad = editorObj->transform().rotationRad;
+            playObj->transform().scale = editorObj->transform().scale;
+            playObj->setSize(editorObj->size());
+            playObj->setLayer(editorObj->layer());
+            playObj->setActive(editorObj->active());
+            playObj->setTextureId(editorObj->textureId());
+        }
+
+        // Step 3: If editor has MORE objects, add them
+        if (editorObjs.size() > playStateObjs.size()) {
+            for (int i = minSize; i < editorObjs.size(); i++) {
+                auto& editorObj = editorObjs[i];
+                if (!editorObj) continue;
+
                 auto newObj = std::make_unique<Gameplay::GameObject>(
-                    editorObj->type(), editorObj->name()
-                );
+                    editorObj->type(), editorObj->name());
                 newObj->transform().position = editorObj->transform().position;
                 newObj->transform().rotationRad = editorObj->transform().rotationRad;
                 newObj->transform().scale = editorObj->transform().scale;
@@ -355,37 +363,19 @@ namespace Platform {
             }
         }
 
-        // Step 3: Remove objects that were deleted in editor
-        int removedCount = 0;
-        playStateObjs.erase(
-            std::remove_if(playStateObjs.begin(), playStateObjs.end(),
-                [&](const std::unique_ptr<Gameplay::GameObject>& playObj) {
-                    if (!playObj) return true;
+        // Step 4: If PlayState has MORE objects, remove them
+        if (playStateObjs.size() > editorObjs.size()) {
+            int removeCount = static_cast<int>(playStateObjs.size() - editorObjs.size());
+            for (int i = 0; i < removeCount; i++) {
+                std::cout << "  - Removing extra object\n";
+                playStateObjs.pop_back();
+            }
+        }
 
-                    // Check if this object still exists in editor
-                    bool existsInEditor = false;
-                    for (auto& editorObj : editorObjs) {
-                        if (editorObj && editorObj->name() == playObj->name()) {
-                            existsInEditor = true;
-                            break;
-                        }
-                    }
-
-                    if (!existsInEditor) {
-                        std::cout << "  - Removing object: " << playObj->name() << "\n";
-                        removedCount++;
-                        return true;  // Remove it
-                    }
-                    return false;  // Keep it
-                }),
-            playStateObjs.end()
-        );
-
-        std::cout << "[LevelEditor] ✓ Sync complete:\n";
-        std::cout << "  Updated: " << updatedCount << " objects\n";
-        std::cout << "  Removed: " << removedCount << " objects\n";
+        std::cout << "[LevelEditor] Sync complete:\n";
         std::cout << "  Final count: " << playStateObjs.size() << " objects\n";
     }
+
 
     void LevelEditor::updatePlayMode(double dt) {
         if (!m_currentScene) {
@@ -404,12 +394,100 @@ namespace Platform {
             }
         }
 
-        // Handle player input BEFORE scene update
-        if (m_playModePlayer) {
-            handlePlayerInput(m_playModePlayer, dt);
-        }
-
+        // Update scene first
         m_currentScene->update(dt);
+
+        // ✅ PLAYER MOVEMENT (exactly like PlayState)
+        if (m_playModePlayer && m_playModePlayer->active()) {
+            Core::Engine& engine = Core::Engine::Get();
+            auto& audio = engine.audio();
+            auto& steps = engine.surfaceAudio();
+
+            m_playModeTimeSinceStep += static_cast<float>(dt);
+            auto surfaceType = getSurfaceUnder(m_playModePlayer);
+            vec2 curPos = m_playModePlayer->transform().position;
+            float speed = magnitude(m_playModePlayer->velocity() * 0.3f);
+            bool moving = speed > 5.0f;
+
+            if (moving) {
+                if (!m_playModeHaveLastFootPos) {
+                    m_playModeLastFootPos = curPos;
+                    m_playModeHaveLastFootPos = true;
+                }
+                vec2 delta = curPos - m_playModeLastFootPos;
+                float frameDist = magnitude(delta);
+                m_playModeDistanceSinceStep += frameDist;
+                m_playModeLastFootPos = curPos;
+
+                if (m_playModeDistanceSinceStep >= m_playModeStepDistance &&
+                    m_playModeTimeSinceStep >= m_playModeMinStepInterval) {
+                    // Time for exactly ONE footstep
+                    steps.playFootstep(audio, surfaceType, speed);
+
+                    m_playModeDistanceSinceStep = 0.0f;
+                    m_playModeTimeSinceStep = 0.0f;
+                }
+            }
+            else {
+                // Not moving → reset
+                m_playModeDistanceSinceStep = 0.0f;
+                m_playModeTimeSinceStep = 0.0f;
+                m_playModeHaveLastFootPos = false;
+            }
+
+            // WASD input → movement vector
+            vec2 move{ 0, 0 };
+            if (m_input->isKeyDown(GLFW_KEY_W)) move.y += 1;
+            if (m_input->isKeyDown(GLFW_KEY_S)) move.y -= 1;
+            if (m_input->isKeyDown(GLFW_KEY_A)) move.x -= 1;
+            if (m_input->isKeyDown(GLFW_KEY_D)) move.x += 1;
+
+            // Normalize diagonal
+            if (move.x != 0 || move.y != 0)
+                move = normalize(move);
+
+            // Apply speed
+            float speedMove = m_playModePlayer->moveSpeed();
+
+            // Shift to run
+            bool isRunning = false;
+            if (m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+                speedMove *= 2.0f;
+                isRunning = true;
+            }
+
+            // Final velocity
+            m_playModePlayer->velocity() = move * speedMove;
+
+            // ✅ Player animation
+            Gameplay::SpriteAnimatorComponent* playerSpriteComp = m_playModePlayer->getComponent<Gameplay::SpriteAnimatorComponent>();
+            if (playerSpriteComp) {
+                std::string animState = m_flashlightOn ? "idle_torch" : "idle";
+                bool isMoving = (move.x != 0 || move.y != 0);
+
+                if (isMoving) {
+                    animState = m_flashlightOn ? "walk_torch" : "walk";
+                    if (isRunning) {
+                        animState = m_flashlightOn ? "run_torch" : "run";
+                    }
+                }
+
+                playerSpriteComp->play(animState);
+            }
+
+            // ✅ Player rotation to face mouse
+            vec2 mouseScreen = m_input->mousePosition();
+            vec2 mouseWorld = screenToWorld(mouseScreen);
+            vec2 playerPos = m_playModePlayer->transform().position;
+            vec2 dir = mouseWorld - playerPos;
+            float dist = magnitude(dir);
+
+            if (dist > 10.0f) {
+                dir = normalize(dir);
+                float angleRad = std::atan2(dir.y, dir.x);
+                m_playModePlayer->transform().rotationRad = angleRad;
+            }
+        }
 
         // Camera follow player
         if (m_playModePlayer) {
@@ -424,71 +502,115 @@ namespace Platform {
 
         // Update battery
         if (m_flashlightOn) {
-            m_playerBattery -= 10.0f * dt;  // drain
+            m_playerBattery -= 10.0f * static_cast<float>(dt);
             if (m_playerBattery <= 0.0f) {
                 m_playerBattery = 0.0f;
                 m_flashlightOn = false;
             }
         }
         else {
-            m_playerBattery += 5.0f * dt;  // recharge
+            m_playerBattery += 5.0f * static_cast<float>(dt);
             m_playerBattery = std::min(100.0f, m_playerBattery);
         }
 
-        // Scene update
-        m_currentScene->update(dt);
+        // Enemy collision detection
+        if (m_playModePlayer && m_playModePlayer->active()) {
+            auto* scene = m_currentScene.get();
+            for (auto& obj : scene->objects()) {
+                if (!obj || !obj->active()) continue;
 
-        // Update enemy light exposure
+                if (obj->type() == Gameplay::GameObjectType::Enemy) {
+                    vec2 playerPos = m_playModePlayer->transform().position;
+                    vec2 enemyPos = obj->transform().position;
+
+                    vec2 playerHalf = m_playModePlayer->size() * 0.5f * 2.0f;
+                    vec2 enemyHalf = obj->size() * 0.5f * 2.0f;
+
+                    if (std::abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
+                        std::abs(playerPos.y - enemyPos.y) < (playerHalf.y + enemyHalf.y)) {
+
+                        std::cout << "Player hit by enemy: " << obj->name() << "!\n";
+                        m_playModePlayer->setActive(false);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Player respawn
+        if (m_playModePlayer && !m_playModePlayer->active()) {
+            if (!m_playModePlayerRespawning) {
+                m_playModePlayer->respawnAt(vec2(0.0f, 0.0f), true, true);
+                std::cout << "[LevelEditor] Player respawned!\n";
+                m_playModePlayerRespawning = true;
+                resetScene();
+            }
+            return;
+        }
+
+        // Reset flag when player is active again
+        if (m_playModePlayer && m_playModePlayer->active()) {
+            m_playModePlayerRespawning = false;
+        }
+
+        // Update light exposure
         updateLightExposure(dt);
     }
 
-    void LevelEditor::updatePhysicsAndGameplay(Runtime::Scene* scene, double dt) {
-        if (!m_playModePlayer) {
-            for (auto& obj : scene->objects()) {
-                if (obj && obj->type() == Gameplay::GameObjectType::Player) {
-                    m_playModePlayer = obj.get();
-                    break;
+    Gameplay::SurfaceType LevelEditor::getSurfaceUnder(Gameplay::GameObject* player)
+    {
+        auto* scene = m_currentScene.get();
+        if (!scene) return Gameplay::SurfaceType::Default;
+
+        vec2 pos = player->transform().position;
+
+        for (auto& obj : scene->objects()) {
+            if (!obj || !obj->active()) continue;
+
+            if (auto* surf = obj->getComponent<Gameplay::SurfaceComponent>()) {
+                vec2 half = obj->size() * 0.5f;
+                if (std::abs(pos.x - obj->transform().position.x) < half.x &&
+                    std::abs(pos.y - obj->transform().position.y) < half.y) {
+                    return surf->type();
                 }
             }
         }
 
-        // Implement player movement (similar to PlayState)
-        if (m_playModePlayer && m_input) {
-            float moveSpeed = 200.0f;
-            float runMultiplier = 2.0f;
+        return Gameplay::SurfaceType::Default;
+    }
 
-            vec2 velocity{ 0.0f, 0.0f };
+void LevelEditor::resetScene()
+{
+    if (!m_currentScene) return;
 
-            if (m_input->isKeyDown(GLFW_KEY_W)) velocity.y += 1.0f;
-            if (m_input->isKeyDown(GLFW_KEY_S)) velocity.y -= 1.0f;
-            if (m_input->isKeyDown(GLFW_KEY_A)) velocity.x -= 1.0f;
-            if (m_input->isKeyDown(GLFW_KEY_D)) velocity.x += 1.0f;
+    // Reload the scene
+    m_currentScene->load();
 
-            // Calculate magnitude manually (no length() function needed)
-            float magSquared = velocity.x * velocity.x + velocity.y * velocity.y;
+    // Reset player reference
+    m_playModePlayer = nullptr;
+    for (auto& obj : m_currentScene->objects()) {
+        if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+            m_playModePlayer = obj.get();
+            break;
+        }
+    }
 
-            if (magSquared > 0.0001f) {  // Use squared magnitude for comparison
-                // Normalize manually (no normalize() function needed)
-                float mag = sqrtf(magSquared);
-                velocity.x /= mag;
-                velocity.y /= mag;
+    // Re-register objects to layers
+    m_currentScene->registerExistingObjectsToLayers();
 
-                // Apply speed
-                float finalSpeed = moveSpeed;
-                if (m_input->isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
-                    m_input->isKeyDown(GLFW_KEY_RIGHT_SHIFT)) {
-                    finalSpeed *= runMultiplier;
-                }
-
-                velocity.x *= finalSpeed;
-                velocity.y *= finalSpeed;
-
-                // Update position
-                m_playModePlayer->transform().position.x += velocity.x * static_cast<float>(dt);
-                m_playModePlayer->transform().position.y += velocity.y * static_cast<float>(dt);
+    // Reinitialize enemy AI
+    if (m_playModePlayer) {
+        for (auto& obj : m_currentScene->objects()) {
+            if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+                obj->addComponent<Gameplay::Chase>(*obj, m_playModePlayer, 150.0f, 300.0f);
             }
         }
     }
+
+    std::cout << "[LevelEditor] Scene reset complete\n";
+}
+
+
 
 // ============================================================================
 // Wall Auto-Tiling
@@ -608,9 +730,9 @@ namespace Platform {
     }
 
 
-// ============================================================================
-// Undo/redo Implementation
-// ============================================================================
+    // ============================================================================
+    // Undo/redo Implementation
+    // ============================================================================
     void LevelEditor::executeCommand(std::unique_ptr<Platform::EditorCommand> cmd) {
         // Execute the command
         cmd->execute();
@@ -632,47 +754,46 @@ namespace Platform {
 
     void LevelEditor::undo() {
         if (m_undoStack.empty()) {
-            std::cout << "Nothing to undo" << std::endl;
+            std::cout << "Nothing to undo\n";
             return;
         }
 
-        // Pop command from undo stack
-        auto cmd = std::move(m_undoStack.back());
+        // 1. Take the command OUT of undo stack
+        std::unique_ptr<Platform::EditorCommand> cmd = std::move(m_undoStack.back());
         m_undoStack.pop_back();
 
-        // Undo it
+        // 2. Execute the undo
         cmd->undo();
 
-        // Move to redo stack
+        // 3. Move it to redo stack (so user can redo if they want)
         m_redoStack.push_back(std::move(cmd));
 
-        // Mark level as dirty
         markLevelDirty();
-
-        std::cout << "Undo successful" << std::endl;
+        std::cout << "Undo successful\n";
     }
 
     void LevelEditor::redo() {
         if (m_redoStack.empty()) {
-            std::cout << "Nothing to redo" << std::endl;
+            std::cout << "Nothing to redo\n";
             return;
         }
 
-        // Pop command from redo stack
-        auto cmd = std::move(m_redoStack.back());
+        // 1. Take the command OUT of redo stack
+        std::unique_ptr<Platform::EditorCommand> cmd = std::move(m_redoStack.back());
         m_redoStack.pop_back();
 
-        // Execute it again
+        // 2. Execute it again (calls execute(), not undo())
         cmd->execute();
 
-        // Move back to undo stack
+        // 3. Move it back to undo stack (so user can undo again if they want)
         m_undoStack.push_back(std::move(cmd));
 
-        // Mark level as dirty
         markLevelDirty();
-
-        std::cout << "Redo successful" << std::endl;
+        std::cout << "Redo successful\n";
     }
+
+
+
 
     void LevelEditor::clearRedoStack() {
         m_redoStack.clear();
@@ -863,7 +984,8 @@ void LevelEditor::renderGizmoScale() {
 void LevelEditor::updateGizmoTranslate() {
     if (!m_selectedObject) return;
 
-    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 mouseScreen = m_input->mousePosition();
+    vec2 mouseWorld = screenToWorld(mouseScreen);
 
     if (!m_isGizmoActive) {
         m_gizmoHoveredAxis = getGizmoHoveredAxis(mouseWorld);
@@ -931,7 +1053,8 @@ void LevelEditor::updateGizmoTranslate() {
 void LevelEditor::updateGizmoRotate() {
     if (!m_selectedObject) return;
 
-    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 mouseScreen = m_input->mousePosition();
+    vec2 mouseWorld = screenToWorld(mouseScreen);
     vec2 center = getGizmoCenterPosition();
     float scaledSize = getGizmoScaledSize();
 
@@ -1005,10 +1128,12 @@ void LevelEditor::updateGizmoRotate() {
 }
 
 // Modify updateGizmoScale():
-void LevelEditor::updateGizmoScale() {
+void LevelEditor::updateGizmoScale()
+{
     if (!m_selectedObject) return;
 
-    vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
+    vec2 mouseScreen = m_input->mousePosition();
+    vec2 mouseWorld = screenToWorld(mouseScreen);
     vec2 center = getGizmoCenterPosition();
     float scaledSize = getGizmoScaledSize();
 
@@ -1022,8 +1147,6 @@ void LevelEditor::updateGizmoScale() {
             m_gizmoActiveAxis = m_gizmoHoveredAxis;
             m_gizmoDragStartWorld = mouseWorld;
             m_gizmoInitialScale = m_selectedObject->transform().scale;
-
-            // RECORD START SCALE FOR UNDO
             m_transformStartScale = m_selectedObject->transform().scale;
             m_isTransforming = true;
         }
@@ -1032,8 +1155,7 @@ void LevelEditor::updateGizmoScale() {
     if (m_isGizmoActive && m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
         vec2 dragDelta = vec2(
             mouseWorld.x - m_gizmoDragStartWorld.x,
-            mouseWorld.y - m_gizmoDragStartWorld.y
-        );
+            mouseWorld.y - m_gizmoDragStartWorld.y);
 
         vec2 newScale = m_gizmoInitialScale;
 
@@ -1053,18 +1175,18 @@ void LevelEditor::updateGizmoScale() {
         case GizmoAxis::Both: {
             float initialDist = std::sqrt(
                 (m_gizmoDragStartWorld.x - center.x) * (m_gizmoDragStartWorld.x - center.x) +
-                (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y)
-            );
+                (m_gizmoDragStartWorld.y - center.y) * (m_gizmoDragStartWorld.y - center.y));
+
             float currentDist = std::sqrt(
                 (mouseWorld.x - center.x) * (mouseWorld.x - center.x) +
-                (mouseWorld.y - center.y) * (mouseWorld.y - center.y)
-            );
+                (mouseWorld.y - center.y) * (mouseWorld.y - center.y));
+
             float scaleFactor = currentDist / std::max(0.001f, initialDist);
 
             newScale = vec2(
                 m_gizmoInitialScale.x * scaleFactor,
-                m_gizmoInitialScale.y * scaleFactor
-            );
+                m_gizmoInitialScale.y * scaleFactor);
+
             newScale.x = std::max(0.1f, newScale.x);
             newScale.y = std::max(0.1f, newScale.y);
             break;
@@ -1083,11 +1205,9 @@ void LevelEditor::updateGizmoScale() {
     }
 
     if (!m_input->isMouseDown(GLFW_MOUSE_BUTTON_LEFT)) {
-        // RECORD COMMAND WHEN RELEASING MOUSE
         if (m_isGizmoActive && m_isTransforming) {
             vec2 finalScale = m_selectedObject->transform().scale;
 
-            // Only record if scale actually changed
             if (std::abs(m_transformStartScale.x - finalScale.x) > 0.001f ||
                 std::abs(m_transformStartScale.y - finalScale.y) > 0.001f) {
                 recordScaleCommand(m_selectedObject, m_transformStartScale, finalScale);
@@ -1100,6 +1220,7 @@ void LevelEditor::updateGizmoScale() {
         m_gizmoActiveAxis = GizmoAxis::None;
     }
 }
+
 
 // ============================================================================
 // GIZMO render Implementation
@@ -1127,37 +1248,37 @@ void LevelEditor::updateGizmoScale() {
     // Save Dialog Implementation
     // ============================================================================
 
-    int promptSaveDiscardCancel() {
-        static bool showDialog = true;
-        static int choice = -1; // 0=save, 1=discard, 2=cancel
+    //static int promptSaveDiscardCancel() {
+    //    static bool showDialog = true;
+    //    static int choice = -1; // 0=save, 1=discard, 2=cancel
 
-        if (showDialog) {
-            ImGui::OpenPopup("Save Changes?");
-            showDialog = false;
-        }
-        if (ImGui::BeginPopupModal("Save Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("You have unsaved changes. Do you want to save before leaving?");
-            if (ImGui::Button("Save")) {
-                choice = 0;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Discard")) {
-                choice = 1;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
-                choice = 2;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-            if (choice != -1) {
-                return choice;
-            }
-        }
-        return -1; // no user choice yet
-    }
+    //    if (showDialog) {
+    //        ImGui::OpenPopup("Save Changes?");
+    //        showDialog = false;
+    //    }
+    //    if (ImGui::BeginPopupModal("Save Changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    //        ImGui::Text("You have unsaved changes. Do you want to save before leaving?");
+    //        if (ImGui::Button("Save")) {
+    //            choice = 0;
+    //            ImGui::CloseCurrentPopup();
+    //        }
+    //        ImGui::SameLine();
+    //        if (ImGui::Button("Discard")) {
+    //            choice = 1;
+    //            ImGui::CloseCurrentPopup();
+    //        }
+    //        ImGui::SameLine();
+    //        if (ImGui::Button("Cancel")) {
+    //            choice = 2;
+    //            ImGui::CloseCurrentPopup();
+    //        }
+    //        ImGui::EndPopup();
+    //        if (choice != -1) {
+    //            return choice;
+    //        }
+    //    }
+    //    return -1; // no user choice yet
+    //}
 
     void LevelEditor::renderSaveDialog() {
         if (!m_showSaveDialog) return;
@@ -1618,8 +1739,13 @@ void LevelEditor::updateGizmoScale() {
         m_sceneFramebuffer.unbind();
             //std::cout << "Framebuffer render complete\n";
 
-        glViewport(0, 0, static_cast<int>(m_windowWidth),
-            static_cast<int>(m_windowHeight));
+        if (m_windowManager) {
+            glViewport(0, 0, m_windowManager->width(), m_windowManager->height());
+        }
+        else {
+            glViewport(0, 0, static_cast<int>(m_windowWidth),
+                static_cast<int>(m_windowHeight));
+        }
     }
 
 
@@ -1666,6 +1792,7 @@ void LevelEditor::updateGizmoScale() {
         }
         renderSaveDialog();
         renderLoadDialog();
+        renderErrorPopup();
     }
 
     /******************************************************************************/
@@ -1938,15 +2065,24 @@ void LevelEditor::updateGizmoScale() {
     void LevelEditor::createObjectFromPrefab(const std::string& prefabName, vec2 position) {
         if (!m_currentScene) return;
 
+        std::cout << "[LevelEditor] Creating: " << prefabName << " at ("
+            << position.x << ", " << position.y << ")\n";
+
+        // Create the object
         auto obj = Gameplay::PrefabFactory::get().createAt(prefabName, position);
-        if (obj) {
-            m_currentScene->addObject(std::move(obj));
-            markLevelDirty();
-            // TODO: Core::Engine::Get().logger().info("Created object from prefab: " + prefabName);
+        if (!obj) {
+            std::cout << "[LevelEditor] Failed to create prefab\n";
+            return;
         }
-        else {
-            // TODO: Core::Engine::Get().logger().error("Failed to create object from prefab: " + prefabName);
-        }
+
+        Gameplay::GameObject* objPtr = obj.get();
+        m_currentScene->addObject(std::move(obj));
+
+        // Record the creation as an undo command
+        auto cmd = std::make_unique<Platform::CreateCommand>(objPtr, m_currentScene.get());
+        executeCommand(std::move(cmd));
+
+        markLevelDirty();
     }
 
     bool LevelEditor::savePrefab(const std::string& name) {
@@ -2185,6 +2321,19 @@ void LevelEditor::updateGizmoScale() {
 
                 // optional: mark editor dirty if you treat audio as part of level data
                 // markLevelDirty();
+            }
+            else {
+                // This is where you satisfy the rubric example: dropping wrong things like .txt
+                // when trying to use the audio pipeline.
+                queueErrorPopup(
+                    "Unsupported File Type",
+                    "The file:\n\n" + path +
+                    "\n\nis not a supported asset type for this editor.\n"
+                    "Supported audio formats: .ogg, .wav, .mp3\n"
+                    "Supported image formats: .png, .jpg\n"
+                    "Level files: .json\n"
+                    "Prefab files: /prefabs/*.json"
+                );
             }
         }
     }
@@ -3034,13 +3183,11 @@ void LevelEditor::updateGizmoScale() {
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
                 const char* prefabName = (const char*)payload->Data;
-
                 ImVec2 mouseImGui = ImGui::GetMousePos();
-                vec2 mouseWorld = screenToWorld(vec2(mouseImGui.x, mouseImGui.y));
-
+                vec2 mouseScreen(mouseImGui.x, mouseImGui.y);
+                vec2 mouseWorld = screenToWorld(mouseScreen);
                 vec2 snappedWorld = snapToGrid(mouseWorld);
-
-                float halfGrid = m_gridSize * 0.5f;
+                float halfGrid = 0.5f * m_gridSize;
                 vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
 
                 createObjectFromPrefab(prefabName, finalPos);
@@ -3542,6 +3689,13 @@ void LevelEditor::updateGizmoScale() {
         if (isMouseOverUI()) return;
 
         vec2 mouseScreen = m_input->mousePosition();
+        vec2 localPos = mouseScreen - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
+
+        if (localPos.x < 0 || localPos.y < 0 ||
+            localPos.x > m_sceneViewportSize.x || localPos.y > m_sceneViewportSize.y) {
+            return;
+        }
+
         vec2 mouseWorld = screenToWorld(mouseScreen);
 
         if (m_selectedObject && isMouseOverGizmo(mouseWorld)) {
@@ -3609,6 +3763,9 @@ void LevelEditor::updateGizmoScale() {
     void LevelEditor::handlePlayerInput(Gameplay::GameObject* player, double dt) {
         if (!player || !m_input) return;
 
+        vec2 mouseScreen = m_input->mousePosition();
+        vec2 mouseWorld = screenToWorld(mouseScreen);
+
         float moveSpeed = player->moveSpeed();
         float maxSpeed = moveSpeed;
         float maxRunSpeed = maxSpeed * 2.0f;
@@ -3643,7 +3800,6 @@ void LevelEditor::updateGizmoScale() {
         }
 
         // Mouse look
-        vec2 mouseWorld = m_input->getMouseWorldPos(m_editorCamera, m_windowWidth, m_windowHeight);
         vec2 dir = vec2(mouseWorld.x - player->transform().position.x,
             mouseWorld.y - player->transform().position.y);
         float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
@@ -3661,6 +3817,12 @@ void LevelEditor::updateGizmoScale() {
         }
 
         vec2 mouseScreen = m_input->mousePosition();
+        vec2 localPos = mouseScreen - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
+
+        if (localPos.x < 0 || localPos.y < 0 ||
+            localPos.x > m_sceneViewportSize.x || localPos.y > m_sceneViewportSize.y) {
+            return;
+        }
         vec2 mouseWorld = screenToWorld(mouseScreen);
 
         // Apply grid snapping - this snaps to the grid corner
@@ -3699,7 +3861,7 @@ void LevelEditor::updateGizmoScale() {
         vec2 mouseWorld = screenToWorld(m_input->mousePosition());
         Gameplay::GameObject* obj = getObjectAtPosition(mouseWorld);
 
-        if (obj && m_currentScene) {
+        if (obj && obj->active() && m_currentScene) {
             selectObject(obj);
             deleteSelectedObject();
         }
@@ -3783,6 +3945,7 @@ void LevelEditor::updateGizmoScale() {
         auto& objects = m_currentScene->objects();
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             auto& obj = *it;
+            if (!obj || !obj->active()) continue;
 
             // Use the object's own AABB but make it larger for easier selection
             Gameplay::AABB aabb = obj->aabbWorld();
@@ -3802,27 +3965,24 @@ void LevelEditor::updateGizmoScale() {
 
 
 
-    vec2 LevelEditor::screenToWorld(vec2 screenPos) const {
+    vec2 LevelEditor::screenToWorld(vec2 screenPos) const
+    {
         // 1. Get the mouse position relative to the Top-Left of the Scene View panel
-            //    (Subtracts the position of the ImGui window itself)
         vec2 localPos = screenPos - vec2(m_sceneViewPosition.x, m_sceneViewPosition.y);
 
-        // 2. Convert to coordinates relative to the CENTER of the viewport.
-        //    (0,0) is now the center of the screen. 
-        //    +X is Right, +Y is Down (because screen coordinates increase downwards)
-        vec2 centered = localPos - vec2(m_windowWidth * 0.5f, m_windowHeight * 0.5f);
+        // 2. Convert to coordinates relative to the CENTER of the scene viewport
+        // ← Use m_sceneViewportSize, NOT m_windowWidth/m_windowHeight
+        vec2 centered = localPos - vec2(m_sceneViewportSize.x * 0.5f, m_sceneViewportSize.y * 0.5f);
 
         // 3. Scale by Camera Zoom to get World Units
         vec2 worldRel = centered / m_editorCamera.zoom();
 
-        // 4. FIX THE FLIP: Convert Screen Y (Down) to World Y (Up)
-        //    In your worldToScreen, you do: relative.y = -relative.y
-        //    So we must do the exact same negation here to reverse it.
+        // 4. Flip Y: Screen Y increases downward, World Y increases upward
         worldRel.y = -worldRel.y;
 
         // 5. Add the Camera Position to get the final World Coordinate
-        vec2 m_editorCameraPos = compat::to_vec2(m_editorCamera.position());
-        return worldRel + m_editorCameraPos;
+        vec2 meditorCameraPos = compat::to_vec2(m_editorCamera.position());
+        return worldRel + meditorCameraPos;
     }
 
 
@@ -3942,7 +4102,7 @@ void LevelEditor::updateGizmoScale() {
             if (obj && obj->active() && obj->type() == Gameplay::GameObjectType::Enemy) {
                 glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
                 if (isPointInPolygon(enemyPos, lightPolyGLM)) {
-                    obj->addLightExposure(dt);
+                    obj->addLightExposure(static_cast<float>(dt));
                     if (obj->lightExposureTime() >= 2.0f) {
                         obj->setActive(false);
                     }
@@ -3981,9 +4141,47 @@ void LevelEditor::updateGizmoScale() {
 
         // Render
         m_renderer->beginLightPass(m_editorCamera.viewProj(), originGLM,
-            glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+            glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f), m_playerBattery/100.f);
         m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
         m_renderer->endLightPass();
+    }
+
+	/******************************************************************************/
+    // Error Handling
+    /******************************************************************************/
+    void LevelEditor::queueErrorPopup(const std::string& title, const std::string& message)
+    {
+        m_errorPopupTitle = title;
+        m_errorPopupMessage = message;
+        m_showErrorPopup = true;
+    }
+
+    void LevelEditor::renderErrorPopup()
+    {
+        if (!m_showErrorPopup)
+            return;
+
+        ImGui::OpenPopup("Audio Error");
+
+        // Center the popup in the main viewport using SetNextWindowPos with pivot (0.5,0.5)
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Audio Error", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+        {
+            ImGui::TextWrapped("%s", m_errorPopupTitle.c_str());
+            ImGui::Separator();
+            ImGui::TextWrapped("%s", m_errorPopupMessage.c_str());
+            ImGui::Spacing();
+
+            if (ImGui::Button("OK", ImVec2(120, 0))) {
+                m_showErrorPopup = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
     }
 
     //void LevelEditor::setupDefaultDockLayout() {

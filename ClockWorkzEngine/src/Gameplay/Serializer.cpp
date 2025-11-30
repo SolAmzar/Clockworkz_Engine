@@ -1,4 +1,19 @@
-﻿#include "Gameplay\Serializer.hpp"
+﻿/******************************************************************************/
+/*!
+\file           Serializer.hpp
+\project        Lights Out
+\author(s)      [Yusuf], 60% [Lebon], 40%
+\brief          Implements full JSON serialization/deserialization for GameObjects,
+                their components, and entire scenes, including prefab-based 
+                construction, transform/collider parsing, and animation/audio loading.
+
+
+All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
+
+#include "Gameplay\Serializer.hpp"
 #include "Gameplay\GameObject.hpp"
 #include "Gameplay\Components\Health.hpp"
 #include "Gameplay\Components\DamageDealer.hpp"
@@ -216,26 +231,46 @@ namespace Gameplay {
                 if (j.contains("blocksLight")) {
                     collide->blocksLight=((j["blocksLight"].get<bool>()));
                 }
+        /*        if (obj.name() == "Enemy" || obj.name() == "Enemy1" || obj.name() == "Enemy2") {
+                    std::cout << "deserialize enemy" << std::endl;
+                }*/
+
+                if (obj.name() == "Wall") {
+                    std::cout << "deserialize wall" << std::endl;
+                }
+                if (j.contains("moveable")) {
+                    obj.setMoveable(j["moveable"].get<bool>());
+                }
             }
             else if (s == "Circle") {
                 auto* collide = obj.addCollider<CircleCollider>();
                 collide->type = ColliderType::Circle;
 
-                // Optional: read radius from JSON (with a default)
+                // Default: half of width
                 float radius = obj.size().x * 0.5f;
-                collide->radius(radius);
+
                 if (j.contains("radius")) {
                     radius = j["radius"].get<float>();
                 }
-                collide->radius(radius);  // assuming CircleCollider has a radius field
+
+                collide->setRadius(radius);
 
                 if (j.contains("blocksLight")) {
                     collide->blocksLight = j["blocksLight"].get<bool>();
                 }
 
-                // Keep size/shape in sync for debug + other systems
                 obj.setShape(Gameplay::GameObjectShape::Circle);
                 obj.setSize(vec2(radius * 2.0f, radius * 2.0f));
+   /*             if (obj.name() == "Enemy" || obj.name() == "Enemy1" || obj.name() == "Enemy2") {
+                    std::cout << "deserialize enemy" << std::endl;
+                }
+
+                if (obj.name() == "Wall") {
+                    std::cout << "deserialize wall" << std::endl;
+                }*/
+                if (j.contains("moveable")) {
+                    obj.setMoveable(j["moveable"].get<bool>());
+                }
             }
             else if (s == "None") {
                 auto* collide = obj.addCollider<Collider>();
@@ -514,7 +549,7 @@ namespace Gameplay {
             return obj;
         }
 
-        // 5️⃣ Fallback: Non-prefab legacy JSON
+        // 5️. Fallback: Non-prefab legacy JSON
         std::string name = j.value("name", "Unnamed");
         GameObjectType type = GameObjectType::Unknown;
         if (j.contains("type")) {
@@ -554,6 +589,20 @@ namespace Gameplay {
             }
         }
 
+        // Too many hard code below code to be remove later, the level json should have proper handling of the object colliders information.
+        // Serializing from level editor should have fix it. make it such that it loads attributes from prefab, but things like transform/level state u can overwrite.
+        using GT = Gameplay::GameObjectType;
+        switch (obj->type()) {
+        case GT::Wall:    obj->setMoveable(false); break;       // <-- walls are static
+        case GT::Floor:   obj->setMoveable(false); break;         // optional: floors static too
+        case GT::Trap:    obj->setMoveable(false); break;        // traps as triggers (no push)
+        case GT::Box:	  obj->setMoveable(true);  break;        // boxes are movable
+        case GT::Player:  obj->setMoveable(true);  break;
+        case GT::Enemy:   obj->setMoveable(true);  break;
+        case GT::Ball:    obj->setMoveable(false); break;        // dynamic bodies move
+        default:
+            obj->setMoveable(true);
+        }
 
             
 

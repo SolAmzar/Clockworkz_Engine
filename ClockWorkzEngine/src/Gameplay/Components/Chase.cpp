@@ -2,10 +2,10 @@
 /*!
 \file           Chase.cpp (DEBUG VERSION)
 \project        Lights Out
-\author(s)      [Amzar], 70% [Syafiq] 40%
+\author(s)      [Amzar], 50% [Lebon], 30% [Syafiq], 20%
 \brief          DEBUG VERSION with extensive logging to diagnose light slowdown
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -49,12 +49,32 @@ namespace Gameplay {
         , m_lastDistance(0.0f)
         , m_currentSpeed(speed)
     {
+        // DEBUG: Log construction
+        std::cout << "[Chase DEBUG] Created for '" << m_enemy.name()
+            << "' | Speed: " << m_speed
+            << " | Slowdown Factor: " << m_lightSlowdownFactor << std::endl;
+
+        // Update animation if sprite animator exists
+        if (auto* spriteAnimator = enemy.getComponent<SpriteAnimatorComponent>()) {
+                spriteAnimator->play("walk");
+        }
     }
 
     bool Chase::shouldEngageTarget(float distance) const {
         // No engage radius means always chase
         if (m_engageRadius <= 0.0f) {
             return true;
+        }
+
+        if (auto* anim = m_enemy.getComponent<SpriteAnimatorComponent>()) {
+            if (anim->currentState() == "attack" && anim->isPlaying()) {
+                return true;
+            }
+        }
+
+        SpriteAnimatorComponent* playerAnim = m_player->getComponent<SpriteAnimatorComponent>();
+        if (playerAnim->currentState() == "death") {
+            return false;
         }
 
         // Only chase if within engage radius
@@ -116,6 +136,12 @@ namespace Gameplay {
             enemy.transform().position += velocity * static_cast<f32>(dt);
             enemy.markDirty();
         }
+
+        if (magnitude(velocity) > 0.001f) {
+            float angleRad = atan2(velocity.y, velocity.x);  // radians
+            enemy.transform().rotationRad = angleRad;
+        }
+
     }
 
     vec2 Chase::generateRandomDirection() const {
@@ -127,8 +153,12 @@ namespace Gameplay {
     void Chase::updateWanderBehavior(GameObject& enemy, double dt) {
 
         if (auto* anim = enemy.getComponent<SpriteAnimatorComponent>()) {
-            if (anim->hasClip("walk"))
+            if (anim->currentState() == "attack" && anim->isPlaying()) {
+                return;
+            }
+            else {
                 anim->play("walk");
+            }
         }
         // Update wander timer
         m_wanderTimer += static_cast<float>(dt);
@@ -150,6 +180,7 @@ namespace Gameplay {
             m_wanderDirection = generateRandomDirection();
             m_wanderTimer = 0.0f;
         }
+        
 
         // Apply wander movement
         applyVelocity(enemy, wanderVel, dt);
@@ -165,6 +196,8 @@ namespace Gameplay {
             return;
         }
 
+
+
         // Calculate distance to target
         vec2 from = m_enemy.transform().position;
         vec2 to = m_player->transform().position;
@@ -174,7 +207,7 @@ namespace Gameplay {
 
 
         // Check if too close - stop to avoid jitter
-        if (distSquared <= m_stopDist * m_stopDist) {
+        /*if (distSquared <= m_stopDist * m_stopDist) {
             m_isChasing = false;
             m_isSlowedByLight = false;
             m_currentSpeed = 0.0f;
@@ -184,8 +217,7 @@ namespace Gameplay {
                 m_enemy.velocity() = { 0.0f, 0.0f };
             }
             return;
-        }
-
+        }*/
         // Determine if should engage target
         m_isChasing = shouldEngageTarget(m_lastDistance);
 
@@ -194,22 +226,19 @@ namespace Gameplay {
         m_isSlowedByLight = (currentLightExposure > 0.0f);
         m_currentSpeed = calculateEffectiveSpeed();
 
-        // Update animation if sprite animator exists
-        if (auto* spriteAnimator = enemy.getComponent<SpriteAnimatorComponent>()) {
-            if (m_isChasing) {
-                spriteAnimator->play("walk");
-            }
-        }
+        
 
         // Stop movement if not chasing - switch to wander behavior
         if (!m_isChasing) {
             updateWanderBehavior(enemy, dt);
             return;
         }
+        else {
+            // Calculate and apply chase movement (with light slowdown applied)
+            vec2 desiredVel = calculateDesiredVelocity(from, to);
+            applyVelocity(enemy, desiredVel, dt);
+        }
 
-        // Calculate and apply chase movement (with light slowdown applied)
-        vec2 desiredVel = calculateDesiredVelocity(from, to);
-        applyVelocity(enemy, desiredVel, dt);
 
     }
 

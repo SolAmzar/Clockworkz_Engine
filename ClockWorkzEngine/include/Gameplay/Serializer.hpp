@@ -1,10 +1,3 @@
-#pragma once
-#include <string>
-#include <vector>
-#include <memory>
-#include <glm/vec2.hpp>
-#include "Core/json.hpp"
-
 /******************************************************************************/
 /*!
 \file           Serializer.hpp
@@ -25,6 +18,16 @@
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
+
+#pragma once
+#include <string>
+#include <vector>
+#include <memory>
+#include <glm/vec2.hpp>
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
+
 
 namespace Gameplay {
     class GameObject;

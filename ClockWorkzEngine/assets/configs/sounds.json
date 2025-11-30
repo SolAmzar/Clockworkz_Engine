@@ -22,6 +22,55 @@
       "is3D": false
     },
     {
+      "name": "level_bgm",
+      "path": "assets/audio/level_bgm.wav",
+      "loop": true,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "level_ambience",
+      "path": "assets/audio/level_ambience.wav",
+      "loop": true,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "flashlight_on",
+      "path": "assets/audio/sfx/flashlight_on.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "flashlight_off",
+      "path": "assets/audio/sfx/flashlight_off.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "enemy_death_1",
+      "path": "assets/audio/sfx/enemy_death_1.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "enemy_death_2",
+      "path": "assets/audio/sfx/enemy_death_2.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
+      "name": "enemy_death_3",
+      "path": "assets/audio/sfx/enemy_death_3.wav",
+      "loop": false,
+      "stream": true,
+      "is3D": false
+    },
+    {
       "name": "fs_concrete_1",
       "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
       "loop": false,

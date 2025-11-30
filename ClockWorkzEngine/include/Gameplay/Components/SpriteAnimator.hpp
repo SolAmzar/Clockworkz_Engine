@@ -1,5 +1,7 @@
 #pragma once
-#include "Core/json.hpp"
+#pragma warning(push, 0)
+#include "Core/json.hpp" // nlohmann::json
+#pragma warning(pop)
 #include "Gameplay/GameObject.hpp"
 #include "Gameplay/Components/SpriteRenderer.hpp"
 #include <unordered_map>
@@ -53,6 +55,8 @@ namespace Gameplay {
         void setSpriteRenderer(SpriteRendererComponent* sr) { m_renderer = sr; }
 
         void removeClip(const std::string& name);
+
+        bool isPlaying() { return m_playing; }
 
     private:
         std::unordered_map<std::string, AnimationClip> m_clips;

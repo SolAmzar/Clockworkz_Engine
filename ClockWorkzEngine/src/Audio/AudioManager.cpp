@@ -42,6 +42,35 @@ static bool isChannelAlive(FMOD::Channel* ch) {
     return playing;
 }
 
+int AudioManager::findChannel(const std::string& id) {
+    // Walk all tracked channels.
+    // While we're here, also prune any dead ones so the map stays clean.
+    for (auto it = m_channels.begin(); it != m_channels.end(); ) {
+        FMOD::Channel* ch = it->second.ch;
+
+        if (!isChannelAlive(ch)) {
+            // Channel finished or invalid ? erase.
+            it = m_channels.erase(it);
+            continue;
+        }
+
+        if (it->second.soundId == id) {
+            // Found a live channel playing this sound id.
+            return it->first;          // this is the channel handle
+        }
+
+        ++it;
+    }
+
+    // 0 means "no live channel found" (consistent with play() failure)
+    std::cerr << "[Audio] Channel " << id << " not found" << "\n";
+    return 0;
+}
+
+bool AudioManager::isPlaying(const std::string& id) {
+    return findChannel(id) != 0;
+}
+
 AudioManager::~AudioManager() {}
 
 AudioManager& AudioManager::get() {

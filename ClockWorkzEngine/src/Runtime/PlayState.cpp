@@ -43,6 +43,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <sstream>
 #include <chrono>
 #include <thread>
 #include <memory>
@@ -61,6 +62,9 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <random>
+#include <algorithm>
+#include <array>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Assets/TextureManager.hpp>
 #include "Gameplay/Components/Fragment.hpp"
@@ -68,6 +72,23 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 using namespace Graphics;
 using namespace Assets;
+
+namespace
+{
+	// Shared RNG for all footsteps
+	std::mt19937& FootstepRng()
+	{
+		static std::mt19937 rng{ std::random_device{}() };
+		return rng;
+	}
+
+	template<std::size_t N>
+	const char* pickRandom(const std::array<const char*, N>& ids)
+	{
+		std::uniform_int_distribution<std::size_t> dist(0, N - 1);
+		return ids[dist(FootstepRng())];
+	}
+}
 
 namespace Runtime
 {
@@ -183,30 +204,40 @@ namespace Runtime
 		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
 		s.rate = 120.f;
 
+
 		// Initialize level editor
 		Core::Engine& engine = Core::Engine::Get();
 
+		auto& audio = engine.audio();
 
-		m_levelEditor = std::make_unique<Platform::LevelEditor>();
+		// play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
+		m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
+		audio.play("level_ambience", Audio::Group::SFX, m_sfxVol, false);
 
-		if (m_levelEditor->init(
-			engine.window().handle(),
-			engine.rendering(),
-			m_input,
-			engine.window())) {
+		//m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
-			// Load current scene into editor
-			if (auto* scene = m_scenes.current()) {
-				m_levelEditor->loadSceneFromPlayState(scene);
-			}
+		//if (m_levelEditor->init(
+		//	engine.window().handle(),
+		//	engine.rendering(),
+		//	m_input,
+		//	engine.window())) {
 
-			m_levelEditor->setActive(false); // Start inactive
-			m_editorInitialized = true;
-			std::cout << "[PlayState] Level editor initialized\n";
-		}
-		else {
-			std::cerr << "[PlayState] Failed to initialize level editor\n";
-		}
+		//	// Create level editor and this will load
+		//	// Scene 'level_01' loaded from : assets / scenes / EditorScene.json
+		//	// Load current scene into editor
+		//	if (auto* scene = m_scenes.current()) {
+		//		m_levelEditor->loadSceneFromPlayState(scene);
+		//	}
+
+		//	m_levelEditor->setActive(false); // Start inactive
+		//	m_editorInitialized = true;
+		//	std::cout << "[PlayState] Level editor initialized\n";
+		//}
+		//else {
+		//	std::cerr << "[PlayState] Failed to initialize level editor\n";
+		//}
+
+
 
 		currentBattery = 100.0f;
 		maxBattery = 100.0f;
@@ -263,16 +294,16 @@ namespace Runtime
 										<< " size=(" << z.x << "," << z.y << ")"
 										<< (o.active() ? "" : " [inactive]") << "\n";
 
-					if (u->type() == Gameplay::GameObjectType::Player)
+					/*if (u->type() == Gameplay::GameObjectType::Player)
 					{
 						m_player = &(*u);
-						Gameplay::SpriteRendererComponent *playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
+
+						Gameplay::SpriteRendererComponent* playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
 						if (playerSprite2)
 						{
-
-							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
+							playerSprite2->setUV(glm::vec4{ 0, 0.875, 0.125, 0.125 });
 						}
-					}
+					}*/
 
 				/*	if (u->type() == Gameplay::GameObjectType::Wall) {
 						auto* sprite = u->getComponent<Gameplay::SpriteRendererComponent>();
@@ -281,6 +312,14 @@ namespace Runtime
 						}
 
 					}*/
+				}
+
+				for (auto& obj : scene->objects()) {
+					if (obj && obj->type() == Gameplay::GameObjectType::Player) {
+						m_player = obj.get();
+						m_spawnPoint = m_player->transform().position;  // Save starting position
+						break;
+					}
 				}
 
 				initializeEnemyAI(scene);
@@ -300,6 +339,14 @@ namespace Runtime
 		m_lastCollectedFragmentId = "";
 
 		std::cout << "[PlayState] Fragment system initialized\n";
+		Assets::ResourceManager<Assets::FontManager>::Load(
+			"Subtitle", "assets/fonts/MANIC2.TTF", 100);
+
+		auto textShader = ResourceManager<Shader>::Load(
+			"text",
+			"assets/shaders/text.vert",
+			"assets/shaders/text.frag");
+
 	}
 
 	void PlayState::onExit()
@@ -320,6 +367,14 @@ namespace Runtime
 			m_scenes.unloadCurrent();
 		}
 		m_loaded = false;
+		
+		if (m_bgmPlaying)
+		{
+			auto& audio = Core::Engine::Get().audio();
+			audio.stop(m_bgmChannel);
+			m_bgmPlaying = false;
+		}
+
 	}
 
 	void PlayState::update(double dt)
@@ -422,6 +477,19 @@ namespace Runtime
 		{
 			m_flashlightOn = !m_flashlightOn;
 			std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
+
+			Audio::AudioManager& sfx_audio = Core::Engine::Get().audio();
+			
+
+			if (m_flashlightOn == true)
+			{
+				sfx_audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+			}
+			else
+			{
+				sfx_audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+			}
+
 		}
 
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))
@@ -471,143 +539,220 @@ namespace Runtime
 						cam.setPosition(glm::vec2(p.x, p.y));
 					}
 
-					// ---- Movement ----
-					float moveSpeed = obj->moveSpeed();
-					bool isRunning = false;
-					float maxSpeed = obj->moveSpeed();
-					float maxRunSpeed = maxSpeed*2;
+					// --- Player Animation Control ---
+					Gameplay::SpriteAnimatorComponent* playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
+					if (playerSpriteComp->currentState() != "death") {
+						// ---- Movement FOLLOW ----
+						//float moveSpeed = static_cast<float>(obj->moveSpeed());
+						bool isRunning = false;
+						//float maxSpeed = obj->moveSpeed();
+						//float maxRunSpeed = maxSpeed*2.0f;
 
-					m_timeSinceStep += (float)dt;
-					auto surfaceType = getSurfaceUnder(obj.get());
-					vec2 curPos = obj->transform().position;
-					float speed = magnitude(obj->velocity() * 0.3f);
-					bool  moving = speed > 5.0f;
-					
-					if (moving) {
-						if (!m_haveLastFootPos) {
+						m_timeSinceStep += (float)dt;
+						auto surfaceType = getSurfaceUnder(obj.get());
+						vec2 curPos = obj->transform().position;
+						float speed = magnitude(obj->velocity() * 0.3f);    // use your magnitude/length
+						bool  moving = speed > 5.0f;
+
+						if (moving) {
+							if (!m_haveLastFootPos) {
+								m_lastFootPos = curPos;
+								m_haveLastFootPos = true;
+							}
+							vec2 delta = curPos - m_lastFootPos;
+							float frameDist = magnitude(delta);
+							m_distanceSinceStep += frameDist;
 							m_lastFootPos = curPos;
-							m_haveLastFootPos = true;
+
+							if (m_distanceSinceStep >= m_stepDistance && m_timeSinceStep >= m_minStepInterval) {
+								// Time for exactly ONE footsteps
+								steps.playFootstep(audio, surfaceType, speed);
+
+								m_distanceSinceStep = 0.0f;   // reset distance
+								m_timeSinceStep = 0.0f;
+							}
 						}
-						vec2 delta = curPos - m_lastFootPos;
-						float frameDist = magnitude(delta);
-						m_distanceSinceStep += frameDist;
-						m_lastFootPos = curPos;
-
-						if (m_distanceSinceStep >= m_stepDistance && m_timeSinceStep >= m_minStepInterval) {
-							// Time for exactly ONE footsteps
-							steps.playFootstep(audio, surfaceType, speed);
-
-							m_distanceSinceStep = 0.0f;   // reset distance
+						else {
+							// not moving → reset so we don’t “owe” steps
+							m_distanceSinceStep = 0.0f;
 							m_timeSinceStep = 0.0f;
+							m_haveLastFootPos = false;
+						}
+
+						vec2 move{ 0,0 };
+
+						// WASD input → movement vector
+						if (m_input.isKeyDown(GLFW_KEY_W)) move.y += 1;
+						if (m_input.isKeyDown(GLFW_KEY_S)) move.y -= 1;
+						if (m_input.isKeyDown(GLFW_KEY_A)) move.x -= 1;
+						if (m_input.isKeyDown(GLFW_KEY_D)) move.x += 1;
+
+						// normalize diagonal
+						if (move.x != 0 || move.y != 0)
+							move = normalize(move);
+
+						// apply speed
+						float speedMove = obj->moveSpeed();
+
+						// shift to run
+						if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+							speedMove *= 2.0f;
+							isRunning = true;
+						}
+
+						// final velocity
+						obj->velocity() = move * speedMove;
+
+
+						////not used
+						//if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+						//{
+						//	moveSpeed *= 2;
+						//	isRunning = true;
+						//}
+
+						////Gameplay::GameObject* fx = nullptr;
+						////for (auto& up : gameObjects) {
+						////	if (up->name() == "ParticleTest") { fx = up.get(); break; }
+						////}
+						////if (fx) {
+						////	if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
+						////		if (auto* em = fx->getComponent<Gameplay::ParticleEmitter>())
+						////			em->burst(80); // 80-particle puff
+						////	}
+						////}
+						////float moveAmount = moveSpeed * static_cast<float>(dt);
+
+						//if (m_input.isKeyDown(GLFW_KEY_W))
+						//{
+						//	obj->velocity().y += moveSpeed * static_cast<f32>(dt);
+						//	if ((!isRunning) && (obj->velocity().y > maxSpeed)) {
+						//		obj->velocity().y = maxSpeed;
+						//	}
+						//	else if (obj->velocity().y > maxRunSpeed){
+						//		obj->velocity().y = maxRunSpeed;
+						//	}
+
+						//}
+						//else if (m_input.isKeyDown(GLFW_KEY_S))
+						//{
+						//	obj->velocity().y -= moveSpeed * static_cast<f32>(dt);
+						//	if ((!isRunning) && (obj->velocity().y < -maxSpeed)) {
+						//		obj->velocity().y = -maxSpeed;
+						//	}
+						//	else if (obj->velocity().y > -maxRunSpeed) {
+						//		obj->velocity().y = -maxRunSpeed;
+						//	}
+						//}
+						//else
+						//{
+						//	obj->velocity().y = 0;
+						//}
+
+						//if (m_input.isKeyDown(GLFW_KEY_A))
+						//{
+						//	obj->velocity().x -= moveSpeed * static_cast<f32>(dt);
+						//	if ((!isRunning) && (obj->velocity().x < -maxSpeed)) {
+						//		obj->velocity().x = -maxSpeed;
+						//	}
+						//	else if (obj->velocity().x > -maxRunSpeed) {
+						//		obj->velocity().x = -maxRunSpeed;
+						//	}
+						//}
+						//else if (m_input.isKeyDown(GLFW_KEY_D))
+						//{
+						//	obj->velocity().x += moveSpeed * static_cast<f32>(dt);
+						//	if ((!isRunning) && (obj->velocity().x > maxSpeed)) {
+						//		obj->velocity().x = maxSpeed;
+						//	}
+						//	else if (obj->velocity().y > maxRunSpeed) {
+						//		obj->velocity().x = maxRunSpeed;
+						//	}
+						//}
+						//else
+						//{
+						//	obj->velocity().x = 0;
+						//}
+
+						if (m_input.isKeyDown(GLFW_KEY_G))
+						{
+							obj->transform().scale.x += static_cast<f32>(10 * dt);
+							obj->transform().scale.y += static_cast<f32>(10 * dt);
+						}
+
+						// Player world position
+						vec2 playerPos = obj->transform().position;
+
+						// Direction vector from player to mouse
+						vec2 dir = mouseWorld - playerPos;
+
+						// Distance check to prevent jitter
+						float dist = magnitude(dir);
+						if (dist > 10.0f)
+						{ // 10 units = threshold distance
+							// Normalize direction
+							dir = normalize(dir);
+
+							// Compute angle in radians — atan2(y, x)
+							float angleRad = std::atan2(dir.y, dir.x);
+
+							// Convert to degrees if your transform uses degrees
+							obj->transform().rotationRad = angleRad;
+						}
+						if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
+						{
+							obj->respawnAt(vec2(0.0f, 0.0f), true, true);
+						}
+
+
+
+						if (playerSpriteComp)
+						{
+							// Determine animation state
+							std::string animState = m_flashlightOn ? "idle_torch" : "idle";
+							//std::string animState = m_flashlightOn ? "idle" : "idle";
+							bool isMoving = (move.x != 0 || move.y != 0);
+
+							if (isMoving)
+							{
+								animState = m_flashlightOn ? "walk_torch" : "walk";
+
+								// You can decide if shift key means run
+								if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+								{
+									animState = m_flashlightOn ? "run_torch" : "run";
+								}
+							}
+
+							playerSpriteComp->play(animState);
 						}
 					}
 					else {
-						// not moving → reset so we don’t “owe” steps
-						m_distanceSinceStep = 0.0f;
-						m_timeSinceStep = 0.0f;
-						m_haveLastFootPos = false;
+						obj->velocity() = vec2();
 					}
 
-					vec2 move{ 0,0 };
-
-
-					// WASD input → movement vector
-					if (m_input.isKeyDown(GLFW_KEY_W)) move.y += 1;
-					if (m_input.isKeyDown(GLFW_KEY_S)) move.y -= 1;
-					if (m_input.isKeyDown(GLFW_KEY_A)) move.x -= 1;
-					if (m_input.isKeyDown(GLFW_KEY_D)) move.x += 1;
-
-					// normalize diagonal
-					if (move.x != 0 || move.y != 0)
-						move = normalize(move);
-
-					// apply speed
-					float speedMove = obj->moveSpeed();
-
-					// shift to run
-					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
-						speedMove *= 2.0f;
-						isRunning = true;
-					}
-
-					// final velocity
-					obj->velocity() = move * speedMove;
-
-					if (m_input.isKeyDown(GLFW_KEY_G))
-					{
-						obj->transform().scale.x += static_cast<f32>(10 * dt);
-						obj->transform().scale.y += static_cast<f32>(10 * dt);
-					}
-
-					// Player world position
-					vec2 playerPos = obj->transform().position;
-
-					// Direction vector from player to mouse
-					vec2 dir = mouseWorld - playerPos;
-
-					// Distance check to prevent jitter
-					float dist = magnitude(dir);
-					if (dist > 10.0f)
-					{ // 10 units = threshold distance
-						// Normalize direction
-						dir = normalize(dir);
-
-						// Compute angle in radians — atan2(y, x)
-						float angleRad = std::atan2(dir.y, dir.x);
-
-						// Convert to degrees if your transform uses degrees
-						obj->transform().rotationRad = angleRad;
-					}
-					/*if (obj->type() == Gameplay::GameObjectType::Player && !obj->active())
-					{
-						obj->respawnAt(vec2(0.0f, 0.0f), true, true);
-					}*/
-
-					// --- Player Animation Control ---
-					Gameplay::SpriteAnimatorComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
-
-					if (playerSpriteComp)
-					{
-						// Determine animation state
-						std::string animState = m_flashlightOn ? "idle_torch" : "idle";
-						//std::string animState = m_flashlightOn ? "idle" : "idle";
-						bool isMoving = (move.x != 0 || move.y != 0);
-
-						if (isMoving)
-						{
-							animState = m_flashlightOn ? "walk_torch" : "walk";
-
-							// You can decide if shift key means run
-							if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
-							{
-								animState = m_flashlightOn ? "run_torch" : "run";
-							}
-						}
-
-						playerSpriteComp->play(animState);
-					}
 				}
 
-				if (obj->type() == Gameplay::GameObjectType::Ball)
-				{
-					obj->velocity().y = 0.0f;
-					obj->velocity().x += m_ballDir * m_ballSpeed;
+				//if (obj->type() == Gameplay::GameObjectType::Ball)
+				//{
+				//	obj->velocity().y = 0.0f;
+				//	obj->velocity().x += m_ballDir * m_ballSpeed;
 
-					// Predict next X and flip if we would cross a bound
-					float nextX = obj->transform().position.x + obj->velocity().x * static_cast<float>(dt);
-					if (nextX < m_leftBound)
-					{
-						nextX = m_leftBound;
-						m_ballDir = +1;
-					}
-					if (nextX > m_rightBound)
-					{
-						nextX = m_rightBound;
-						m_ballDir = -1;
-					}
+				//	// Predict next X and flip if we would cross a bound
+				//	float nextX = obj->transform().position.x + obj->velocity().x * static_cast<float>(dt);
+				//	if (nextX < m_leftBound)
+				//	{
+				//		nextX = m_leftBound;
+				//		m_ballDir = +1;
+				//	}
+				//	if (nextX > m_rightBound)
+				//	{
+				//		nextX = m_rightBound;
+				//		m_ballDir = -1;
+				//	}
 
-					obj->transform().position.x = nextX; // snap to keep within bounds (optional)
-				}
+				//	obj->transform().position.x = nextX; // snap to keep within bounds (optional)
+				//}
 			}
 		}
 
@@ -688,65 +833,58 @@ namespace Runtime
 				}
 			}
 		}
+		
+		
+		if (m_player) {
+			Gameplay::SpriteAnimatorComponent* playerSpriteComp = m_player->getComponent<Gameplay::SpriteAnimatorComponent>();
+			const std::string &playerState = playerSpriteComp->currentState();
+			if (playerState != "death") {
+				auto* scene = m_scenes.current();
+				for (auto& obj : scene->objects()) {
+					if (!obj || !obj->active()) continue;
 
-		if (m_player && !m_playerDead) {
+					if (obj->type() == Gameplay::GameObjectType::Enemy) {
+						vec2 playerPos = m_player->transform().position;
+						vec2 enemyPos = obj->transform().position;
 
-			auto* scene = m_scenes.current();
+						vec2 playerHalf = m_player->size() * 0.5f * 2.0f;
+						vec2 enemyHalf = obj->size() * 0.5f * 2.0f;
 
-			for (auto& obj : scene->objects()) {
-				if (!obj || !obj->active()) continue;
+						// Check if bounding boxes overlap
 
-				if (obj->type() == Gameplay::GameObjectType::Enemy) {
+						if (abs(playerPos.x - enemyPos.x) < (playerHalf.x + enemyHalf.x) &&
+							abs(playerPos.y - enemyPos.y) < (playerHalf.y + enemyHalf.y)) {
 
-					vec2 playerPos = m_player->transform().position;
-					vec2 enemyPos = obj->transform().position;
+							std::cout << "Player hit by enemy: " << obj->name() << "!\n";
 
-					// Calculate distance between centers
-					vec2 diff = playerPos - enemyPos;
-					float distance = sqrt(diff.x * diff.x + diff.y * diff.y);
-
-					// Use average of width and height as radius
-					float playerRadius = (m_player->size().x + m_player->size().y) * 0.25f;
-					float enemyRadius = (obj->size().x + obj->size().y) * 0.25f;
-
-					// Add a buffer to make it more forgiving
-					float collisionDistance = playerRadius + enemyRadius + 80.0f;
-
-					// Check if close enough for collision
-					if (distance < collisionDistance) {
-						std::cout << "Player hit by enemy: " << obj->name()
-							<< " (distance: " << distance << ")\n";
-
-						// Kill the player
-						m_playerDead = true;
-						m_deathTimer = 0.0f;
-
-						break;
+							// Kill the player, killing at Physics2D, need to use event bus later on.
+							//playerSpriteComp->play("death");
+							//m_player->setActive(false);
+							break;
+						}
 					}
+				}
+			}
+			else {
+				m_flashlightOn = false;
+				m_playerRespawning -= (float)dt;
+				if (m_playerRespawning <= 5.f) {
+					m_GameOver = true;
+				}
+				if (m_playerRespawning <= 0) {
+					m_playerRespawning = 7.f;
+					m_GameOver = false;
+					m_player->respawnAt(m_spawnPoint, true, true);
+					std::cout << "Player respawned!\n";
+					resetScene();
+					return;
 				}
 			}
 		}
 
-		// Handle death sequence
-		if (m_playerDead) {
-			m_deathTimer += static_cast<float>(dt);
-
-			if (m_player) {
-				m_player->velocity() = vec2(0, 0);
-			}
-
-			if (m_deathTimer >= m_deathDelay) {
-				// Transition to game over state
-				std::cout << "[PlayState] Pushing GameOverState\n";
-				resetScene();
-				m_gsm.push(std::make_shared<GameOverState>(m_gsm, m_input, m_initialSceneId));
-				m_playerDead = false;
-				m_deathTimer = 0.0f;
-				return;
-			}
-		}
+		m_scenes.update(dt);
+		
 		updateFragmentCollection(dt);
-		//m_scenes.update(dt);
 		updateLightExposure(dt);
 		updateBatteryDisplay();
 	}
@@ -842,6 +980,7 @@ namespace Runtime
 		// ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;
+		auto audio = Core::Engine::Get().audio();
 
 		for (auto& obj : objs) {
 			if (!obj || !obj->active()) continue;
@@ -853,7 +992,7 @@ namespace Runtime
 				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
 
 				if (inLight) {
-					obj->addLightExposure(dt);
+					obj->addLightExposure(static_cast<float>(dt));
 				}
 				else {
 					if (obj->lightExposureTime() > 0.0f) {
@@ -863,11 +1002,19 @@ namespace Runtime
 
 				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
 					// Enemy is in light
-					obj->addLightExposure(dt);
+					obj->addLightExposure(static_cast<float>(dt));
 
 
 					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
 						std::cout << ">>> Enemy '" << obj->name() << "' KILLED!" << std::endl;
+						static const std::array<const char*, 3> defaultIds = {
+						"enemy_death_1",
+						"enemy_death_2",
+						"enemy_death_3"
+						};
+						std::string id = pickRandom(defaultIds);
+
+						audio.playOneShot(id, Audio::Group::SFX, 0.7f);
 						obj->setActive(false);
 					}
 				}
@@ -876,9 +1023,9 @@ namespace Runtime
 					if (obj->lightExposureTime() > 0.0f) {
 						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
 					}
-					float oldExposure = obj->lightExposureTime();
-					obj->decreaseLightExposure(dt * DECAY_RATE);
-					float newExposure = obj->lightExposureTime();
+					//float oldExposure = obj->lightExposureTime();
+					obj->decreaseLightExposure(static_cast<float>(dt) * DECAY_RATE);
+					//float newExposure = obj->lightExposureTime();
 				}
 			}
 		}
@@ -940,11 +1087,11 @@ namespace Runtime
 
 		// Battery management code (keep all existing flashlight code)
 		if (m_player) {
-			float dt = timer->delta();
+			float dt = static_cast<float>(timer->delta());
 
 			if (m_flashlightOn) {
-				float currentBattery = m_player->checkBatt();
-				currentBattery -= m_player->checkDrain() * dt;
+				currentBattery = m_player->checkBatt();
+				currentBattery -= m_player->checkDrain() * dt * 4.f;
 				m_player->setBatt(currentBattery);
 
 				if (currentBattery <= 0.0f) {
@@ -953,8 +1100,8 @@ namespace Runtime
 				}
 			}
 			else {
-				float currentBattery = m_player->checkBatt();
-				currentBattery += m_player->checkCharge() * dt;
+				currentBattery = m_player->checkBatt();
+				currentBattery += m_player->checkCharge() * dt * 2.f;
 				m_player->setBatt(std::min(100.0f, currentBattery));
 			}
 		}
@@ -983,7 +1130,8 @@ namespace Runtime
 			}
 
 			// Render the light cone
-			m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f));
+			float batteryPercent = currentBattery / maxBattery;
+			m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f), batteryPercent);
 			m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
 			m_renderer->endLightPass();
 		}
@@ -1031,7 +1179,7 @@ namespace Runtime
 
 				glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
 				glm::vec2 batteryPos(screenSize.x - 100.0f, screenSize.y - 100.0f); // Top-right corner
-				glm::vec2 batterySize(64.0f, 64.0f); // Adjust to your texture size
+				glm::vec2 batterySize(200.0f, 200.0f); // Adjust to your texture size
 
 				// Use an orthographic projection for UI (screen space)
 				glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);
@@ -1048,6 +1196,27 @@ namespace Runtime
 				m_renderer->endScenePass();
 			}
 		}
+
+		Platform::WindowManager& window = engine.window();
+		int w = window.width();
+		int h = window.height();
+		glm::mat4 uiProj = glm::ortho(0.f, (float)w, 0.f, (float)h);
+		m_renderer->beginFontPass(uiProj);
+
+
+
+		if (m_GameOver) {
+			auto shader = Assets::ResourceManager<Shader>::Get("text");
+			auto subFont = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
+			subFont->RenderText("You Lose!", w * 0.40f, h * 0.6f, 1.f, glm::vec3{ 1,0.2,0.2 }, *shader);
+			std::stringstream ss;
+			ss << "Restarting in " << int(m_playerRespawning);
+			subFont->RenderText(ss.str(), w * 0.32f, h * 0.4f, 1.f, glm::vec3{ 1,0.2,0.2 }, *shader);
+			
+		}
+		
+		m_renderer->endFontPass();
+		
 		renderFragmentUI();
 		(void)timer;
 	}
@@ -1626,6 +1795,8 @@ namespace Runtime
 				initializeEnemyAI(scene);
 			}
 		}
+
+		m_player->setMoveable(true);
 	}
 
 } // namespace Runtime

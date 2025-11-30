@@ -44,7 +44,7 @@ namespace Graphics {
         void beginFontPass(const glm::mat4& vp);
         void endFontPass();
 
-        void beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle);
+        void beginLightPass(const glm::mat4& vp, const glm::vec2& lightPos, const glm::vec3& color, const float& radius, const float& playerRotationAngle, const float& lightAngle, const float& batteryFactor);
         void endLightPass();
         // Debug drawing methods
         void drawPoint(float x, float y, float r, float g, float b, float size = 5.0f);

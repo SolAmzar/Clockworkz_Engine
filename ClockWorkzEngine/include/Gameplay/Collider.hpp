@@ -16,7 +16,7 @@
                 Notes (REMOVE AFTER EDIT)
                 - Credit to Physics developer for foundational collision logic.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -70,7 +70,23 @@ namespace Gameplay
         CircleCollider() { type = ColliderType::Circle; }
 
         float radius() const override { return r; }
-		float radius(float newR) { r = newR; return r * 0.5; }
+        void setRadius(float newR) { r = newR; }
+
+        // World helpers: center based on object position + offset
+        vec2 worldCenter(const vec2& objPos) const {
+            return objPos + offset;
+        }
+
+        // Optional: override worldMin/worldMax with a bounding AABB
+        vec2 worldMin(const vec2& objPos) const override {
+            vec2 c = worldCenter(objPos);
+            return { c.x - r, c.y - r };
+        }
+
+        vec2 worldMax(const vec2& objPos) const override {
+            vec2 c = worldCenter(objPos);
+            return { c.x + r, c.y + r };
+        }
     };
 
 }

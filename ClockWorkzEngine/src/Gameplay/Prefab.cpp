@@ -62,7 +62,7 @@ namespace Gameplay
             return GameObjectType::Floor;
         if (name == "Trap")
             return GameObjectType::Trap;
-        if (name == "Ball")
+        if (name == "Ball" || name == "Pot")
 			return GameObjectType::Ball;
 		if (name == "Box")
 			return GameObjectType::Box;
@@ -355,6 +355,7 @@ namespace Gameplay
             components["health"]["hp"] = 10;
 
             components["spriteRenderer"]["textureId"] = "player_texture";
+            components["spriteAnimator"]["filename"] = "player_animations.json";
 
             factory.registerPrefab("Player", components);
         }

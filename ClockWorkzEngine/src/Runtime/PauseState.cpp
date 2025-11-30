@@ -27,6 +27,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <glm/gtc/matrix_transform.hpp>
 #include "IMGUI/imgui.h"
 #include <iostream>
+#include <Assets/TextureManager.hpp>
 
 using Assets::ResourceManager;
 using Graphics::Shader;
@@ -37,7 +38,8 @@ namespace Runtime {
     PauseState::PauseState(GameStateManager& gsm, Platform::InputManager& input)
         : m_gsm(gsm),
         m_input(input),
-        m_background(GameObjectType::Unknown, "PauseBG", GameObjectShape::Rectangle)
+        m_background(GameObjectType::Unknown, "PauseBG", GameObjectShape::Rectangle),
+		m_audio(Core::Engine::Get().audio())
     {
     }
 
@@ -53,17 +55,24 @@ namespace Runtime {
         m_background.addComponent<SpriteRendererComponent>("pause_bg_texture");
         m_background.setSize({ 1.f, 1.f });                    // Proper dimensions
         m_background.transform().scale = { 1920.0f, 1080.0f }; // Keep scale neutral
+        
+        if (m_audio.isPlaying("level_bgm"))
+            m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeDuringPause);
+            m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeDuringPause);
+
         std::cout << "[PauseState] Ready\n";
     }
 
     void PauseState::moveUp()
     {
+        m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
         if (--m_selected < 0)
             m_selected = static_cast<int>(m_items.size()) - 1;
     }
 
     void PauseState::moveDown()
     {
+        m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
         if (++m_selected >= static_cast<int>(m_items.size()))
             m_selected = 0;
     }
@@ -71,10 +80,13 @@ namespace Runtime {
     void PauseState::select()
     {
         const std::string& choice = m_items[m_selected];
+        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
 
         if (choice == "Resume Game")
         {
-            std::cout << "[PauseState] Resuming...\n";
+            std::cout << "[PauseState] Resuming...\n"; 
+            m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
+            m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
             m_gsm.pop();
             return;
         }
@@ -82,6 +94,11 @@ namespace Runtime {
         if (choice == "Main Menu")
         {
             std::cout << "[PauseState] Exiting...\n";
+			m_audio.stop("level_bgm");
+			m_audio.stop("level_ambience");
+            m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
+            m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
+			m_audio.play("menu_bgm", Audio::Group::BGM, 1.4f, false);
             m_gsm.pop();
             m_gsm.pop();
         }
@@ -127,6 +144,7 @@ namespace Runtime {
                 if (m_selected != i)
                 {
                     m_selected = i;
+                    m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
                     // Optional: Add sound effect here if you have audio manager
                     // m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
                 }
@@ -138,7 +156,9 @@ namespace Runtime {
         if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT))
         {
             // Optional: Add sound effect here
-            // m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+           //m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
+         
+          
             select();
         }
 
@@ -146,6 +166,7 @@ namespace Runtime {
         if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
         {
             std::cout << "[PauseState] ESC pressed - resuming\n";
+            m_audio.setGroupVolume(Audio::Group::BGM, 0.5f);
             m_gsm.pop();
             return;
         }
@@ -162,6 +183,7 @@ namespace Runtime {
 
         if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER))
         {
+
             select();
         }
 #ifdef _DEBUG
@@ -178,15 +200,34 @@ namespace Runtime {
         Platform::WindowManager& window = engine.window();
         Graphics::RenderingManager& renderer = engine.rendering();
 
-        m_renderer->beginScenePass(m_cam->viewProj());
-        m_background.render(*m_renderer);
-        m_renderer->endScenePass();
-
         int w = window.width();
         int h = window.height();
 
-        glm::mat4 projection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
+        //  UI orthographic projection
+        glm::mat4 uiProjection = glm::ortho(0.0f, static_cast<float>(w),
+            0.0f, static_cast<float>(h));
 
+        m_renderer->beginScenePass(uiProjection);
+
+        // Center it on screen, size it to fill the window
+        glm::vec2 bgPos(w * 0.5f, h * 0.5f);  // Center of screen
+        glm::vec2 bgSize(static_cast<float>(w), static_cast<float>(h));  // Full window size
+
+        // Get the texture ID for your pause background
+        unsigned int bgTexId = Assets::TextureManager::Get("pause_bg_texture")->id();
+
+        m_renderer->drawSprite(
+            bgTexId,
+            bgPos,
+            bgSize,
+            0.0f,  // rotation
+            glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),  // full UV rect
+            glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)   // white tint, 70% opacity so text shows
+        );
+
+        m_renderer->endScenePass();
+
+        glm::mat4 projection = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
         m_renderer->beginFontPass(projection);
 
         auto shader = ResourceManager<Shader>::Get("text");

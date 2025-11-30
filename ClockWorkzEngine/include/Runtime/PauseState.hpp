@@ -52,6 +52,13 @@ namespace Runtime {
 
         int m_selected{ 0 };
         bool m_debug{ false };
+        Audio::AudioManager& m_audio;
+		float m_bgmVolumeBeforePause{ 1.f };
+		float m_sfxVolumeBeforePause{ 1.f };
+		float m_bgmVolumeDuringPause{ 0.3f };
+		float m_sfxVolumeDuringPause{ 0.05f };
+
+        float m_sfx{ 8.f };
     };
 
 } // namespace Runtime

@@ -3,7 +3,6 @@
 \file           GameObject.hpp
 \project        Lights Out
 \author(s)      [Lebon], 100% - Will be shared later once other features combine in.
-Serializer guy come in split the 100%
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
@@ -149,6 +148,7 @@ namespace Gameplay {
         bool isHazard() const { return m_isHazard; }
         bool blocksLight() const { return m_blocksLight; }
         void setSolid(bool v) { m_isSolid = v; }
+        void setMoveable(bool move) { m_moveable = move; }
         void setHazard(bool v) { m_isHazard = v; }
         void setBlocksLight(bool v) { m_blocksLight = v; }
         void setName(const std::string& newName); 
