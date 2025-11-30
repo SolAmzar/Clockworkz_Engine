@@ -2,7 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon], 70% [Syafiq] 20%
+\author(s)      [Lebon], [Syafiq]
 \brief          Declares PlayState, the main gameplay loop state.
 				Responsibilities include:
 				- Loading and managing the current Scene and its GameObjects

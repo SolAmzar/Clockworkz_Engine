@@ -2,7 +2,7 @@
 /*!
 \file           Serializer.hpp
 \project        Lights Out
-\author(s)      [Yusuf], 100%
+\author(s)      [Yusuf], [Lebon], [Syafiq]
 \brief          Declares Serializer data structures and utility functions for
                 converting GameObjects to/from JSON format using nlohmann/json.
                 Responsibilities include:

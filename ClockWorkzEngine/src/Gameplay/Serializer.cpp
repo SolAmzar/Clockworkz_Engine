@@ -2,7 +2,7 @@
 /*!
 \file           Serializer.hpp
 \project        Lights Out
-\author(s)      [Yusuf], 60% [Lebon], 40%
+\author(s)      [Yusuf], [Lebon], [Syafiq]
 \brief          Implements full JSON serialization/deserialization for GameObjects,
                 their components, and entire scenes, including prefab-based 
                 construction, transform/collider parsing, and animation/audio loading.
