@@ -1,0 +1,151 @@
+Project Guide – Light Out / Clockworkz Engine
+All content © 2025 DigiPen (SINGAPORE) Corporation, all rights reserved.
+
+
+==================================================
+1. CMake – Installing and Regenerating Visual Studio 2022
+==================================================
+
+CMake is required to generate the Visual Studio 2022 solution for Light Out / Clockworkz Engine.  
+You must install CMake before attempting to open the project.
+
+-----------------------------------------
+1.1 Installing CMake (First-Time Setup)
+-----------------------------------------
+
+1. Go to the official CMake download page:
+   https://cmake.org/download/
+
+2. Download the **Windows x64 Installer** for the latest stable version.
+
+3. Run the installer and enable:
+      "Add CMake to system PATH for all users"
+   (Recommended; otherwise the command will not work from terminal.)
+
+4. Verify installation:
+   Open Command Prompt or PowerShell and run:
+      cmake --version
+   If installation was successful, it will print the installed version.
+
+-----------------------------------------
+1.2 Generating the Visual Studio 2022 Solution (First Time)
+-----------------------------------------
+
+1. Navigate to the project root directory (the folder containing `CMakeLists.txt`).
+
+2. Create a build folder (one-time setup):
+      mkdir build
+
+3. Run CMake to configure the solution:
+      cmake -S . -B build -G "Visual Studio 17 2022"
+
+4. After configuration succeeds, open the generated solution:
+      build\ClockWorkzEngine.sln
+   (Or whichever solution name your project produces.)
+
+5. In Visual Studio:
+   - Choose configuration: Debug or Release (top toolbar)
+   - Set the main game executable as the startup project
+   - Run using F5 or Ctrl+F5
+
+-----------------------------------------
+1.3 Regenerating the Visual Studio 2022 Solution (When CMakeLists.txt Changes)
+-----------------------------------------
+
+Whenever new modules, folders, or source files are added, you must regenerate the solution:
+
+1. Close Visual Studio (recommended).
+2. Open a terminal in the project root.
+3. Run:
+      cmake -S . -B build -G "Visual Studio 17 2022"
+4. Re-open:
+      build\ClockWorkzEngine.sln
+
+If the build folder becomes corrupted (e.g., mismatched paths or major configuration change):
+   - Delete the entire `build` folder
+   - Run the configure command again to generate a clean solution
+
+
+==================================================
+2. Project Settings (Debug vs Release)
+==================================================
+
+The Visual Studio solution supports multiple build configurations:
+
+  • Debug  
+  • Release  
+
+-----------------------------
+2.1 Debug Configuration
+-----------------------------
+Used during development.
+
+Features:
+  - Debug symbols enabled
+  - Assertions and diagnostics enabled
+  - In-game debug UI and Level Editor available
+  - Debug drawing tools enabled
+
+-----------------------------
+2.2 Release Configuration
+-----------------------------
+Used for final submissions or performance testing.
+
+Features:
+  - Optimized performance
+  - Debug overlays disabled or minimized
+  - Suitable for milestone/demo builds
+
+
+==================================================
+3. Level Editor – Turning On / Off
+==================================================
+
+The Level Editor runs **in real time** on top of gameplay using ImGui.
+
+-----------------------------
+3.1 Enabling the Level Editor
+-----------------------------
+1. Build and run the project in **Debug** configuration.
+2. When the game is running, press start on the menu to load into the level
+3. Once loaded, Press "Z" Key to enter the level editor
+4. The Level Editor UI will appear, including:
+   - Hierarchy of GameObjects
+   - Component inspector
+   - Object creation panel
+   - Scene save / load tools
+   - Toolbar that allows for selecting and placing GameObjects
+   - Asset Browser
+
+-----------------------------
+3.2 Disabling the Level Editor
+-----------------------------
+Press the same toggle key again to hide the UI overlay and return to gameplay view.
+
+In **Release** configuration, the Level Editor is disabled by default.
+
+-----------------------------
+3.3 Editing Workflow
+-----------------------------
+The editor supports **real-time** workflow:
+  - Create GameObjects and attach components while the game is running
+  - Adjust positions, colliders, and gameplay values visually
+  - Test by Clicking "Play" in the Toolbar
+  - Save current setup as a scene or prefab without restarting the game
+
+
+==================================================
+4. Quick Start Summary
+==================================================
+
+1. Install CMake from https://cmake.org/download/  
+2. In the project root, run:
+       cmake -S . -B build -G "Visual Studio 17 2022"
+3. Open `build\ClockWorkzEngine.sln`
+4. Build in **Debug**
+5. Run the game
+6. Press the editor toggle key to use the Level Editor
+7. Switch to **Release** for final milestone submissions
+
+
+End of projectGuide.txt
