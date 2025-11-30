@@ -10,7 +10,7 @@
 				- Rendering the game world each frame
 				- Transitioning back to other states (e.g., pause or menu)
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content   2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -37,7 +37,7 @@ namespace Graphics {
 }
 
 namespace Runtime {
-	
+
 	class PlayState final : public GameState {
 	public:
 		explicit PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm);
@@ -55,7 +55,7 @@ namespace Runtime {
 		const int SPAWN_PER_FRAME = 100;
 		bool m_shouldReturnToMenu{ false };
 		void rebindLightsAndPlayerAfterReload();
-		//void InitPlayerSpriteUVs();
+		void InitPlayerSpriteUVs();
 		const char* toString(Gameplay::GameObjectType t);
 		void renderImGui(Core::Time* timer) override; //Imgui for playstate
 		Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject* player);
@@ -76,7 +76,6 @@ namespace Runtime {
 		float m_rightBound{ 700.f };
 		float m_ballSpeed{ 220.f };
 		int   m_ballDir{ +1 };
-		vec2 m_spawnPoint = vec2(0.0f, 0.0f);
 		float m_distanceSinceStep = 0.0f;
 		float m_stepDistance = 60.0f;
 		float m_timeSinceStep = 0.0f;
@@ -100,13 +99,21 @@ namespace Runtime {
 		bool m_editorInitialized{ false };
 
 		void initializeEnemyAI(Runtime::Scene* scene);
-		int   m_bgmChannel = 0;
-		bool  m_bgmPlaying = false;
-		float m_bgmVol = 0.5f;
-		float m_sfxVol = 0.05f;
 
-		float m_playerRespawning{ 5.f };
-		bool m_GameOver{ false };
+		bool m_playerDead;
+		float m_deathTimer;
+		const float m_deathDelay = 2.0f;
+
+		// Fragment system
+		void updateFragmentCollection(double dt);
+		void renderFragmentUI();
+		void handleFragmentPickup(Gameplay::GameObject* player, Gameplay::GameObject* fragment);
+		std::string m_fragmentIconTexture = "fragment_texture";
+
+		//Fragment tracking
+		bool m_showFragmentNotification = false;
+		float m_fragmentNotificationTimer = 0.0f;
+		std::string m_lastCollectedFragmentId;
 	};
 
 } // namespace Runtime
