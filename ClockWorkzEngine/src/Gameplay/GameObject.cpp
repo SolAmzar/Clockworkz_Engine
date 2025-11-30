@@ -2,7 +2,7 @@
 /*!
 \file           GameObject.cpp
 \project        Lights Out
-\author(s)      [Lebon], 50% 
+\author(s)      [Lebon], 60%, [Wei An] 40%
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
