@@ -2,7 +2,7 @@
 /*!
 \file           PauseState.cpp
 \project        Lights Out
-\author(s)      [Syafiq], 100%
+\author(s)      [Syafiq], 95%  [Lebon], 5%
 \brief          Basic pause menu implementation
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -238,13 +238,13 @@ namespace Runtime {
         auto pauseFont = ResourceManager<Assets::FontManager>::Get("PauseMenu");
         if (!pauseFont) {
             Assets::ResourceManager<Assets::FontManager>::Load(
-                "PauseMenu", "assets/fonts/ANUNEDW_.TTF", 48);
+                "PauseMenu", "assets/fonts/MANIC1.TTF", 48);
             pauseFont = ResourceManager<Assets::FontManager>::Get("PauseMenu");
         }
 
         // Colors matching the scribble/sticky note aesthetic
-        glm::vec3 normalCol(0.7f, 0.5f, 0.5f);      // Medium brown (unselected)
-        glm::vec3 selectedCol(0.20f, 0.15f, 0.12f);    // Dark brown (selected - like pen ink)
+        glm::vec3 normalCol(0.1f, 0.1f, 0.1f);      // White
+        glm::vec3 selectedCol(1.0f, 1.0f, 1.0f);    // Black
 
         if (pauseFont) {
             // "PAUSED" title - brown color to match scribbles, smaller and centered
@@ -252,7 +252,7 @@ namespace Runtime {
             float titleScale = 1.0f;
             float titleWidth = title.length() * 48.0f * titleScale * 0.55f;  // Better estimation
             float titleX = (w / 2.0f) - (titleWidth / 2.0f)- 10.0f;
-            pauseFont->RenderText(title, titleX, h - 150.0f, titleScale, glm::vec3(0.5f, 0.4f, 0.3f), *shader);
+            pauseFont->RenderText(title, titleX, h - 150.0f, titleScale, glm::vec3(0.5f, 0.0f, 0.0f), *shader);
         }
 
         // Render menu options - smaller, centered, matching aesthetic
