@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file			WallTiles.hpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Declares helper functions for wall tile UV mapping
+                using a 3x3 texture atlas.
+                Responsibilities include:
+                - Atlas3x3(): Compute UV coordinates for a given column/row in a 3x3 grid
+                - WallTile enum: Define tile types (corners, edges, center)
+				- GetWallTileUV(): Retrieve UVs for specific wall tile types
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <glm/vec4.hpp>
 #include <Math/Vec4.hpp>
