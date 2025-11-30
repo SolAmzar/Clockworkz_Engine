@@ -126,11 +126,13 @@ namespace Runtime
 		, m_input(input)
 		, m_gsm(gsm)
 		, m_player(nullptr)
+		, m_levelEditor(nullptr)
 		, m_editorInitialized(false)
-		,currentBattery(100.0f)
-		,maxBattery(100.0f)
+		, currentBattery(100.0f)
+		, maxBattery(100.0f)
 	{
 	}
+
 	PlayState::~PlayState()
 	{
 	}
@@ -204,28 +206,28 @@ namespace Runtime
 		m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
 		audio.play("level_ambience", Audio::Group::SFX, m_sfxVol, false);
 
-		//m_levelEditor = std::make_unique<Platform::LevelEditor>();
+		m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
-		//if (m_levelEditor->init(
-		//	engine.window().handle(),
-		//	engine.rendering(),
-		//	m_input,
-		//	engine.window())) {
+		if (m_levelEditor->init(
+			engine.window().handle(),
+			engine.rendering(),
+			m_input,
+			engine.window())) {
 
-		//	// Create level editor and this will load
-		//	// Scene 'level_01' loaded from : assets / scenes / EditorScene.json
-		//	// Load current scene into editor
-		//	if (auto* scene = m_scenes.current()) {
-		//		m_levelEditor->loadSceneFromPlayState(scene);
-		//	}
+			// Create level editor and this will load
+			// Scene 'level_01' loaded from : assets / scenes / EditorScene.json
+			// Load current scene into editor
+			if (auto* scene = m_scenes.current()) {
+				m_levelEditor->loadSceneFromPlayState(scene);
+			}
 
-		//	m_levelEditor->setActive(false); // Start inactive
-		//	m_editorInitialized = true;
-		//	std::cout << "[PlayState] Level editor initialized\n";
-		//}
-		//else {
-		//	std::cerr << "[PlayState] Failed to initialize level editor\n";
-		//}
+			m_levelEditor->setActive(false); // Start inactive
+			m_editorInitialized = true;
+			std::cout << "[PlayState] Level editor initialized\n";
+		}
+		else {
+			std::cerr << "[PlayState] Failed to initialize level editor\n";
+		}
 
 
 
@@ -1169,7 +1171,7 @@ namespace Runtime
 		if (m_GameOver) {
 			auto shader = Assets::ResourceManager<Shader>::Get("text");
 			auto subFont = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
-			subFont->RenderText("You Lose!", w * 0.40f, h * 0.6f, 1.f, glm::vec3{ 1,0.2,0.2 }, *shader);
+			subFont->RenderText("YOU DIED!", w * 0.40f, h * 0.6f, 1.f, glm::vec3{ 1,0.2,0.2 }, *shader);
 			std::stringstream ss;
 			ss << "Restarting in " << int(m_playerRespawning);
 			subFont->RenderText(ss.str(), w * 0.32f, h * 0.4f, 1.f, glm::vec3{ 1,0.2,0.2 }, *shader);
