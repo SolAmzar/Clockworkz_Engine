@@ -31,7 +31,10 @@ Shift            ............ Run (faster movement)
 
 ----------- Interaction / Gameplay -----------
 R............................ Flashlight On and Off (Flashlight Drains over Time)
-Esc .......................... Pause 
+Esc ......................... Pause 
+Q ........................... Zoom In
+E ........................... Zoom Out 
+Arrow Keys .................. Move in Menu
 
 
 ----------- Debug / Developer Tools -----------
