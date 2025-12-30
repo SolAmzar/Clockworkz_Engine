@@ -282,15 +282,15 @@ namespace Platform {
             }
         }
 
-        // Add Chase components to enemies
-        if (player) {
-            for (auto& obj : m_currentScene->objects()) {
-                if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
-                    obj->addComponent<Gameplay::Chase>(*obj, player, 150.0f, 300.0f);
-                    std::cout << "  Added Chase to: " << obj->name() << "\n";
-                }
-            }
-        }
+         //Add Chase components to enemies
+        //if (player) {
+        //    for (auto& obj : m_currentScene->objects()) {
+        //        if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+        //            obj->addComponent<Gameplay::Chase>(*obj, player, 150.0f, 300.0f);
+        //            std::cout << "  Added Chase to: " << obj->name() << "\n";
+        //        }
+        //    }
+        //}
 
         std::cout << "[LevelEditor] Play Mode initialized\n";
     }

@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file			VecCompatGLM.hpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Declares conversion functions between your custom vector/matrix types
+                and GLM types for interoperability.
+                Responsibilities include:
+                - to_vec2, to_vec3, to_vec4: Convert glm::vec* to your vec*
+                - to_glm: Convert your vec* to glm::vec*
+				- to_glm and to_mat4: Convert between your Mat4 and glm::mat4
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <glm/glm.hpp>
 

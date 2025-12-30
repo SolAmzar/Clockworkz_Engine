@@ -2,7 +2,7 @@
 /*!
 \file           Physics2D.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon], 50% [Amzar], 50% 
 \brief          Implements the 2D physics system responsible for collision and
                 raycasting logic.
 

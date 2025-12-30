@@ -28,10 +28,13 @@ namespace Graphics {
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+		// DISABLE imgui.ini file generation
+		io.IniFilename = nullptr;
+
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-		// Optional: Enable Multi-Viewport (allows windows to be dragged outside main window)
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 		ImGui::StyleColorsDark();

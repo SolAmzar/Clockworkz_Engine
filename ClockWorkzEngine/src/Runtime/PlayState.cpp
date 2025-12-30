@@ -65,31 +65,40 @@ All content   2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <Assets/TextureManager.hpp>
 #include "Gameplay/Components/Fragment.hpp"
 
-
 using namespace Graphics;
 using namespace Assets;
 
 namespace Runtime
 {
-	static Gameplay::GameObject* findFirstPlayer(Runtime::Scene* scene) {
-		if (!scene) return nullptr;
-		for (auto& u : scene->objects()) {
-			if (u && u->type() == Gameplay::GameObjectType::Player) return u.get();
+	static Gameplay::GameObject *findFirstPlayer(Runtime::Scene *scene)
+	{
+		if (!scene)
+			return nullptr;
+		for (auto &u : scene->objects())
+		{
+			if (u && u->type() == Gameplay::GameObjectType::Player)
+				return u.get();
 		}
 		return nullptr;
 	}
 
-	Gameplay::SurfaceType PlayState::getSurfaceUnder(Gameplay::GameObject* player) {
-		auto* scene = m_scenes.current();
-		if (!scene) return Gameplay::SurfaceType::Default;
+	Gameplay::SurfaceType PlayState::getSurfaceUnder(Gameplay::GameObject *player)
+	{
+		auto *scene = m_scenes.current();
+		if (!scene)
+			return Gameplay::SurfaceType::Default;
 
 		vec2 pos = player->transform().position;
-		for (auto& obj : scene->objects()) {
-			if (!obj || !obj->active()) continue;
-			if (auto* surf = obj->getComponent<Gameplay::SurfaceComponent>()) {
+		for (auto &obj : scene->objects())
+		{
+			if (!obj || !obj->active())
+				continue;
+			if (auto *surf = obj->getComponent<Gameplay::SurfaceComponent>())
+			{
 				vec2 half = obj->size() * 0.5f;
 				if (abs(pos.x - obj->transform().position.x) <= half.x &&
-					abs(pos.y - obj->transform().position.y) <= half.y) {
+						abs(pos.y - obj->transform().position.y) <= half.y)
+				{
 					return surf->type();
 				}
 			}
@@ -99,31 +108,22 @@ namespace Runtime
 
 	void PlayState::rebindLightsAndPlayerAfterReload()
 	{
-		auto* scene = m_scenes.current();
+		auto *scene = m_scenes.current();
 		// 1) Rebind player pointer to the NEW player object created by reload
 		m_player = findFirstPlayer(scene);
-
 	}
 
-
-	PlayState::PlayState(std::string initialSceneId, Platform::InputManager& input, GameStateManager& gsm)
-		: m_initialSceneId(std::move(initialSceneId))
-		, m_input(input)
-		, m_gsm(gsm)
-		, m_player(nullptr)
-		, m_editorInitialized(false)
-		, currentBattery(100.0f)
-		, maxBattery(100.0f)
-		, m_playerDead(false)
-		, m_deathTimer(0.0f)
+	PlayState::PlayState(std::string initialSceneId, Platform::InputManager &input, GameStateManager &gsm)
+			: m_initialSceneId(std::move(initialSceneId)), m_input(input), m_gsm(gsm), m_player(nullptr), m_levelEditor(nullptr), m_editorInitialized(false), currentBattery(100.0f), maxBattery(100.0f)
 	{
 	}
+
 	PlayState::~PlayState()
 	{
 	}
-	const char* PlayState::name() const { return "PlayState"; }
+	const char *PlayState::name() const { return "PlayState"; }
 
-	const char* PlayState::toString(Gameplay::GameObjectType t)
+	const char *PlayState::toString(Gameplay::GameObjectType t)
 	{
 		using T = Gameplay::GameObjectType;
 		switch (t)
@@ -154,49 +154,50 @@ namespace Runtime
 
 		// 1) Make the GO and keep a raw pointer before moving it into the vector
 		auto fxUP = std::make_unique<Gameplay::GameObject>(
-			Gameplay::GameObjectType::Wall, "ParticleTest");
-		Gameplay::GameObject* fx = fxUP.get();
+				Gameplay::GameObjectType::Wall, "ParticleTest");
+		Gameplay::GameObject *fx = fxUP.get();
 
-		fx->transform().position = { 5.0f, 3.0f };
+		fx->transform().position = {5.0f, 3.0f};
 		// fx->setLayer(Gameplay::DrawLayer::FX);
 
 		// 2) Transfer ownership
-		if (auto* scene = m_scenes.current()) {
+		if (auto *scene = m_scenes.current())
+		{
 			scene->addObject(std::move(fxUP));
 		}
 		m_fx = fx;
 
 		// 3) Construct the component in-place (NO new). Pass the ctor args.
 		// ParticleEmitter(GameObject& owner, std::size_t max)
-		auto* emitter = fx->addComponent<Gameplay::ParticleEmitter>(1000);
+		auto *emitter = fx->addComponent<Gameplay::ParticleEmitter>(1000);
 
 		emitter->setRenderer(m_renderer);
 
 		// 4) Configure
-		auto& s = emitter->system();
-		s.dir = normalize(vec2{ 1, 0 });
+		auto &s = emitter->system();
+		s.dir = normalize(vec2{1, 0});
 		s.spreadDeg = 40.f;
-		s.acceleration = { 0.f, -50.f };
+		s.acceleration = {0.f, -50.f};
 		s.sizeStart = 0.2f;
 		s.sizeEnd = 0.0f;
-		s.colorStart = { 1.f, 0.6f, 0.1f, 1.f };
-		s.colorEnd = { 1.f, 0.1f, 0.0f, 0.f };
+		s.colorStart = {1.f, 0.6f, 0.1f, 1.f};
+		s.colorEnd = {1.f, 0.1f, 0.0f, 0.f};
 		s.rate = 120.f;
 
 		// Initialize level editor
-		Core::Engine& engine = Core::Engine::Get();
-
+		Core::Engine &engine = Core::Engine::Get();
 
 		m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
 		if (m_levelEditor->init(
-			engine.window().handle(),
-			engine.rendering(),
-			m_input,
-			engine.window())) {
-
+						engine.window().handle(),
+						engine.rendering(),
+						m_input,
+						engine.window()))
+		{
 			// Load current scene into editor
-			if (auto* scene = m_scenes.current()) {
+			if (auto *scene = m_scenes.current())
+			{
 				m_levelEditor->loadSceneFromPlayState(scene);
 			}
 
@@ -204,7 +205,8 @@ namespace Runtime
 			m_editorInitialized = true;
 			std::cout << "[PlayState] Level editor initialized\n";
 		}
-		else {
+		else
+		{
 			std::cerr << "[PlayState] Failed to initialize level editor\n";
 		}
 
@@ -216,22 +218,22 @@ namespace Runtime
 		m_renderer = &engine.rendering();
 
 		auto textureShader = ResourceManager<Shader>::Load(
-			"texture",
-			"assets/shaders/texture.vert",
-			"assets/shaders/texture.frag");
+				"texture",
+				"assets/shaders/texture.vert",
+				"assets/shaders/texture.frag");
 
 		ResourceManager<Shader>::Load(
-			"light",
-			"assets/shaders/light.vert",
-			"assets/shaders/light.frag");
+				"light",
+				"assets/shaders/light.vert",
+				"assets/shaders/light.frag");
 
 		auto textShader = Assets::ResourceManager<Graphics::Shader>::Load(
-			"text",
-			"assets/shaders/text.vert",
-			"assets/shaders/text.frag");
+				"text",
+				"assets/shaders/text.vert",
+				"assets/shaders/text.frag");
 
 		Assets::ResourceManager<Assets::FontManager>::Load(
-			"FragmentUI", "assets/fonts/MANIC1.TTF", 32);
+				"FragmentUI", "assets/fonts/MANIC1.TTF", 32);
 
 		// Initialize fragment system
 		m_showFragmentNotification = false;
@@ -246,31 +248,31 @@ namespace Runtime
 			m_loaded = true;
 
 			// Print all GameObjects created by the loaded scene
-			if (auto* scene = m_scenes.current())
+			if (auto *scene = m_scenes.current())
 			{
-				auto& objs = scene->objects();
+				auto &objs = scene->objects();
 				std::cout << "GameObjects created (" << objs.size() << "):\n";
 
-				for (auto& u : objs)
+				for (auto &u : objs)
 				{
-					auto const& o = *u;
+					auto const &o = *u;
 					auto p = o.transform().position;
 					auto z = o.size();
 					std::cout << " - id=" << o.id()
-						<< " type=" << toString(o.type())
-						<< " name=\"" << o.name() << "\""
-						<< " pos=(" << p.x << "," << p.y << ")"
-						<< " size=(" << z.x << "," << z.y << ")"
-						<< (o.active() ? "" : " [inactive]") << "\n";
+										<< " type=" << toString(o.type())
+										<< " name=\"" << o.name() << "\""
+										<< " pos=(" << p.x << "," << p.y << ")"
+										<< " size=(" << z.x << "," << z.y << ")"
+										<< (o.active() ? "" : " [inactive]") << "\n";
 
 					if (u->type() == Gameplay::GameObjectType::Player)
 					{
 						m_player = &(*u);
-						Gameplay::SpriteRendererComponent* playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
+						Gameplay::SpriteRendererComponent *playerSprite2 = u->getComponent<Gameplay::SpriteRendererComponent>();
 						if (playerSprite2)
 						{
 
-							playerSprite2->setUV(glm::vec4{ 0, 0.875, 0.125, 0.125 });
+							playerSprite2->setUV(glm::vec4{0, 0.875, 0.125, 0.125});
 						}
 					}
 
@@ -305,8 +307,10 @@ namespace Runtime
 	void PlayState::onExit()
 	{
 		// Shutdown level editor FIRST
-		if (m_levelEditor && m_editorInitialized) {
-			if (auto* scene = m_scenes.current()) {
+		if (m_levelEditor && m_editorInitialized)
+		{
+			if (auto *scene = m_scenes.current())
+			{
 				m_levelEditor->syncSceneBackToPlayState(scene);
 			}
 			m_levelEditor->shutdown();
@@ -325,30 +329,36 @@ namespace Runtime
 	void PlayState::update(double dt)
 	{
 		// ESC = Exit editor (or pause if not in editor)
-		if (m_input.wasKeyPressed(GLFW_KEY_Z) && m_levelEditor->isActive()) {
-			if (m_levelEditor && m_levelEditor->isActive()) {
+		if (m_input.wasKeyPressed(GLFW_KEY_Z) && m_levelEditor->isActive())
+		{
+			if (m_levelEditor && m_levelEditor->isActive())
+			{
 				// Close editor
 				m_levelEditor->setActive(false);
-				if (auto* scene = m_scenes.current()) {
+				if (auto *scene = m_scenes.current())
+				{
 					m_levelEditor->syncSceneBackToPlayState(scene);
 					scene->registerExistingObjectsToLayers();
 				}
 				return;
 			}
-			else {
+			else
+			{
 				// Normal pause
 				m_pauseRequested = true;
 				return;
 			}
 		}
 
-
 #ifdef _DEBUG
 		// F10 = Open editor
-		if (m_input.wasKeyPressed(GLFW_KEY_F10)) {
-			if (m_levelEditor && !m_levelEditor->isActive()) {
+		if (m_input.wasKeyPressed(GLFW_KEY_F10))
+		{
+			if (m_levelEditor && !m_levelEditor->isActive())
+			{
 				m_levelEditor->setActive(true);
-				if (auto* scene = m_scenes.current()) {
+				if (auto *scene = m_scenes.current())
+				{
 					m_levelEditor->loadSceneFromPlayState(scene);
 				}
 			}
@@ -370,7 +380,8 @@ namespace Runtime
 			return;
 		}
 
-		if (!m_loaded) return;
+		if (!m_loaded)
+			return;
 
 		// Check for pause input
 		if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
@@ -380,17 +391,16 @@ namespace Runtime
 			return; // Don't continue this frame
 		}
 
-		Core::Engine& engine = Core::Engine::Get();
-		//Platform::InputManager &input = engine.input();
-		Graphics::Camera2D& cam = engine.camera();
-		Platform::WindowManager& window = engine.window();
-		auto& audio = engine.audio();
-		auto& steps = engine.surfaceAudio();
+		Core::Engine &engine = Core::Engine::Get();
+		// Platform::InputManager &input = engine.input();
+		Graphics::Camera2D &cam = engine.camera();
+		Platform::WindowManager &window = engine.window();
+		auto &audio = engine.audio();
+		auto &steps = engine.surfaceAudio();
 		vec2 mouseWorld = m_input.getMouseWorldPos(
-			cam,
-			static_cast<float>(window.width()),
-			static_cast<float>(window.height()));
-
+				cam,
+				static_cast<float>(window.width()),
+				static_cast<float>(window.height()));
 
 		if (m_shouldReturnToMenu)
 		{
@@ -426,46 +436,53 @@ namespace Runtime
 
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))
 		{
-			if (m_levelEditor && m_editorInitialized) {
+			if (m_levelEditor && m_editorInitialized)
+			{
 				bool newState = !m_levelEditor->isActive();
 				m_levelEditor->setActive(newState);
 				std::cout << "[PlayState] Level editor "
-					<< (newState ? "activated" : "deactivated") << "\n";
+									<< (newState ? "activated" : "deactivated") << "\n";
 
-				if (auto* scene = m_scenes.current()) {
-					if (newState) {
+				if (auto *scene = m_scenes.current())
+				{
+					if (newState)
+					{
 						m_levelEditor->loadSceneFromPlayState(scene);
 					}
-					else {
+					else
+					{
 						m_levelEditor->syncSceneBackToPlayState(scene);
 					}
 				}
 			}
 		}
 
-		if (m_levelEditor && m_levelEditor->isActive()) {
+		if (m_levelEditor && m_levelEditor->isActive())
+		{
 			m_levelEditor->update(dt);
 			return; // Don't update game while editor is active
 		}
 
 		// Syafiq - Player movement
-		if (auto* scene = m_scenes.current())
+		if (auto *scene = m_scenes.current())
 		{
 			m_scenes.update(dt);
 			// Syafiq - need find a way to cache the player.or do a unordered_map with object unique name to array of objects.
 			// objMap["Player"][0] <- since only 1 player. index 0 will work.
-			for (auto& obj : scene->objects())
+			for (auto &obj : scene->objects())
 			{
 
 				if (obj->type() == Gameplay::GameObjectType::Player)
 				{
-					if (m_playerDead) {
+					if (m_playerDead)
+					{
 						// Player is dead - freeze them, skip all movement
 						obj->velocity() = vec2(0, 0);
-						continue;  // Skip to next object
+						continue; // Skip to next object
 					}
 					// ---- CAMERA FOLLOW ----
-					if (m_player && !m_playerDead) {
+					if (m_player && !m_playerDead)
+					{
 						vec2 p = m_player->transform().position;
 
 						cam.setPosition(glm::vec2(p.x, p.y));
@@ -481,10 +498,12 @@ namespace Runtime
 					auto surfaceType = getSurfaceUnder(obj.get());
 					vec2 curPos = obj->transform().position;
 					float speed = magnitude(obj->velocity() * 0.3f);
-					bool  moving = speed > 5.0f;
+					bool moving = speed > 5.0f;
 
-					if (moving) {
-						if (!m_haveLastFootPos) {
+					if (moving)
+					{
+						if (!m_haveLastFootPos)
+						{
 							m_lastFootPos = curPos;
 							m_haveLastFootPos = true;
 						}
@@ -493,29 +512,34 @@ namespace Runtime
 						m_distanceSinceStep += frameDist;
 						m_lastFootPos = curPos;
 
-						if (m_distanceSinceStep >= m_stepDistance && m_timeSinceStep >= m_minStepInterval) {
+						if (m_distanceSinceStep >= m_stepDistance && m_timeSinceStep >= m_minStepInterval)
+						{
 							// Time for exactly ONE footsteps
 							steps.playFootstep(audio, surfaceType, speed);
 
-							m_distanceSinceStep = 0.0f;   // reset distance
+							m_distanceSinceStep = 0.0f; // reset distance
 							m_timeSinceStep = 0.0f;
 						}
 					}
-					else {
+					else
+					{
 						// not moving → reset so we don’t “owe” steps
 						m_distanceSinceStep = 0.0f;
 						m_timeSinceStep = 0.0f;
 						m_haveLastFootPos = false;
 					}
 
-					vec2 move{ 0,0 };
-
+					vec2 move{0, 0};
 
 					// WASD input → movement vector
-					if (m_input.isKeyDown(GLFW_KEY_W)) move.y += 1;
-					if (m_input.isKeyDown(GLFW_KEY_S)) move.y -= 1;
-					if (m_input.isKeyDown(GLFW_KEY_A)) move.x -= 1;
-					if (m_input.isKeyDown(GLFW_KEY_D)) move.x += 1;
+					if (m_input.isKeyDown(GLFW_KEY_W))
+						move.y += 1;
+					if (m_input.isKeyDown(GLFW_KEY_S))
+						move.y -= 1;
+					if (m_input.isKeyDown(GLFW_KEY_A))
+						move.x -= 1;
+					if (m_input.isKeyDown(GLFW_KEY_D))
+						move.x += 1;
 
 					// normalize diagonal
 					if (move.x != 0 || move.y != 0)
@@ -525,7 +549,8 @@ namespace Runtime
 					float speedMove = obj->moveSpeed();
 
 					// shift to run
-					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+					if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
+					{
 						speedMove *= 2.0f;
 						isRunning = true;
 					}
@@ -564,13 +589,13 @@ namespace Runtime
 					}*/
 
 					// --- Player Animation Control ---
-					Gameplay::SpriteAnimatorComponent* playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
+					Gameplay::SpriteAnimatorComponent *playerSpriteComp = obj->getComponent<Gameplay::SpriteAnimatorComponent>();
 
 					if (playerSpriteComp)
 					{
 						// Determine animation state
 						std::string animState = m_flashlightOn ? "idle_torch" : "idle";
-						//std::string animState = m_flashlightOn ? "idle" : "idle";
+						// std::string animState = m_flashlightOn ? "idle" : "idle";
 						bool isMoving = (move.x != 0 || move.y != 0);
 
 						if (isMoving)
@@ -611,26 +636,31 @@ namespace Runtime
 			}
 		}
 
-		if (m_fx && m_input.isKeyDown(GLFW_KEY_SPACE)) {
-			if (auto* em = m_fx->getComponent<Gameplay::ParticleEmitter>())
+		if (m_fx && m_input.isKeyDown(GLFW_KEY_SPACE))
+		{
+			if (auto *em = m_fx->getComponent<Gameplay::ParticleEmitter>())
 				em->burst(80);
 		}
 
 		if (m_input.wasKeyPressed(GLFW_KEY_Z))
 		{
-			if (m_levelEditor && m_editorInitialized) {
+			if (m_levelEditor && m_editorInitialized)
+			{
 				bool newState = !m_levelEditor->isActive();
 				m_levelEditor->setActive(newState);
 				std::cout << "[PlayState] Level editor "
-					<< (newState ? "activated" : "deactivated") << "\n";
+									<< (newState ? "activated" : "deactivated") << "\n";
 
 				// Sync scene data when toggling
-				if (auto* scene = m_scenes.current()) {
-					if (newState) {
+				if (auto *scene = m_scenes.current())
+				{
+					if (newState)
+					{
 						// Activating: load current state
 						m_levelEditor->loadSceneFromPlayState(scene);
 					}
-					else {
+					else
+					{
 						// Deactivating: save changes back
 						m_levelEditor->syncSceneBackToPlayState(scene);
 					}
@@ -648,14 +678,15 @@ namespace Runtime
 		}
 
 		// Update level editor if active
-		if (m_levelEditor && m_levelEditor->isActive()) {
+		if (m_levelEditor && m_levelEditor->isActive())
+		{
 			m_levelEditor->update(dt);
 			return; // Don't update game while editor is active
 		}
 
 		if (m_spawning && m_spawnedCount < 2500)
 		{
-			auto& factory = Gameplay::PrefabFactory::get();
+			auto &factory = Gameplay::PrefabFactory::get();
 			auto currentScene = m_scenes.currentScene();
 
 			if (currentScene)
@@ -689,14 +720,18 @@ namespace Runtime
 			}
 		}
 
-		if (m_player && !m_playerDead) {
+		if (m_player && !m_playerDead)
+		{
 
-			auto* scene = m_scenes.current();
+			auto *scene = m_scenes.current();
 
-			for (auto& obj : scene->objects()) {
-				if (!obj || !obj->active()) continue;
+			for (auto &obj : scene->objects())
+			{
+				if (!obj || !obj->active())
+					continue;
 
-				if (obj->type() == Gameplay::GameObjectType::Enemy) {
+				if (obj->type() == Gameplay::GameObjectType::Enemy)
+				{
 
 					vec2 playerPos = m_player->transform().position;
 					vec2 enemyPos = obj->transform().position;
@@ -713,9 +748,10 @@ namespace Runtime
 					float collisionDistance = playerRadius + enemyRadius + 80.0f;
 
 					// Check if close enough for collision
-					if (distance < collisionDistance) {
+					if (distance < collisionDistance)
+					{
 						std::cout << "Player hit by enemy: " << obj->name()
-							<< " (distance: " << distance << ")\n";
+											<< " (distance: " << distance << ")\n";
 
 						// Kill the player
 						m_playerDead = true;
@@ -728,14 +764,17 @@ namespace Runtime
 		}
 
 		// Handle death sequence
-		if (m_playerDead) {
+		if (m_playerDead)
+		{
 			m_deathTimer += static_cast<float>(dt);
 
-			if (m_player) {
+			if (m_player)
+			{
 				m_player->velocity() = vec2(0, 0);
 			}
 
-			if (m_deathTimer >= m_deathDelay) {
+			if (m_deathTimer >= m_deathDelay)
+			{
 				// Transition to game over state
 				std::cout << "[PlayState] Pushing GameOverState\n";
 				resetScene();
@@ -746,44 +785,54 @@ namespace Runtime
 			}
 		}
 		updateFragmentCollection(dt);
-		//m_scenes.update(dt);
+		// m_scenes.update(dt);
 		updateLightExposure(dt);
 		updateBatteryDisplay();
 	}
 
-	void PlayState::updateBatteryDisplay() {
+	void PlayState::updateBatteryDisplay()
+	{
 		float batteryPercent = currentBattery / maxBattery;
 
 		// Select appropriate texture based on battery level
-		if (batteryPercent > 0.875f) {
+		if (batteryPercent > 0.875f)
+		{
 			currentBatteryTexture = "battery_full";
 		}
-		else if (batteryPercent > 0.625f) {
+		else if (batteryPercent > 0.625f)
+		{
 			currentBatteryTexture = "battery_3/4";
 		}
-		else if (batteryPercent > 0.375f) {
+		else if (batteryPercent > 0.375f)
+		{
 			currentBatteryTexture = "battery_2/4";
 		}
-		else if (batteryPercent > 0.125f) {
+		else if (batteryPercent > 0.125f)
+		{
 			currentBatteryTexture = "battery_1/4";
 		}
-		else {
+		else
+		{
 			currentBatteryTexture = "battery_empty";
 		}
 	}
 
 	// Helper: Check if point is inside polygon
-	bool isPointInPolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon) {
+	bool isPointInPolygon(const glm::vec2 &point, const std::vector<glm::vec2> &polygon)
+	{
 		int intersections = 0;
 		size_t n = polygon.size();
 
-		for (size_t i = 0; i < n; i++) {
+		for (size_t i = 0; i < n; i++)
+		{
 			glm::vec2 p1 = polygon[i];
 			glm::vec2 p2 = polygon[(i + 1) % n];
 
-			if ((p1.y > point.y) != (p2.y > point.y)) {
+			if ((p1.y > point.y) != (p2.y > point.y))
+			{
 				float xIntersect = p1.x + (point.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
-				if (point.x < xIntersect) {
+				if (point.x < xIntersect)
+				{
 					intersections++;
 				}
 			}
@@ -792,17 +841,22 @@ namespace Runtime
 		return (intersections % 2) == 1;
 	}
 
-	void PlayState::updateLightExposure(double dt) {
-		auto* scene = m_scenes.current();
-		if (!scene) return;
+	void PlayState::updateLightExposure(double dt)
+	{
+		auto *scene = m_scenes.current();
+		if (!scene)
+			return;
 
-		auto* physics = scene->getPhysics();
+		auto *physics = scene->getPhysics();
 
 		// Only check if flashlight is on
-		if (!m_flashlightOn || !physics || !m_player || !m_player->active() || m_player->checkBatt() <= 0.0f) {
+		if (!m_flashlightOn || !physics || !m_player || !m_player->active() || m_player->checkBatt() <= 0.0f)
+		{
 			// Flashlight is off - reset all enemy exposures
-			for (auto& obj : scene->objects()) {
-				if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+			for (auto &obj : scene->objects())
+			{
+				if (obj && obj->type() == Gameplay::GameObjectType::Enemy)
+				{
 					obj->resetLightExposure();
 				}
 			}
@@ -814,66 +868,74 @@ namespace Runtime
 		vec2 origin = m_player->transform().position;
 		float angle = m_player->transform().rotationRad;
 		glm::vec2 torchOffsetWorld(
-			torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
-			torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
-		);
+				torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+				torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle));
 		glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
 		// Calculate light direction vector
 		glm::vec2 lightDir(cos(angle), sin(angle));
 
 		// Compute visibility polygon
-		std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-		vec2 originVec2 = { originGLM.x, originGLM.y };
+		std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+		vec2 originVec2 = {originGLM.x, originGLM.y};
 		std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-			originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
-
+				originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
 
 		std::vector<glm::vec2> lightPolyGLM;
-		for (const auto& point : lightPoly) {
+		for (const auto &point : lightPoly)
+		{
 			lightPolyGLM.emplace_back(point.x, point.y);
 		}
 
-		//if (lightPolyGLM.size() > 0) {
+		// if (lightPolyGLM.size() > 0) {
 		//	for (size_t i = 0; i < std::min(size_t(5), lightPolyGLM.size()); i++) {
 		//		std::cout << "  [" << i << "] (" << lightPolyGLM[i].x << ", " << lightPolyGLM[i].y << ")" << std::endl;
 		//	}
-		//}
-		// ✓ Check enemies against light polygon
+		// }
+		//  ✓ Check enemies against light polygon
 		const float KILL_THRESHOLD = 3.0f;
 		const float DECAY_RATE = 2.0f;
 
-		for (auto& obj : objs) {
-			if (!obj || !obj->active()) continue;
+		for (auto &obj : objs)
+		{
+			if (!obj || !obj->active())
+				continue;
 
-			if (obj->type() == Gameplay::GameObjectType::Enemy) {
+			if (obj->type() == Gameplay::GameObjectType::Enemy)
+			{
 				glm::vec2 enemyPos(obj->transform().position.x, obj->transform().position.y);
 
 				// FORCE TRUE for testing
 				bool inLight = isPointInPolygon(enemyPos, lightPolyGLM);
 
-				if (inLight) {
+				if (inLight)
+				{
 					obj->addLightExposure(dt);
 				}
-				else {
-					if (obj->lightExposureTime() > 0.0f) {
+				else
+				{
+					if (obj->lightExposureTime() > 0.0f)
+					{
 					}
 					obj->resetLightExposure();
 				}
 
-				if (isPointInPolygon(enemyPos, lightPolyGLM)) {
+				if (isPointInPolygon(enemyPos, lightPolyGLM))
+				{
 					// Enemy is in light
 					obj->addLightExposure(dt);
 
-
-					if (obj->lightExposureTime() >= KILL_THRESHOLD) {
+					if (obj->lightExposureTime() >= KILL_THRESHOLD)
+					{
 						std::cout << ">>> Enemy '" << obj->name() << "' KILLED!" << std::endl;
 						obj->setActive(false);
 					}
 				}
-				else {
+				else
+				{
 					// Enemy not in light - reset exposure
-					if (obj->lightExposureTime() > 0.0f) {
+					if (obj->lightExposureTime() > 0.0f)
+					{
 						std::cout << "Enemy '" << obj->name() << "' left light" << std::endl;
 					}
 					float oldExposure = obj->lightExposureTime();
@@ -884,13 +946,14 @@ namespace Runtime
 		}
 	}
 
-	void PlayState::renderImGui(Core::Time* timer)
+	void PlayState::renderImGui(Core::Time *timer)
 	{
 #ifdef _DEBUG
 		// Only render editor UI if editor is active
-		if (m_levelEditor && m_levelEditor->isActive()) {
-			Core::Engine& engine = Core::Engine::Get();
-			Graphics::ImGuiManager& imgui = engine.imguiManager();
+		if (m_levelEditor && m_levelEditor->isActive())
+		{
+			Core::Engine &engine = Core::Engine::Get();
+			Graphics::ImGuiManager &imgui = engine.imguiManager();
 
 			imgui.beginDockspace();
 			m_levelEditor->renderUI();
@@ -901,16 +964,17 @@ namespace Runtime
 #endif
 	}
 
-	void PlayState::render(Core::Time* timer)
+	void PlayState::render(Core::Time *timer)
 	{
 		if (!m_loaded || !m_renderer)
 			return;
 
-		Core::Engine& engine = Core::Engine::Get();
+		Core::Engine &engine = Core::Engine::Get();
 
 		// Editor rendering mode
-		if (m_levelEditor && m_levelEditor->isActive()) {
-			Graphics::FrameBuffer& editorFB = m_levelEditor->getFramebuffer();
+		if (m_levelEditor && m_levelEditor->isActive())
+		{
+			Graphics::FrameBuffer &editorFB = m_levelEditor->getFramebuffer();
 			editorFB.bind();
 
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -932,27 +996,31 @@ namespace Runtime
 		m_renderer->endScenePass();
 
 		// ==================== Torch Light Rendering & Enemy Interaction ====================
-		auto* scene = m_scenes.current();
+		auto *scene = m_scenes.current();
 		if (!scene)
 			return;
 
-		auto* physics = scene->getPhysics();
+		auto *physics = scene->getPhysics();
 
 		// Battery management code (keep all existing flashlight code)
-		if (m_player) {
+		if (m_player)
+		{
 			float dt = timer->delta();
 
-			if (m_flashlightOn) {
+			if (m_flashlightOn)
+			{
 				float currentBattery = m_player->checkBatt();
 				currentBattery -= m_player->checkDrain() * dt;
 				m_player->setBatt(currentBattery);
 
-				if (currentBattery <= 0.0f) {
+				if (currentBattery <= 0.0f)
+				{
 					m_player->setBatt(0.0f);
 					m_flashlightOn = false;
 				}
 			}
-			else {
+			else
+			{
 				float currentBattery = m_player->checkBatt();
 				currentBattery += m_player->checkCharge() * dt;
 				m_player->setBatt(std::min(100.0f, currentBattery));
@@ -966,18 +1034,17 @@ namespace Runtime
 			vec2 origin = m_player->transform().position;
 			float angle = m_player->transform().rotationRad;
 			glm::vec2 torchOffsetWorld(
-				torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
-				torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle)
-			);
+					torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+					torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle));
 			glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
-			std::vector<std::unique_ptr<Gameplay::GameObject>>& objs = scene->objects();
-			vec2 originVec2 = { originGLM.x, originGLM.y };
+			std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
+			vec2 originVec2 = {originGLM.x, originGLM.y};
 			std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-				originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+					originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
 
 			std::vector<glm::vec2> lightPolyGLM;
-			for (const auto& point : lightPoly)
+			for (const auto &point : lightPoly)
 			{
 				lightPolyGLM.emplace_back(point.x, point.y);
 			}
@@ -985,44 +1052,54 @@ namespace Runtime
 			// Render the light cone
 			float batteryPercent = currentBattery / maxBattery;
 			m_renderer->beginLightPass(engine.camera().viewProj(), originGLM, glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle, glm::radians(60.0f), batteryPercent);
-			m_renderer->drawLightCone(originGLM, lightPolyGLM, { 1.0f, 0.9f, 0.6f });
+			m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
 			m_renderer->endLightPass();
 		}
-		else {
+		else
+		{
 			// Flashlight is off - reset all enemy exposure times
-			for (auto& obj : scene->objects()) {
-				if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+			for (auto &obj : scene->objects())
+			{
+				if (obj && obj->type() == Gameplay::GameObjectType::Enemy)
+				{
 					obj->resetLightExposure();
 				}
 			}
 		}
 
 		// ==================== Battery UI Rendering ====================
-		if (m_player) {
+		if (m_player)
+		{
 			// Update battery display based on current battery level
 			float batteryPercent = m_player->checkBatt() / 100.0f; // Assuming max battery is 100
 
 			// Select appropriate texture based on battery level
-			if (batteryPercent > 0.875f) {
+			if (batteryPercent > 0.875f)
+			{
 				currentBatteryTexture = "battery_full";
 			}
-			else if (batteryPercent > 0.625f) {
+			else if (batteryPercent > 0.625f)
+			{
 				currentBatteryTexture = "battery_3/4";
 			}
-			else if (batteryPercent > 0.375f) {
+			else if (batteryPercent > 0.375f)
+			{
 				currentBatteryTexture = "battery_2/4";
 			}
-			else if (batteryPercent > 0.125f) {
+			else if (batteryPercent > 0.125f)
+			{
 				currentBatteryTexture = "battery_1/4";
 			}
-			else {
+			else
+			{
 				currentBatteryTexture = "battery_empty";
 			}
 
 			// Get the texture from TextureManager
 			auto batteryTex = Assets::TextureManager::Get(currentBatteryTexture);
 
-			if (batteryTex) {
+			if (batteryTex)
+			{
 				// Get the OpenGL texture ID
 				unsigned int batteryTexId = batteryTex->id();
 
@@ -1032,46 +1109,71 @@ namespace Runtime
 
 				glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
 				glm::vec2 batteryPos(screenSize.x - 100.0f, screenSize.y - 100.0f); // Top-right corner
-				glm::vec2 batterySize(64.0f, 64.0f); // Adjust to your texture size
+				glm::vec2 batterySize(64.0f, 64.0f);																// Adjust to your texture size
 
 				// Use an orthographic projection for UI (screen space)
 				glm::mat4 uiProjection = glm::ortho(0.0f, screenSize.x, 0.0f, screenSize.y);
 
 				m_renderer->beginScenePass(uiProjection);
 				m_renderer->drawSprite(
-					batteryTexId,
-					batteryPos,
-					batterySize,
-					0.0f, // no rotation
-					glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), // full UV rect
-					glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)  // white tint, full opacity
+						batteryTexId,
+						batteryPos,
+						batterySize,
+						0.0f,															 // no rotation
+						glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), // full UV rect
+						glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)	 // white tint, full opacity
 				);
 				m_renderer->endScenePass();
 			}
 		}
+
 		renderFragmentUI();
+
+		Platform::WindowManager &window = engine.window();
+		int w = window.width();
+		int h = window.height();
+		glm::mat4 uiProj = glm::ortho(0.f, (float)w, 0.f, (float)h);
+		m_renderer->beginFontPass(uiProj);
+
+		if (m_GameOver)
+		{
+			auto shader = Assets::ResourceManager<Shader>::Get("text");
+			auto subFont = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
+			subFont->RenderText("YOU DIED!", w * 0.40f, h * 0.6f, 1.f, glm::vec3{1, 0.2, 0.2}, *shader);
+			std::stringstream ss;
+			ss << "Restarting in " << int(m_playerRespawning);
+			subFont->RenderText(ss.str(), w * 0.32f, h * 0.4f, 1.f, glm::vec3{1, 0.2, 0.2}, *shader);
+		}
+
+		m_renderer->endFontPass();
+
 		(void)timer;
 	}
 
 	// test for IMGUI (still broken)
-	const char* defaultTextures[] = {
+	const char *defaultTextures[] = {
 			"player_texture",
 			"enemy.png",
 			"assets/textures/wall.png",
 			"assets/textures/floor.png",
-			"assets/textures/trap.png" };
+			"assets/textures/trap.png"};
 
-	void PlayState::initializeEnemyAI(Runtime::Scene* scene) {
-		if (!scene || !m_player) {
+	void PlayState::initializeEnemyAI(Runtime::Scene *scene)
+	{
+		if (!scene || !m_player)
+		{
 			std::cout << "[PlayState] Cannot initialize enemy AI: scene or player missing\n";
 			return;
 		}
 
-		auto& objs = scene->objects();
-		for (auto& obj : objs) {
-			if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active()) {
+		auto &objs = scene->objects();
+		for (auto &obj : objs)
+		{
+			if (obj && obj->type() == Gameplay::GameObjectType::Enemy && obj->active())
+			{
 				// Check if Chase component already exists
-				if (!obj->getComponent<Gameplay::Chase>()) {
+				if (!obj->getComponent<Gameplay::Chase>())
+				{
 					constexpr float CHASE_SPEED = 150.0f;
 					constexpr float ENGAGE_RADIUS = 350.0f;
 
@@ -1081,7 +1183,7 @@ namespace Runtime
 			}
 		}
 	}
-	//void PlayState::renderImGui(Core::Time *timer)
+	// void PlayState::renderImGui(Core::Time *timer)
 	//{
 	//	if (!m_debug)
 	//		return;
@@ -1135,7 +1237,7 @@ namespace Runtime
 	//					if (scene)
 	//					{
 	//						obj->setLayer(Gameplay::DrawLayer::Actors);
-	//						scene->addObject(std::move(obj)); 
+	//						scene->addObject(std::move(obj));
 	//					}
 	//					std::cout << "Player created\n";
 	//				}
@@ -1153,7 +1255,7 @@ namespace Runtime
 	//					if (scene)
 	//					{
 	//						obj->setLayer(Gameplay::DrawLayer::Actors);
-	//						scene->addObject(std::move(obj)); 
+	//						scene->addObject(std::move(obj));
 	//					}
 	//					std::cout << "Enemy created\n";
 	//				}
@@ -1170,7 +1272,7 @@ namespace Runtime
 	//					if (scene)
 	//					{
 	//						obj->setLayer(Gameplay::DrawLayer::Background);
-	//						scene->addObject(std::move(obj)); 
+	//						scene->addObject(std::move(obj));
 	//					}
 	//					std::cout << "Wall created\n";
 	//				}
@@ -1186,7 +1288,7 @@ namespace Runtime
 	//					if (scene)
 	//					{
 	//						obj->setLayer(Gameplay::DrawLayer::World);
-	//						scene->addObject(std::move(obj)); 
+	//						scene->addObject(std::move(obj));
 	//					}
 	//					std::cout << "Floor created\n";
 	//				}
@@ -1210,7 +1312,7 @@ namespace Runtime
 	//			if (!v.empty())
 	//			{
 	//				Gameplay::GameObject* doomed = v.back().get();
-	//				scene->destroyObject(doomed);   
+	//				scene->destroyObject(doomed);
 	//			}
 	//		}
 	//		ImGui::Text("Object counter: %d ", m_scenes.current()->objects().size());
@@ -1298,7 +1400,6 @@ namespace Runtime
 	//					}
 	//				}
 
-
 	//				ImGui::TextDisabled("Per-layer object counts:");
 	//				for (int i = 0; i < 5; ++i) {
 	//					ImGui::BulletText("%s : %zu", names[i], counts[i]);
@@ -1324,7 +1425,7 @@ namespace Runtime
 	//				if (chosen < 0) chosen = 0;
 	//				if (chosen >= (int)objs.size()) chosen = (int)objs.size() - 1;
 
-	//				
+	//
 
 	//				ImGui::TextDisabled("Move one object to a new draw layer:");
 	//				ImGui::SliderInt("Object Index", &chosen, 0, (int)objs.size() > 0 ? (int)objs.size() - 1 : 0);
@@ -1388,7 +1489,7 @@ namespace Runtime
 	//						if (obj)
 	//						{
 	//							obj->setLayer(Gameplay::DrawLayer::Background);
-	//							currentScene->addObject(std::move(obj)); 
+	//							currentScene->addObject(std::move(obj));
 	//						}
 	//					}
 	//				}
@@ -1431,24 +1532,34 @@ namespace Runtime
 	//	// dl->AddCircle(center, radius, IM_COL32(255, 0, 0, 255), segments, thickness);
 	//}
 
-	void PlayState::updateFragmentCollection(double dt) {
-		auto* scene = m_scenes.current();
-		if (!scene) { return; }
+	void PlayState::updateFragmentCollection(double dt)
+	{
+		auto *scene = m_scenes.current();
+		if (!scene)
+		{
+			return;
+		}
 
 		// Find player
-		Gameplay::GameObject* player = nullptr;
-		for (auto& obj : scene->objects()) {
-			if (obj && obj->type() == Gameplay::GameObjectType::Player && obj->active()) {
+		Gameplay::GameObject *player = nullptr;
+		for (auto &obj : scene->objects())
+		{
+			if (obj && obj->type() == Gameplay::GameObjectType::Player && obj->active())
+			{
 				player = obj.get();
 				break;
 			}
 		}
 
-		if (!player) { return; }
+		if (!player)
+		{
+			return;
+		}
 
 		// Get player's fragment collector component
-		auto* collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
-		if (!collector) {
+		auto *collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
+		if (!collector)
+		{
 			return;
 		}
 
@@ -1459,15 +1570,25 @@ namespace Runtime
 		vec2 playerPos = player->transform().position;
 
 		// Check for fragment collisions
-		for (auto& obj : scene->objects()) {
-			if (!obj || !obj->active()) { continue; }
+		for (auto &obj : scene->objects())
+		{
+			if (!obj || !obj->active())
+			{
+				continue;
+			}
 
 			// Check if this is a Fragment GameObject
-			if (obj->type() != Gameplay::GameObjectType::Fragment) { continue; }
+			if (obj->type() != Gameplay::GameObjectType::Fragment)
+			{
+				continue;
+			}
 
 			// Check if already collected
-			auto* fragmentComp = obj->getComponent<Gameplay::FragmentComponent>();
-			if (fragmentComp && fragmentComp->isCollected()) { continue; }
+			auto *fragmentComp = obj->getComponent<Gameplay::FragmentComponent>();
+			if (fragmentComp && fragmentComp->isCollected())
+			{
+				continue;
+			}
 
 			// Calculate distance
 			vec2 fragmentPos = obj->transform().position;
@@ -1476,34 +1597,45 @@ namespace Runtime
 			float distSquared = dx * dx + dy * dy;
 
 			// Check if within pickup radius
-			if (distSquared <= pickupRadiusSquared) {
+			if (distSquared <= pickupRadiusSquared)
+			{
 				handleFragmentPickup(player, obj.get());
 			}
 		}
 
 		// Update notification timer
-		if (m_showFragmentNotification) {
+		if (m_showFragmentNotification)
+		{
 			m_fragmentNotificationTimer -= static_cast<float>(dt);
-			if (m_fragmentNotificationTimer <= 0.0f) {
+			if (m_fragmentNotificationTimer <= 0.0f)
+			{
 				m_showFragmentNotification = false;
 			}
 		}
 	}
 
-	void PlayState::handleFragmentPickup(Gameplay::GameObject* player, Gameplay::GameObject* fragment) {
+	void PlayState::handleFragmentPickup(Gameplay::GameObject *player, Gameplay::GameObject *fragment)
+	{
 
-		if (fragment->type() != Gameplay::GameObjectType::Fragment) {
+		if (fragment->type() != Gameplay::GameObjectType::Fragment)
+		{
 			return;
 		}
 
-		auto* collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
-		if (!collector) { return; }
+		auto *collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
+		if (!collector)
+		{
+			return;
+		}
 
 		// Get optional fragment component for metadata
-		auto* fragmentComp = fragment->getComponent<Gameplay::FragmentComponent>();
+		auto *fragmentComp = fragment->getComponent<Gameplay::FragmentComponent>();
 
 		// Check if already collected
-		if (fragmentComp && fragmentComp->isCollected()) { return; }
+		if (fragmentComp && fragmentComp->isCollected())
+		{
+			return;
+		}
 
 		// Get fragment value (default 1 if no component)
 		int value = fragmentComp ? fragmentComp->value() : 1;
@@ -1512,7 +1644,8 @@ namespace Runtime
 		std::string fragmentId = fragmentComp ? fragmentComp->fragmentId() : fragment->name();
 
 		// Mark as collected
-		if (fragmentComp) {
+		if (fragmentComp)
+		{
 			fragmentComp->markCollected();
 		}
 
@@ -1532,40 +1665,47 @@ namespace Runtime
 		// audio.playSound("fragment_collect");
 
 		// Check completion
-		if (collector->canEscape()) {
+		if (collector->canEscape())
+		{
 			// Optional: Trigger escape door, next level, etc.
 		}
 	}
 
-	void PlayState::renderFragmentUI() {
+	void PlayState::renderFragmentUI()
+	{
 
-		auto* scene = m_scenes.current();
-		if (!scene) {
+		auto *scene = m_scenes.current();
+		if (!scene)
+		{
 			std::cout << "[FRAGMENT UI] No scene!\n";
 			return;
 		}
 
 		// Find player
-		Gameplay::GameObject* player = nullptr;
-		for (auto& obj : scene->objects()) {
-			if (obj && obj->type() == Gameplay::GameObjectType::Player && obj->active()) {
+		Gameplay::GameObject *player = nullptr;
+		for (auto &obj : scene->objects())
+		{
+			if (obj && obj->type() == Gameplay::GameObjectType::Player && obj->active())
+			{
 				player = obj.get();
 				break;
 			}
 		}
 
-		if (!player) {
+		if (!player)
+		{
 			std::cout << "[FRAGMENT UI] No player found!\n";
 			return;
 		}
 
-		auto* collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
-		if (!collector) {
+		auto *collector = player->getComponent<Gameplay::FragmentCollectorComponent>();
+		if (!collector)
+		{
 			std::cout << "[FRAGMENT UI] !!! PLAYER HAS NO FragmentCollectorComponent !!!\n";
 			return;
 		}
 
-		Core::Engine& engine = Core::Engine::Get();
+		Core::Engine &engine = Core::Engine::Get();
 		int windowWidth = engine.window().width();
 		int windowHeight = engine.window().height();
 		glm::vec2 screenSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
@@ -1576,28 +1716,30 @@ namespace Runtime
 		auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
 		auto font = Assets::ResourceManager<Assets::FontManager>::Get("Debug");
 
-		if (!shader) {
+		if (!shader)
+		{
 			std::cout << "[FRAGMENT UI] Text shader not found!\n";
 		}
-		if (!font) {
+		if (!font)
+		{
 			std::cout << "[FRAGMENT UI] Debug font not found!\n";
 		}
 
-		if (font && shader) {
+		if (font && shader)
+		{
 
 			std::string text = std::to_string(collector->collectedCount()) +
-				" / " +
-				std::to_string(collector->requiredFragments());
+												 " / " +
+												 std::to_string(collector->requiredFragments());
 
 			font->RenderText("FRAGMENT TEST", 20.0f, screenSize.y - 80.0f, 1.0f,
-				glm::vec3(1.0f, 1.0f, 0.0f), *shader);
+											 glm::vec3(1.0f, 1.0f, 0.0f), *shader);
 
 			font->RenderText(text, 20.0f, screenSize.y - 120.0f, 1.0f,
-				glm::vec3(1.0f, 1.0f, 1.0f), *shader);
+											 glm::vec3(1.0f, 1.0f, 1.0f), *shader);
 		}
 
 		m_renderer->endFontPass();
-
 	}
 
 	void PlayState::resetScene()
@@ -1608,19 +1750,20 @@ namespace Runtime
 
 			rebindLightsAndPlayerAfterReload();
 
-			if (auto* scene = m_scenes.current()) {
+			if (auto *scene = m_scenes.current())
+			{
 				scene->registerExistingObjectsToLayers();
 				m_player = findFirstPlayer(scene);
 
 				initializeEnemyAI(scene);
 			}
-
 		}
 		else
 		{
 			m_scenes.loadScene(m_initialSceneId);
 			rebindLightsAndPlayerAfterReload();
-			if (auto* scene = m_scenes.current()) {
+			if (auto *scene = m_scenes.current())
+			{
 				scene->registerExistingObjectsToLayers();
 				m_player = findFirstPlayer(scene);
 

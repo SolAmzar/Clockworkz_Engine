@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file			AudioSource.cpp
+\project        Lights Out
+\author(s)      [Amzar], 100%
+\brief          Defines the AudioSourceComponent for attaching audio playback
+                capabilities to GameObjects.
+                Responsibilities include:
+                - Storing sound ID, volume, loop, and play-on-start settings
+                - Playing audio via AudioManager during updates
+				- Serialization to/from JSON for level saving/loading
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Gameplay/Components/AudioSource.hpp"
 #include "Core/Engine.hpp" // for Engine::Get().audio()
 
