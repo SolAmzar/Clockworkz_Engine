@@ -82,6 +82,7 @@ namespace Runtime {
 		float m_minStepInterval = 0.22f;
 		vec2  m_lastFootPos{};
 		bool  m_haveLastFootPos = false;
+		vec2 m_spawnPoint;
 		void resetScene();
 		Gameplay::GameObject* m_player;
 		std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
@@ -102,8 +103,14 @@ namespace Runtime {
 
 		float m_playerRespawning{ 5.f };
 		bool m_GameOver{ false };
-		bool m_playerDead;
-		float m_deathTimer;
+		bool m_playerDead{ false };
+		float m_deathTimer{ 0.0f };
+		
+		// Audio members
+		int m_bgmChannel{ -1 };
+		float m_bgmVol{ 0.5f };
+		float m_sfxVol{ 0.5f };
+		bool m_bgmPlaying{ false };
 		const float m_deathDelay = 2.0f;
 
 		// Fragment system
