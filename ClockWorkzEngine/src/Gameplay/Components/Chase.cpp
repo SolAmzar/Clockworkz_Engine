@@ -167,7 +167,6 @@ namespace Gameplay {
         if (m_wanderTimer >= m_wanderChangeInterval) {
             m_wanderDirection = generateRandomDirection();
             m_wanderTimer = 0.0f;
-            std::cout << "[Chase DEBUG] Wander direction changed for '" << m_enemy.name() << "'" << std::endl;
         }
 
         // Calculate wander velocity

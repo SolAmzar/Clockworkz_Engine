@@ -89,7 +89,12 @@
 			"path": "assets/textures/energy flat.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "fragment_texture",
+			"path": "assets/textures/fragmentsample.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
-
 	]
 }

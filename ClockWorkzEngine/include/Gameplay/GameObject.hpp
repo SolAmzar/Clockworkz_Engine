@@ -2,7 +2,7 @@
 /*!
 \file           GameObject.hpp
 \project        Lights Out
-\author(s)      [Lebon], 100% - Will be shared later once other features combine in.
+\author(s)      [Lebon], [Syafiq] - Will be shared later once other features combine in.
 \brief          Declares GameObject, the fundamental gameplay entity.
                 Responsibilities include:
                 - Holding transform, size, velocity, texture, and component data
@@ -42,7 +42,7 @@ namespace Gameplay {
 	class LayerManager;
 
     // Keep it small; components can add behavior later.
-    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box};
+    enum class GameObjectType : uint8_t { Floor, Wall, Player, Enemy, Trap, Unknown, Ball, Box, Fragment };
 
 	// To disguish between different collision shapes
     enum class CollisionShapeType : uint8_t { AABB, Circle, Polygon, Unknown}; 
