@@ -43,6 +43,7 @@ All content   2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <sstream>
 #include <chrono>
 #include <thread>
 #include <memory>

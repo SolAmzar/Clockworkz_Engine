@@ -100,6 +100,8 @@ namespace Runtime {
 
 		void initializeEnemyAI(Runtime::Scene* scene);
 
+		float m_playerRespawning{ 5.f };
+		bool m_GameOver{ false };
 		bool m_playerDead;
 		float m_deathTimer;
 		const float m_deathDelay = 2.0f;
