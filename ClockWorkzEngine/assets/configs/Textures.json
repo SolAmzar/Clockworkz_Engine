@@ -7,12 +7,6 @@
 			"alphaOnlyIsRed": false
 		},
 		{
-			"name": "enemy_texture",
-			"path": "assets/textures/enemy.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
 			"name": "wall_texture",
 			"path": "assets/textures/wall_atlas.png",
 			"flipY": true,
@@ -21,12 +15,6 @@
 		{
 			"name": "menu_bg_texture",
 			"path": "assets/textures/background.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "corgi_texture",
-			"path": "assets/textures/corgi.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		},
