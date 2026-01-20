@@ -1,0 +1,181 @@
+/******************************************************************************/
+/*!
+\file           PlayerController.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] (100%)
+\brief          PlayerController component - manages player input and movement
+logic.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
+#pragma once
+
+#include "Components/SpriteAnimator.hpp"
+#include "Components/StateMachine.hpp"
+#include "Components/Torch.hpp"
+#include "Components/Transform.hpp"
+#include "Components/Velocity.hpp"
+#include "Core/Engine.hpp"
+#include "ECS/World.hpp"
+#include "Math/Vec2.hpp"
+#include "Platform/InputManager.hpp"
+#include "Platform/WindowManager.hpp"
+#include <GLFW/glfw3.h>
+#include <cmath>
+#include <iostream>
+#include <string>
+
+namespace Components {
+
+struct PlayerController {
+  bool initialized{false};
+
+  // Speed multipliers
+  float walkMultiplier{1.0f};   // Normal walking speed
+  float sprintMultiplier{2.0f}; // Sprint speed multiplier
+
+  void OnEnter(ECS::Entity entity, ECS::World &world) {
+    (void)entity;
+    (void)world;
+    std::cout << "PlayerController Attached/Started!" << std::endl;
+  }
+
+  void Update(ECS::Entity entity, ECS::World &world, double dt,
+              Platform::InputManager &input) {
+    (void)dt;
+    auto *vel = world.getComponent<Velocity>(entity);
+    auto *trans = world.getComponent<Transform>(entity);
+    auto *sm = world.getComponent<StateMachine>(entity);
+    auto *anim = world.getComponent<SpriteAnimator>(entity);
+    auto *torch = world.getComponent<TorchComponent>(entity);
+
+    std::string currentState = "idle";
+
+    if (vel && trans) {
+      // Get forward/backward input (W/S)
+      float forwardInput = 0.f;
+      if (input.isKeyDown(GLFW_KEY_W))
+        forwardInput += 1.f;
+      if (input.isKeyDown(GLFW_KEY_S))
+        forwardInput -= 1.f;
+
+      if (forwardInput != 0.f) {
+        // Determine speed multiplier
+        bool isSprinting = input.isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
+                           input.isKeyDown(GLFW_KEY_RIGHT_SHIFT);
+
+        float speedMultiplier = isSprinting ? sprintMultiplier : walkMultiplier;
+        float currentSpeed = vel->moveSpeed * speedMultiplier;
+
+        // Calculate movement direction based on player's rotation
+        float playerAngle = trans->rotation;
+
+        // Forward direction (along player's facing)
+        vec2 forward{std::cos(playerAngle), std::sin(playerAngle)};
+
+        // Combine forward movement
+        vec2 moveDir = forward * forwardInput;
+
+        // Normalize if moving diagonally
+        float moveLength =
+            std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+        if (moveLength > 0.f) {
+          moveDir.x /= moveLength;
+          moveDir.y /= moveLength;
+        }
+
+        vel->velocity = {moveDir.x * currentSpeed, moveDir.y * currentSpeed};
+
+        // Update animation state
+        if (isSprinting) {
+          currentState = "run";
+        } else {
+          currentState = "walk";
+        }
+      } else {
+        vel->velocity = {0.f, 0.f};
+        currentState = "idle";
+      }
+    }
+
+    // Mouse-facing rotation
+    if (trans) {
+      // Get mouse world position
+      auto &engine = Core::Engine::Get();
+      auto &window = engine.window();
+      auto &camera = engine.camera();
+
+      vec2 mouseWorld =
+          input.getMouseWorldPos(camera, static_cast<float>(window.width()),
+                                 static_cast<float>(window.height()));
+
+      // Calculate direction from player to mouse
+      vec2 playerPos = trans->position;
+      vec2 dir = mouseWorld - playerPos;
+
+      // Only rotate if mouse is far enough to avoid jitter
+      float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+      if (dist > 10.0f) {
+        // Normalize direction
+        dir.x /= dist;
+        dir.y /= dist;
+
+        // Calculate angle in radians
+        float angleRad = std::atan2(dir.y, dir.x);
+        trans->rotation = angleRad;
+      }
+    }
+
+    // Append _torch if torch component is present and active
+    if (torch && torch->active) {
+      currentState += "_torch"; // e.g. "idle_torch", "walk_torch", "run_torch"
+    }
+
+    // Update StateMachine if it exists (optional)
+    if (sm) {
+      sm->currentState = currentState;
+    }
+
+    // Sync Animation
+    if (anim) {
+      std::string targetClip = (sm) ? sm->currentState : currentState;
+
+      if (anim->currentClip != targetClip) {
+        bool clipExists = false;
+        for (const auto &clip : anim->clips) {
+          if (clip.first == targetClip) {
+            clipExists = true;
+            break;
+          }
+        }
+
+        if (clipExists) {
+          anim->play(targetClip);
+        }
+      }
+    }
+
+    // Update torch offset based on animation state
+    if (torch) {
+      // Adjust offset based on animation state for better visual alignment
+      if (currentState.find("idle") != std::string::npos) {
+        torch->offset = vec2{35.0f, -20.0f}; // Default idle pose
+      } else if (currentState.find("walk") != std::string::npos) {
+        torch->offset = vec2{40.0f, -15.0f}; // Walking pose - slightly forward
+      } else if (currentState.find("run") != std::string::npos) {
+        torch->offset = vec2{45.0f, -10.0f}; // Running pose - more forward
+      }
+    }
+  }
+
+  void OnExit(ECS::Entity entity, ECS::World &world) {
+    (void)entity;
+    (void)world;
+    std::cout << "PlayerController Stopped!" << std::endl;
+  }
+};
+
+} // namespace Components

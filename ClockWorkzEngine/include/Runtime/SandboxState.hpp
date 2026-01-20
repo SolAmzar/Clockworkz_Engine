@@ -24,20 +24,7 @@ reserved.
 #include "Runtime/GameState.hpp"
 #include <vector>
 
-// Component includes
-#include "Components/AudioSource.hpp"
-#include "Components/Battery.hpp"
-#include "Components/Collider.hpp"
-#include "Components/Fragment.hpp"
-#include "Components/Health.hpp"
-#include "Components/LightExposure.hpp"
-#include "Components/Patrol.hpp"
-#include "Components/SpriteRenderer.hpp"
-#include "Components/Transform.hpp"
-#include "Components/Velocity.hpp"
-
-// System includes
-#include "Systems/RenderSystem.hpp"
+#include "Runtime/Scene.hpp"
 
 namespace Platform {
 class InputManager;
@@ -77,12 +64,9 @@ private:
   Platform::InputManager &m_input;
   GameStateManager &m_gsm;
 
-  // ECS World
-  ECS::World m_world;
+  // Scene (Runtime Logic)
+  Scene m_scene;
 
-  // Systems
-  Systems::RenderSystem m_renderSystem;
-  bool m_renderSystemEnabled{true};
   bool m_showSystemsWindow{true};
 
   // Test entities
@@ -101,12 +85,18 @@ private:
   // Component management
   int m_selectedEntityIdx{0};
 
+  // Drag and Drop State
+  ECS::Entity m_draggedEntity{0, 0}; // Invalid entity by default
+  bool m_isDragging{false};
+  glm::vec2 m_dragOffset{0.f, 0.f};
+
   // Helper functions
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
   void renderStatsWindow();
   void spawnTestEntity(vec2 position);
+  void renderTorchPass(Graphics::RenderingManager &renderer);
 };
 
 } // namespace Runtime
