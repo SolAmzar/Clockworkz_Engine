@@ -88,12 +88,40 @@ private:
   // Drag and Drop State
   ECS::Entity m_draggedEntity{0, 0}; // Invalid entity by default
   bool m_isDragging{false};
-  glm::vec2 m_dragOffset{0.f, 0.f};
+  vec2 m_dragOffset{0.f, 0.f};
+
+  // Scene View & Gizmos
+  Graphics::FrameBuffer m_framebuffer;
+  vec2 m_viewportSize{0.f, 0.f};
+  bool m_viewportFocused{false};
+  bool m_viewportHovered{false};
+
+  enum class GizmoMode { Translation, Rotation, Scale, None };
+  GizmoMode m_gizmoMode{GizmoMode::Translation};
+  int m_gizmoActiveAxis{
+      -1}; // -1: None, 0: X, 1: Y, 2: Z/Both/Rotate, 3: Center
+  vec2 m_gizmoOriginalPos{0.f, 0.f}; // For delta calculation
+  vec2 m_gizmoClickOffset{0.f, 0.f};
+  float m_gizmoOriginalRotation{0.f};
+  vec2 m_gizmoOriginalScale{1.f, 1.f};
+
+  // Editor Features
+  bool m_showGrid{true};
+  float m_gridSize{50.0f};
+  bool m_isPaused{false};
+  bool m_showAssetBrowser{true};
+  std::string m_selectedAsset;
 
   // Helper functions
+  void renderToolbar();
+  void renderGrid();
+  void renderAssetBrowser();
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
+  void renderSceneWindow();
+  void renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
+                    const vec2 &viewportMin);
   void renderStatsWindow();
   void spawnTestEntity(vec2 position);
   void renderTorchPass(Graphics::RenderingManager &renderer);

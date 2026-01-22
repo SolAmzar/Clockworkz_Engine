@@ -52,6 +52,11 @@ reserved.
 #include "Systems/StateMachineSystem.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <cmath>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <cmath>
+#include "Math/Vec2.hpp"
 
 namespace Runtime {
 
@@ -85,7 +90,9 @@ void SandboxState::update(double dt) {
   }
 
   // Update Scene Logic
-  m_scene.Update(dt, m_input);
+  if (!m_isPaused) {
+    m_scene.Update(dt, m_input);
+  }
 }
 
 void SandboxState::render(Core::Time *timer) {
@@ -105,6 +112,11 @@ void SandboxState::render(Core::Time *timer) {
 
   // Render Torch Pass
   renderTorchPass(renderer);
+
+  // Render Grid (Must happen while framebuffer is bound)
+  renderGrid();
+
+  m_framebuffer.unbind();
 }
 
 void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
@@ -128,14 +140,15 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
 
         // Calculate Torch World Position
         float angle = trans.rotation;
-        glm::vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
-        glm::vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
+
+        vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
+        vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
                                        torchOffsetLocal.y * std::sin(angle),
                                    torchOffsetLocal.x * std::sin(angle) +
                                        torchOffsetLocal.y * std::cos(angle));
 
         glm::vec2 originGLM =
-            glm::vec2(trans.position.x, trans.position.y) + torchOffsetWorld;
+            glm::vec2((trans.position.x + torchOffsetWorld.x), (trans.position.y + torchOffsetWorld.y));
 
         // Create simple light polygon (Fan)
         std::vector<glm::vec2> lightPoly;
@@ -210,6 +223,9 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderEntityWindow();
   renderComponentWindow();
   renderStatsWindow();
+  renderSceneWindow();
+  renderToolbar();
+  renderAssetBrowser();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
@@ -327,6 +343,26 @@ void SandboxState::renderEntityWindow() {
     }
 
     ImGui::PopID();
+  }
+
+  // Handle deferred actions
+  if (entityToClone != -1) {
+    if (entityToClone >= 0 && entityToClone < (int)m_testEntities.size())
+      cloneTestEntity(m_testEntities[entityToClone]);
+  }
+
+  if (entityToDelete != -1) {
+    if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
+
+      world.destroyEntity(m_testEntities[entityToDelete]);
+      m_testEntities.erase(m_testEntities.begin() + entityToDelete);
+
+      // Fix selection index if needed
+      if (m_selectedEntityIdx == entityToDelete)
+        m_selectedEntityIdx = -1;
+      else if (m_selectedEntityIdx > entityToDelete)
+        m_selectedEntityIdx--;
+    }
   }
 
   ImGui::EndChild();
@@ -760,4 +796,514 @@ void SandboxState::renderSystemsWindow() {
   ImGui::End();
 }
 
+void SandboxState::renderSceneWindow() {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+  ImGui::Begin("Scene", nullptr,
+               ImGuiWindowFlags_NoScrollbar |
+                   ImGuiWindowFlags_NoScrollWithMouse);
+
+  m_viewportFocused = ImGui::IsWindowFocused();
+  m_viewportHovered = ImGui::IsWindowHovered();
+
+  ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+  if (m_viewportSize.x != viewportPanelSize.x ||
+      m_viewportSize.y != viewportPanelSize.y) {
+    m_viewportSize = {viewportPanelSize.x, viewportPanelSize.y};
+    m_framebuffer.resize((int)m_viewportSize.x, (int)m_viewportSize.y);
+    Core::Engine::Get().camera().setViewport((int)m_viewportSize.x,
+                                             (int)m_viewportSize.y);
+  }
+
+  uint64_t textureID = m_framebuffer.getTextureID();
+  // Invert V coordinate because OpenGL textures are upside down relative to
+  // ImGui
+  ImGui::Image(reinterpret_cast<void *>(textureID), viewportPanelSize,
+               ImVec2(0, 1), ImVec2(1, 0));
+
+  // Determine viewport bounds
+  ImVec2 windowPos = ImGui::GetWindowPos();
+  ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+  // Determine viewport bounds
+
+  vec2 viewportMin = {windowPos.x + contentMin.x,
+                           windowPos.y + contentMin.y};
+
+  // Drag and Drop Target
+  if (ImGui::BeginDragDropTarget()) {
+    if (const ImGuiPayload *payload =
+            ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+      const char *textureName = (const char *)payload->Data;
+      // Calculate drop position
+      ImVec2 mousePos = ImGui::GetMousePos();
+      vec2 localMouse = {mousePos.x - viewportMin.x,
+                              mousePos.y - viewportMin.y};
+      
+      Graphics::Camera2D &cam = Core::Engine::Get().camera();
+      float zoom = cam.zoom();
+      vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+       vec2 centeredMouse = {
+          localMouse.x - m_viewportSize.x * 0.5f,
+          -(localMouse.y - m_viewportSize.y * 0.5f)};
+
+       vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+       // Spawn Entity
+       spawnTestEntity(vec2(worldPos.x, worldPos.y)); 
+       // Set texture of last spawned entity (hacky but works given spawnTestEntity pushes back)
+       if (!m_testEntities.empty()) {
+           auto& world = m_scene.GetWorld();
+           auto entity = m_testEntities.back();
+           auto* sprite = world.getComponent<Components::SpriteRenderer>(entity);
+           if (!sprite) {
+               world.addComponent(entity, Components::SpriteRenderer{});
+               sprite = world.getComponent<Components::SpriteRenderer>(entity);
+           }
+           if (sprite) {
+               sprite->textureId = textureName;
+               sprite->size = vec2(50, 50); // Default size
+           }
+       }
+    }
+    ImGui::EndDragDropTarget();
+  }
+
+  // Gizmos and Picking
+  renderGizmos({windowPos.x, windowPos.y},
+               {viewportPanelSize.x, viewportPanelSize.y}, viewportMin);
+
+  // Handle Object Picking (Selection)
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
+      m_gizmoActiveAxis == -1) {
+    // Create a dummy gizmo check context or just assume no gizmo if axis is -1
+    // Convert mouse to world space
+    ImVec2 mousePos = ImGui::GetMousePos();
+    vec2 localMouse = {mousePos.x - viewportMin.x,
+                            mousePos.y - viewportMin.y};
+
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    // Adjust for center origin
+    vec2 centeredMouse = {
+        localMouse.x - m_viewportSize.x * 0.5f,
+        -(localMouse.y -
+          m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y is
+                                   // down (pixel space)
+    };
+
+    vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+    // Iterate m_testEntities
+    auto &world = m_scene.GetWorld();
+    float bestDist = FLT_MAX;
+    int bestIdx = -1;
+
+    for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+      auto entity = m_testEntities[i];
+      auto *trans = world.getComponent<Components::Transform>(entity);
+      if (trans) {
+        // Simple distance check for selection (assume rad 50)
+        float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
+        if (dist < 50.0f && dist < bestDist) {
+          bestDist = dist;
+          bestIdx = i;
+        }
+      }
+    }
+
+    if (bestIdx != -1) {
+      m_selectedEntityIdx = bestIdx;
+    }
+  }
+
+  // Gizmo Mode Toggles Hotkeys
+  // Gizmo Mode Toggles Hotkeys
+  if (m_viewportFocused) {
+    if (ImGui::IsKeyPressed(ImGuiKey_W))
+      m_gizmoMode = GizmoMode::Translation;
+    if (ImGui::IsKeyPressed(ImGuiKey_E))
+      m_gizmoMode = GizmoMode::Rotation;
+    if (ImGui::IsKeyPressed(ImGuiKey_R))
+      m_gizmoMode = GizmoMode::Scale;
+
+    // Cloning (Ctrl + D)
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D)) {
+      if (m_selectedEntityIdx >= 0 &&
+          m_selectedEntityIdx < (int)m_testEntities.size()) {
+        cloneTestEntity(m_testEntities[m_selectedEntityIdx]);
+      }
+    }
+
+    // Deleting (Delete)
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+      if (m_selectedEntityIdx >= 0 &&
+          m_selectedEntityIdx < (int)m_testEntities.size()) {
+        auto &world = m_scene.GetWorld();
+        world.destroyEntity(m_testEntities[m_selectedEntityIdx]);
+        m_testEntities.erase(m_testEntities.begin() + m_selectedEntityIdx);
+        m_selectedEntityIdx = -1;
+        m_gizmoActiveAxis = -1; // Reset gizmo
+      }
+    }
+  }
+
+  ImGui::End();
+  ImGui::PopStyleVar();
+}
+
+void SandboxState::renderGizmos(const vec2 &windowPos,
+                                const vec2 &windowSize,
+                                const vec2 &viewportMin) {
+  (void)windowPos;
+  (void)windowSize;
+  if (m_selectedEntityIdx < 0 ||
+      m_selectedEntityIdx >= (int)m_testEntities.size())
+    return;
+
+  auto &world = m_scene.GetWorld();
+  auto entity = m_testEntities[m_selectedEntityIdx];
+  auto *trans = world.getComponent<Components::Transform>(entity);
+  if (!trans)
+    return;
+
+  ImDrawList *drawList = ImGui::GetWindowDrawList();
+  Graphics::Camera2D &cam = Core::Engine::Get().camera();
+
+  // World to Screen
+  vec2 camPos = vec2(cam.position().x, cam.position().y);
+  float zoom = cam.zoom();
+
+  vec2 worldDelta =
+      vec2(trans->position.x, trans->position.y) - camPos;
+  vec2 screenCenter = viewportMin + m_viewportSize * 0.5f;
+  // Note: World Y is up, Screen Y is down.
+  vec2 objectScreenPos =
+      screenCenter + vec2(worldDelta.x * zoom, -worldDelta.y * zoom);
+
+  float handleThickness = 6.0f;
+  float handleLength = 60.0f;
+  float interactionThresh = 8.0f; // Screen pixels tolerance
+
+  ImVec2 origin = {objectScreenPos.x, objectScreenPos.y};
+  ImU32 colX = IM_COL32(200, 50, 50, 255);
+  ImU32 colY = IM_COL32(50, 200, 50, 255);
+  ImU32 colZ = IM_COL32(50, 50, 200, 255);
+  ImU32 colHover = IM_COL32(255, 255, 0, 255);
+
+  ImVec2 mousePos = ImGui::GetMousePos();
+  bool mouseClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+  bool mouseReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+  bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+
+  if (mouseReleased) {
+    m_gizmoActiveAxis = -1;
+  }
+
+  // Helper: Distance from point p to segment v-w
+  auto distToSegment = [](ImVec2 p, ImVec2 v, ImVec2 w) {
+    float l2 = static_cast<float>(pow(v.x - w.x, 2) + pow(v.y - w.y, 2));
+    if (l2 == 0)
+      return static_cast<float>(sqrt(pow(p.x - v.x, 2) + pow(p.y - v.y, 2)));
+    float t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+    t = std::max(0.0f, std::min(1.0f, t));
+    ImVec2 projection = {v.x + t * (w.x - v.x), v.y + t * (w.y - v.y)};
+    return static_cast<float>(
+        sqrt(pow(p.x - projection.x, 2) + pow(p.y - projection.y, 2)));
+  };
+
+  // Calculate Rotated Axis Directions (Screen Space)
+  // World rotation is radians CCW.
+  // Screen space Y is flipped.
+  float angle = trans->rotation;
+  float c = cos(angle);
+  float s = sin(angle);
+
+  // World space basis vectors
+  // X: (c, s)
+  // Y: (-s, c)
+  // Screen space transform: y component negated.
+  vec2 xAxisScreen = vec2(c, -s);
+  vec2 yAxisScreen = vec2(-s, -c);
+
+  // Normalize handle vectors in screen pixels
+  ImVec2 xHandleVec = {xAxisScreen.x * handleLength,
+                       xAxisScreen.y * handleLength};
+  ImVec2 yHandleVec = {yAxisScreen.x * handleLength,
+                       yAxisScreen.y * handleLength};
+
+  // Gizmo Logic
+  if (m_gizmoMode == GizmoMode::Translation) {
+    ImVec2 xEnd = {origin.x + xHandleVec.x, origin.y + xHandleVec.y};
+    ImVec2 yEnd = {origin.x + yHandleVec.x, origin.y + yHandleVec.y};
+
+    bool hoverX = distToSegment(mousePos, origin, xEnd) < interactionThresh;
+    bool hoverY = distToSegment(mousePos, origin, yEnd) < interactionThresh;
+
+    if (m_gizmoActiveAxis == 0)
+      hoverX = true;
+    if (m_gizmoActiveAxis == 1)
+      hoverY = true;
+
+    drawList->AddLine(origin, xEnd, hoverX ? colHover : colX, handleThickness);
+    drawList->AddLine(origin, yEnd, hoverY ? colHover : colY, handleThickness);
+
+    // Arrow heads (Manual rotation...)
+    // Simpler: Just stick to lines or render triangle at end manually rotated
+    // X Head
+    {
+      vec2 dir = normalize(xAxisScreen);
+      vec2 perp = {-dir.y, dir.x}; // 90 deg screen space
+      ImVec2 p1 = {xEnd.x, xEnd.y};
+      ImVec2 p2 = {xEnd.x - dir.x * 10 + perp.x * 5,
+                   xEnd.y - dir.y * 10 + perp.y * 5};
+      ImVec2 p3 = {xEnd.x - dir.x * 10 - perp.x * 5,
+                   xEnd.y - dir.y * 10 - perp.y * 5};
+      drawList->AddTriangleFilled(p1, p2, p3, hoverX ? colHover : colX);
+    }
+    // Y Head
+    {
+      vec2 dir = normalize(yAxisScreen);
+      vec2 perp = {-dir.y, dir.x};
+      ImVec2 p1 = {yEnd.x, yEnd.y};
+      ImVec2 p2 = {yEnd.x - dir.x * 10 + perp.x * 5,
+                   yEnd.y - dir.y * 10 + perp.y * 5};
+      ImVec2 p3 = {yEnd.x - dir.x * 10 - perp.x * 5,
+                   yEnd.y - dir.y * 10 - perp.y * 5};
+      drawList->AddTriangleFilled(p1, p2, p3, hoverY ? colHover : colY);
+    }
+
+    if (mouseClicked && (hoverX || hoverY) && !m_isDragging) {
+      m_gizmoActiveAxis = hoverX ? 0 : 1;
+      m_gizmoOriginalPos = {trans->position.x, trans->position.y};
+      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+    }
+
+    if (mouseDown && m_gizmoActiveAxis != -1) {
+      // Drag logic needs to project mouse movement onto the axis in Screen
+      // Space Then apply that magnitude to World Space axis
+      float dx = (mousePos.x - m_gizmoClickOffset.x);
+      float dy = (mousePos.y - m_gizmoClickOffset.y);
+
+      // Dot product with screen axis to get magnitude
+      vec2 screenMove(dx, dy);
+      vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
+      axisDir = normalize(axisDir);
+
+      float proj = dot(screenMove, axisDir);
+
+      // proj is pixels moved along the screen axis
+      // Convert to world units: divide by zoom
+      float worldMove = proj / zoom;
+
+      // World axis matches screen axis conceptually but Y component is flipped
+      // for storage? No, trans->rotation tells us the world axis direction.
+      // X-Axis world vector is (c, s).
+      // So we move worldMove * (c, s)
+
+      vec2 worldDir =
+          (m_gizmoActiveAxis == 0) ? vec2(c, s) : vec2(-s, c);
+
+      trans->position.x = m_gizmoOriginalPos.x + worldDir.x * worldMove;
+      trans->position.y = m_gizmoOriginalPos.y + worldDir.y * worldMove;
+    }
+  } else if (m_gizmoMode == GizmoMode::Rotation) {
+    float radius = handleLength * 0.8f;
+    drawList->AddCircle(origin, radius, colZ, 64, handleThickness / 2);
+
+    float dist = static_cast<float>(
+        sqrt(pow(mousePos.x - origin.x, 2) + pow(mousePos.y - origin.y, 2)));
+    bool hover = abs(dist - radius) < 10.0f;
+
+    if (m_gizmoActiveAxis == 2)
+      hover = true;
+
+    if (hover)
+      drawList->AddCircle(origin, radius, colHover, 64, handleThickness);
+
+    if (mouseClicked && hover && !m_isDragging) {
+      m_gizmoActiveAxis = 2;
+      m_gizmoOriginalRotation = trans->rotation;
+      m_gizmoClickOffset.x =
+          atan2(mousePos.y - origin.y, mousePos.x - origin.x);
+    }
+
+    if (mouseDown && m_gizmoActiveAxis == 2) {
+      float currentAngle = atan2(mousePos.y - origin.y, mousePos.x - origin.x);
+      float delta = currentAngle - m_gizmoClickOffset.x;
+      // Screen Y down means +angle is CW. World +angle is CCW.
+      // So delta screen angle needs to be subtracted?
+      // If I move mouse CW (angle increases), I intend to rotate CW (angle
+      // decreases in standard math). So newRotation = old - delta.
+      trans->rotation = m_gizmoOriginalRotation - delta;
+    }
+  } else if (m_gizmoMode == GizmoMode::Scale) {
+    ImVec2 xEnd = {origin.x + xHandleVec.x, origin.y + xHandleVec.y};
+    ImVec2 yEnd = {origin.x + yHandleVec.x, origin.y + yHandleVec.y};
+
+    bool hoverX = distToSegment(mousePos, origin, xEnd) < interactionThresh;
+    bool hoverY = distToSegment(mousePos, origin, yEnd) < interactionThresh;
+
+    if (m_gizmoActiveAxis == 0)
+      hoverX = true;
+    if (m_gizmoActiveAxis == 1)
+      hoverY = true;
+
+    drawList->AddLine(origin, xEnd, hoverX ? colHover : colX, handleThickness);
+    drawList->AddLine(origin, yEnd, hoverY ? colHover : colY, handleThickness);
+
+    // Box heads
+    {
+      auto drawBox = [&](ImVec2 center, ImU32 col) {
+        drawList->AddRectFilled({center.x - 5, center.y - 5},
+                                {center.x + 5, center.y + 5}, col);
+      };
+      drawBox(xEnd, hoverX ? colHover : colX);
+      drawBox(yEnd, hoverY ? colHover : colY);
+    }
+
+    if (mouseClicked && (hoverX || hoverY)) {
+      m_gizmoActiveAxis = hoverX ? 0 : 1;
+      m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
+      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+    }
+
+    if (mouseDown && m_gizmoActiveAxis != -1) {
+      float dx = (mousePos.x - m_gizmoClickOffset.x);
+      float dy = (mousePos.y - m_gizmoClickOffset.y);
+
+      vec2 screenMove(dx, dy);
+      vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
+      axisDir = normalize(axisDir);
+      float proj = dot(screenMove, axisDir);
+
+      // Scale sensitivity
+      float scaleDelta = proj * 0.01f;
+
+      if (m_gizmoActiveAxis == 0)
+        trans->scale.x = m_gizmoOriginalScale.x + scaleDelta;
+      if (m_gizmoActiveAxis == 1)
+        trans->scale.y = m_gizmoOriginalScale.y + scaleDelta;
+    }
+  }
+}
+
 } // namespace Runtime
+
+void Runtime::SandboxState::renderToolbar() {
+  ImGui::Begin("Toolbar");
+
+  if (m_isPaused) {
+    if (ImGui::Button("Play", ImVec2(50, 0))) {
+      m_isPaused = false;
+    }
+  } else {
+    if (ImGui::Button("Pause", ImVec2(50, 0))) {
+      m_isPaused = true;
+    }
+  }
+
+  ImGui::SameLine();
+  ImGui::Separator();
+  ImGui::SameLine();
+
+  ImGui::Checkbox("Show Grid", &m_showGrid);
+  ImGui::SameLine();
+  ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
+
+  ImGui::End();
+}
+
+void Runtime::SandboxState::renderGrid() {
+  if (!m_showGrid)
+    return;
+
+  Graphics::Camera2D &cam = Core::Engine::Get().camera();
+  Graphics::RenderingManager &renderer = Core::Engine::Get().rendering();
+
+  // Get visible world bounds from camera
+  // This is an approximation. Ideally we project screen corners to world.
+  // Assuming camera is at center.
+  vec2 camPos = vec2(cam.position().x, cam.position().y);
+  ImVec2 viewSize = ImVec2(m_viewportSize.x, m_viewportSize.y);
+  float zoom = cam.zoom();
+
+  // Calculate world width/height visible
+  float worldW = viewSize.x / zoom;
+  float worldH = viewSize.y / zoom;
+
+  float left = camPos.x - worldW * 0.6f; // Add some padding
+  float right = camPos.x + worldW * 0.6f;
+  float top = camPos.y + worldH * 0.6f;
+  float bottom = camPos.y - worldH * 0.6f;
+
+  // Snap to grid
+  float startX = std::floor(left / m_gridSize) * m_gridSize;
+  float endX = std::ceil(right / m_gridSize) * m_gridSize;
+  float startY = std::floor(bottom / m_gridSize) * m_gridSize;
+  float endY = std::ceil(top / m_gridSize) * m_gridSize;
+
+  // Draw Vertical Lines
+  for (float x = startX; x <= endX; x += m_gridSize) {
+    renderer.drawLine(x, bottom, x, top, 0.3f, 0.3f, 0.3f);
+  }
+
+  // Draw Horizontal Lines
+  for (float y = startY; y <= endY; y += m_gridSize) {
+    renderer.drawLine(left, y, right, y, 0.3f, 0.3f, 0.3f);
+  }
+
+  // Draw Origin
+  renderer.drawLine(0, bottom, 0, top, 0.0f, 1.0f, 0.0f); // Y-Axis Green
+  renderer.drawLine(left, 0, right, 0, 1.0f, 0.0f, 0.0f); // X-Axis Red
+}
+
+void Runtime::SandboxState::renderAssetBrowser() {
+  ImGui::Begin("Asset Browser", &m_showAssetBrowser);
+
+  if (ImGui::BeginTabBar("AssetTabs")) {
+    if (ImGui::BeginTabItem("Textures")) {
+      auto names = Assets::TextureManager::GetLoadedTextureNames();
+      float thumbnailSize = 64.f;
+      float padding = 8.f;
+      float cellSize = thumbnailSize + padding;
+      float panelWidth = ImGui::GetContentRegionAvail().x;
+      int columnCount = (int)(panelWidth / cellSize);
+      if (columnCount < 1)
+        columnCount = 1;
+
+      if (ImGui::BeginTable("TextureTable", columnCount)) {
+        for (const auto &name : names) {
+          ImGui::TableNextColumn();
+          ImGui::PushID(name.c_str());
+
+          auto tex = Assets::TextureManager::Get(name);
+          if (tex && tex->id() != 0) {
+            // Image Button
+            if (ImGui::ImageButton("##btn", (ImTextureID)(intptr_t)tex->id(),
+                                   ImVec2(thumbnailSize, thumbnailSize))) {
+              m_selectedAsset = name;
+            }
+
+            // Drag and Drop Source
+            if (ImGui::BeginDragDropSource()) {
+              ImGui::SetDragDropPayload("TEXTURE_ASSET", name.c_str(),
+                                        name.size() + 1);
+              ImGui::Text("%s", name.c_str());
+              ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+              ImGui::EndDragDropSource();
+            }
+          }
+
+          ImGui::TextWrapped("%s", name.c_str());
+          ImGui::PopID();
+        }
+        ImGui::EndTable();
+      }
+      ImGui::EndTabItem();
+    }
+    ImGui::EndTabBar();
+  }
+  ImGui::End();
+}
