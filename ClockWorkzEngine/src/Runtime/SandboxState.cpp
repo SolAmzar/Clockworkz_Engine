@@ -60,6 +60,11 @@ reserved.
 
 namespace Runtime {
 
+// Helper struct for type identity (moved to namespace scope)
+template <typename T> struct Identity {
+  using type = T;
+};
+
 SandboxState::SandboxState(Platform::InputManager &input, GameStateManager &gsm)
     : m_input(input), m_gsm(gsm) {}
 
@@ -74,12 +79,16 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+
+  // Init Framebuffer for Scene View
+  m_framebuffer.create(800, 600);
 }
 
 void SandboxState::onExit() {
   // Clean up all test entities
   m_scene.Clear();
   m_testEntities.clear();
+  m_framebuffer.destroy();
 }
 
 void SandboxState::update(double dt) {
@@ -96,10 +105,21 @@ void SandboxState::update(double dt) {
 }
 
 void SandboxState::render(Core::Time *timer) {
+  (void)timer;
+  // We render the scene into the framebuffer for the editor view
+  m_framebuffer.bind();
+
   // Get renderer from Engine
   Core::Engine &engine = Core::Engine::Get();
   Graphics::RenderingManager &renderer = engine.rendering();
   Graphics::Camera2D &camera = engine.camera();
+
+  // Clear screen (implied by beginFrame/endFrame usually, but here we might
+  // need manual clear if FB doesn't auto-clear) Assuming RenderingManager or
+  // engine handles clearing, but usually it clears backbuffer. For FB, we
+  // should clear it.
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
 
   // Start Scene Pass (sets up shader and view-projection)
   renderer.beginScenePass(camera.viewProj());
@@ -214,6 +234,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
     ImGui::DockBuilderDockWindow("ECS Stats", dock_actual_right_id);
 
     // Center: Empty (implicitly open)
+    ImGui::DockBuilderDockWindow("Scene", dock_center_id);
 
     ImGui::DockBuilderFinish(dockspace_id);
   }
@@ -328,18 +349,47 @@ void SandboxState::renderEntityWindow() {
   // Scrollable entity list
   ImGui::BeginChild("EntityList", ImVec2(0, 200), true);
 
+  int entityToClone = -1;
+  int entityToDelete = -1;
+
   for (size_t i = 0; i < m_testEntities.size(); ++i) {
     auto entity = m_testEntities[i];
 
     ImGui::PushID(static_cast<int>(i));
-    ImGui::Text("Entity %u (gen %u)", entity.id, entity.generation);
-    ImGui::SameLine(200);
 
-    if (ImGui::SmallButton("Destroy")) {
-      world.destroyEntity(entity);
-      m_testEntities.erase(m_testEntities.begin() + i);
-      ImGui::PopID();
-      break;
+    char label[64];
+    snprintf(label, sizeof(label), "Entity %u (gen %u)", entity.id,
+             entity.generation);
+
+    // Selection Logic
+    bool isSelected = (m_selectedEntityIdx == (int)i);
+    float availWidth = ImGui::GetContentRegionAvail().x;
+
+    // Limit Selectable width to leave room for buttons (approx 60px)
+    if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
+      m_selectedEntityIdx = (int)i;
+    }
+
+    // Right Click Context Menu
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::Selectable("Clone")) {
+        entityToClone = (int)i;
+        ImGui::CloseCurrentPopup();
+      }
+      if (ImGui::Selectable("Delete")) {
+        entityToDelete = (int)i;
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("C")) { // Clone
+      entityToClone = (int)i;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("X")) { // Destroy
+      entityToDelete = (int)i;
     }
 
     ImGui::PopID();
@@ -353,7 +403,7 @@ void SandboxState::renderEntityWindow() {
 
   if (entityToDelete != -1) {
     if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
-
+      auto &world = m_scene.GetWorld();
       world.destroyEntity(m_testEntities[entityToDelete]);
       m_testEntities.erase(m_testEntities.begin() + entityToDelete);
 
@@ -387,16 +437,19 @@ void SandboxState::renderComponentWindow() {
     return;
   }
 
-  // Entity selector
-  ImGui::Text("Select Entity:");
+  // Entity selector info
   if (m_selectedEntityIdx >= static_cast<int>(m_testEntities.size()))
     m_selectedEntityIdx = 0;
 
-  ImGui::SliderInt("Entity Index", &m_selectedEntityIdx, 0,
-                   static_cast<int>(m_testEntities.size()) - 1);
+  // Sync Logic: Ensure index is valid
+  if (m_selectedEntityIdx < 0 || m_testEntities.empty()) {
+    ImGui::Text("No entity selected.");
+    ImGui::End();
+    return;
+  }
 
   auto entity = m_testEntities[m_selectedEntityIdx];
-  ImGui::Text("Entity ID: %u (gen %u)", entity.id, entity.generation);
+  ImGui::Text("Inspecting: Entity %u (gen %u)", entity.id, entity.generation);
 
   ImGui::Separator();
 
@@ -773,6 +826,52 @@ void SandboxState::spawnTestEntity(vec2 position) {
 
   // Track it
   m_testEntities.push_back(entity);
+}
+
+void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
+  auto &world = m_scene.GetWorld();
+
+  // Create new entity
+  auto newEntity = world.createEntity();
+
+  // Helper lambda for copying components cleanly without C++20 template lambdas
+  auto copyXYZ = [&](auto typeIdentity) {
+    using T = typename decltype(typeIdentity)::type;
+    T *comp = world.getComponent<T>(sourceEntity);
+    if (comp) {
+      world.addComponent(newEntity, *comp);
+    }
+  };
+
+  // Copy Components
+  copyXYZ(Identity<Components::Velocity>{});
+  copyXYZ(Identity<Components::SpriteRenderer>{});
+  copyXYZ(Identity<Components::Collider>{});
+  copyXYZ(Identity<Components::Health>{});
+  copyXYZ(Identity<Components::Battery>{});
+  copyXYZ(Identity<Components::LightExposure>{});
+  copyXYZ(Identity<Components::Fragment>{});
+  copyXYZ(Identity<Components::FragmentCollector>{});
+  copyXYZ(Identity<Components::EnemyAI>{});
+  copyXYZ(Identity<Components::AudioSource>{});
+  copyXYZ(Identity<Components::SpriteAnimator>{});
+  copyXYZ(Identity<Components::TorchComponent>{});
+  copyXYZ(Identity<Components::StateMachine>{});
+  copyXYZ(Identity<Components::PlayerController>{});
+
+  // Transform (Offset slightly so we see it)
+  auto *trans = world.getComponent<Components::Transform>(sourceEntity);
+  if (trans) {
+    Components::Transform newTrans = *trans;
+    newTrans.position.x += 20.f;
+    newTrans.position.y -= 20.f;
+    world.addComponent(newEntity, newTrans);
+  }
+
+  // Track it
+  m_testEntities.push_back(newEntity);
+  // Select the new one
+  m_selectedEntityIdx = (int)m_testEntities.size() - 1;
 }
 
 void SandboxState::renderSystemsWindow() {

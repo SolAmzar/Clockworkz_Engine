@@ -303,11 +303,9 @@ public:
   }
 
 private:
-  /**
-   * @brief Get component array for type T
-   * @tparam T Component type
-   * @return Pointer to component array
-   */
+  // @brief Get component array for type T
+  // @tparam T Component type
+  // @return Pointer to component array
   template <typename T> ComponentArray<T> *getComponentArray() {
     std::type_index typeIndex(typeid(T));
     auto it = m_componentArrays.find(typeIndex);
@@ -316,11 +314,9 @@ private:
     return static_cast<ComponentArray<T> *>(it->second.get());
   }
 
-  /**
-   * @brief Get component array for type T (const version)
-   * @tparam T Component type
-   * @return Const pointer to component array
-   */
+  // @brief Get component array for type T (const version)
+  // @tparam T Component type
+  // @return Const pointer to component array
   template <typename T> const ComponentArray<T> *getComponentArray() const {
     std::type_index typeIndex(typeid(T));
     auto it = m_componentArrays.find(typeIndex);
