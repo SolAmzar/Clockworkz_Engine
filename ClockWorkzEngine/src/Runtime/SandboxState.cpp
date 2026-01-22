@@ -511,12 +511,22 @@ void SandboxState::renderComponentWindow() {
 
         if (ImGui::BeginCombo("Texture ID", sprite->textureId.c_str())) {
           for (size_t i = 0; i < textureNames.size(); i++) {
+            ImGui::PushID(static_cast<int>(i));
             bool isSelected = (currentItem == static_cast<int>(i));
+
+            // Preview Image
+            auto tex = Assets::TextureManager::Get(textureNames[i]);
+            if (tex) {
+              ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+              ImGui::SameLine();
+            }
+
             if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
               sprite->textureId = textureNames[i];
             }
             if (isSelected)
               ImGui::SetItemDefaultFocus();
+            ImGui::PopID();
           }
           ImGui::EndCombo();
         }
