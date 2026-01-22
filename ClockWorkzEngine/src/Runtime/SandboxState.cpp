@@ -52,8 +52,15 @@ reserved.
 #include "Systems/StateMachineSystem.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <cmath>
+#include <glm/glm.hpp>
 
 namespace Runtime {
+
+// Helper struct for type identity (moved to namespace scope)
+template <typename T> struct Identity {
+  using type = T;
+};
 
 SandboxState::SandboxState(Platform::InputManager &input, GameStateManager &gsm)
     : m_input(input), m_gsm(gsm) {}
@@ -69,12 +76,16 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+
+  // Init Framebuffer for Scene View
+  m_framebuffer.create(800, 600);
 }
 
 void SandboxState::onExit() {
   // Clean up all test entities
   m_scene.Clear();
   m_testEntities.clear();
+  m_framebuffer.destroy();
 }
 
 void SandboxState::update(double dt) {
@@ -89,10 +100,21 @@ void SandboxState::update(double dt) {
 }
 
 void SandboxState::render(Core::Time *timer) {
+  (void)timer;
+  // We render the scene into the framebuffer for the editor view
+  m_framebuffer.bind();
+
   // Get renderer from Engine
   Core::Engine &engine = Core::Engine::Get();
   Graphics::RenderingManager &renderer = engine.rendering();
   Graphics::Camera2D &camera = engine.camera();
+
+  // Clear screen (implied by beginFrame/endFrame usually, but here we might
+  // need manual clear if FB doesn't auto-clear) Assuming RenderingManager or
+  // engine handles clearing, but usually it clears backbuffer. For FB, we
+  // should clear it.
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
 
   // Start Scene Pass (sets up shader and view-projection)
   renderer.beginScenePass(camera.viewProj());
@@ -105,6 +127,8 @@ void SandboxState::render(Core::Time *timer) {
 
   // Render Torch Pass
   renderTorchPass(renderer);
+
+  m_framebuffer.unbind();
 }
 
 void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
@@ -201,6 +225,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
     ImGui::DockBuilderDockWindow("ECS Stats", dock_actual_right_id);
 
     // Center: Empty (implicitly open)
+    ImGui::DockBuilderDockWindow("Scene", dock_center_id);
 
     ImGui::DockBuilderFinish(dockspace_id);
   }
@@ -210,6 +235,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderEntityWindow();
   renderComponentWindow();
   renderStatsWindow();
+  renderSceneWindow();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
@@ -312,21 +338,70 @@ void SandboxState::renderEntityWindow() {
   // Scrollable entity list
   ImGui::BeginChild("EntityList", ImVec2(0, 200), true);
 
+  int entityToClone = -1;
+  int entityToDelete = -1;
+
   for (size_t i = 0; i < m_testEntities.size(); ++i) {
     auto entity = m_testEntities[i];
 
     ImGui::PushID(static_cast<int>(i));
-    ImGui::Text("Entity %u (gen %u)", entity.id, entity.generation);
-    ImGui::SameLine(200);
 
-    if (ImGui::SmallButton("Destroy")) {
-      world.destroyEntity(entity);
-      m_testEntities.erase(m_testEntities.begin() + i);
-      ImGui::PopID();
-      break;
+    char label[64];
+    snprintf(label, sizeof(label), "Entity %u (gen %u)", entity.id,
+             entity.generation);
+
+    // Selection Logic
+    bool isSelected = (m_selectedEntityIdx == (int)i);
+    float availWidth = ImGui::GetContentRegionAvail().x;
+
+    // Limit Selectable width to leave room for buttons (approx 60px)
+    if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
+      m_selectedEntityIdx = (int)i;
+    }
+
+    // Right Click Context Menu
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::Selectable("Clone")) {
+        entityToClone = (int)i;
+        ImGui::CloseCurrentPopup();
+      }
+      if (ImGui::Selectable("Delete")) {
+        entityToDelete = (int)i;
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("C")) { // Clone
+      entityToClone = (int)i;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("X")) { // Destroy
+      entityToDelete = (int)i;
     }
 
     ImGui::PopID();
+  }
+
+  // Handle deferred actions
+  if (entityToClone != -1) {
+    if (entityToClone >= 0 && entityToClone < (int)m_testEntities.size())
+      cloneTestEntity(m_testEntities[entityToClone]);
+  }
+
+  if (entityToDelete != -1) {
+    if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
+      auto &world = m_scene.GetWorld();
+      world.destroyEntity(m_testEntities[entityToDelete]);
+      m_testEntities.erase(m_testEntities.begin() + entityToDelete);
+
+      // Fix selection index if needed
+      if (m_selectedEntityIdx == entityToDelete)
+        m_selectedEntityIdx = -1;
+      else if (m_selectedEntityIdx > entityToDelete)
+        m_selectedEntityIdx--;
+    }
   }
 
   ImGui::EndChild();
@@ -351,16 +426,19 @@ void SandboxState::renderComponentWindow() {
     return;
   }
 
-  // Entity selector
-  ImGui::Text("Select Entity:");
+  // Entity selector info
   if (m_selectedEntityIdx >= static_cast<int>(m_testEntities.size()))
     m_selectedEntityIdx = 0;
 
-  ImGui::SliderInt("Entity Index", &m_selectedEntityIdx, 0,
-                   static_cast<int>(m_testEntities.size()) - 1);
+  // Sync Logic: Ensure index is valid
+  if (m_selectedEntityIdx < 0 || m_testEntities.empty()) {
+    ImGui::Text("No entity selected.");
+    ImGui::End();
+    return;
+  }
 
   auto entity = m_testEntities[m_selectedEntityIdx];
-  ImGui::Text("Entity ID: %u (gen %u)", entity.id, entity.generation);
+  ImGui::Text("Inspecting: Entity %u (gen %u)", entity.id, entity.generation);
 
   ImGui::Separator();
 
@@ -739,6 +817,52 @@ void SandboxState::spawnTestEntity(vec2 position) {
   m_testEntities.push_back(entity);
 }
 
+void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
+  auto &world = m_scene.GetWorld();
+
+  // Create new entity
+  auto newEntity = world.createEntity();
+
+  // Helper lambda for copying components cleanly without C++20 template lambdas
+  auto copyXYZ = [&](auto typeIdentity) {
+    using T = typename decltype(typeIdentity)::type;
+    T *comp = world.getComponent<T>(sourceEntity);
+    if (comp) {
+      world.addComponent(newEntity, *comp);
+    }
+  };
+
+  // Copy Components
+  copyXYZ(Identity<Components::Velocity>{});
+  copyXYZ(Identity<Components::SpriteRenderer>{});
+  copyXYZ(Identity<Components::Collider>{});
+  copyXYZ(Identity<Components::Health>{});
+  copyXYZ(Identity<Components::Battery>{});
+  copyXYZ(Identity<Components::LightExposure>{});
+  copyXYZ(Identity<Components::Fragment>{});
+  copyXYZ(Identity<Components::FragmentCollector>{});
+  copyXYZ(Identity<Components::EnemyAI>{});
+  copyXYZ(Identity<Components::AudioSource>{});
+  copyXYZ(Identity<Components::SpriteAnimator>{});
+  copyXYZ(Identity<Components::TorchComponent>{});
+  copyXYZ(Identity<Components::StateMachine>{});
+  copyXYZ(Identity<Components::PlayerController>{});
+
+  // Transform (Offset slightly so we see it)
+  auto *trans = world.getComponent<Components::Transform>(sourceEntity);
+  if (trans) {
+    Components::Transform newTrans = *trans;
+    newTrans.position.x += 20.f;
+    newTrans.position.y -= 20.f;
+    world.addComponent(newEntity, newTrans);
+  }
+
+  // Track it
+  m_testEntities.push_back(newEntity);
+  // Select the new one
+  m_selectedEntityIdx = (int)m_testEntities.size() - 1;
+}
+
 void SandboxState::renderSystemsWindow() {
   ImGui::Begin("Systems", &m_showSystemsWindow);
 
@@ -758,6 +882,356 @@ void SandboxState::renderSystemsWindow() {
   ImGui::Checkbox("PlayerSystem", &m_scene.m_playerSystemEnabled);
 
   ImGui::End();
+}
+
+void SandboxState::renderSceneWindow() {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+  ImGui::Begin("Scene", nullptr,
+               ImGuiWindowFlags_NoScrollbar |
+                   ImGuiWindowFlags_NoScrollWithMouse);
+
+  m_viewportFocused = ImGui::IsWindowFocused();
+  m_viewportHovered = ImGui::IsWindowHovered();
+
+  ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+  if (m_viewportSize.x != viewportPanelSize.x ||
+      m_viewportSize.y != viewportPanelSize.y) {
+    m_viewportSize = {viewportPanelSize.x, viewportPanelSize.y};
+    m_framebuffer.resize((int)m_viewportSize.x, (int)m_viewportSize.y);
+    Core::Engine::Get().camera().setViewport((int)m_viewportSize.x,
+                                             (int)m_viewportSize.y);
+  }
+
+  uint64_t textureID = m_framebuffer.getTextureID();
+  // Invert V coordinate because OpenGL textures are upside down relative to
+  // ImGui
+  ImGui::Image(reinterpret_cast<void *>(textureID), viewportPanelSize,
+               ImVec2(0, 1), ImVec2(1, 0));
+
+  // Determine viewport bounds
+  ImVec2 windowPos = ImGui::GetWindowPos();
+  ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+  glm::vec2 viewportMin = {windowPos.x + contentMin.x,
+                           windowPos.y + contentMin.y};
+
+  // Gizmos and Picking
+  renderGizmos({windowPos.x, windowPos.y},
+               {viewportPanelSize.x, viewportPanelSize.y}, viewportMin);
+
+  // Handle Object Picking (Selection)
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
+      m_gizmoActiveAxis == -1) {
+    // Create a dummy gizmo check context or just assume no gizmo if axis is -1
+    // Convert mouse to world space
+    ImVec2 mousePos = ImGui::GetMousePos();
+    glm::vec2 localMouse = {mousePos.x - viewportMin.x,
+                            mousePos.y - viewportMin.y};
+
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    glm::vec2 camPos = cam.position();
+
+    // Adjust for center origin
+    glm::vec2 centeredMouse = {
+        localMouse.x - m_viewportSize.x * 0.5f,
+        -(localMouse.y -
+          m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y is
+                                   // down (pixel space)
+    };
+
+    glm::vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+    // Iterate m_testEntities
+    auto &world = m_scene.GetWorld();
+    float bestDist = FLT_MAX;
+    int bestIdx = -1;
+
+    for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+      auto entity = m_testEntities[i];
+      auto *trans = world.getComponent<Components::Transform>(entity);
+      if (trans) {
+        // Simple distance check for selection (assume rad 50)
+        float dist = glm::distance(
+            glm::vec2(trans->position.x, trans->position.y), worldPos);
+        if (dist < 50.0f && dist < bestDist) {
+          bestDist = dist;
+          bestIdx = i;
+        }
+      }
+    }
+
+    if (bestIdx != -1) {
+      m_selectedEntityIdx = bestIdx;
+    }
+  }
+
+  // Gizmo Mode Toggles Hotkeys
+  // Gizmo Mode Toggles Hotkeys
+  if (m_viewportFocused) {
+    if (ImGui::IsKeyPressed(ImGuiKey_W))
+      m_gizmoMode = GizmoMode::Translation;
+    if (ImGui::IsKeyPressed(ImGuiKey_E))
+      m_gizmoMode = GizmoMode::Rotation;
+    if (ImGui::IsKeyPressed(ImGuiKey_R))
+      m_gizmoMode = GizmoMode::Scale;
+
+    // Cloning (Ctrl + D)
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D)) {
+      if (m_selectedEntityIdx >= 0 &&
+          m_selectedEntityIdx < (int)m_testEntities.size()) {
+        cloneTestEntity(m_testEntities[m_selectedEntityIdx]);
+      }
+    }
+
+    // Deleting (Delete)
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+      if (m_selectedEntityIdx >= 0 &&
+          m_selectedEntityIdx < (int)m_testEntities.size()) {
+        auto &world = m_scene.GetWorld();
+        world.destroyEntity(m_testEntities[m_selectedEntityIdx]);
+        m_testEntities.erase(m_testEntities.begin() + m_selectedEntityIdx);
+        m_selectedEntityIdx = -1;
+        m_gizmoActiveAxis = -1; // Reset gizmo
+      }
+    }
+  }
+
+  ImGui::End();
+  ImGui::PopStyleVar();
+}
+
+void SandboxState::renderGizmos(const glm::vec2 &windowPos,
+                                const glm::vec2 &windowSize,
+                                const glm::vec2 &viewportMin) {
+  if (m_selectedEntityIdx < 0 ||
+      m_selectedEntityIdx >= (int)m_testEntities.size())
+    return;
+
+  auto &world = m_scene.GetWorld();
+  auto entity = m_testEntities[m_selectedEntityIdx];
+  auto *trans = world.getComponent<Components::Transform>(entity);
+  if (!trans)
+    return;
+
+  ImDrawList *drawList = ImGui::GetWindowDrawList();
+  Graphics::Camera2D &cam = Core::Engine::Get().camera();
+
+  // World to Screen
+  glm::vec2 camPos = cam.position();
+  float zoom = cam.zoom();
+
+  glm::vec2 worldDelta =
+      glm::vec2(trans->position.x, trans->position.y) - camPos;
+  glm::vec2 screenCenter = viewportMin + m_viewportSize * 0.5f;
+  // Note: World Y is up, Screen Y is down.
+  glm::vec2 objectScreenPos =
+      screenCenter + glm::vec2(worldDelta.x * zoom, -worldDelta.y * zoom);
+
+  float handleThickness = 6.0f;
+  float handleLength = 60.0f;
+  float interactionThresh = 8.0f; // Screen pixels tolerance
+
+  ImVec2 origin = {objectScreenPos.x, objectScreenPos.y};
+  ImU32 colX = IM_COL32(200, 50, 50, 255);
+  ImU32 colY = IM_COL32(50, 200, 50, 255);
+  ImU32 colZ = IM_COL32(50, 50, 200, 255);
+  ImU32 colHover = IM_COL32(255, 255, 0, 255);
+
+  ImVec2 mousePos = ImGui::GetMousePos();
+  bool mouseClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+  bool mouseReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+  bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+
+  if (mouseReleased) {
+    m_gizmoActiveAxis = -1;
+  }
+
+  // Helper: Distance from point p to segment v-w
+  auto distToSegment = [](ImVec2 p, ImVec2 v, ImVec2 w) {
+    float l2 = static_cast<float>(pow(v.x - w.x, 2) + pow(v.y - w.y, 2));
+    if (l2 == 0)
+      return static_cast<float>(sqrt(pow(p.x - v.x, 2) + pow(p.y - v.y, 2)));
+    float t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+    t = std::max(0.0f, std::min(1.0f, t));
+    ImVec2 projection = {v.x + t * (w.x - v.x), v.y + t * (w.y - v.y)};
+    return static_cast<float>(
+        sqrt(pow(p.x - projection.x, 2) + pow(p.y - projection.y, 2)));
+  };
+
+  // Calculate Rotated Axis Directions (Screen Space)
+  // World rotation is radians CCW.
+  // Screen space Y is flipped.
+  float angle = trans->rotation;
+  float c = cos(angle);
+  float s = sin(angle);
+
+  // World space basis vectors
+  // X: (c, s)
+  // Y: (-s, c)
+  // Screen space transform: y component negated.
+  glm::vec2 xAxisScreen = glm::vec2(c, -s);
+  glm::vec2 yAxisScreen = glm::vec2(-s, -c);
+
+  // Normalize handle vectors in screen pixels
+  ImVec2 xHandleVec = {xAxisScreen.x * handleLength,
+                       xAxisScreen.y * handleLength};
+  ImVec2 yHandleVec = {yAxisScreen.x * handleLength,
+                       yAxisScreen.y * handleLength};
+
+  // Gizmo Logic
+  if (m_gizmoMode == GizmoMode::Translation) {
+    ImVec2 xEnd = {origin.x + xHandleVec.x, origin.y + xHandleVec.y};
+    ImVec2 yEnd = {origin.x + yHandleVec.x, origin.y + yHandleVec.y};
+
+    bool hoverX = distToSegment(mousePos, origin, xEnd) < interactionThresh;
+    bool hoverY = distToSegment(mousePos, origin, yEnd) < interactionThresh;
+
+    if (m_gizmoActiveAxis == 0)
+      hoverX = true;
+    if (m_gizmoActiveAxis == 1)
+      hoverY = true;
+
+    drawList->AddLine(origin, xEnd, hoverX ? colHover : colX, handleThickness);
+    drawList->AddLine(origin, yEnd, hoverY ? colHover : colY, handleThickness);
+
+    // Arrow heads (Manual rotation...)
+    // Simpler: Just stick to lines or render triangle at end manually rotated
+    // X Head
+    {
+      glm::vec2 dir = glm::normalize(xAxisScreen);
+      glm::vec2 perp = {-dir.y, dir.x}; // 90 deg screen space
+      ImVec2 p1 = {xEnd.x, xEnd.y};
+      ImVec2 p2 = {xEnd.x - dir.x * 10 + perp.x * 5,
+                   xEnd.y - dir.y * 10 + perp.y * 5};
+      ImVec2 p3 = {xEnd.x - dir.x * 10 - perp.x * 5,
+                   xEnd.y - dir.y * 10 - perp.y * 5};
+      drawList->AddTriangleFilled(p1, p2, p3, hoverX ? colHover : colX);
+    }
+    // Y Head
+    {
+      glm::vec2 dir = glm::normalize(yAxisScreen);
+      glm::vec2 perp = {-dir.y, dir.x};
+      ImVec2 p1 = {yEnd.x, yEnd.y};
+      ImVec2 p2 = {yEnd.x - dir.x * 10 + perp.x * 5,
+                   yEnd.y - dir.y * 10 + perp.y * 5};
+      ImVec2 p3 = {yEnd.x - dir.x * 10 - perp.x * 5,
+                   yEnd.y - dir.y * 10 - perp.y * 5};
+      drawList->AddTriangleFilled(p1, p2, p3, hoverY ? colHover : colY);
+    }
+
+    if (mouseClicked && (hoverX || hoverY) && !m_isDragging) {
+      m_gizmoActiveAxis = hoverX ? 0 : 1;
+      m_gizmoOriginalPos = {trans->position.x, trans->position.y};
+      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+    }
+
+    if (mouseDown && m_gizmoActiveAxis != -1) {
+      // Drag logic needs to project mouse movement onto the axis in Screen
+      // Space Then apply that magnitude to World Space axis
+      float dx = (mousePos.x - m_gizmoClickOffset.x);
+      float dy = (mousePos.y - m_gizmoClickOffset.y);
+
+      // Dot product with screen axis to get magnitude
+      glm::vec2 screenMove(dx, dy);
+      glm::vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
+      axisDir = glm::normalize(axisDir);
+
+      float proj = glm::dot(screenMove, axisDir);
+
+      // proj is pixels moved along the screen axis
+      // Convert to world units: divide by zoom
+      float worldMove = proj / zoom;
+
+      // World axis matches screen axis conceptually but Y component is flipped
+      // for storage? No, trans->rotation tells us the world axis direction.
+      // X-Axis world vector is (c, s).
+      // So we move worldMove * (c, s)
+
+      glm::vec2 worldDir =
+          (m_gizmoActiveAxis == 0) ? glm::vec2(c, s) : glm::vec2(-s, c);
+
+      trans->position.x = m_gizmoOriginalPos.x + worldDir.x * worldMove;
+      trans->position.y = m_gizmoOriginalPos.y + worldDir.y * worldMove;
+    }
+  } else if (m_gizmoMode == GizmoMode::Rotation) {
+    float radius = handleLength * 0.8f;
+    drawList->AddCircle(origin, radius, colZ, 64, handleThickness / 2);
+
+    float dist = static_cast<float>(
+        sqrt(pow(mousePos.x - origin.x, 2) + pow(mousePos.y - origin.y, 2)));
+    bool hover = abs(dist - radius) < 10.0f;
+
+    if (m_gizmoActiveAxis == 2)
+      hover = true;
+
+    if (hover)
+      drawList->AddCircle(origin, radius, colHover, 64, handleThickness);
+
+    if (mouseClicked && hover && !m_isDragging) {
+      m_gizmoActiveAxis = 2;
+      m_gizmoOriginalRotation = trans->rotation;
+      m_gizmoClickOffset.x =
+          atan2(mousePos.y - origin.y, mousePos.x - origin.x);
+    }
+
+    if (mouseDown && m_gizmoActiveAxis == 2) {
+      float currentAngle = atan2(mousePos.y - origin.y, mousePos.x - origin.x);
+      float delta = currentAngle - m_gizmoClickOffset.x;
+      // Screen Y down means +angle is CW. World +angle is CCW.
+      // So delta screen angle needs to be subtracted?
+      // If I move mouse CW (angle increases), I intend to rotate CW (angle
+      // decreases in standard math). So newRotation = old - delta.
+      trans->rotation = m_gizmoOriginalRotation - delta;
+    }
+  } else if (m_gizmoMode == GizmoMode::Scale) {
+    ImVec2 xEnd = {origin.x + xHandleVec.x, origin.y + xHandleVec.y};
+    ImVec2 yEnd = {origin.x + yHandleVec.x, origin.y + yHandleVec.y};
+
+    bool hoverX = distToSegment(mousePos, origin, xEnd) < interactionThresh;
+    bool hoverY = distToSegment(mousePos, origin, yEnd) < interactionThresh;
+
+    if (m_gizmoActiveAxis == 0)
+      hoverX = true;
+    if (m_gizmoActiveAxis == 1)
+      hoverY = true;
+
+    drawList->AddLine(origin, xEnd, hoverX ? colHover : colX, handleThickness);
+    drawList->AddLine(origin, yEnd, hoverY ? colHover : colY, handleThickness);
+
+    // Box heads
+    {
+      auto drawBox = [&](ImVec2 center, ImU32 col) {
+        drawList->AddRectFilled({center.x - 5, center.y - 5},
+                                {center.x + 5, center.y + 5}, col);
+      };
+      drawBox(xEnd, hoverX ? colHover : colX);
+      drawBox(yEnd, hoverY ? colHover : colY);
+    }
+
+    if (mouseClicked && (hoverX || hoverY)) {
+      m_gizmoActiveAxis = hoverX ? 0 : 1;
+      m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
+      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+    }
+
+    if (mouseDown && m_gizmoActiveAxis != -1) {
+      float dx = (mousePos.x - m_gizmoClickOffset.x);
+      float dy = (mousePos.y - m_gizmoClickOffset.y);
+
+      glm::vec2 screenMove(dx, dy);
+      glm::vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
+      axisDir = glm::normalize(axisDir);
+      float proj = glm::dot(screenMove, axisDir);
+
+      // Scale sensitivity
+      float scaleDelta = proj * 0.01f;
+
+      if (m_gizmoActiveAxis == 0)
+        trans->scale.x = m_gizmoOriginalScale.x + scaleDelta;
+      if (m_gizmoActiveAxis == 1)
+        trans->scale.y = m_gizmoOriginalScale.y + scaleDelta;
+    }
+  }
 }
 
 } // namespace Runtime
