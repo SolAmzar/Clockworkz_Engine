@@ -197,8 +197,8 @@ void PlayState::onEnter() {
   auto &audio = engine.audio();
 
   // play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
-  m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
-  audio.play("level_ambience", Audio::Group::SFX, m_sfxVol, false);
+  m_bgmChannel = Assets::SoundManager::Play("level_bgm");
+  Assets::SoundManager::Play("level_ambience");
 
   m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
@@ -420,12 +420,14 @@ void PlayState::update(double dt) {
     m_flashlightOn = !m_flashlightOn;
     std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
 
-    Audio::AudioManager &sfx_audio = Core::Engine::Get().audio();
+    // Audio::AudioManager &sfx_audio = Core::Engine::Get().audio();
 
     if (m_flashlightOn == true) {
-      sfx_audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+      // sfx_audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+      Assets::SoundManager::Play("flashlight_on");
     } else {
-      sfx_audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+      // sfx_audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+      Assets::SoundManager::Play("flashlight_off");
     }
   }
 
