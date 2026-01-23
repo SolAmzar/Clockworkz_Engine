@@ -120,6 +120,27 @@ public:
    */
   uint32_t entityCount() const { return m_livingEntityCount; }
 
+  /**
+   * @brief Destroy all entities
+   *
+   * Clears all entities from the world. Useful for scene transitions.
+   */
+  void destroyAll() {
+    // Collect all entity IDs first to avoid iterator invalidation
+    std::vector<uint32_t> entityIds;
+    for (uint32_t id = 1; id < m_nextId; ++id) {
+      Entity entity{id, m_generations[id]};
+      if (isValid(entity)) {
+        entityIds.push_back(id);
+      }
+    }
+
+    // Destroy all collected entities
+    for (uint32_t id : entityIds) {
+      destroyEntity(Entity{id, m_generations[id]});
+    }
+  }
+
   // ===== Component Management =====
 
   /**
@@ -282,11 +303,9 @@ public:
   }
 
 private:
-  /**
-   * @brief Get component array for type T
-   * @tparam T Component type
-   * @return Pointer to component array
-   */
+  // @brief Get component array for type T
+  // @tparam T Component type
+  // @return Pointer to component array
   template <typename T> ComponentArray<T> *getComponentArray() {
     std::type_index typeIndex(typeid(T));
     auto it = m_componentArrays.find(typeIndex);
@@ -295,11 +314,9 @@ private:
     return static_cast<ComponentArray<T> *>(it->second.get());
   }
 
-  /**
-   * @brief Get component array for type T (const version)
-   * @tparam T Component type
-   * @return Const pointer to component array
-   */
+  // @brief Get component array for type T (const version)
+  // @tparam T Component type
+  // @return Const pointer to component array
   template <typename T> const ComponentArray<T> *getComponentArray() const {
     std::type_index typeIndex(typeid(T));
     auto it = m_componentArrays.find(typeIndex);

@@ -1,0 +1,344 @@
+#include "Runtime/SceneSerializer.hpp"
+#include "Components/AudioSource.hpp"
+#include "Components/Collider.hpp"
+#include "Components/EnemyAI.hpp"
+#include "Components/Fragment.hpp"
+#include "Components/FragmentCollector.hpp"
+#include "Components/PlayerController.hpp"
+#include "Components/SpriteAnimator.hpp"
+#include "Components/SpriteRenderer.hpp"
+#include "Components/StateMachine.hpp"
+#include "Components/Transform.hpp"
+#include "Components/Velocity.hpp"
+
+#pragma warning(push, 0)
+#include "Core/json.hpp"
+#pragma warning(pop)
+#include <fstream>
+#include <iostream>
+
+using json = nlohmann::json;
+
+namespace Runtime {
+
+void SceneSerializer::Serialize(ECS::World &world,
+                                const std::string &filepath) {
+  json root;
+  root["objects"] = json::array();
+
+  // Iterate over all entities with Transform
+  world.each<Components::Transform>([&](ECS::Entity entity,
+                                        Components::Transform &tc) {
+    json obj;
+    obj["active"] = true; // Assuming all serialized entities are active for now
+    obj["name"] = "Entity_" + std::to_string(entity.id); // Placeholder name
+    obj["components"] = json::object();
+
+    // Transform
+    obj["components"]["transform"] = {
+        {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
+        {"rotation", tc.rotation},
+        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}}};
+
+    // Velocity
+    if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
+      obj["components"]["velocity"] = {{"x", vel->velocity.x},
+                                       {"y", vel->velocity.y},
+                                       {"moveSpeed", vel->moveSpeed}};
+    }
+
+    // SpriteRenderer
+    if (auto *sc = world.getComponent<Components::SpriteRenderer>(entity)) {
+      obj["components"]["spriteRenderer"] = {
+          {"textureId", sc->textureId},
+          {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}}};
+    }
+
+    // SpriteAnimator
+    if (auto *sac = world.getComponent<Components::SpriteAnimator>(entity)) {
+      if (!sac->filename.empty()) {
+        std::string fname = sac->filename;
+        std::string prefix = "assets/animations/";
+        size_t pos = fname.find(prefix);
+        if (pos != std::string::npos) {
+          fname = fname.substr(pos + prefix.length());
+        }
+        obj["components"]["spriteAnimator"] = {{"filename", fname}};
+      }
+    }
+
+    // AudioSource
+    if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
+      obj["components"]["audioSource"] = {
+          {"soundId", ac->soundId}, {"volume", ac->volume}, {"loop", ac->loop}};
+    }
+
+    // EnemyAI
+    if (auto *ai = world.getComponent<Components::EnemyAI>(entity)) {
+      obj["components"]["enemyAI"] = {{"detectionRadius", ai->detectionRadius},
+                                      {"chaseSpeed", ai->chaseSpeed},
+                                      {"patrolSpeed", ai->patrolSpeed}};
+    }
+
+    // StateMachine
+    if (auto *sm = world.getComponent<Components::StateMachine>(entity)) {
+      obj["components"]["stateMachine"] = {{"currentState", sm->currentState}};
+    }
+
+    // PlayerController
+    if (auto *pc = world.getComponent<Components::PlayerController>(entity)) {
+      obj["components"]["playerController"] = {
+          {"walkMultiplier", pc->walkMultiplier},
+          {"sprintMultiplier", pc->sprintMultiplier}};
+    }
+
+    // Collider
+    if (auto *cc = world.getComponent<Components::Collider>(entity)) {
+      obj["components"]["collider"] = {
+          {"width", cc->size.x},
+          {"height", cc->size.y},
+          {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}},
+          {"isSolid", cc->isSolid},
+          {"isHazard", cc->isHazard},
+          {"isTrigger", cc->isTrigger},
+          {"moveable", cc->moveable},
+          {"collisionCategory", cc->collisionCategory},
+          {"collisionMask", cc->collisionMask}};
+    }
+
+    // Fragment
+    if (auto *fc = world.getComponent<Components::Fragment>(entity)) {
+      obj["components"]["fragment"] = {
+          {"fragmentId",
+           fc->fragmentId}, // Note: JSON uses int, ensure type match
+          {"collected", fc->collected}
+          // bob info usually not serialized if purely visual/runtime
+      };
+    }
+
+    // FragmentCollector
+    if (auto *fcc = world.getComponent<Components::FragmentCollector>(entity)) {
+      obj["components"]["fragmentCollector"] = {
+          {"requiredFragments", fcc->requiredFragments},
+          {"collectedCount", fcc->collectedCount},
+          {"pickupRadius", fcc->pickupRadius}};
+    }
+
+    // TorchComponent
+    if (auto *torch = world.getComponent<Components::TorchComponent>(entity)) {
+      obj["components"]["torch"] = {
+          {"active", torch->active},
+          {"offset", {{"x", torch->offset.x}, {"y", torch->offset.y}}},
+          {"color",
+           {{"r", torch->color.r},
+            {"g", torch->color.g},
+            {"b", torch->color.b}}},
+          {"radius", torch->radius},
+          {"angle", torch->angle},
+          {"intensity", torch->intensity}};
+    }
+
+    root["objects"].push_back(obj);
+  });
+
+  std::ofstream fout(filepath);
+  fout << root.dump(4);
+}
+
+bool SceneSerializer::Deserialize(ECS::World &world,
+                                  const std::string &filepath) {
+  std::ifstream fin(filepath);
+  if (!fin.is_open())
+    return false;
+
+  json root;
+  fin >> root;
+
+  if (root.contains("objects")) {
+    for (auto &obj : root["objects"]) {
+      ECS::Entity entity = world.createEntity();
+
+      // Retrieve name if available (can store in a Tag component later)
+      std::string name = obj.value("name", "Entity");
+      // TODO: Add TagComponent(name)
+
+      auto components = obj["components"];
+
+      // Transform
+      if (components.contains("transform")) {
+        auto &tc = components["transform"];
+        Components::Transform transform;
+        if (tc["position"].is_object()) {
+          transform.position.x = tc["position"].value("x", 0.0f);
+          transform.position.y = tc["position"].value("y", 0.0f);
+        }
+        transform.rotation = tc.value("rotation", 0.0f);
+        if (tc["scale"].is_object()) {
+          transform.scale.x = tc["scale"].value("x", 1.0f);
+          transform.scale.y = tc["scale"].value("y", 1.0f);
+        }
+        world.addComponent(entity, transform);
+      }
+
+      // Velocity
+      if (components.contains("velocity")) {
+        auto &vc = components["velocity"];
+        Components::Velocity velocity;
+        velocity.velocity.x = vc.value("x", 0.0f);
+        velocity.velocity.y = vc.value("y", 0.0f);
+        velocity.moveSpeed = vc.value("moveSpeed", 100.0f);
+        world.addComponent(entity, velocity);
+      }
+
+      // SpriteRenderer
+      if (components.contains("spriteRenderer")) {
+        auto &sc = components["spriteRenderer"];
+        Components::SpriteRenderer sprite;
+        sprite.textureId = sc.value("textureId", "");
+        if (sc.contains("uv")) {
+          if (sc["uv"].is_array() && sc["uv"].size() == 4) {
+            sprite.uv = {sc["uv"][0], sc["uv"][1], sc["uv"][2], sc["uv"][3]};
+          }
+        }
+        world.addComponent(entity, sprite);
+      }
+
+      // SpriteAnimator
+      if (components.contains("spriteAnimator")) {
+        auto &sac = components["spriteAnimator"];
+        std::string filename = sac.value("filename", "");
+        if (!filename.empty()) {
+          Components::SpriteAnimator anim;
+          anim.loadFromPath("assets/animations/" + filename);
+          anim.filename = filename;
+          world.addComponent(entity, anim);
+        }
+      }
+
+      // AudioSource
+      if (components.contains("audioSource")) {
+        auto &ac = components["audioSource"];
+        Components::AudioSource audio;
+        audio.soundId = ac.value("soundId", "default");
+        audio.volume = ac.value("volume", 1.0f);
+        audio.loop = ac.value("loop", false);
+        world.addComponent(entity, audio);
+      }
+
+      // EnemyAI
+      if (components.contains("enemyAI")) {
+        auto &aic = components["enemyAI"];
+        Components::EnemyAI ai;
+        ai.detectionRadius = aic.value("detectionRadius", 300.f);
+        ai.chaseSpeed = aic.value("chaseSpeed", 100.f);
+        ai.patrolSpeed = aic.value("patrolSpeed", 50.f);
+        world.addComponent(entity, ai);
+      }
+
+      // StateMachine
+      if (components.contains("stateMachine")) {
+        auto &smc = components["stateMachine"];
+        Components::StateMachine sm;
+        sm.currentState = smc.value("currentState", "idle");
+        world.addComponent(entity, sm);
+      }
+
+      // PlayerController
+      if (components.contains("playerController")) {
+        auto &pcc = components["playerController"];
+        Components::PlayerController pc;
+        pc.walkMultiplier = pcc.value("walkMultiplier", 1.0f);
+        pc.sprintMultiplier = pcc.value("sprintMultiplier", 2.0f);
+        world.addComponent(entity, pc);
+      }
+
+      // Collider
+      if (components.contains("collider")) {
+        auto &cc = components["collider"];
+        Components::Collider collider;
+        collider.size.x = cc.value("width", 100.f);
+        collider.size.y = cc.value("height", 100.f);
+        collider.isSolid = cc.value("isSolid", true);
+        collider.isHazard = cc.value("isHazard", false);
+        collider.isTrigger = cc.value("isTrigger", false);
+        collider.moveable = cc.value("moveable", false);
+        collider.collisionCategory = cc.value("collisionCategory", 1);
+        collider.collisionMask = cc.value("collisionMask", 0xFFFFFFFF);
+
+        // Handle layer mapping from legacy json if present ("layer": 4)
+        // For now, mapping directly to collisionCategory/Mask seems best if
+        // JSON already has them.
+
+        world.addComponent(entity, collider);
+      }
+
+      // Fragment
+      if (components.contains("fragment")) {
+        auto &fc = components["fragment"];
+        Components::Fragment fragment;
+        // In JSON it might be "fragmentId": "fragment_1" (string) or int.
+        // Legacy check: JSON says "fragmentId": "fragment_1"
+        // Class definition says: int fragmentId
+        // WE HAVE A MISMATCH.
+        // I will use a simple hash or parsing for now, or change the component
+        // to string. Let's check if json value is string or number.
+        if (fc["fragmentId"].is_string()) {
+          // quick hash or atoi if it contains number?
+          // "fragment_1" -> 1?
+          // Let's try to extract number.
+          std::string fid = fc["fragmentId"];
+          if (fid.find("_") != std::string::npos) {
+            try {
+              fragment.fragmentId = std::stoi(fid.substr(fid.find("_") + 1));
+            } catch (...) {
+              fragment.fragmentId = 0;
+            }
+          }
+        } else {
+          fragment.fragmentId = fc.value("fragmentId", 0);
+        }
+
+        fragment.collected = fc.value("collected", false);
+        // value property in JSON? "value": 1.
+        world.addComponent(entity, fragment);
+      }
+
+      // FragmentCollector
+      if (components.contains("fragmentCollector")) {
+        auto &fcc = components["fragmentCollector"];
+        Components::FragmentCollector collector;
+        collector.requiredFragments = fcc.value("requiredFragments", 1);
+        collector.collectedCount = fcc.value("collectedCount", 0);
+        collector.pickupRadius = fcc.value("pickupRadius", 50.f);
+        world.addComponent(entity, collector);
+      }
+
+      // TorchComponent
+      if (components.contains("torch")) {
+        auto &tc = components["torch"];
+        Components::TorchComponent torch;
+        torch.active = tc.value("active", true);
+
+        if (tc.contains("offset") && tc["offset"].is_object()) {
+          torch.offset.x = tc["offset"].value("x", 35.0f);
+          torch.offset.y = tc["offset"].value("y", -20.0f);
+        }
+
+        if (tc.contains("color") && tc["color"].is_object()) {
+          torch.color.r = tc["color"].value("r", 1.0f);
+          torch.color.g = tc["color"].value("g", 0.9f);
+          torch.color.b = tc["color"].value("b", 0.6f);
+        }
+
+        torch.radius = tc.value("radius", 300.0f);
+        torch.angle = tc.value("angle", 60.0f);
+        torch.intensity = tc.value("intensity", 1.0f);
+
+        world.addComponent(entity, torch);
+      }
+    }
+  }
+  return true;
+}
+
+} // namespace Runtime

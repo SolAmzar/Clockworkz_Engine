@@ -22,22 +22,11 @@ reserved.
 #include "ECS/World.hpp"
 #include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
+#include <glm/vec2.hpp>
 #include <vector>
 
-// Component includes
-#include "Components/AudioSource.hpp"
-#include "Components/Battery.hpp"
-#include "Components/Collider.hpp"
-#include "Components/Fragment.hpp"
-#include "Components/Health.hpp"
-#include "Components/LightExposure.hpp"
-#include "Components/Patrol.hpp"
-#include "Components/SpriteRenderer.hpp"
-#include "Components/Transform.hpp"
-#include "Components/Velocity.hpp"
-
-// System includes
-#include "Systems/RenderSystem.hpp"
+#include "Graphics/FrameBuffer.hpp"
+#include "Runtime/Scene.hpp"
 
 namespace Platform {
 class InputManager;
@@ -77,12 +66,9 @@ private:
   Platform::InputManager &m_input;
   GameStateManager &m_gsm;
 
-  // ECS World
-  ECS::World m_world;
+  // Scene (Runtime Logic)
+  Scene m_scene;
 
-  // Systems
-  Systems::RenderSystem m_renderSystem;
-  bool m_renderSystemEnabled{true};
   bool m_showSystemsWindow{true};
 
   // Test entities
@@ -101,12 +87,37 @@ private:
   // Component management
   int m_selectedEntityIdx{0};
 
+  // Drag and Drop State
+  ECS::Entity m_draggedEntity{0, 0}; // Invalid entity by default
+  bool m_isDragging{false};
+  glm::vec2 m_dragOffset{0.f, 0.f};
+
+  // Scene View & Gizmos
+  Graphics::FrameBuffer m_framebuffer;
+  glm::vec2 m_viewportSize{0.f, 0.f};
+  bool m_viewportFocused{false};
+  bool m_viewportHovered{false};
+
+  enum class GizmoMode { Translation, Rotation, Scale, None };
+  GizmoMode m_gizmoMode{GizmoMode::Translation};
+  int m_gizmoActiveAxis{
+      -1}; // -1: None, 0: X, 1: Y, 2: Z/Both/Rotate, 3: Center
+  glm::vec2 m_gizmoOriginalPos{0.f, 0.f}; // For delta calculation
+  glm::vec2 m_gizmoClickOffset{0.f, 0.f};
+  float m_gizmoOriginalRotation{0.f};
+  glm::vec2 m_gizmoOriginalScale{1.f, 1.f};
+
   // Helper functions
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
+  void renderSceneWindow();
+  void renderGizmos(const glm::vec2 &windowPos, const glm::vec2 &windowSize,
+                    const glm::vec2 &viewportMin);
   void renderStatsWindow();
   void spawnTestEntity(vec2 position);
+  void cloneTestEntity(ECS::Entity entity);
+  void renderTorchPass(Graphics::RenderingManager &renderer);
 };
 
 } // namespace Runtime

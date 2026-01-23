@@ -8,8 +8,9 @@ uniform vec2 uLightDir;     // normalized direction vector (cos,sin)
 uniform float uRadius;
 uniform float uAngle;       // half-angle of cone in radians
 uniform vec3 uLightColor;
-uniform float uBattery;   // 0.0 to 1.0
-uniform float uFlicker;   // 0.0 to 1.0 (time-based flicker)
+uniform float uBattery;   // 0.0 to 1.0 (battery level)
+uniform float uFlicker;   // 0.0 to 1.0 (random flicker factor)
+uniform float uIntensity; // 0.0 to 1.0 (base opacity/brightness)
 
 void main() {
     vec2 toFrag = FragWorldPos - uLightPos;
@@ -30,8 +31,12 @@ void main() {
     radial = pow(radial, 2.0);
 
     float intensity = coneFactor * radial;
+    
+    // Apply base intensity/opacity
+    intensity *= uIntensity;
+
     // Apply battery fading
-    intensity = uBattery;
+    intensity *= uBattery;
 
     // Apply flicker near low battery
     float lowBatteryMix = smoothstep(0.1, 0.0, uBattery);

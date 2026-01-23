@@ -21,10 +21,11 @@ namespace Components {
  * Used by FragmentSystem to handle collection logic.
  */
 struct Fragment {
-  int fragmentId{0};     ///< Unique fragment identifier
-  bool collected{false}; ///< Has been collected
-  float bobSpeed{2.f};   ///< Visual bobbing speed
-  float bobAmount{10.f}; ///< Visual bobbing amplitude
+  int fragmentId{0};         ///< Unique fragment identifier
+  bool collected{false};     ///< Has been collected
+  float bobSpeed{2.f};       ///< Visual bobbing speed
+  float bobAmount{10.f};     ///< Visual bobbing amplitude
+  float animationTimer{0.f}; ///< Tracks animation phase
 };
 
 } // namespace Components
