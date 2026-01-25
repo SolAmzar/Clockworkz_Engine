@@ -114,20 +114,7 @@ private:
   bool m_showAssetBrowser{true};
   std::string m_selectedAsset;
 
-  // Scene View & Gizmos
-  Graphics::FrameBuffer m_framebuffer;
-  glm::vec2 m_viewportSize{0.f, 0.f};
-  bool m_viewportFocused{false};
-  bool m_viewportHovered{false};
 
-  enum class GizmoMode { Translation, Rotation, Scale, None };
-  GizmoMode m_gizmoMode{GizmoMode::Translation};
-  int m_gizmoActiveAxis{
-      -1}; // -1: None, 0: X, 1: Y, 2: Z/Both/Rotate, 3: Center
-  glm::vec2 m_gizmoOriginalPos{0.f, 0.f}; // For delta calculation
-  glm::vec2 m_gizmoClickOffset{0.f, 0.f};
-  float m_gizmoOriginalRotation{0.f};
-  glm::vec2 m_gizmoOriginalScale{1.f, 1.f};
 
   // Helper functions
   void renderToolbar();

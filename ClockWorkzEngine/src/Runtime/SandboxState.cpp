@@ -104,39 +104,38 @@ void SandboxState::update(double dt) {
   }
 }
 
-void SandboxState::render(Core::Time *timer) {
-  (void)timer;
-  // We render the scene into the framebuffer for the editor view
-  m_framebuffer.bind();
+void SandboxState::render(Core::Time* timer) {
+    (void)timer;
+    // We render the scene into the framebuffer for the editor view
+    m_framebuffer.bind();
 
-  // Get renderer from Engine
-  Core::Engine &engine = Core::Engine::Get();
-  Graphics::RenderingManager &renderer = engine.rendering();
-  Graphics::Camera2D &camera = engine.camera();
+    // Get renderer from Engine
+    Core::Engine& engine = Core::Engine::Get();
+    Graphics::RenderingManager& renderer = engine.rendering();
+    Graphics::Camera2D& camera = engine.camera();
 
-  // Clear screen (implied by beginFrame/endFrame usually, but here we might
-  // need manual clear if FB doesn't auto-clear) Assuming RenderingManager or
-  // engine handles clearing, but usually it clears backbuffer. For FB, we
-  // should clear it.
-  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
+    // Clear screen
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-  // Start Scene Pass (sets up shader and view-projection)
-  renderer.beginScenePass(camera.viewProj());
+    // Start Scene Pass (sets up shader and view-projection)
+    renderer.beginScenePass(camera.viewProj());
 
-  // Run Scene Render
-  m_scene.Render(renderer);
+    // Run Scene Render
+    m_scene.Render(renderer);
 
-  // End Scene Pass
-  renderer.endScenePass();
+    // End Scene Pass
+    renderer.endScenePass();
 
-  // Render Torch Pass
-  renderTorchPass(renderer);
+    // Render Torch Pass
+    renderTorchPass(renderer);
 
-  // Render Grid (Must happen while framebuffer is bound)
-  renderGrid();
+    // Render Grid
+    renderer.beginDebugPass(camera.viewProj());
+    renderGrid();
+    renderer.endDebugPass();
 
-  m_framebuffer.unbind();
+    m_framebuffer.unbind();
 }
 
 void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
@@ -403,7 +402,7 @@ void SandboxState::renderEntityWindow() {
 
   if (entityToDelete != -1) {
     if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
-      auto &world = m_scene.GetWorld();
+
       world.destroyEntity(m_testEntities[entityToDelete]);
       m_testEntities.erase(m_testEntities.begin() + entityToDelete);
 
@@ -907,7 +906,7 @@ void SandboxState::renderSceneWindow() {
   ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
   if (m_viewportSize.x != viewportPanelSize.x ||
       m_viewportSize.y != viewportPanelSize.y) {
-    m_viewportSize = {viewportPanelSize.x, viewportPanelSize.y};
+    m_viewportSize = vec2(viewportPanelSize.x, viewportPanelSize.y);
     m_framebuffer.resize((int)m_viewportSize.x, (int)m_viewportSize.y);
     Core::Engine::Get().camera().setViewport((int)m_viewportSize.x,
                                              (int)m_viewportSize.y);
@@ -1175,8 +1174,8 @@ void SandboxState::renderGizmos(const vec2 &windowPos,
 
     if (mouseClicked && (hoverX || hoverY) && !m_isDragging) {
       m_gizmoActiveAxis = hoverX ? 0 : 1;
-      m_gizmoOriginalPos = {trans->position.x, trans->position.y};
-      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+      m_gizmoOriginalPos = vec2(trans->position.x, trans->position.y);
+      m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
@@ -1264,8 +1263,8 @@ void SandboxState::renderGizmos(const vec2 &windowPos,
 
     if (mouseClicked && (hoverX || hoverY)) {
       m_gizmoActiveAxis = hoverX ? 0 : 1;
-      m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
-      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+      m_gizmoOriginalScale = vec2(trans->scale.x, trans->scale.y);
+      m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
