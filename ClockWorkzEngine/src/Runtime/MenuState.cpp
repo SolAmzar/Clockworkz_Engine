@@ -48,6 +48,7 @@ reserved.
 using Assets::ResourceManager;
 using Graphics::Shader;
 using namespace Gameplay;
+#include "Runtime/Level1State.hpp"
 
 namespace Runtime {
 
@@ -151,7 +152,8 @@ void MenuState::select() {
   if (choice == "Start Game") {
 #if 1
     //*** DO NOT REMOVE! Working on SwitchTo GSM*****
-    // m_gsm.switchTo(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
+    // m_gsm.switchTo(std::make_shared<Level1State>(m_input, m_gsm));
+    m_gsm.push(std::make_shared<Level1State>(m_input, m_gsm));
 
     // m_audio.stop(m_audio.findChannel("menu_bgm"));
     m_audio.stop(m_bgmChannel);

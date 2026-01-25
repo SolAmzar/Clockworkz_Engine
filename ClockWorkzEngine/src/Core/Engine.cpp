@@ -269,8 +269,8 @@ void Engine::update(double dt) {
   if (!m_booted) {
     // Initial State when Run Game, start off from Sandbox State for ECS testing
     // Push SandboxState once
-    //m_gsm->push(std::make_shared<Runtime::SandboxState>(*m_input, *m_gsm));
-    m_gsm->push(std::make_shared<Runtime::MenuState>(*m_gsm, *m_input,*m_window, *m_audio)); 
+    m_gsm->push(std::make_shared<Runtime::SandboxState>(*m_input, *m_gsm));
+    //m_gsm->push(std::make_shared<Runtime::MenuState>(*m_gsm, *m_input,*m_window, *m_audio)); 
 
     m_booted = true;
   }

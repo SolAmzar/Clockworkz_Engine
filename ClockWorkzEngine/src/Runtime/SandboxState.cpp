@@ -36,6 +36,7 @@ reserved.
 #include "Core/Engine.hpp"
 #include "Core/Profiler.hpp"
 #include "Core/Time.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include "Graphics/RenderingManager.hpp"
@@ -759,6 +760,46 @@ void SandboxState::renderComponentWindow() {
     } else {
       if (ImGui::Button("Add StateMachine"))
         world.addComponent(entity, Components::StateMachine{});
+    }
+  }
+
+  // ParticleEmitter
+  if (ImGui::CollapsingHeader("ParticleEmitter")) {
+    auto *pe = world.getComponent<Components::ParticleEmitter>(entity);
+    if (pe) {
+      bool active = pe->active();
+      if (ImGui::Checkbox("Active", &active))
+        pe->setActive(active);
+
+      // Ensure renderer is set (fix for previously created components)
+      pe->setRenderer(&Core::Engine::Get().rendering());
+
+      auto &sys = pe->system();
+
+      ImGui::DragFloat("Rate", &sys.rate, 1.0f, 0.1f, 1000.0f);
+      ImGui::DragFloatRange2("Lifetime", &sys.lifeMin, &sys.lifeMax, 0.1f, 0.1f,
+                             10.0f);
+      ImGui::DragFloatRange2("Speed", &sys.speedMin, &sys.speedMax, 1.0f, 0.0f,
+                             1000.0f);
+      ImGui::DragFloat("Size Start", &sys.sizeStart, 0.1f, 0.0f, 20.0f);
+      ImGui::DragFloat("Size End", &sys.sizeEnd, 0.1f, 0.0f, 20.0f);
+      ImGui::ColorEdit4("Color Start", (float *)&sys.colorStart);
+      ImGui::ColorEdit4("Color End", (float *)&sys.colorEnd);
+
+      if (ImGui::Button("Burst (50)")) {
+        pe->burst(50);
+      }
+
+      if (ImGui::Button("Remove ParticleEmitter"))
+        world.removeComponent<Components::ParticleEmitter>(entity);
+    } else {
+      if (ImGui::Button("Add ParticleEmitter")) {
+        world.addComponent(entity, Components::ParticleEmitter{1000});
+        auto *newPE = world.getComponent<Components::ParticleEmitter>(entity);
+        if (newPE) {
+          newPE->setRenderer(&Core::Engine::Get().rendering());
+        }
+      }
     }
   }
 
