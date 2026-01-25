@@ -53,7 +53,10 @@ reserved.
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
-#include <glm/glm.hpp>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <cmath>
+#include "Math/Vec2.hpp"
 
 namespace Runtime {
 
@@ -96,39 +99,43 @@ void SandboxState::update(double dt) {
   }
 
   // Update Scene Logic
-  m_scene.Update(dt, m_input);
+  if (!m_isPaused) {
+    m_scene.Update(dt, m_input);
+  }
 }
 
-void SandboxState::render(Core::Time *timer) {
-  (void)timer;
-  // We render the scene into the framebuffer for the editor view
-  m_framebuffer.bind();
+void SandboxState::render(Core::Time* timer) {
+    (void)timer;
+    // We render the scene into the framebuffer for the editor view
+    m_framebuffer.bind();
 
-  // Get renderer from Engine
-  Core::Engine &engine = Core::Engine::Get();
-  Graphics::RenderingManager &renderer = engine.rendering();
-  Graphics::Camera2D &camera = engine.camera();
+    // Get renderer from Engine
+    Core::Engine& engine = Core::Engine::Get();
+    Graphics::RenderingManager& renderer = engine.rendering();
+    Graphics::Camera2D& camera = engine.camera();
 
-  // Clear screen (implied by beginFrame/endFrame usually, but here we might
-  // need manual clear if FB doesn't auto-clear) Assuming RenderingManager or
-  // engine handles clearing, but usually it clears backbuffer. For FB, we
-  // should clear it.
-  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
+    // Clear screen
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-  // Start Scene Pass (sets up shader and view-projection)
-  renderer.beginScenePass(camera.viewProj());
+    // Start Scene Pass (sets up shader and view-projection)
+    renderer.beginScenePass(camera.viewProj());
 
-  // Run Scene Render
-  m_scene.Render(renderer);
+    // Run Scene Render
+    m_scene.Render(renderer);
 
-  // End Scene Pass
-  renderer.endScenePass();
+    // End Scene Pass
+    renderer.endScenePass();
 
-  // Render Torch Pass
-  renderTorchPass(renderer);
+    // Render Torch Pass
+    renderTorchPass(renderer);
 
-  m_framebuffer.unbind();
+    // Render Grid
+    renderer.beginDebugPass(camera.viewProj());
+    renderGrid();
+    renderer.endDebugPass();
+
+    m_framebuffer.unbind();
 }
 
 void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
@@ -152,14 +159,15 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
 
         // Calculate Torch World Position
         float angle = trans.rotation;
-        glm::vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
-        glm::vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
+
+        vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
+        vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
                                        torchOffsetLocal.y * std::sin(angle),
                                    torchOffsetLocal.x * std::sin(angle) +
                                        torchOffsetLocal.y * std::cos(angle));
 
         glm::vec2 originGLM =
-            glm::vec2(trans.position.x, trans.position.y) + torchOffsetWorld;
+            glm::vec2((trans.position.x + torchOffsetWorld.x), (trans.position.y + torchOffsetWorld.y));
 
         // Create simple light polygon (Fan)
         std::vector<glm::vec2> lightPoly;
@@ -236,6 +244,8 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderComponentWindow();
   renderStatsWindow();
   renderSceneWindow();
+  renderToolbar();
+  renderAssetBrowser();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
@@ -392,7 +402,7 @@ void SandboxState::renderEntityWindow() {
 
   if (entityToDelete != -1) {
     if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
-      auto &world = m_scene.GetWorld();
+
       world.destroyEntity(m_testEntities[entityToDelete]);
       m_testEntities.erase(m_testEntities.begin() + entityToDelete);
 
@@ -906,7 +916,7 @@ void SandboxState::renderSceneWindow() {
   ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
   if (m_viewportSize.x != viewportPanelSize.x ||
       m_viewportSize.y != viewportPanelSize.y) {
-    m_viewportSize = {viewportPanelSize.x, viewportPanelSize.y};
+    m_viewportSize = vec2(viewportPanelSize.x, viewportPanelSize.y);
     m_framebuffer.resize((int)m_viewportSize.x, (int)m_viewportSize.y);
     Core::Engine::Get().camera().setViewport((int)m_viewportSize.x,
                                              (int)m_viewportSize.y);
@@ -921,8 +931,50 @@ void SandboxState::renderSceneWindow() {
   // Determine viewport bounds
   ImVec2 windowPos = ImGui::GetWindowPos();
   ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-  glm::vec2 viewportMin = {windowPos.x + contentMin.x,
+  // Determine viewport bounds
+
+  vec2 viewportMin = {windowPos.x + contentMin.x,
                            windowPos.y + contentMin.y};
+
+  // Drag and Drop Target
+  if (ImGui::BeginDragDropTarget()) {
+    if (const ImGuiPayload *payload =
+            ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+      const char *textureName = (const char *)payload->Data;
+      // Calculate drop position
+      ImVec2 mousePos = ImGui::GetMousePos();
+      vec2 localMouse = {mousePos.x - viewportMin.x,
+                              mousePos.y - viewportMin.y};
+      
+      Graphics::Camera2D &cam = Core::Engine::Get().camera();
+      float zoom = cam.zoom();
+      vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+       vec2 centeredMouse = {
+          localMouse.x - m_viewportSize.x * 0.5f,
+          -(localMouse.y - m_viewportSize.y * 0.5f)};
+
+       vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+       // Spawn Entity
+       spawnTestEntity(vec2(worldPos.x, worldPos.y)); 
+       // Set texture of last spawned entity (hacky but works given spawnTestEntity pushes back)
+       if (!m_testEntities.empty()) {
+           auto& world = m_scene.GetWorld();
+           auto entity = m_testEntities.back();
+           auto* sprite = world.getComponent<Components::SpriteRenderer>(entity);
+           if (!sprite) {
+               world.addComponent(entity, Components::SpriteRenderer{});
+               sprite = world.getComponent<Components::SpriteRenderer>(entity);
+           }
+           if (sprite) {
+               sprite->textureId = textureName;
+               sprite->size = vec2(50, 50); // Default size
+           }
+       }
+    }
+    ImGui::EndDragDropTarget();
+  }
 
   // Gizmos and Picking
   renderGizmos({windowPos.x, windowPos.y},
@@ -934,22 +986,22 @@ void SandboxState::renderSceneWindow() {
     // Create a dummy gizmo check context or just assume no gizmo if axis is -1
     // Convert mouse to world space
     ImVec2 mousePos = ImGui::GetMousePos();
-    glm::vec2 localMouse = {mousePos.x - viewportMin.x,
+    vec2 localMouse = {mousePos.x - viewportMin.x,
                             mousePos.y - viewportMin.y};
 
     Graphics::Camera2D &cam = Core::Engine::Get().camera();
     float zoom = cam.zoom();
-    glm::vec2 camPos = cam.position();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
 
     // Adjust for center origin
-    glm::vec2 centeredMouse = {
+    vec2 centeredMouse = {
         localMouse.x - m_viewportSize.x * 0.5f,
         -(localMouse.y -
           m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y is
                                    // down (pixel space)
     };
 
-    glm::vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+    vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
 
     // Iterate m_testEntities
     auto &world = m_scene.GetWorld();
@@ -961,8 +1013,7 @@ void SandboxState::renderSceneWindow() {
       auto *trans = world.getComponent<Components::Transform>(entity);
       if (trans) {
         // Simple distance check for selection (assume rad 50)
-        float dist = glm::distance(
-            glm::vec2(trans->position.x, trans->position.y), worldPos);
+        float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
         if (dist < 50.0f && dist < bestDist) {
           bestDist = dist;
           bestIdx = i;
@@ -1010,9 +1061,11 @@ void SandboxState::renderSceneWindow() {
   ImGui::PopStyleVar();
 }
 
-void SandboxState::renderGizmos(const glm::vec2 &windowPos,
-                                const glm::vec2 &windowSize,
-                                const glm::vec2 &viewportMin) {
+void SandboxState::renderGizmos(const vec2 &windowPos,
+                                const vec2 &windowSize,
+                                const vec2 &viewportMin) {
+  (void)windowPos;
+  (void)windowSize;
   if (m_selectedEntityIdx < 0 ||
       m_selectedEntityIdx >= (int)m_testEntities.size())
     return;
@@ -1027,15 +1080,15 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
   Graphics::Camera2D &cam = Core::Engine::Get().camera();
 
   // World to Screen
-  glm::vec2 camPos = cam.position();
+  vec2 camPos = vec2(cam.position().x, cam.position().y);
   float zoom = cam.zoom();
 
-  glm::vec2 worldDelta =
-      glm::vec2(trans->position.x, trans->position.y) - camPos;
-  glm::vec2 screenCenter = viewportMin + m_viewportSize * 0.5f;
+  vec2 worldDelta =
+      vec2(trans->position.x, trans->position.y) - camPos;
+  vec2 screenCenter = viewportMin + m_viewportSize * 0.5f;
   // Note: World Y is up, Screen Y is down.
-  glm::vec2 objectScreenPos =
-      screenCenter + glm::vec2(worldDelta.x * zoom, -worldDelta.y * zoom);
+  vec2 objectScreenPos =
+      screenCenter + vec2(worldDelta.x * zoom, -worldDelta.y * zoom);
 
   float handleThickness = 6.0f;
   float handleLength = 60.0f;
@@ -1079,8 +1132,8 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
   // X: (c, s)
   // Y: (-s, c)
   // Screen space transform: y component negated.
-  glm::vec2 xAxisScreen = glm::vec2(c, -s);
-  glm::vec2 yAxisScreen = glm::vec2(-s, -c);
+  vec2 xAxisScreen = vec2(c, -s);
+  vec2 yAxisScreen = vec2(-s, -c);
 
   // Normalize handle vectors in screen pixels
   ImVec2 xHandleVec = {xAxisScreen.x * handleLength,
@@ -1108,8 +1161,8 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
     // Simpler: Just stick to lines or render triangle at end manually rotated
     // X Head
     {
-      glm::vec2 dir = glm::normalize(xAxisScreen);
-      glm::vec2 perp = {-dir.y, dir.x}; // 90 deg screen space
+      vec2 dir = normalize(xAxisScreen);
+      vec2 perp = {-dir.y, dir.x}; // 90 deg screen space
       ImVec2 p1 = {xEnd.x, xEnd.y};
       ImVec2 p2 = {xEnd.x - dir.x * 10 + perp.x * 5,
                    xEnd.y - dir.y * 10 + perp.y * 5};
@@ -1119,8 +1172,8 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
     }
     // Y Head
     {
-      glm::vec2 dir = glm::normalize(yAxisScreen);
-      glm::vec2 perp = {-dir.y, dir.x};
+      vec2 dir = normalize(yAxisScreen);
+      vec2 perp = {-dir.y, dir.x};
       ImVec2 p1 = {yEnd.x, yEnd.y};
       ImVec2 p2 = {yEnd.x - dir.x * 10 + perp.x * 5,
                    yEnd.y - dir.y * 10 + perp.y * 5};
@@ -1131,8 +1184,8 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
 
     if (mouseClicked && (hoverX || hoverY) && !m_isDragging) {
       m_gizmoActiveAxis = hoverX ? 0 : 1;
-      m_gizmoOriginalPos = {trans->position.x, trans->position.y};
-      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+      m_gizmoOriginalPos = vec2(trans->position.x, trans->position.y);
+      m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
@@ -1142,11 +1195,11 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
       float dy = (mousePos.y - m_gizmoClickOffset.y);
 
       // Dot product with screen axis to get magnitude
-      glm::vec2 screenMove(dx, dy);
-      glm::vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
-      axisDir = glm::normalize(axisDir);
+      vec2 screenMove(dx, dy);
+      vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
+      axisDir = normalize(axisDir);
 
-      float proj = glm::dot(screenMove, axisDir);
+      float proj = dot(screenMove, axisDir);
 
       // proj is pixels moved along the screen axis
       // Convert to world units: divide by zoom
@@ -1157,8 +1210,8 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
       // X-Axis world vector is (c, s).
       // So we move worldMove * (c, s)
 
-      glm::vec2 worldDir =
-          (m_gizmoActiveAxis == 0) ? glm::vec2(c, s) : glm::vec2(-s, c);
+      vec2 worldDir =
+          (m_gizmoActiveAxis == 0) ? vec2(c, s) : vec2(-s, c);
 
       trans->position.x = m_gizmoOriginalPos.x + worldDir.x * worldMove;
       trans->position.y = m_gizmoOriginalPos.y + worldDir.y * worldMove;
@@ -1220,18 +1273,18 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
 
     if (mouseClicked && (hoverX || hoverY)) {
       m_gizmoActiveAxis = hoverX ? 0 : 1;
-      m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
-      m_gizmoClickOffset = {mousePos.x, mousePos.y};
+      m_gizmoOriginalScale = vec2(trans->scale.x, trans->scale.y);
+      m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
       float dx = (mousePos.x - m_gizmoClickOffset.x);
       float dy = (mousePos.y - m_gizmoClickOffset.y);
 
-      glm::vec2 screenMove(dx, dy);
-      glm::vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
-      axisDir = glm::normalize(axisDir);
-      float proj = glm::dot(screenMove, axisDir);
+      vec2 screenMove(dx, dy);
+      vec2 axisDir = (m_gizmoActiveAxis == 0) ? xAxisScreen : yAxisScreen;
+      axisDir = normalize(axisDir);
+      float proj = dot(screenMove, axisDir);
 
       // Scale sensitivity
       float scaleDelta = proj * 0.01f;
@@ -1245,3 +1298,120 @@ void SandboxState::renderGizmos(const glm::vec2 &windowPos,
 }
 
 } // namespace Runtime
+
+void Runtime::SandboxState::renderToolbar() {
+  ImGui::Begin("Toolbar");
+
+  if (m_isPaused) {
+    if (ImGui::Button("Play", ImVec2(50, 0))) {
+      m_isPaused = false;
+    }
+  } else {
+    if (ImGui::Button("Pause", ImVec2(50, 0))) {
+      m_isPaused = true;
+    }
+  }
+
+  ImGui::SameLine();
+  ImGui::Separator();
+  ImGui::SameLine();
+
+  ImGui::Checkbox("Show Grid", &m_showGrid);
+  ImGui::SameLine();
+  ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
+
+  ImGui::End();
+}
+
+void Runtime::SandboxState::renderGrid() {
+  if (!m_showGrid)
+    return;
+
+  Graphics::Camera2D &cam = Core::Engine::Get().camera();
+  Graphics::RenderingManager &renderer = Core::Engine::Get().rendering();
+
+  // Get visible world bounds from camera
+  // This is an approximation. Ideally we project screen corners to world.
+  // Assuming camera is at center.
+  vec2 camPos = vec2(cam.position().x, cam.position().y);
+  ImVec2 viewSize = ImVec2(m_viewportSize.x, m_viewportSize.y);
+  float zoom = cam.zoom();
+
+  // Calculate world width/height visible
+  float worldW = viewSize.x / zoom;
+  float worldH = viewSize.y / zoom;
+
+  float left = camPos.x - worldW * 0.6f; // Add some padding
+  float right = camPos.x + worldW * 0.6f;
+  float top = camPos.y + worldH * 0.6f;
+  float bottom = camPos.y - worldH * 0.6f;
+
+  // Snap to grid
+  float startX = std::floor(left / m_gridSize) * m_gridSize;
+  float endX = std::ceil(right / m_gridSize) * m_gridSize;
+  float startY = std::floor(bottom / m_gridSize) * m_gridSize;
+  float endY = std::ceil(top / m_gridSize) * m_gridSize;
+
+  // Draw Vertical Lines
+  for (float x = startX; x <= endX; x += m_gridSize) {
+    renderer.drawLine(x, bottom, x, top, 0.3f, 0.3f, 0.3f);
+  }
+
+  // Draw Horizontal Lines
+  for (float y = startY; y <= endY; y += m_gridSize) {
+    renderer.drawLine(left, y, right, y, 0.3f, 0.3f, 0.3f);
+  }
+
+  // Draw Origin
+  renderer.drawLine(0, bottom, 0, top, 0.0f, 1.0f, 0.0f); // Y-Axis Green
+  renderer.drawLine(left, 0, right, 0, 1.0f, 0.0f, 0.0f); // X-Axis Red
+}
+
+void Runtime::SandboxState::renderAssetBrowser() {
+  ImGui::Begin("Asset Browser", &m_showAssetBrowser);
+
+  if (ImGui::BeginTabBar("AssetTabs")) {
+    if (ImGui::BeginTabItem("Textures")) {
+      auto names = Assets::TextureManager::GetLoadedTextureNames();
+      float thumbnailSize = 64.f;
+      float padding = 8.f;
+      float cellSize = thumbnailSize + padding;
+      float panelWidth = ImGui::GetContentRegionAvail().x;
+      int columnCount = (int)(panelWidth / cellSize);
+      if (columnCount < 1)
+        columnCount = 1;
+
+      if (ImGui::BeginTable("TextureTable", columnCount)) {
+        for (const auto &name : names) {
+          ImGui::TableNextColumn();
+          ImGui::PushID(name.c_str());
+
+          auto tex = Assets::TextureManager::Get(name);
+          if (tex && tex->id() != 0) {
+            // Image Button
+            if (ImGui::ImageButton("##btn", (ImTextureID)(intptr_t)tex->id(),
+                                   ImVec2(thumbnailSize, thumbnailSize))) {
+              m_selectedAsset = name;
+            }
+
+            // Drag and Drop Source
+            if (ImGui::BeginDragDropSource()) {
+              ImGui::SetDragDropPayload("TEXTURE_ASSET", name.c_str(),
+                                        name.size() + 1);
+              ImGui::Text("%s", name.c_str());
+              ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+              ImGui::EndDragDropSource();
+            }
+          }
+
+          ImGui::TextWrapped("%s", name.c_str());
+          ImGui::PopID();
+        }
+        ImGui::EndTable();
+      }
+      ImGui::EndTabItem();
+    }
+    ImGui::EndTabBar();
+  }
+  ImGui::End();
+}
