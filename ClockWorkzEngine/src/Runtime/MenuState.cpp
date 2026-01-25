@@ -19,6 +19,7 @@ reserved.
 #include "Runtime/MenuState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Core/Time.hpp"
 #include "Graphics/RenderingManager.hpp"
@@ -47,6 +48,7 @@ reserved.
 using Assets::ResourceManager;
 using Graphics::Shader;
 using namespace Gameplay;
+#include "Runtime/Level1State.hpp"
 
 namespace Runtime {
 
@@ -96,7 +98,9 @@ void MenuState::onEnter() {
   auto textureShader = ResourceManager<Shader>::Load(
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   // Amzar
-  m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol, false);
+  // m_bgmChannel = m_audio.play("menu_bgm", Audio::Group::BGM, m_bgmVol,
+  // false);
+  m_bgmChannel = Assets::SoundManager::Play("menu_bgm");
 
   m_background.addComponent<SpriteRendererComponent>("menu_bg_texture");
   SpriteRendererComponent *bgSprite =
@@ -146,19 +150,19 @@ void MenuState::select() {
   const std::string &choice = m_items[m_selected];
 
   if (choice == "Start Game") {
-#if 0
-            //*** DO NOT REMOVE! Working on SwitchTo GSM*****
-            //m_gsm.switchTo(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
+#if 1
+    //*** DO NOT REMOVE! Working on SwitchTo GSM*****
+    // m_gsm.switchTo(std::make_shared<Level1State>(m_input, m_gsm));
+    m_gsm.push(std::make_shared<Level1State>(m_input, m_gsm));
 
-            
-           
-          m_audio.stop(m_audio.findChannel("menu_bgm"));
-          m_bgmChannel = 0;
-          m_bgmPaused = true;
+    // m_audio.stop(m_audio.findChannel("menu_bgm"));
+    m_audio.stop(m_bgmChannel);
+    m_bgmChannel = 0;
+    m_bgmPaused = true;
 
-            m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
+    // m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
 #endif
-    std::cout << "PlayState is currently disabled for refactoring.\n";
+    // std::cout << "PlayState is currently disabled for refactoring.\n";
     return;
   }
   if (choice == "Exit Game") {
@@ -246,7 +250,8 @@ void MenuState::update(double /*dt*/) {
       isHover = true;
       if (m_selected != i) {
         m_selected = i;
-        m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+        // m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+        Assets::SoundManager::Play("ui_move");
         m_dirty = true;
       }
       break;
@@ -254,29 +259,32 @@ void MenuState::update(double /*dt*/) {
   }
 
   if (isHover && m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
-    m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+    // m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+    Assets::SoundManager::Play("ui_select");
     /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
     select();
   }
 
   // Keys: arrows or WASD
   if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
-    m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+    // m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+    Assets::SoundManager::Play("ui_move");
     moveUp();
   }
   if (m_input.wasKeyPressed(GLFW_KEY_DOWN) ||
       m_input.wasKeyPressed(GLFW_KEY_S)) {
-    m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+    // m_audio.playOneShot("ui_move", Audio::Group::SFX, 0.9f);
+    Assets::SoundManager::Play("ui_move");
     moveDown();
   }
 
   // Enter / KP_Enter to select
   if (m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
       m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
-    m_audio.playOneShot(
-        "ui_select", Audio::Group::SFX,
-        1.0f), /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
-        select();
+    // m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.0f);
+    Assets::SoundManager::Play("ui_select");
+    /*std::this_thread::sleep_for(std::chrono::milliseconds(120));*/
+    select();
   }
 #ifdef _DEBUG
   if (m_input.wasKeyPressed(GLFW_KEY_P)) {

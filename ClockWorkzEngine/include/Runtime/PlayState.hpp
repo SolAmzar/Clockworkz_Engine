@@ -1,4 +1,4 @@
-#if 0
+#if 1
 /******************************************************************************/
 /*!
 \file           PlayState.hpp
@@ -20,12 +20,14 @@ reserved.
 /******************************************************************************/
 
 #pragma once
+#include "ECS/Entity.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Platform/InputManager.hpp"
 #include "Runtime/GameState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneManager.hpp"
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -45,7 +47,7 @@ class RenderingManager;
 
 namespace Runtime {
 
-class PlayState final : public GameState {
+class PlayState : public GameState {
 public:
   explicit PlayState(std::string initialSceneId, Platform::InputManager &input,
                      GameStateManager &gsm);
@@ -132,6 +134,13 @@ private:
   bool m_showFragmentNotification = false;
   float m_fragmentNotificationTimer = 0.0f;
   std::string m_lastCollectedFragmentId;
+
+  // ECS Integration
+  std::map<uint32_t, ECS::Entity> m_enemyMap;
+  void clearEnemyAI();
+  void syncEnemyTransforms();
 };
+
+} // namespace Runtime
 
 #endif

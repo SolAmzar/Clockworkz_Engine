@@ -16,6 +16,7 @@
 #include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp"
 
 namespace Runtime {
 
@@ -36,6 +37,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::PlayerController>();
   m_world.registerComponent<Components::FragmentCollector>();
   m_world.registerComponent<Components::TorchComponent>();
+  m_world.registerComponent<Components::ParticleEmitter>();
 }
 
 void Scene::Clear() {
@@ -66,12 +68,54 @@ void Scene::Update(double dt, Platform::InputManager &input) {
   // Player System needs input
   if (m_playerSystemEnabled)
     m_playerSystem.update(m_world, dt, input);
+
+  // --- Update Legacy GameObjects ---
+  for (auto &obj : m_gameObjects) {
+    if (obj && obj->active()) {
+      obj->update(dt);
+    }
+  }
+
+  // --- Update ECS Particle Emitters ---
+  m_world.each<Components::Transform, Components::ParticleEmitter>(
+      [&](ECS::Entity, Components::Transform &t,
+          Components::ParticleEmitter &pe) {
+        if (pe.active()) {
+          ps::v2 pos{t.position.x, t.position.y};
+          pe.update(pos, dt);
+        }
+      });
 }
 
 void Scene::Render(Graphics::RenderingManager &renderer) {
   if (m_renderSystemEnabled) {
     m_renderSystem.update(m_world, renderer);
   }
+
+  // --- Render Legacy GameObjects ---
+  for (auto &obj : m_gameObjects) {
+    if (obj && obj->active()) {
+      obj->debugRender(renderer); // Using debugRender for now primarily
+      // obj->render(renderer); // If you have real rendering logic
+    }
+  }
+
+  // --- Render ECS Particle Emitters ---
+  m_world.each<Components::ParticleEmitter>(
+      [&](ECS::Entity, Components::ParticleEmitter &pe) {
+        if (pe.active()) {
+          // Ensure renderer is set if not already (safeguard)
+          pe.setRenderer(&renderer);
+          // We can just call onRender with a dummy or expose render method.
+          // Logic is: if (m_renderer) m_system.render(*m_renderer);
+          // so calling system().render(renderer) directly works if exposed,
+          // OR better, we simply call pe.onRender(dummy) or pe.render(renderer)
+          // if we added it. Since we didn't add explicit render(renderer) to
+          // Emitter, let's use the fact that it has the pointer. But we can
+          // just use the system directly!
+          pe.system().render(renderer);
+        }
+      });
 }
 
 } // namespace Runtime

@@ -33,26 +33,37 @@ enum class AIState {
  *
  * Data component for state-machine based enemy behavior.
  */
+/**
+ * @brief EnemyAI component
+ *
+ * Data component for state-machine based enemy behavior.
+ */
 struct EnemyAI {
   // State
   AIState state{AIState::Patrol};
 
+  // State Data
+  float stateTimer{0.f}; ///< General timer for states (Alert, Idle)
+  vec2 targetPosition{0.f,
+                      0.f}; ///< Last known interesting position (Player pos)
+
   // Patrol Data
-  std::vector<vec2> waypoints{};
-  int currentWaypoint{0};
-  float waypointRadius{10.f};
-  bool loop{true};
-  bool reverse{false};
+  vec2 wanderDirection{1.f, 0.f};
+  float wanderTimer{0.f};
+  float wanderInterval{2.0f};
 
   // Detection / Chase Data
-  float detectionRadius{150.f}; ///< Range to spot player
-  float chaseSpeed{100.f};      ///< Speed when chasing
+  float detectionRadius{300.f}; ///< Range to spot player
+  float chaseSpeed{150.f};      ///< Speed when chasing
   float patrolSpeed{50.f};      ///< Speed when patrolling
 
   // Alert Data
-  float alertTimer{0.f}; ///< Current timer value
-  float searchDuration{
+  float alertDuration{
       3.0f}; ///< How long to stay Alert before returning to Patrol
+
+  // Light Interaction
+  float lightSensitivity{
+      0.3f}; ///< Speed multiplier when in light (0.0 = stop, 1.0 = full speed)
 };
 
 } // namespace Components

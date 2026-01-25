@@ -12,9 +12,12 @@ reserved.
 
 #include "Systems/AISystem.hpp"
 #include "Components/EnemyAI.hpp"
+#include "Components/LightExposure.hpp"
+#include "Components/PlayerController.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 
 namespace Systems {
@@ -34,146 +37,135 @@ static vec2 normalize(const vec2 &v) {
   return {v.x / len, v.y / len};
 }
 
+// Helper: random float between -1 and 1
+static float randomFloat() {
+  return (static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f;
+}
+
 void AISystem::update(ECS::World &world, double dt) {
   float fDt = static_cast<float>(dt);
 
-  // For this simple implementation, we assume the player is entity 0 for
-  // "Chase" target In a real game, we'd look up the player entity by Tag or
-  // Component. We'll try to find a "Player" entity if possible, or just use
-  // Entity 0 as a placeholder if active. Actually, let's just use mouse
-  // position or a known entity for testing. For now: Assume the FIRST entity is
-  // the Player.
-
+  // 1. Find Player Position
   vec2 playerPos{0, 0};
   bool playerFound = false;
 
-  // Find a target: look for an entity with Transform + Velocity but NO EnemyAI
-  world.each<Components::Transform>([&](ECS::Entity e,
-                                        Components::Transform &t) {
-    if (playerFound)
-      return; // Optimization: just find the first one
+  world.each<Components::PlayerController, Components::Transform>(
+      [&](ECS::Entity, Components::PlayerController &,
+          Components::Transform &t) {
+        playerPos = t.position;
+        playerFound = true;
+      });
 
-    bool isEnemy = (world.getComponent<Components::EnemyAI>(e) != nullptr);
-    bool hasVelocity = (world.getComponent<Components::Velocity>(e) != nullptr);
-
-    if (!isEnemy && hasVelocity) {
-      playerPos = t.position;
-      playerFound = true;
-    }
-  });
-
-  world.each<Components::EnemyAI>([&](ECS::Entity entity,
-                                      Components::EnemyAI &ai) {
-    auto *transform = world.getComponent<Components::Transform>(entity);
-    auto *velocity = world.getComponent<Components::Velocity>(entity);
-
-    if (!transform || !velocity)
-      return;
-
-    switch (ai.state) {
-    // -----------------------------------------------------------------
-    // PATROL STATE
-    // -----------------------------------------------------------------
-    case Components::AIState::Patrol: {
-      // Check for Player
-      if (playerFound) {
-        float distToPlayer = distance(transform->position, playerPos);
-        if (distToPlayer < ai.detectionRadius) {
-          ai.state = Components::AIState::Chase;
-          // std::cout << "Enemy detected player! Switching to CHASE." <<
-          // std::endl;
-          return;
+  // 2. Update AI Entities
+  world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
+      [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
+          Components::Velocity &vel) {
+        // --- Light Sensitivity Check ---
+        float speedMultiplier = 1.0f;
+        auto *lightExp = world.getComponent<Components::LightExposure>(e);
+        if (lightExp && lightExp->exposureTime > 0.0f) {
+          speedMultiplier = ai.lightSensitivity;
         }
-      }
 
-      // Patrol Logic
-      if (ai.waypoints.empty()) {
-        velocity->velocity = {0.f, 0.f}; // No waypoints, stand still
-        return;
-      }
+        // --- State Machine ---
+        switch (ai.state) {
 
-      vec2 target = ai.waypoints[ai.currentWaypoint];
-      float dist = distance(transform->position, target);
+        // --- PATROL STATE ---
+        case Components::AIState::Patrol: {
+          // Check for Player
+          if (playerFound) {
+            float distToPlayer = distance(t.position, playerPos);
+            if (distToPlayer < ai.detectionRadius) {
+              ai.state = Components::AIState::Chase;
+              // Reset Chase params if needed
+              return;
+            }
+          }
 
-      if (dist < ai.waypointRadius) {
-        // Reached waypoint, next one
-        if (ai.loop) {
-          ai.currentWaypoint = (ai.currentWaypoint + 1) % ai.waypoints.size();
-        } else {
-          // Should reverse logic here if implemented, for now just wrap or stop
-          ai.currentWaypoint = (ai.currentWaypoint + 1) % ai.waypoints.size();
+          // Wander Logic
+          ai.wanderTimer -= fDt;
+          if (ai.wanderTimer <= 0.0f) {
+            // New random direction
+            ai.wanderDirection = normalize({randomFloat(), randomFloat()});
+            ai.wanderTimer = ai.wanderInterval;
+          }
+
+          // Set Velocity
+          vel.moveSpeed = ai.patrolSpeed * speedMultiplier;
+          vel.velocity = ai.wanderDirection;
+          break;
         }
-      } else {
-        // Move towards waypoint
-        vec2 dir = normalize({target.x - transform->position.x,
-                              target.y - transform->position.y});
-        velocity->velocity.x = dir.x * ai.patrolSpeed;
-        velocity->velocity.y = dir.y * ai.patrolSpeed;
-      }
-      break;
-    }
 
-    // -----------------------------------------------------------------
-    // CHASE STATE
-    // -----------------------------------------------------------------
-    case Components::AIState::Chase: {
-      if (!playerFound) {
-        ai.state = Components::AIState::Alert;
-        ai.alertTimer = ai.searchDuration;
-        return;
-      }
+        // --- CHASE STATE ---
+        case Components::AIState::Chase: {
+          // Lost Player?
+          if (!playerFound) {
+            ai.state = Components::AIState::Alert;
+            ai.stateTimer = ai.alertDuration;
+            ai.targetPosition = t.position; // Stay put or search here
+            return;
+          }
 
-      float distToPlayer = distance(transform->position, playerPos);
-      if (distToPlayer >
-          ai.detectionRadius *
-              1.5f) { // Hysteresis: needs to go further to lose sight
-        ai.state = Components::AIState::Alert;
-        ai.alertTimer = ai.searchDuration;
-        // std::cout << "Lost sight of player. Switching to ALERT." <<
-        // std::endl;
-      } else {
-        // Move towards player
-        vec2 dir = normalize({playerPos.x - transform->position.x,
-                              playerPos.y - transform->position.y});
-        velocity->velocity.x = dir.x * ai.chaseSpeed;
-        velocity->velocity.y = dir.y * ai.chaseSpeed;
-      }
-      break;
-    }
+          float distToPlayer = distance(t.position, playerPos);
+          // Hysteresis: needs to go further to lose sight (1.5x)
+          if (distToPlayer > ai.detectionRadius * 1.5f) {
+            ai.state = Components::AIState::Alert;
+            ai.stateTimer = ai.alertDuration;
+            ai.targetPosition = playerPos; // Go to where we last saw them
+            return;
+          }
 
-    // -----------------------------------------------------------------
-    // ALERT STATE
-    // -----------------------------------------------------------------
-    case Components::AIState::Alert: {
-      // Stop moving
-      velocity->velocity = {0.f, 0.f};
+          // Move towards player
+          vec2 dir = normalize(
+              {playerPos.x - t.position.x, playerPos.y - t.position.y});
 
-      // Countdown
-      ai.alertTimer -= fDt;
-      if (ai.alertTimer <= 0.f) {
-        ai.state = Components::AIState::Patrol;
-        // std::cout << "Given up search. Returning to PATROL." << std::endl;
-      }
+          vel.moveSpeed = ai.chaseSpeed * speedMultiplier;
+          vel.velocity = dir;
 
-      // Optional: Could still spot player here immediately
-      if (playerFound &&
-          distance(transform->position, playerPos) < ai.detectionRadius) {
-        ai.state = Components::AIState::Chase;
-      }
-      break;
-    }
+          // Update known position
+          ai.targetPosition = playerPos;
+          break;
+        }
 
-    // -----------------------------------------------------------------
-    // DEATH STATE
-    // -----------------------------------------------------------------
-    case Components::AIState::Death: {
-      // Stop moving
-      velocity->velocity = {0.f, 0.f};
-      // Do nothing else. Logic for cleanup or animation would go here.
-      break;
-    }
-    }
-  });
+        // --- ALERT STATE ---
+        case Components::AIState::Alert: {
+          // Timer
+          ai.stateTimer -= fDt;
+          if (ai.stateTimer <= 0.0f) {
+            ai.state = Components::AIState::Patrol;
+            ai.wanderTimer = 0.0f; // Force new direction immediately
+            return;
+          }
+
+          // Check for Player
+          if (playerFound) {
+            if (distance(t.position, playerPos) < ai.detectionRadius) {
+              ai.state = Components::AIState::Chase;
+              return;
+            }
+          }
+
+          // Behavior: Go to target position, then wait
+          float distToTarget = distance(t.position, ai.targetPosition);
+          if (distToTarget > 20.0f) {
+            // Move to target
+            vec2 dir = normalize({ai.targetPosition.x - t.position.x,
+                                  ai.targetPosition.y - t.position.y});
+            vel.moveSpeed = ai.chaseSpeed * speedMultiplier; // Alert runs fast
+            vel.velocity = dir;
+          } else {
+            // Arrived, look around (stand still)
+            vel.velocity = {0.f, 0.f};
+          }
+          break;
+        }
+
+        // --- OTHER STATES ---
+        default:
+          vel.velocity = {0.f, 0.f};
+          break;
+        }
+      });
 }
 
 } // namespace Systems

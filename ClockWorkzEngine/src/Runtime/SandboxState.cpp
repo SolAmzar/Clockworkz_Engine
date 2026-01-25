@@ -36,6 +36,7 @@ reserved.
 #include "Core/Engine.hpp"
 #include "Core/Profiler.hpp"
 #include "Core/Time.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include "Graphics/RenderingManager.hpp"
@@ -779,6 +780,57 @@ void SandboxState::renderComponentWindow() {
     } else {
       if (ImGui::Button("Add StateMachine"))
         world.addComponent(entity, Components::StateMachine{});
+    }
+  }
+
+  // ParticleEmitter
+  if (ImGui::CollapsingHeader("ParticleEmitter")) {
+    auto *pe = world.getComponent<Components::ParticleEmitter>(entity);
+    if (pe) {
+      bool active = pe->active();
+      if (ImGui::Checkbox("Active", &active))
+        pe->setActive(active);
+
+      // Ensure renderer is set (fix for previously created components)
+      pe->setRenderer(&Core::Engine::Get().rendering());
+
+      auto &sys = pe->system();
+
+      ImGui::DragFloat("Rate", &sys.rate, 1.f, 0.f, 1000.f);
+      ImGui::DragFloatRange2("Life", &sys.lifeMin, &sys.lifeMax, 0.05f, 0.05f,
+                             5.0f);
+      ImGui::DragFloatRange2("Speed", &sys.speedMin, &sys.speedMax, 1.f, 0.f,
+                             500.f);
+      ImGui::DragFloatRange2("Size", &sys.sizeEnd, &sys.sizeStart, 0.05f, 0.f,
+                             10.f);
+      ImGui::ColorEdit4("Start Color", &sys.colorStart.r);
+      ImGui::ColorEdit4("End Color", &sys.colorEnd.r);
+
+      // New controls for direction
+      ImGui::DragFloat("Spread (Deg)", &sys.spreadDeg, 1.0f, 0.0f, 180.0f);
+      if (ImGui::DragFloat2("Direction", &sys.dir.x, 0.05f, -1.0f, 1.0f)) {
+        // Basic normalization to keep direction vector sane
+        float len = std::sqrt(sys.dir.x * sys.dir.x + sys.dir.y * sys.dir.y);
+        if (len > 0.001f) {
+          sys.dir.x /= len;
+          sys.dir.y /= len;
+        }
+      }
+
+      if (ImGui::Button("Burst (50)")) {
+        pe->burst(50);
+      }
+
+      if (ImGui::Button("Remove ParticleEmitter"))
+        world.removeComponent<Components::ParticleEmitter>(entity);
+    } else {
+      if (ImGui::Button("Add ParticleEmitter")) {
+        world.addComponent(entity, Components::ParticleEmitter{1000});
+        auto *newPE = world.getComponent<Components::ParticleEmitter>(entity);
+        if (newPE) {
+          newPE->setRenderer(&Core::Engine::Get().rendering());
+        }
+      }
     }
   }
 
