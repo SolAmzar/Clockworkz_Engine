@@ -279,9 +279,9 @@ void RenderingManager::beginDebugPass(const glm::mat4 &vp) {
 }
 
 void RenderingManager::endDebugPass() {
-  glDepthMask(GL_TRUE);
-  glEnable(GL_DEPTH_TEST);
-  glUseProgram(0);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(0);
 }
 
 void RenderingManager::beginFontPass(const glm::mat4 &vp) {
