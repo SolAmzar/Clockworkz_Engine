@@ -776,15 +776,26 @@ void SandboxState::renderComponentWindow() {
 
       auto &sys = pe->system();
 
-      ImGui::DragFloat("Rate", &sys.rate, 1.0f, 0.1f, 1000.0f);
-      ImGui::DragFloatRange2("Lifetime", &sys.lifeMin, &sys.lifeMax, 0.1f, 0.1f,
-                             10.0f);
-      ImGui::DragFloatRange2("Speed", &sys.speedMin, &sys.speedMax, 1.0f, 0.0f,
-                             1000.0f);
-      ImGui::DragFloat("Size Start", &sys.sizeStart, 0.1f, 0.0f, 20.0f);
-      ImGui::DragFloat("Size End", &sys.sizeEnd, 0.1f, 0.0f, 20.0f);
-      ImGui::ColorEdit4("Color Start", (float *)&sys.colorStart);
-      ImGui::ColorEdit4("Color End", (float *)&sys.colorEnd);
+      ImGui::DragFloat("Rate", &sys.rate, 1.f, 0.f, 1000.f);
+      ImGui::DragFloatRange2("Life", &sys.lifeMin, &sys.lifeMax, 0.05f, 0.05f,
+                             5.0f);
+      ImGui::DragFloatRange2("Speed", &sys.speedMin, &sys.speedMax, 1.f, 0.f,
+                             500.f);
+      ImGui::DragFloatRange2("Size", &sys.sizeEnd, &sys.sizeStart, 0.05f, 0.f,
+                             10.f);
+      ImGui::ColorEdit4("Start Color", &sys.colorStart.r);
+      ImGui::ColorEdit4("End Color", &sys.colorEnd.r);
+
+      // New controls for direction
+      ImGui::DragFloat("Spread (Deg)", &sys.spreadDeg, 1.0f, 0.0f, 180.0f);
+      if (ImGui::DragFloat2("Direction", &sys.dir.x, 0.05f, -1.0f, 1.0f)) {
+        // Basic normalization to keep direction vector sane
+        float len = std::sqrt(sys.dir.x * sys.dir.x + sys.dir.y * sys.dir.y);
+        if (len > 0.001f) {
+          sys.dir.x /= len;
+          sys.dir.y /= len;
+        }
+      }
 
       if (ImGui::Button("Burst (50)")) {
         pe->burst(50);
