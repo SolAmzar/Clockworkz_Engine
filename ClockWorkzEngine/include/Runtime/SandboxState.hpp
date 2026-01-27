@@ -27,6 +27,9 @@ reserved.
 
 #include "Graphics/FrameBuffer.hpp"
 #include "Runtime/Scene.hpp"
+#include "SandboxCommands.hpp"
+#include "UndoableImGui.hpp"
+#include <memory>
 
 namespace Platform {
 class InputManager;
@@ -68,6 +71,8 @@ private:
 
   Platform::InputManager &m_input;
   GameStateManager &m_gsm;
+
+  static constexpr size_t MAX_UNDO_LEVELS = 20;
 
   // Scene (Runtime Logic)
   Scene m_scene;
@@ -164,10 +169,18 @@ private:
   void loadTilemap(const std::string &filepath);
   void clearTilemap();
 
+  std::vector<std::unique_ptr<Sandbox::SandboxCommand>> m_undoStack;
+  std::vector<std::unique_ptr<Sandbox::SandboxCommand>> m_redoStack;
+
+  void executeCommand(std::unique_ptr<Sandbox::SandboxCommand> cmd);
+  void undo();
+  void redo();
+
   // Helper functions
   void renderToolbar();
   void renderGrid();
   void renderAssetBrowser();
+  void renderUndoRedoPanel();
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
