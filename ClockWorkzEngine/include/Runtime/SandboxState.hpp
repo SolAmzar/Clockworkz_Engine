@@ -114,49 +114,43 @@ private:
   bool m_showAssetBrowser{true};
   std::string m_selectedAsset;
 
-  //prefab editor
+  // prefab editor
   void renderPrefabEditor();
-  void savePrefabFromEntity(ECS::Entity entity, const std::string& name, const std::string& category);
+  void savePrefabFromEntity(ECS::Entity entity, const std::string &name,
+                            const std::string &category);
   void loadAvailablePrefabs();
-  void spawnPrefab(const std::string& prefabName, vec2 position);
-  void deletePrefab(const std::string& prefabName);
+  void spawnPrefab(const std::string &prefabName, vec2 position);
+  void deletePrefab(const std::string &prefabName);
 
-
-  //tilemap editing
-      bool m_tileMapMode = false;
+  // tilemap editing
+  bool m_tileMapMode = false;
   std::string m_selectedTilePrefab = "";
   bool m_showTilePalette = true;
 
   // Tilemap painting
-  enum class PaintMode {
-      Paint,
-      Erase,
-      Select
-  };
+  enum class PaintMode { Paint, Erase, Select };
   PaintMode m_paintMode = PaintMode::Paint;
 
   // Optional: Store tilemap data for serialization
   struct TileData {
-      std::string prefabName;
-      vec2 position;
+    std::string prefabName;
+    vec2 position;
   };
   std::vector<TileData> m_tilemap;
 
-  //Prefab editor features
+  // Prefab editor features
   bool m_showPrefabEditor = false;
   std::string m_newPrefabName;
   std::string m_newPrefabCategory = "Custom";
   int m_selectedPrefabIndex = -1;
   std::vector<std::string> m_availablePrefabs;
 
-  //tilemap editor
+  // tilemap editor
   void renderTilePalette();
-  void handleTileMapInput(const vec2& viewportMin);
-  void saveTilemap(const std::string& filepath);
-  void loadTilemap(const std::string& filepath);
+  void handleTileMapInput(const vec2 &viewportMin);
+  void saveTilemap(const std::string &filepath);
+  void loadTilemap(const std::string &filepath);
   void clearTilemap();
-
-
 
   // Helper functions
   void renderToolbar();
@@ -170,6 +164,8 @@ private:
                     const vec2 &viewportMin);
   void renderStatsWindow();
   void spawnTestEntity(vec2 position);
+  void spawnPlayer();
+  void spawnEnemy();
   void cloneTestEntity(ECS::Entity entity);
   void renderTorchPass(Graphics::RenderingManager &renderer);
 };
