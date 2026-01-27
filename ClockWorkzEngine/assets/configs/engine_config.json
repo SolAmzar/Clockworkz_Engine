@@ -3,5 +3,5 @@
     "height": 1080,
     "vsync": true,
     "title": "Lights Out",
-    "startState": "Menu"
+    "startState": "Sandbox"
 }

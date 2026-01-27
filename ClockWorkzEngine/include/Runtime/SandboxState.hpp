@@ -78,6 +78,7 @@ private:
   bool m_showEntityWindow{true};
   bool m_showComponentWindow{true};
   bool m_showStatsWindow{true};
+  bool m_dockLayoutInitialized{false};
 
   // Entity spawning controls
   int m_spawnCount{1};
@@ -137,6 +138,9 @@ private:
     vec2 position;
   };
   std::vector<TileData> m_tilemap;
+  std::vector<std::string> m_availableTilemaps;
+  int m_selectedTilemapIdx = 0;
+  void refreshTilemapList();
 
   // Prefab editor features
   bool m_showPrefabEditor = false;

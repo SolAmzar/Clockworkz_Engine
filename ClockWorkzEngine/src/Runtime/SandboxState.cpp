@@ -47,6 +47,7 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Platform/InputManager.hpp"
 #include "Runtime/GameStateManager.hpp"
+#include "Runtime/MenuState.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "Systems/AISystem.hpp"
 #include "Systems/AnimationSystem.hpp"
@@ -86,9 +87,13 @@ void SandboxState::onEnter() {
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
   // Load prefabs
   loadAvailablePrefabs();
+  refreshTilemapList();
 
   // Init Framebuffer for Scene View
   m_framebuffer.create(800, 600);
+
+  // Force reset dock layout on enter
+  m_dockLayoutInitialized = false;
 }
 
 void SandboxState::onExit() {
@@ -108,7 +113,9 @@ void SandboxState::update(double dt) {
   (void)dt;
   // Handle ESC to return to menu
   if (m_input.wasKeyTriggered(GLFW_KEY_ESCAPE)) {
-    m_gsm.pop();
+    m_gsm.switchTo(std::make_shared<MenuState>(m_gsm, m_input,
+                                               Core::Engine::Get().window(),
+                                               Core::Engine::Get().audio()));
   }
 
   // Update Scene Logic
@@ -251,6 +258,26 @@ void SandboxState::loadAvailablePrefabs() {
   std::cout << "[Prefab] Loaded " << m_availablePrefabs.size() << " prefabs\n";
 }
 
+void SandboxState::refreshTilemapList() {
+  m_availableTilemaps.clear();
+  namespace fs = std::filesystem;
+  std::string path = "assets/scenes"; // Changed to scenes
+
+  if (!fs::exists(path)) {
+    fs::create_directories(path);
+  }
+
+  for (const auto &entry : fs::directory_iterator(path)) {
+    if (entry.path().extension() == ".json") {
+      m_availableTilemaps.push_back(entry.path().filename().string());
+    }
+  }
+
+  if (m_selectedTilemapIdx >= (int)m_availableTilemaps.size()) {
+    m_selectedTilemapIdx = 0;
+  }
+}
+
 void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
   std::string filepath = "assets/prefabs/" + prefabName + ".json";
   std::ifstream file(filepath);
@@ -322,8 +349,8 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
     // Health
     if (components.contains("health")) {
       Components::Health health;
-      health.hp = components["health"].value("hp", 100);
-      health.maxHp = components["health"].value("maxHp", 100);
+      health.hp = components["health"].value("hp", 100.0f);
+      health.maxHp = components["health"].value("maxHp", 100.0f);
       world.addComponent(entity, health);
     }
 
@@ -528,10 +555,9 @@ void SandboxState::renderImGui(Core::Time *timer) {
   Core::Engine::Get().imguiManager().beginDockspace();
 
   ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-  static bool dockLayoutInitialized = false;
 
-  if (!dockLayoutInitialized) {
-    dockLayoutInitialized = true;
+  if (!m_dockLayoutInitialized) {
+    m_dockLayoutInitialized = true;
     ImGui::DockBuilderRemoveNode(dockspace_id); // Clear any existing layout
     ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
@@ -539,30 +565,43 @@ void SandboxState::renderImGui(Core::Time *timer) {
     ImGuiID dock_main_id = dockspace_id;
     ImGuiID dock_left_id = 0;
     ImGuiID dock_right_id = 0;
+    ImGuiID dock_center_col_id = 0;
+    ImGuiID dock_center_id = 0;
+    ImGuiID dock_toolbar_id = 0;
+    ImGuiID dock_actual_right_id = 0;
+    ImGuiID dock_right_top_id = 0;
+    ImGuiID dock_right_bottom_id = 0;
 
-    // Split: Left (20%) and the rest
-    ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f,
+    // 1. Split Left (20%) for Entity/Systems
+    ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.225f,
                                 &dock_left_id, &dock_right_id);
 
-    // Split the Rest: Center and Right (25% of the rest? or absolute?)
-    // We want to split 'dock_right_id' (which is center+right) into Right (25%
-    // of total width ≈ 30% of remaining)
-    ImGuiID dock_center_id = 0;
-    ImGuiID dock_actual_right_id = 0;
+    // 2. Split Right (25% of remainder) for Components/Stats
     ImGui::DockBuilderSplitNode(dock_right_id, ImGuiDir_Right, 0.25f,
-                                &dock_actual_right_id, &dock_center_id);
+                                &dock_actual_right_id, &dock_center_col_id);
+
+    // 2.5 Split the Right Column (Components) into Top and Bottom (for Assets)
+    ImGui::DockBuilderSplitNode(dock_actual_right_id, ImGuiDir_Down, 0.50f,
+                                &dock_right_bottom_id, &dock_right_top_id);
+
+    // 3. Split Top of Center Column for Toolbar (small strip)
+    ImGui::DockBuilderSplitNode(dock_center_col_id, ImGuiDir_Up, 0.12f,
+                                &dock_toolbar_id, &dock_center_id);
 
     // Dock Windows
-    // Left: Entity Management, Systems
+    // Left
     ImGui::DockBuilderDockWindow("Entity Management", dock_left_id);
     ImGui::DockBuilderDockWindow("Systems", dock_left_id);
 
-    // Right: Components, ECS Stats (Tabbed)
-    // Docking multiple windows to the same ID stacks them as tabs
-    ImGui::DockBuilderDockWindow("Components", dock_actual_right_id);
-    ImGui::DockBuilderDockWindow("ECS Stats", dock_actual_right_id);
+    // Right Top (Components, Stats)
+    ImGui::DockBuilderDockWindow("Components", dock_right_top_id);
+    ImGui::DockBuilderDockWindow("ECS Stats", dock_right_top_id);
 
-    // Center: Empty (implicitly open)
+    // Right Bottom (Assets)
+    ImGui::DockBuilderDockWindow("Asset Browser", dock_right_bottom_id);
+
+    // Center Column
+    ImGui::DockBuilderDockWindow("Toolbar", dock_toolbar_id);
     ImGui::DockBuilderDockWindow("Scene", dock_center_id);
 
     ImGui::DockBuilderFinish(dockspace_id);
@@ -595,11 +634,42 @@ void SandboxState::renderEntityWindow() {
 
   // Serialization UI
   static char currentLevelName[256] = "Level_Save.json";
+
+  // Dropdown for loading
+  if (!m_availableTilemaps.empty()) {
+    ImGui::SetNextItemWidth(150);
+    if (ImGui::BeginCombo("##tilemapCombo",
+                          m_availableTilemaps[m_selectedTilemapIdx].c_str())) {
+      for (int i = 0; i < (int)m_availableTilemaps.size(); i++) {
+        bool isSelected = (m_selectedTilemapIdx == i);
+        if (ImGui::Selectable(m_availableTilemaps[i].c_str(), isSelected)) {
+          m_selectedTilemapIdx = i;
+          // Copy to input buffer
+          strncpy_s(currentLevelName, m_availableTilemaps[i].c_str(), 256);
+        }
+        if (isSelected) {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+  }
+
+  if (ImGui::Button("R")) {
+    refreshTilemapList();
+  }
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("Refresh file list");
+
+  ImGui::SameLine();
+
   ImGui::InputText("Filename", currentLevelName, 256);
 
   if (ImGui::Button("Save Level")) {
     std::string path = "assets/scenes/" + std::string(currentLevelName);
     SceneSerializer::Serialize(world, path);
+    refreshTilemapList(); // Refresh list after saving
     ImGui::OpenPopup("Saved");
   }
 
@@ -666,7 +736,7 @@ void SandboxState::renderEntityWindow() {
     spawnEnemy();
   }
 
-  ImGui::SameLine();
+  // ImGui::SameLine();
   if (ImGui::Button("Clear All")) {
     m_scene.Clear(); // Use Scene Clear
     // Also clear test entities vector if tracked?
@@ -1411,23 +1481,6 @@ void Runtime::SandboxState::renderToolbar() {
 
     if (ImGui::Button("Clear Tilemap")) {
       clearTilemap();
-    }
-
-    ImGui::SameLine();
-
-    // Tilemap Save/Load
-    static char tilemapName[256] = "tilemap.json";
-    ImGui::SetNextItemWidth(150);
-    ImGui::InputText("##tilemap", tilemapName, 256);
-
-    ImGui::SameLine();
-    if (ImGui::Button("Save Tilemap")) {
-      saveTilemap("assets/tilemaps/" + std::string(tilemapName));
-    }
-
-    ImGui::SameLine();
-    if (ImGui::Button("Load Tilemap")) {
-      loadTilemap("assets/tilemaps/" + std::string(tilemapName));
     }
   }
 
@@ -2218,25 +2271,16 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
 void Runtime::SandboxState::clearTilemap() {
   auto &world = m_scene.GetWorld();
 
-  // Destroy all tile entities
-  for (const auto &tile : m_tilemap) {
-    // Find and destroy entity at this position
-    for (int i = (int)m_testEntities.size() - 1; i >= 0; --i) {
-      auto entity = m_testEntities[i];
-      auto *trans = world.getComponent<Components::Transform>(entity);
-
-      if (trans) {
-        float dist = magnitude(vec2(trans->position.x, trans->position.y) -
-                               tile.position);
-        if (dist < m_gridSize * 0.1f) {
-          world.destroyEntity(entity);
-          m_testEntities.erase(m_testEntities.begin() + i);
-          break;
-        }
-      }
-    }
+  // Destroy all tracked entities
+  for (auto entity : m_testEntities) {
+    world.destroyEntity(entity);
   }
+  m_testEntities.clear();
+
+  // Reset selection
+  m_selectedEntityIdx = -1;
+  m_gizmoActiveAxis = -1;
 
   m_tilemap.clear();
-  std::cout << "[Tilemap] Cleared\n";
+  std::cout << "[Tilemap] Cleared all entities and tile data\n";
 }
