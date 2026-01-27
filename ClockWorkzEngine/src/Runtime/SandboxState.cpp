@@ -568,6 +568,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderToolbar();
   renderAssetBrowser();
   renderPrefabEditor();
+  renderTilePalette();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
@@ -1256,6 +1257,228 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   m_selectedEntityIdx = (int)m_testEntities.size() - 1;
 }
 
+void Runtime::SandboxState::renderToolbar() {
+    ImGui::Begin("Toolbar");
+
+    if (m_isPaused) {
+        if (ImGui::Button("Play", ImVec2(50, 0))) {
+            m_isPaused = false;
+        }
+    }
+    else {
+        if (ImGui::Button("Pause", ImVec2(50, 0))) {
+            m_isPaused = true;
+        }
+    }
+
+    ImGui::SameLine();
+    ImGui::Separator();
+    ImGui::SameLine();
+
+    //TILEMAP MODE TOGGLE
+    if (ImGui::Checkbox("Tilemap Mode", &m_tileMapMode)) {
+        if (m_tileMapMode) {
+            m_showTilePalette = true;
+            // Deselect entity when entering tilemap mode
+            m_selectedEntityIdx = -1;
+            m_gizmoActiveAxis = -1;
+        }
+    }
+
+    ImGui::SameLine();
+
+    // Paint mode buttons (only show in tilemap mode)
+    if (m_tileMapMode) {
+        if (ImGui::RadioButton("Paint", m_paintMode == PaintMode::Paint)) {
+            m_paintMode = PaintMode::Paint;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Erase", m_paintMode == PaintMode::Erase)) {
+            m_paintMode = PaintMode::Erase;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Select", m_paintMode == PaintMode::Select)) {
+            m_paintMode = PaintMode::Select;
+        }
+        ImGui::SameLine();
+    }
+
+    ImGui::Separator();
+    ImGui::SameLine();
+
+    ImGui::Checkbox("Show Grid", &m_showGrid);
+    ImGui::SameLine();
+    ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
+    ImGui::Separator();
+    ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
+
+    //TILEMAP CONTROLS
+    if (m_tileMapMode) {
+        ImGui::Separator();
+        ImGui::Checkbox("Tile Palette", &m_showTilePalette);
+
+        if (ImGui::Button("Clear Tilemap")) {
+            clearTilemap();
+        }
+
+        ImGui::SameLine();
+
+        // Tilemap Save/Load
+        static char tilemapName[256] = "tilemap.json";
+        ImGui::SetNextItemWidth(150);
+        ImGui::InputText("##tilemap", tilemapName, 256);
+
+        ImGui::SameLine();
+        if (ImGui::Button("Save Tilemap")) {
+            saveTilemap("assets/tilemaps/" + std::string(tilemapName));
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Load Tilemap")) {
+            loadTilemap("assets/tilemaps/" + std::string(tilemapName));
+        }
+    }
+
+    ImGui::End();
+}
+
+void Runtime::SandboxState::renderTilePalette() {
+    if (!m_showTilePalette || !m_tileMapMode) return;
+
+    ImGui::Begin("Tile Palette", &m_showTilePalette);
+
+    ImGui::Text("Select a tile to paint:");
+    ImGui::Separator();
+
+    // Display prefabs as selectable tiles
+    ImGui::BeginChild("TilePaletteList", ImVec2(0, 0), true);
+
+    for (int i = 0; i < (int)m_availablePrefabs.size(); ++i) {
+        bool isSelected = (m_selectedTilePrefab == m_availablePrefabs[i]);
+
+        if (ImGui::Selectable(m_availablePrefabs[i].c_str(), isSelected)) {
+            m_selectedTilePrefab = m_availablePrefabs[i];
+            m_paintMode = PaintMode::Paint; // Auto-switch to paint mode
+        }
+
+        // Optional: Show preview if you have texture info in prefab
+        // You could load the prefab JSON and display a small preview icon
+    }
+
+    ImGui::EndChild();
+
+    if (!m_selectedTilePrefab.empty()) {
+        ImGui::Separator();
+        ImGui::Text("Selected: %s", m_selectedTilePrefab.c_str());
+    }
+    else {
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "No tile selected");
+    }
+
+    ImGui::End();
+}
+
+void Runtime::SandboxState::handleTileMapInput(const vec2& viewportMin) {
+    if (!m_tileMapMode || !m_viewportHovered) return;
+
+    ImVec2 mousePos = ImGui::GetMousePos();
+    vec2 localMouse = { mousePos.x - viewportMin.x,
+                            mousePos.y - viewportMin.y };
+
+    Graphics::Camera2D& cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    vec2 centeredMouse = {
+       localMouse.x - m_viewportSize.x * 0.5f,
+       -(localMouse.y - m_viewportSize.y * 0.5f) };
+
+    vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+    // Always snap to grid in tilemap mode
+    worldPos = snapToGrid(worldPos, m_gridSize);
+
+    // Paint Mode
+    if (m_paintMode == PaintMode::Paint && !m_selectedTilePrefab.empty()) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+            ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+
+            // Check if tile already exists at this position
+            bool tileExists = false;
+            for (const auto& tile : m_tilemap) {
+                float dist = magnitude(tile.position - worldPos);
+                if (dist < m_gridSize * 0.1f) { // Close enough
+                    tileExists = true;
+                    break;
+                }
+            }
+
+            if (!tileExists) {
+                // Spawn the tile
+                spawnPrefab(m_selectedTilePrefab, worldPos);
+
+                // Record in tilemap
+                m_tilemap.push_back({ m_selectedTilePrefab, worldPos });
+            }
+        }
+    }
+    // Erase Mode
+    else if (m_paintMode == PaintMode::Erase) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+            ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+
+            auto& world = m_scene.GetWorld();
+
+            // Find and remove entities at this position
+            for (int i = (int)m_testEntities.size() - 1; i >= 0; --i) {
+                auto entity = m_testEntities[i];
+                auto* trans = world.getComponent<Components::Transform>(entity);
+
+                if (trans) {
+                    float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
+                    if (dist < m_gridSize * 0.5f) {
+                        // Remove from tilemap data
+                        m_tilemap.erase(
+                            std::remove_if(m_tilemap.begin(), m_tilemap.end(),
+                                [&](const TileData& tile) {
+                                    return magnitude(tile.position - worldPos) < m_gridSize * 0.1f;
+                                }),
+                            m_tilemap.end()
+                        );
+
+                        // Destroy entity
+                        world.destroyEntity(entity);
+                        m_testEntities.erase(m_testEntities.begin() + i);
+                        break; // Only erase one per click
+                    }
+                }
+            }
+        }
+    }
+    // Select Mode
+    else if (m_paintMode == PaintMode::Select) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            auto& world = m_scene.GetWorld();
+
+            // Find entity at position
+            for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+                auto entity = m_testEntities[i];
+                auto* trans = world.getComponent<Components::Transform>(entity);
+
+                if (trans) {
+                    float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
+                    if (dist < m_gridSize * 0.5f) {
+                        m_selectedEntityIdx = i;
+                        m_tileMapMode = false; // Exit tilemap mode to edit
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void SandboxState::renderSystemsWindow() {
   ImGui::Begin("Systems", &m_showSystemsWindow);
 
@@ -1382,6 +1605,12 @@ void SandboxState::renderSceneWindow() {
       ImGui::EndDragDropTarget();
   }
 
+
+  if (m_tileMapMode) {
+        handleTileMapInput(viewportMin);
+        
+        // Don't do gizmo/selection in tilemap mode
+    }
   // Gizmos and Picking
   renderGizmos({windowPos.x, windowPos.y},
                {viewportPanelSize.x, viewportPanelSize.y}, viewportMin);
@@ -1705,31 +1934,31 @@ void SandboxState::renderGizmos(const vec2 &windowPos,
 
 } // namespace Runtime
 
-void Runtime::SandboxState::renderToolbar() {
-  ImGui::Begin("Toolbar");
-
-  if (m_isPaused) {
-    if (ImGui::Button("Play", ImVec2(50, 0))) {
-      m_isPaused = false;
-    }
-  } else {
-    if (ImGui::Button("Pause", ImVec2(50, 0))) {
-      m_isPaused = true;
-    }
-  }
-
-  ImGui::SameLine();
-  ImGui::Separator();
-  ImGui::SameLine();
-
-  ImGui::Checkbox("Show Grid", &m_showGrid);
-  ImGui::SameLine();
-  ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
-  ImGui::Separator();
-  ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
-
-  ImGui::End();
-}
+//void Runtime::SandboxState::renderToolbar() {
+//  ImGui::Begin("Toolbar");
+//
+//  if (m_isPaused) {
+//    if (ImGui::Button("Play", ImVec2(50, 0))) {
+//      m_isPaused = false;
+//    }
+//  } else {
+//    if (ImGui::Button("Pause", ImVec2(50, 0))) {
+//      m_isPaused = true;
+//    }
+//  }
+//
+//  ImGui::SameLine();
+//  ImGui::Separator();
+//  ImGui::SameLine();
+//
+//  ImGui::Checkbox("Show Grid", &m_showGrid);
+//  ImGui::SameLine();
+//  ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
+//  ImGui::Separator();
+//  ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
+//
+//  ImGui::End();
+//}
 
 void Runtime::SandboxState::renderGrid() {
   if (!m_showGrid)
@@ -1822,4 +2051,99 @@ void Runtime::SandboxState::renderAssetBrowser() {
     ImGui::EndTabBar();
   }
   ImGui::End();
+}
+
+void Runtime::SandboxState::saveTilemap(const std::string& filepath) {
+    nlohmann::json tilemapJson;
+    tilemapJson["gridSize"] = m_gridSize;
+    tilemapJson["tiles"] = nlohmann::json::array();
+
+    for (const auto& tile : m_tilemap) {
+        nlohmann::json tileJson;
+        tileJson["prefab"] = tile.prefabName;
+        tileJson["position"] = { {"x", tile.position.x}, {"y", tile.position.y} };
+        tilemapJson["tiles"].push_back(tileJson);
+    }
+
+    // Create directory if it doesn't exist
+    namespace fs = std::filesystem;
+    fs::path filePath(filepath);
+    if (filePath.has_parent_path()) {
+        fs::create_directories(filePath.parent_path());
+    }
+
+    std::ofstream file(filepath);
+    if (file.is_open()) {
+        file << tilemapJson.dump(4);
+        file.close();
+        std::cout << "[Tilemap] Saved: " << filepath << "\n";
+    }
+    else {
+        std::cerr << "[Tilemap] Failed to save: " << filepath << "\n";
+    }
+}
+
+void Runtime::SandboxState::loadTilemap(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[Tilemap] Failed to load: " << filepath << "\n";
+        return;
+    }
+
+    nlohmann::json tilemapJson;
+    file >> tilemapJson;
+    file.close();
+
+    // Clear existing tilemap
+    clearTilemap();
+
+    // Load grid size
+    if (tilemapJson.contains("gridSize")) {
+        m_gridSize = tilemapJson["gridSize"].get<float>();
+    }
+
+    // Load tiles
+    if (tilemapJson.contains("tiles")) {
+        for (const auto& tileJson : tilemapJson["tiles"]) {
+            std::string prefabName = tileJson.value("prefab", "");
+            vec2 position;
+            if (tileJson.contains("position")) {
+                position.x = tileJson["position"].value("x", 0.0f);
+                position.y = tileJson["position"].value("y", 0.0f);
+            }
+
+            // Spawn the tile
+            spawnPrefab(prefabName, position);
+
+            // Record in tilemap
+            m_tilemap.push_back({ prefabName, position });
+        }
+    }
+
+    std::cout << "[Tilemap] Loaded: " << filepath << " (" << m_tilemap.size() << " tiles)\n";
+}
+
+void Runtime::SandboxState::clearTilemap() {
+    auto& world = m_scene.GetWorld();
+
+    // Destroy all tile entities
+    for (const auto& tile : m_tilemap) {
+        // Find and destroy entity at this position
+        for (int i = (int)m_testEntities.size() - 1; i >= 0; --i) {
+            auto entity = m_testEntities[i];
+            auto* trans = world.getComponent<Components::Transform>(entity);
+
+            if (trans) {
+                float dist = magnitude(vec2(trans->position.x, trans->position.y) - tile.position);
+                if (dist < m_gridSize * 0.1f) {
+                    world.destroyEntity(entity);
+                    m_testEntities.erase(m_testEntities.begin() + i);
+                    break;
+                }
+            }
+        }
+    }
+
+    m_tilemap.clear();
+    std::cout << "[Tilemap] Cleared\n";
 }
