@@ -41,13 +41,15 @@ reserved.
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
+#include "Runtime/MenuState.hpp"
 #include "Runtime/SandboxState.hpp"
 #include "Runtime/SpriteState.hpp"
+#include "Scripting/LuaManager.hpp"
+#include "Runtime/MenuState.hpp"
 #include <GLFW/glfw3.h>
 #include <exception>
 #include <iostream>
 #include <string>
-
 
 using namespace Core;
 
@@ -102,6 +104,7 @@ bool Engine::init() {
   m_renderer = std::make_unique<Graphics::RenderingManager>();
   m_camera = std::make_unique<Graphics::Camera2D>();
   m_imgui = std::make_unique<Graphics::ImGuiManager>();
+  m_lua = std::make_unique<Scripting::LuaManager>();
 
   m_config->loadFromFile("assets/configs/engine_config.json");
   m_logger->init();
@@ -151,6 +154,11 @@ bool Engine::init() {
 
   // m_camera->setViewport((float)m_window->width(), (float)m_window->height());
   m_camera->init((int)m_window->width(), (int)m_window->height());
+
+  m_lua->Initialize();
+
+  // Test Line
+  m_lua->ExecuteScript("assets/scripts/test.lua");
 
   m_gsm = std::make_unique<Runtime::GameStateManager>();
 
@@ -241,10 +249,15 @@ void Engine::shutdown() {
     m_sfAudio.reset();
   }
 
-  // 9. TextureManager cleanup
+  // 9. Lua Shutdown
+  if (m_lua) {
+      m_lua.reset();
+  }
+
+  // 10. TextureManager cleanup
   Assets::TextureManager::Clear();
 
-  // 10. Basic engine services (safe anywhere below)
+  // 11. Basic engine services (safe anywhere below)
   m_time.reset();
   m_logger.reset();
   m_config.reset();
@@ -270,7 +283,7 @@ void Engine::update(double dt) {
     // Initial State when Run Game, start off from Sandbox State for ECS testing
     // Push SandboxState once
     m_gsm->push(std::make_shared<Runtime::SandboxState>(*m_input, *m_gsm));
-    //m_gsm->push(std::make_shared<Runtime::MenuState>(*m_gsm , *m_input, *m_window , *m_audio));
+    //m_gsm->push(std::make_shared<Runtime::MenuState>(*m_gsm, *m_input,*m_window, *m_audio)); 
 
     m_booted = true;
   }

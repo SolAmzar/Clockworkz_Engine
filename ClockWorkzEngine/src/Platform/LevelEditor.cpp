@@ -1843,6 +1843,45 @@ bool LevelEditor::newLevel(const std::string &name) {
   return true;
 }
 
+// Helper to resolve the source asset path from the build path
+static std::string resolveSourcePath(const std::string &buildPath) {
+  fs::path path(buildPath);
+  std::string pathStr =
+      path.generic_string(); // Helper for consistent separators (/)
+
+  // 1. Check if we are in a 'build' folder (common CMake pattern)
+  // We look for "/build/" to avoid partial matches
+  size_t buildPos = pathStr.find("/build/");
+  if (buildPos == std::string::npos)
+    return "";
+
+  // 2. Check if we have an 'assets' folder downstream
+  size_t assetsPos = pathStr.find("/assets/", buildPos);
+  if (assetsPos == std::string::npos)
+    return "";
+
+  // 3. Construct Source Path
+  // Root is everything before "/build/"
+  std::string root = pathStr.substr(0, buildPos);
+  // Relative asset path is everything from "/assets/" onwards
+  std::string relativeAssetPath = pathStr.substr(assetsPos);
+
+  // Combine root + relative part
+  // Note: root usually lacks trailing slash because we split at /build/
+  // relativeAssetPath starts with /assets/
+  fs::path sourcePath =
+      fs::path(root) /
+      relativeAssetPath.substr(
+          1); // Remove leading slash to use path joining or just append
+
+  // Actually, simple string concatenation is safer if we trust the slash
+  // content
+  std::string finalPath = root + relativeAssetPath;
+
+  // Convert to OS preferred path
+  return fs::path(finalPath).make_preferred().string();
+}
+
 bool LevelEditor::saveLevel() {
   if (m_currentLevelMetadata.filepath.empty()) {
     m_showSaveDialog = true;
@@ -1891,8 +1930,40 @@ bool LevelEditor::saveLevel(const std::string &filepath) {
       m_recentLevels.resize(MAX_RECENT_LEVELS);
     }
 
-    std::cout << "[LevelEditor] Successfully saved level: "
+    std::cout << "[LevelEditor] Successfully saved level (Build): "
               << std::filesystem::absolute(filepath) << "\n";
+
+    // --- DUAL SAVE STRATEGY ---
+    // Attempt to save to the source directory as well
+    std::string sourcePath = resolveSourcePath(filepath);
+    if (!sourcePath.empty() && sourcePath != filepath) {
+
+      // Ensure source directory exists
+      fs::path srcFilePath(sourcePath);
+      fs::path srcParentDir = srcFilePath.parent_path();
+
+      try {
+        if (!srcParentDir.empty() && !fs::exists(srcParentDir)) {
+          fs::create_directories(srcParentDir);
+        }
+
+        bool srcSuccess = Gameplay::GameObjectSerializer::saveSceneToFile(
+            m_currentLevelMetadata.name, m_currentScene->objects(), sourcePath);
+
+        if (srcSuccess) {
+          std::cout << "[LevelEditor] DUAL SAVE: Also saved to Source: "
+                    << sourcePath << "\n";
+        } else {
+          std::cerr << "[LevelEditor] DUAL SAVE FAILED for: " << sourcePath
+                    << "\n";
+        }
+
+      } catch (const std::exception &e) {
+        std::cerr << "[LevelEditor] Dual Save Exception: " << e.what() << "\n";
+      }
+    }
+    // ---------------------------
+
   } else {
     std::cout << "[LevelEditor] Failed to save level: " << filepath << "\n";
   }
@@ -2100,24 +2171,35 @@ bool LevelEditor::loadPrefab(const std::string &filepath) {
 
 void LevelEditor::registerBuiltInPrefabs() {
   // Register built-in prefabs with palette entries
+  // Added texture IDs for icons
 
-  m_prefabPalette.push_back(
-      {"Floor", "Floor Tile", "Terrain", "", Gameplay::GameObjectType::Floor});
+  m_prefabPalette.push_back({"Floor", "Floor Tile", "Terrain", "floor_texture",
+                             Gameplay::GameObjectType::Floor});
 
-  m_prefabPalette.push_back(
-      {"Wall", "Wall", "Terrain", "", Gameplay::GameObjectType::Wall});
+  m_prefabPalette.push_back({"Wall", "Wall", "Terrain", "wall_texture",
+                             Gameplay::GameObjectType::Wall});
 
   /*  m_prefabPalette.push_back({
        "Wall", "Wall", "Terrain",
        "", Gameplay::GameObjectType::WallCornerBL
         });*/
 
-  m_prefabPalette.push_back({"Player", "Player Character", "Characters", "",
+  m_prefabPalette.push_back({"Player", "Player Character", "Characters",
+                             "player_texture",
                              Gameplay::GameObjectType::Player});
 
-  m_prefabPalette.push_back(
-      {"Enemy", "Enemy", "Characters", "", Gameplay::GameObjectType::Enemy});
+  m_prefabPalette.push_back({"Enemy", "Enemy", "Characters", "monster_texture",
+                             Gameplay::GameObjectType::Enemy});
 
+  // Using pot_texture for Trap as a placeholder/example if no dedicated trap
+  // texture exists Or keep empty if no texture is appropriate yet, but plan
+  // implies using available ones. Based on textures.json, "pot_texture" exists,
+  // but for Trap? Game logic might not have a dedicated trap texture loaded in
+  // textures.json. I will check if "trap_texture" exists? It wasn't in the
+  // list. I'll leave it empty or pick a related one. Let's use "wall_texture"
+  // as placeholder or leaves empty. Actually, let's leave it empty string if no
+  // good icon, or maybe "pot_texture" if it looks dangerous? I'll leave empty
+  // for now to avoid confusion.
   m_prefabPalette.push_back(
       {"Trap", "Trap", "Hazards", "", Gameplay::GameObjectType::Trap});
 }
@@ -2139,7 +2221,25 @@ void LevelEditor::scanPrefabDirectory(const std::string &directory) {
         }
 
         if (!exists) {
-          m_prefabPalette.push_back({filename, filename, "Custom", "",
+          // Parse JSON to find textureId for icon
+          std::string iconPath = "";
+          try {
+            std::ifstream f(entry.path());
+            if (f.is_open()) {
+              nlohmann::json j;
+              f >> j;
+              // Look for: components -> spriteRenderer -> textureId
+              if (j.contains("components") &&
+                  j["components"].contains("spriteRenderer")) {
+                iconPath =
+                    j["components"]["spriteRenderer"].value("textureId", "");
+              }
+            }
+          } catch (...) {
+            // ignore parsing errors, just no icon
+          }
+
+          m_prefabPalette.push_back({filename, filename, "Custom", iconPath,
                                      Gameplay::GameObjectType::Unknown});
         }
       }
@@ -2917,12 +3017,57 @@ void LevelEditor::renderProperties() {
     if (auto *sr = m_selectedObject->getComponent<SpriteRendererComponent>()) {
       if (ImGui::TreeNode("Sprite Renderer")) {
         // Show / edit texture alias
-        char texAlias[256];
-        std::strncpy(texAlias, sr->textureAlias().c_str(), sizeof(texAlias));
-        if (ImGui::InputText("Texture Alias", texAlias, sizeof(texAlias))) {
-          sr->setTexture(texAlias);
-          m_selectedObject->setTextureId(texAlias);
-          markLevelDirty();
+        // Texture Dropdown with Visual Preview
+        auto textureNames = Assets::TextureManager::GetLoadedTextureNames();
+        int currentItem = -1;
+        for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
+          if (textureNames[i] == sr->textureAlias()) {
+            currentItem = i;
+            break;
+          }
+        }
+
+        if (ImGui::BeginCombo("Texture", sr->textureAlias().c_str())) {
+          for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
+            ImGui::PushID(i);
+            bool isSelected = (currentItem == i);
+
+            // Preview Image
+            auto tex = Assets::TextureManager::Get(textureNames[i]);
+            if (tex) {
+              ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+              ImGui::SameLine();
+            }
+
+            // Text
+            if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
+              sr->setTexture(textureNames[i]);
+              m_selectedObject->setTextureId(textureNames[i]);
+              markLevelDirty();
+            }
+
+            if (isSelected)
+              ImGui::SetItemDefaultFocus();
+
+            // Drag Source for Texture
+            if (ImGui::BeginDragDropSource(
+                    ImGuiDragDropFlags_SourceAllowNullID)) {
+              ImGui::SetDragDropPayload("TEXTURE_ID", textureNames[i].c_str(),
+                                        strlen(textureNames[i].c_str()) + 1);
+
+              // Preview
+              if (tex) {
+                ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+              }
+              ImGui::SameLine();
+              ImGui::Text("Creating object with: %s", textureNames[i].c_str());
+
+              ImGui::EndDragDropSource();
+            }
+
+            ImGui::PopID();
+          }
+          ImGui::EndCombo();
         }
 
         // Show current UV
@@ -3048,10 +3193,18 @@ void LevelEditor::renderPrefabPalette() {
 
   ImGui::Separator();
 
-  // Display prefabs as buttons
+  // Display prefabs as grid of buttons
   std::string selectedCategory = categories[categoryIndex];
 
-  for (const auto &prefab : m_prefabPalette) {
+  float windowVisibleX2 =
+      ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+  ImGuiStyle &style = ImGui::GetStyle();
+  float buttonSize = 64.0f; // Size of the icon
+  float buttonSpacing = style.ItemSpacing.x;
+
+  for (size_t i = 0; i < m_prefabPalette.size(); ++i) {
+    const auto &prefab = m_prefabPalette[i];
+
     // Filter by category
     if (selectedCategory != "All" && prefab.category != selectedCategory) {
       continue;
@@ -3059,8 +3212,44 @@ void LevelEditor::renderPrefabPalette() {
 
     ImGui::PushID(prefab.name.c_str());
 
+    // Try to get texture for icon
+    ImTextureID texID = 0;
+    if (!prefab.iconPath.empty()) {
+      auto tex = Assets::TextureManager::Get(prefab.iconPath);
+      if (tex)
+        texID = (ImTextureID)(intptr_t)tex->id();
+    }
+
+    bool clicked = false;
     bool isSelected = (m_selectedPrefab == prefab.name);
-    if (ImGui::Selectable(prefab.displayName.c_str(), isSelected)) {
+
+    // Highlight if selected
+    if (isSelected) {
+      ImGui::PushStyleColor(ImGuiCol_Button,
+                            ImVec4(1.0f, 1.0f, 0.0f, 0.4f)); // Yellow highlight
+    }
+
+    if (texID) {
+      // Image Button
+      // Note: UVs flipped if needed? standard ImageButton uses 0,0 to 1,1
+      // ClockWorkz engine usually flips textures on load, so standard UVs work
+      if (ImGui::ImageButton(prefab.name.c_str(), texID,
+                             ImVec2(buttonSize, buttonSize))) {
+        clicked = true;
+      }
+    } else {
+      // Fallback Text Button
+      if (ImGui::Button(prefab.displayName.c_str(),
+                        ImVec2(buttonSize, buttonSize))) {
+        clicked = true;
+      }
+    }
+
+    if (isSelected) {
+      ImGui::PopStyleColor();
+    }
+
+    if (clicked) {
       m_selectedPrefab = prefab.name;
       m_currentTool = EditorTool::Place;
       m_objectTypeToPlace = prefab.type;
@@ -3071,18 +3260,33 @@ void LevelEditor::renderPrefabPalette() {
       ImGui::BeginTooltip();
       ImGui::Text("Name: %s", prefab.name.c_str());
       ImGui::Text("Category: %s", prefab.category.c_str());
+      ImGui::Text("Texture: %s", prefab.iconPath.c_str());
       ImGui::Text("Click to select, then click in scene to place");
       ImGui::EndTooltip();
     }
 
+    // Drag Source
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
       ImGui::SetDragDropPayload("PREFAB_NAME", prefab.name.c_str(),
                                 prefab.name.length() + 1);
+
+      // Drag preview
+      if (texID) {
+        ImGui::Image(texID, ImVec2(32, 32));
+      }
+      ImGui::SameLine();
       ImGui::Text("Drag: %s", prefab.displayName.c_str());
+
       ImGui::EndDragDropSource();
     }
 
     ImGui::PopID();
+
+    // Grid layout logic
+    float lastButtonX2 = ImGui::GetItemRectMax().x;
+    float nextButtonX2 = lastButtonX2 + buttonSpacing + buttonSize;
+    if (i + 1 < m_prefabPalette.size() && nextButtonX2 < windowVisibleX2)
+      ImGui::SameLine();
   }
 
   ImGui::Separator();
@@ -3155,6 +3359,31 @@ void LevelEditor::renderSceneView() {
       vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
 
       createObjectFromPrefab(prefabName, finalPos);
+    }
+
+    if (const ImGuiPayload *payload =
+            ImGui::AcceptDragDropPayload("TEXTURE_ID")) {
+      const char *textureName = (const char *)payload->Data;
+      ImVec2 mouseImGui = ImGui::GetMousePos();
+      vec2 mouseScreen(mouseImGui.x, mouseImGui.y);
+      vec2 mouseWorld = screenToWorld(mouseScreen);
+      vec2 snappedWorld = snapToGrid(mouseWorld);
+      float halfGrid = 0.5f * m_gridSize;
+      vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
+
+      // Create a generic object
+      auto newObj = std::make_unique<Gameplay::GameObject>(
+          Gameplay::GameObjectType::Wall, "New Object");
+      newObj->setPosition(finalPos);
+      newObj->setSize(vec2(m_gridSize, m_gridSize));
+      newObj->setTextureId(textureName);
+
+      // Add SpriteRenderer
+      auto *sr = newObj->addComponent<Gameplay::SpriteRendererComponent>();
+      sr->setTexture(textureName);
+
+      m_currentScene->addObject(std::move(newObj));
+      markLevelDirty();
     }
     ImGui::EndDragDropTarget();
   }
@@ -3233,6 +3462,30 @@ void LevelEditor::renderSceneViewDropZone() {
         float halfGrid = 0.5f * m_gridSize;
         vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
         createObjectFromPrefab(prefabName, finalPos);
+      }
+
+      if (const ImGuiPayload *payload =
+              ImGui::AcceptDragDropPayload("TEXTURE_ID")) {
+        const char *textureName = (const char *)payload->Data;
+        ImVec2 mouseImGui = ImGui::GetMousePos();
+        vec2 mouseScreen(mouseImGui.x, mouseImGui.y);
+        vec2 mouseWorld = screenToWorld(mouseScreen);
+        vec2 snappedWorld = snapToGrid(mouseWorld);
+        float halfGrid = 0.5f * m_gridSize;
+        vec2 finalPos = snappedWorld + vec2(halfGrid, halfGrid);
+
+        // Create a generic object
+        auto newObj = std::make_unique<Gameplay::GameObject>(
+            Gameplay::GameObjectType::Wall, "New Object");
+        newObj->setPosition(finalPos);
+        newObj->setSize(vec2(m_gridSize, m_gridSize));
+        newObj->setTextureId(textureName);
+
+        auto *sr = newObj->addComponent<Gameplay::SpriteRendererComponent>();
+        sr->setTexture(textureName);
+
+        m_currentScene->addObject(std::move(newObj));
+        markLevelDirty();
       }
       ImGui::EndDragDropTarget();
     }

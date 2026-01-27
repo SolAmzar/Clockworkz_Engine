@@ -34,7 +34,6 @@ reserved.
 #include <cmath>
 #include <vector>
 
-
 namespace Graphics {
 // Call Stack: engine run -> engine init -> rendering manager init
 bool RenderingManager::init() {
@@ -130,6 +129,17 @@ void RenderingManager::drawRect(float x, float y, float w, float h, float r,
   drawLine(right, bottom, right, top, r, g, b);   // right
   drawLine(right, top, left, top, r, g, b);       // top
   drawLine(left, top, left, bottom, r, g, b);     // left
+}
+
+void RenderingManager::drawFilledRect(float x, float y, float w, float h,
+                                      float r, float g, float b) {
+  // Use Renderer2D to draw a filled quad (using fallback white texture)
+  // x,y is center, w,h is size
+  m_renderer2D.submitQuad(glm::vec2(x, y), glm::vec2(w, h),
+                          0,                              // texture 0 = white
+                          glm::vec4(r, g, b, 1.0f), 0.0f, // rotation
+                          glm::vec4(0, 0, 1, 1),          // uv
+                          Graphics::Anchor::Center);
 }
 
 void RenderingManager::drawCircle(float x, float y, float radius, float r,

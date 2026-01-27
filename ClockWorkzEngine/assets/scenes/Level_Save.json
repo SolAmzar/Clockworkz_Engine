@@ -1,0 +1,111 @@
+{
+    "objects": [
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "width": 100.0
+                },
+                "playerController": {
+                    "sprintMultiplier": 2.0,
+                    "walkMultiplier": 1.0
+                },
+                "spriteAnimator": {
+                    "filename": "player.json"
+                },
+                "spriteRenderer": {
+                    "textureId": "player_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        0.125,
+                        0.125
+                    ]
+                },
+                "torch": {
+                    "active": true,
+                    "angle": 60.0,
+                    "color": {
+                        "b": 0.6000000238418579,
+                        "g": 0.8999999761581421,
+                        "r": 1.0
+                    },
+                    "intensity": 1.0,
+                    "offset": {
+                        "x": 35.0,
+                        "y": -20.0
+                    },
+                    "radius": 300.0
+                },
+                "transform": {
+                    "position": {
+                        "x": -97.3916244506836,
+                        "y": -31.833097457885742
+                    },
+                    "rotation": 2.371802806854248,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "velocity": {
+                    "moveSpeed": 8.0,
+                    "x": 0.0,
+                    "y": 0.0
+                }
+            },
+            "name": "Entity_1"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "textureId": "wall_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "position": {
+                        "x": 100.0,
+                        "y": 137.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_2"
+        }
+    ]
+}

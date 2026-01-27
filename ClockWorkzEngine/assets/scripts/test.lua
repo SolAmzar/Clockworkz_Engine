@@ -1,0 +1,1 @@
+print("Hello from Lua! The engine is working.")

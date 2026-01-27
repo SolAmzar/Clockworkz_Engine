@@ -1,3 +1,15 @@
+/*!
+\file           SceneSerializer.hpp
+\project        Lights Out
+\author(s)      [Lebon], 90%, [Amzar] 10%
+\brief          Loads and saves entire scenes to/from JSON files.
+
+				Takes an ECS World and serializes all entities with their components
+
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
+
 #include "Runtime/SceneSerializer.hpp"
 #include "Components/AudioSource.hpp"
 #include "Components/Collider.hpp"
@@ -10,6 +22,7 @@
 #include "Components/StateMachine.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp"
 
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -136,6 +149,38 @@ void SceneSerializer::Serialize(ECS::World &world,
           {"radius", torch->radius},
           {"angle", torch->angle},
           {"intensity", torch->intensity}};
+    }
+
+    // ParticleEmitter
+    if (auto *pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+      auto &sys = pe->system();
+      obj["components"]["particleEmitter"] = {
+          {"active", pe->active()},
+          {"rate", sys.rate},
+          {"lifeMin", sys.lifeMin},
+          {"lifeMax", sys.lifeMax},
+          {"speedMin", sys.speedMin},
+          {"speedMax", sys.speedMax},
+          {"sizeStart", sys.sizeStart},
+          {"sizeEnd", sys.sizeEnd},
+          {"colorStart",
+           {{"r", sys.colorStart.r},
+            {"g", sys.colorStart.g},
+            {"b", sys.colorStart.b},
+            {"a", sys.colorStart.a}}},
+          {"colorEnd",
+           {{"r", sys.colorEnd.r},
+            {"g", sys.colorEnd.g},
+            {"b", sys.colorEnd.b},
+            {"a", sys.colorEnd.a}}},
+          {"spreadDeg", sys.spreadDeg},
+          {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+          {"acceleration",
+           {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+          {"looping", sys.looping},
+          {"worldSpace", sys.worldSpace},
+          {"localOffset",
+           {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
     }
 
     root["objects"].push_back(obj);
@@ -335,6 +380,50 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         torch.intensity = tc.value("intensity", 1.0f);
 
         world.addComponent(entity, torch);
+      }
+
+      // ParticleEmitter
+      if (components.contains("particleEmitter")) {
+        auto &pec = components["particleEmitter"];
+        Components::ParticleEmitter pe;
+        pe.setActive(pec.value("active", true));
+        pe.localOffset.x = pec["localOffset"].value("x", 0.0f);
+        pe.localOffset.y = pec["localOffset"].value("y", 0.0f);
+
+        auto &sys = pe.system();
+        sys.rate = pec.value("rate", 200.f);
+        sys.lifeMin = pec.value("lifeMin", 0.5f);
+        sys.lifeMax = pec.value("lifeMax", 1.2f);
+        sys.speedMin = pec.value("speedMin", 20.f);
+        sys.speedMax = pec.value("speedMax", 120.f);
+        sys.sizeStart = pec.value("sizeStart", 2.25f);
+        sys.sizeEnd = pec.value("sizeEnd", 0.f);
+        sys.spreadDeg = pec.value("spreadDeg", 45.f);
+        sys.looping = pec.value("looping", true);
+        sys.worldSpace = pec.value("worldSpace", true);
+
+        if (pec.contains("colorStart")) {
+          sys.colorStart.r = pec["colorStart"].value("r", 1.f);
+          sys.colorStart.g = pec["colorStart"].value("g", 1.f);
+          sys.colorStart.b = pec["colorStart"].value("b", 1.f);
+          sys.colorStart.a = pec["colorStart"].value("a", 1.f);
+        }
+        if (pec.contains("colorEnd")) {
+          sys.colorEnd.r = pec["colorEnd"].value("r", 1.f);
+          sys.colorEnd.g = pec["colorEnd"].value("g", 1.f);
+          sys.colorEnd.b = pec["colorEnd"].value("b", 1.f);
+          sys.colorEnd.a = pec["colorEnd"].value("a", 0.f);
+        }
+        if (pec.contains("direction")) {
+          sys.dir.x = pec["direction"].value("x", 1.f);
+          sys.dir.y = pec["direction"].value("y", 0.f);
+        }
+        if (pec.contains("acceleration")) {
+          sys.acceleration.x = pec["acceleration"].value("x", 0.f);
+          sys.acceleration.y = pec["acceleration"].value("y", -200.f);
+        }
+
+        world.addComponent(entity, pe);
       }
     }
   }

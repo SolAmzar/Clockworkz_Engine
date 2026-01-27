@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # --- Import dependencies ---
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(ImportDependencies)
+include(ImportLua)
 importDependencies()  # fetch/build GLFW, GLEW, GLM, FreeType, ImGui
 
 
@@ -35,6 +36,8 @@ if(ENGINE_SOURCES STREQUAL "" AND ENGINE_HEADERS STREQUAL "")
 endif()
 
 add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphics/ImGuiManager.cpp" "src/Platform/LevelEditor.cpp" "src/Platform/LevelEditorState.cpp")
+
+import_lua(${PROJECT_NAME})
 
 if (MSVC)
     # Strong warnings
