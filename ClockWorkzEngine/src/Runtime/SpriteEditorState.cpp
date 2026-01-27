@@ -13,7 +13,6 @@
 #include <fstream>
 #include <iostream>
 
-
 // Engine Core
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
@@ -27,14 +26,12 @@
 #include "Graphics/Shader.hpp"
 #include "IMGUI/imgui.h"
 
-
 // Components & Assets
 #include "Assets/ResourceManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
-
 
 // Runtime Includes
 #include "Runtime/Scene.hpp"
@@ -76,6 +73,7 @@ void SpriteEditorState::onEnter() {
       // Try to find an entity that has SpriteRenderer
       world.each<Components::SpriteRenderer>(
           [&](ECS::Entity e, Components::SpriteRenderer &sr) {
+            (void)sr;
             if (!m_spriteEntity.isValid())
               m_spriteEntity = e;
           });
@@ -134,6 +132,9 @@ void SpriteEditorState::update(double dt) {
 }
 
 void SpriteEditorState::render(Core::Time *timer) {
+    
+  (void)timer;
+
   if (!m_loaded || !m_renderer)
     return;
 
@@ -183,6 +184,9 @@ void SpriteEditorState::render(Core::Time *timer) {
 }
 
 void SpriteEditorState::renderImGui(Core::Time *timer) {
+
+  (void)timer;
+
   if (!m_debug || !m_spriteEntity.isValid())
     return;
 

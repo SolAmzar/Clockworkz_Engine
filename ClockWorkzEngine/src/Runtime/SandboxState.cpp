@@ -16,6 +16,7 @@ reserved.
 #include "Platform/WindowManager.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -85,6 +86,7 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+
   // Load prefabs
   loadAvailablePrefabs();
   refreshTilemapList();
@@ -119,26 +121,83 @@ void SandboxState::update(double dt) {
   }
 
   // Update Scene Logic
+  // Update Scene Logic
   if (!m_isPaused) {
     m_scene.Update(dt, m_input);
+  }
 
-    // Camera Logic
-    auto &camera = Core::Engine::Get().camera();
+  // Camera Logic
+  auto &camera = Core::Engine::Get().camera();
 
-    if (m_cameraFollowPlayer) {
-      // Camera Follow Logic
-      auto &world = m_scene.GetWorld();
-      world.each<Components::PlayerController, Components::Transform>(
-          [&](ECS::Entity, Components::PlayerController &,
-              Components::Transform &t) {
-            // Simple hard lock
-            camera.setPosition(glm::vec2(t.position.x, t.position.y));
-            m_editorCameraPos =
-                glm::vec2(t.position.x, t.position.y); // Sync pos
-          });
-    } else {
-      // Free Camera Logic
-      float camSpeed = 500.0f * static_cast<float>(dt);
+  // Only follow player if we are Playing AND Follow is enabled
+  if (!m_isPaused && m_cameraFollowPlayer) {
+    // Camera Follow Logic
+    auto &world = m_scene.GetWorld();
+    world.each<Components::PlayerController, Components::Transform>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Transform &t) {
+          // Simple hard lock
+          camera.setPosition(glm::vec2(t.position.x, t.position.y));
+          m_editorCameraPos = glm::vec2(t.position.x, t.position.y); // Sync pos
+        });
+  } else {
+    // Free Camera Logic (Editor Mode OR Playing with Free Cam)
+
+    // 1. Zoom Logic (Mouse Wheel)
+    float zoomSpeed = 0.1f;
+    float scroll = static_cast<float>(Platform::InputManager::GetScrollY());
+    if (scroll != 0.0f) {
+      float currentZoom = camera.zoom();
+      float newZoom = currentZoom + (scroll * zoomSpeed * currentZoom);
+      // Clamp zoom to reasonable values
+      if (newZoom < 0.1f)
+        newZoom = 0.1f;
+      if (newZoom > 5.0f)
+        newZoom = 5.0f;
+      camera.setZoom(newZoom);
+    }
+
+    // 2. Pan Logic (MMB or Alt+LMB)
+    static double lastMouseX = 0.0, lastMouseY = 0.0;
+    double currMouseX, currMouseY;
+    m_input.getMousePosition(currMouseX, currMouseY);
+
+    if (m_input.isMouseDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
+      // Calculate Delta
+      float dx = static_cast<float>(currMouseX - lastMouseX);
+      float dy = static_cast<float>(currMouseY - lastMouseY);
+
+      // Apply to camera position (inverted for drag feeling)
+      // Scale by zoom to keep panning constant relative to view
+      float panScale = 1.0f / camera.zoom();
+
+      m_editorCameraPos.x -= dx * panScale;
+      m_editorCameraPos.y += dy * panScale;
+    }
+
+    lastMouseX = currMouseX;
+    lastMouseY = currMouseY;
+
+    // Focus on Selected Entity (F)
+    if (m_input.wasKeyTriggered(GLFW_KEY_F)) {
+      if (m_selectedEntityIdx >= 0 &&
+          m_selectedEntityIdx < static_cast<int>(m_testEntities.size())) {
+        auto entity = m_testEntities[m_selectedEntityIdx];
+        auto *transform =
+            m_scene.GetWorld().getComponent<Components::Transform>(entity);
+        if (transform) {
+          m_editorCameraPos =
+              glm::vec2(transform->position.x, transform->position.y);
+          camera.setPosition(m_editorCameraPos);
+          camera.setZoom(1.0f);
+        }
+      }
+    }
+
+    // WASD Logic (Keep as backup or modifier)
+    // User requested Ctrl + WASD to avoid conflict with Player controls
+    if (m_input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+      float camSpeed = 500.0f / camera.zoom() * static_cast<float>(dt);
       if (m_input.isKeyDown(GLFW_KEY_W))
         m_editorCameraPos.y += camSpeed;
       if (m_input.isKeyDown(GLFW_KEY_S))
@@ -183,6 +242,55 @@ void SandboxState::render(Core::Time *timer) {
   renderer.beginDebugPass(camera.viewProj());
   renderGrid();
   renderer.endDebugPass();
+
+  // Debug Collider Pass
+  if (m_showColliders)
+    renderDebugColliders(renderer);
+
+  // Render HUD (Battery)
+  if (m_showHUD && m_viewportSize.x > 0 && m_viewportSize.y > 0) {
+    // Determine Ortho Projection for UI (0,0 bottom-left, to matches GL
+    // default)
+    glm::mat4 uiProj =
+        glm::ortho(0.0f, m_viewportSize.x, 0.0f, m_viewportSize.y, -1.0f, 1.0f);
+
+    // Begin UI Pass (reuses Scene Pass setup but with UI projection)
+    renderer.beginScenePass(uiProj);
+
+    auto &world = m_scene.GetWorld();
+    world.each<Components::PlayerController, Components::Battery>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Battery &batt) {
+          float pct = batt.charge / batt.maxCharge;
+
+          std::string texId = "battery_empty";
+          if (pct > 0.875f)
+            texId = "battery_full";
+          else if (pct > 0.625f)
+            texId = "battery_3/4";
+          else if (pct > 0.375f)
+            texId = "battery_2/4";
+          else if (pct > 0.125f)
+            texId = "battery_1/4";
+
+          glm::vec2 uiSize(128.0f, 64.0f);
+          float margin = 20.0f;
+          // Top-Right positioning
+          // x = ViewportWidth - Margin - Width
+          // y = ViewportHeight - Margin - Height (Top anchor for BottomLeft
+          // origin)
+          glm::vec2 uiPos(m_viewportSize.x - margin - uiSize.x,
+                          m_viewportSize.y - margin - uiSize.y);
+
+          auto tex = Assets::TextureManager::Get(texId);
+          if (tex) {
+            renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
+                                glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
+          }
+        });
+
+    renderer.endScenePass();
+  }
 
   m_framebuffer.unbind();
 }
@@ -382,13 +490,71 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       world.addComponent(entity, battery);
     }
 
-    // Add more component deserialization as needed...
-  }
+    // Velocity
+    if (components.contains("velocity")) {
+      Components::Velocity velocity;
+      velocity.velocity.x = components["velocity"].value("x", 0.0f);
+      velocity.velocity.y = components["velocity"].value("y", 0.0f);
+      velocity.moveSpeed = components["velocity"].value("moveSpeed", 100.0f);
+      world.addComponent(entity, velocity);
+    }
 
-  // Track the entity
-  m_testEntities.push_back(entity);
-  std::cout << "[Prefab] Spawned: " << prefabName << " at (" << position.x
-            << ", " << position.y << ")\n";
+    // PlayerController
+    if (components.contains("playerController")) {
+      Components::PlayerController pc;
+      pc.walkMultiplier =
+          components["playerController"].value("walkMultiplier", 1.0f);
+      pc.sprintMultiplier =
+          components["playerController"].value("sprintMultiplier", 2.0f);
+      world.addComponent(entity, pc);
+    }
+
+    // TorchComponent
+    if (components.contains("torch")) {
+      Components::TorchComponent torch;
+      auto &tc = components["torch"];
+      torch.active = tc.value("active", true);
+      if (tc.contains("offset")) {
+        torch.offset.x = tc["offset"].value("x", 35.0f);
+        torch.offset.y = tc["offset"].value("y", -20.0f);
+      }
+      if (tc.contains("color")) {
+        torch.color.r = tc["color"].value("r", 1.0f);
+        torch.color.g = tc["color"].value("g", 0.9f);
+        torch.color.b = tc["color"].value("b", 0.6f);
+      }
+      torch.radius = tc.value("radius", 300.0f);
+      torch.angle = tc.value("angle", 60.0f);
+      torch.intensity = tc.value("intensity", 1.0f);
+      world.addComponent(entity, torch);
+    }
+
+    // SpriteAnimator
+    if (components.contains("spriteAnimator")) {
+      auto &sac = components["spriteAnimator"];
+      std::string filename = sac.value("filename", "");
+      if (!filename.empty()) {
+        Components::SpriteAnimator anim;
+        // Basic path assumption: assets/animations/ + filename
+        anim.loadFromPath("assets/animations/" + filename);
+        anim.filename = filename;
+        world.addComponent(entity, anim);
+      }
+    }
+
+    // StateMachine
+    if (components.contains("stateMachine")) {
+      Components::StateMachine sm;
+      sm.currentState =
+          components["stateMachine"].value("currentState", "idle");
+      world.addComponent(entity, sm);
+    }
+
+    // Track the entity
+    m_testEntities.push_back(entity);
+    std::cout << "[Prefab] Spawned: " << prefabName << " at (" << position.x
+              << ", " << position.y << ")\n";
+  }
 }
 
 void SandboxState::deletePrefab(const std::string &prefabName) {
@@ -547,17 +713,131 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
 
         // Create simple light polygon (Fan)
         std::vector<glm::vec2> lightPoly;
-        int segments = 30;
+        int segments = 100; // Increased segments for smoother shadows
         float halfFov = glm::radians(torch.angle) * 0.5f;
         float startAngle = angle - halfFov;
-        float step = glm::radians(torch.angle) / segments;
+        float totalAngle = glm::radians(torch.angle);
+        float step = totalAngle / segments;
 
-        // Note: drawLightCone expects polygon points, not including origin (it
-        // adds origin itself)
-        for (int i = 0; i <= segments; ++i) {
-          float theta = startAngle + step * i;
-          lightPoly.emplace_back(originGLM.x + std::cos(theta) * torch.radius,
-                                 originGLM.y + std::sin(theta) * torch.radius);
+        if (!m_enableShadows) {
+          // SIMPLE FAN (No Shadows)
+          for (int i = 0; i <= segments; ++i) {
+            float theta = startAngle + step * i;
+            lightPoly.emplace_back(originGLM.x + std::cos(theta) * torch.radius,
+                                   originGLM.y +
+                                       std::sin(theta) * torch.radius);
+          }
+        } else {
+          // RAYCAST SHADOWS
+          // Local Raycast Helper
+          auto Raycast = [&](glm::vec2 start, glm::vec2 dir,
+                             float maxDist) -> glm::vec2 {
+            float closestDist = maxDist;
+            glm::vec2 closestPoint = start + dir * maxDist;
+
+            // Helper to rotate vector by angle (radians)
+            auto RotateVec = [](glm::vec2 v, float angle) -> glm::vec2 {
+              float s = std::sin(angle);
+              float c = std::cos(angle);
+              return glm::vec2(v.x * c - v.y * s, v.x * s + v.y * c);
+            };
+
+            // Iterate all potential occluders
+            world.each<Components::Transform, Components::Collider>(
+                [&](ECS::Entity, Components::Transform &obsTrans,
+                    Components::Collider &obsCol) {
+                  if (!obsCol.isSolid || !obsCol.blocksLight)
+                    return;
+
+                  // 1. Calculate World Center with Rotated Offset
+                  glm::vec2 offsetRotated =
+                      RotateVec(glm::vec2(obsCol.offset.x, obsCol.offset.y),
+                                obsTrans.rotation);
+                  glm::vec2 obsCenter =
+                      glm::vec2(obsTrans.position.x, obsTrans.position.y) +
+                      offsetRotated;
+
+                  if (obsCol.shape == Components::Collider::Shape::Box) {
+                    // --- OBB Logic (Oriented Bounding Box) ---
+                    // Transform Ray into Box's Local Space
+                    // Local Ray Origin = Rotate(WorldRayStart - BoxCenter,
+                    // -Angle) Local Ray Dir    = Rotate(WorldRayDir, -Angle)
+
+                    glm::vec2 localStart =
+                        RotateVec(start - obsCenter, -obsTrans.rotation);
+                    glm::vec2 localDir = RotateVec(dir, -obsTrans.rotation);
+
+                    // AABB in Local Space is centered at (0,0) with
+                    // half-extents
+                    // Apply Transform Scale to Box Size
+                    glm::vec2 scaledSize =
+                        glm::vec2(obsCol.size.x * obsTrans.scale.x,
+                                  obsCol.size.y * obsTrans.scale.y);
+                    glm::vec2 halfSize = scaledSize * 0.5f;
+
+                    glm::vec2 min = -halfSize;
+                    glm::vec2 max = halfSize;
+
+                    // Standard Slab Method in Local Space
+                    glm::vec2 invDir;
+                    invDir.x = (std::abs(localDir.x) < 1e-6f)
+                                   ? 1e6f
+                                   : 1.0f / localDir.x;
+                    invDir.y = (std::abs(localDir.y) < 1e-6f)
+                                   ? 1e6f
+                                   : 1.0f / localDir.y;
+
+                    glm::vec2 t1 = (min - localStart) * invDir;
+                    glm::vec2 t2 = (max - localStart) * invDir;
+
+                    float tmin =
+                        std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y));
+                    float tmax =
+                        std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y));
+
+                    // If hit, tmin is the distance along the ray.
+                    // Since rotation preserves distance, tmin is valid in
+                    // World Space too.
+                    if (tmax >= std::max(0.0f, tmin) && tmin < closestDist) {
+                      closestDist = tmin;
+                      closestPoint = start + dir * tmin;
+                    }
+                  } else if (obsCol.shape ==
+                             Components::Collider::Shape::Circle) {
+                    // --- Circle Logic ---
+                    // Circle is rotation invariant, but we must use the
+                    // correct Center (offset logic above) Apply Transform
+                    // Scale to Radius
+                    float scaledRadius =
+                        obsCol.radius *
+                        std::max(obsTrans.scale.x, obsTrans.scale.y);
+
+                    float r = scaledRadius;
+                    glm::vec2 oc = start - obsCenter;
+                    float b = 2.0f * glm::dot(oc, dir);
+                    float c = glm::dot(oc, oc) - r * r;
+                    float discriminant = b * b - 4.0f * c;
+
+                    if (discriminant >= 0.0f) {
+                      float sqrtD = std::sqrt(discriminant);
+                      // t1 is entry, t2 is exit
+                      float t1 = (-b - sqrtD) * 0.5f;
+
+                      if (t1 > 0.0f && t1 < closestDist) {
+                        closestDist = t1;
+                        closestPoint = start + dir * t1;
+                      }
+                    }
+                  }
+                });
+            return closestPoint;
+          };
+
+          for (int i = 0; i <= segments; ++i) {
+            float theta = startAngle + step * i;
+            glm::vec2 rayDir(std::cos(theta), std::sin(theta));
+            lightPoly.push_back(Raycast(originGLM, rayDir, torch.radius));
+          }
         }
 
         // Render Light Pass
@@ -567,6 +847,50 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
         renderer.drawLightCone(originGLM, lightPoly, torch.color);
         renderer.endLightPass();
       });
+}
+
+void SandboxState::renderDebugColliders(Graphics::RenderingManager &renderer) {
+  auto &world = m_scene.GetWorld();
+  renderer.beginDebugPass(Core::Engine::Get().camera().viewProj());
+
+  world.each<Components::Transform, Components::Collider>(
+      [&](ECS::Entity, Components::Transform &t, Components::Collider &c) {
+        // Rotate Offset
+        auto RotateVec = [](glm::vec2 v, float angle) -> glm::vec2 {
+          float s = std::sin(angle);
+          float c_ang = std::cos(angle);
+          return glm::vec2(v.x * c_ang - v.y * s, v.x * s + v.y * c_ang);
+        };
+
+        glm::vec2 offsetRot =
+            RotateVec(glm::vec2(c.offset.x, c.offset.y), t.rotation);
+        glm::vec2 pos(t.position.x + offsetRot.x, t.position.y + offsetRot.y);
+
+        glm::vec3 color = c.isTrigger ? glm::vec3(1.0f, 1.0f, 0.0f)  // Yellow
+                                      : glm::vec3(0.0f, 1.0f, 0.0f); // Green
+
+        if (c.shape == Components::Collider::Shape::Box) {
+          // Draw Rotated Rect using Lines
+          glm::vec2 half = glm::vec2(c.size.x, c.size.y) * 0.5f;
+          // Corners in local space
+          glm::vec2 p1 =
+              RotateVec(glm::vec2(-half.x, -half.y), t.rotation) + pos;
+          glm::vec2 p2 =
+              RotateVec(glm::vec2(half.x, -half.y), t.rotation) + pos;
+          glm::vec2 p3 = RotateVec(glm::vec2(half.x, half.y), t.rotation) + pos;
+          glm::vec2 p4 =
+              RotateVec(glm::vec2(-half.x, half.y), t.rotation) + pos;
+
+          renderer.drawLine(p1.x, p1.y, p2.x, p2.y, color.r, color.g, color.b);
+          renderer.drawLine(p2.x, p2.y, p3.x, p3.y, color.r, color.g, color.b);
+          renderer.drawLine(p3.x, p3.y, p4.x, p4.y, color.r, color.g, color.b);
+          renderer.drawLine(p4.x, p4.y, p1.x, p1.y, color.r, color.g, color.b);
+        } else {
+          renderer.drawCircle(pos.x, pos.y, c.radius, color.r, color.g,
+                              color.b);
+        }
+      });
+  renderer.endDebugPass();
 }
 
 void SandboxState::renderImGui(Core::Time *timer) {
@@ -599,7 +923,8 @@ void SandboxState::renderImGui(Core::Time *timer) {
     ImGui::DockBuilderSplitNode(dock_right_id, ImGuiDir_Right, 0.25f,
                                 &dock_actual_right_id, &dock_center_col_id);
 
-    // 2.5 Split the Right Column (Components) into Top and Bottom (for Assets)
+    // 2.5 Split the Right Column (Components) into Top and Bottom (for
+    // Assets)
     ImGui::DockBuilderSplitNode(dock_actual_right_id, ImGuiDir_Down, 0.50f,
                                 &dock_right_bottom_id, &dock_right_top_id);
 
@@ -686,14 +1011,47 @@ void SandboxState::renderEntityWindow() {
   ImGui::InputText("Filename", currentLevelName, 256);
 
   if (ImGui::Button("Save Level")) {
+    // 1. Save to current runtime directory (Build folder)
     std::string path = "assets/scenes/" + std::string(currentLevelName);
     SceneSerializer::Serialize(world, path);
+
+    // 2. Save to Project Source directory (Persistence)
+    // Attempt to save to source folder assuming standard build layout
+    // (bin/Debug -> root)
+    // 2. Save to Project Source directory (Persistence)
+    // We try multiple relative paths because the CWD can vary (e.g. 'build'
+    // vs 'build/bin/Debug')
+    std::string candidatePaths[] = {
+        "../assets/scenes/" +
+            std::string(currentLevelName), // If running from 'build'
+        "../../../assets/scenes/" +
+            std::string(currentLevelName) // If running from 'build/bin/Debug'
+    };
+
+    bool foundSource = false;
+    for (const auto &relPath : candidatePaths) {
+      std::filesystem::path srcDir =
+          std::filesystem::path(relPath).parent_path();
+      if (std::filesystem::exists(srcDir)) {
+        SceneSerializer::Serialize(world, relPath);
+        foundSource = true;
+        break;
+      }
+    }
+
+    if (!foundSource) {
+      std::cout << "[Sandbox] Error: Could not find source 'assets/scenes' via "
+                   "relative paths.\n";
+      std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
+    }
+
     refreshTilemapList(); // Refresh list after saving
     ImGui::OpenPopup("Saved");
   }
 
   if (ImGui::BeginPopup("Saved")) {
     ImGui::Text("Level Saved Successfully!");
+    ImGui::TextDisabled("(To Build & Source)");
     if (ImGui::Button("Close"))
       ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
@@ -745,6 +1103,12 @@ void SandboxState::renderEntityWindow() {
     }
   }
 
+  ImGui::Separator();
+  ImGui::Text("View Options");
+  // Debug Toggle
+  ImGui::Checkbox("Show Colliders", &m_showColliders);
+  ImGui::Checkbox("Show HUD", &m_showHUD);
+
   // AI Testing Buttons
   ImGui::Separator();
   if (ImGui::Button("Spawn Player (Blue)")) {
@@ -762,13 +1126,13 @@ void SandboxState::renderEntityWindow() {
     // Actually Scene::Clear might not clear m_testEntities in SandboxState.
     // We generated m_testEntities locally.
     // But deserialization probably adds to world directly and m_testEntities
-    // doesn't track them. This local tracking is legacy. Let's iterate world to
-    // destroy? Use a quick loop: This is just a debug tool. For now, assume
-    // Scene::Clear works or just skip. But since I updated Scene.cpp to have
-    // empty Clear(), I should implement it properly there or loop here. Let's
-    // rely on world.destroyEntity loop I wrote before, but adapted. Or better:
-    // Scene should implement `Clear` properly. I'll leave the button doing
-    // nothing useful for now or rely on reload.
+    // doesn't track them. This local tracking is legacy. Let's iterate world
+    // to destroy? Use a quick loop: This is just a debug tool. For now,
+    // assume Scene::Clear works or just skip. But since I updated Scene.cpp
+    // to have empty Clear(), I should implement it properly there or loop
+    // here. Let's rely on world.destroyEntity loop I wrote before, but
+    // adapted. Or better: Scene should implement `Clear` properly. I'll leave
+    // the button doing nothing useful for now or rely on reload.
     m_testEntities.clear();
   }
 
@@ -989,14 +1353,40 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
-  // Collider
   if (ImGui::CollapsingHeader("Collider")) {
     auto *c = world.getComponent<Components::Collider>(entity);
     if (c) {
-      ImGui::InputFloat2("Size", &c->size.x);
+      // Shape Selector
+      const char *shapeNames[] = {"Box", "Circle"};
+      int currentShape = (int)c->shape;
+      if (ImGui::Combo("Shape", &currentShape, shapeNames, 2)) {
+        c->shape = (Components::Collider::Shape)currentShape;
+      }
+
+      if (c->shape == Components::Collider::Shape::Box) {
+        ImGui::InputFloat2("Size", &c->size.x);
+      } else {
+        ImGui::InputFloat("Radius", &c->radius);
+      }
+
       ImGui::InputFloat2("Offset", &c->offset.x);
       ImGui::Checkbox("Is Solid", &c->isSolid);
       ImGui::Checkbox("Trigger", &c->isTrigger);
+      ImGui::Checkbox("Blocks Light", &c->blocksLight);
+      ImGui::Checkbox("Moveable", &c->moveable);
+
+      if (ImGui::Button("Fit to Sprite")) {
+        auto *spr = world.getComponent<Components::SpriteRenderer>(entity);
+        if (spr) {
+          if (c->shape == Components::Collider::Shape::Box) {
+            c->size = spr->size;
+          } else {
+            // Radius is half the max dimension
+            c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+          }
+        }
+      }
+
       if (ImGui::Button("Remove Collider"))
         world.removeComponent<Components::Collider>(entity);
     } else {
@@ -1347,7 +1737,25 @@ void SandboxState::spawnPlayer() {
 
   // Logic
   world.addComponent(entity, Components::PlayerController{});
+  world.addComponent(entity,
+                     Components::Battery{100.f, 100.f}); // Added Battery
   world.addComponent(entity, Components::Health{100.f, 100.f});
+
+  // Add Torch
+  Components::TorchComponent torch;
+  torch.active = false; // Start off
+  torch.offset = {35.f, -20.f};
+  torch.radius = 400.f;
+  torch.intensity = 1.0f;
+  torch.color = {1.0f, 0.9f, 0.7f}; // Warm light
+  world.addComponent(entity, torch);
+
+  // Add Animator
+  Components::SpriteAnimator anim;
+  anim.loadFromPath("assets/animations/player.json");
+  anim.filename = "player.json";
+  anim.play("idle");
+  world.addComponent(entity, anim);
 
   m_testEntities.push_back(entity);
   std::cout << "Spawned Player Entity: " << entity.id << "\n";
@@ -1399,7 +1807,8 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   // Create new entity
   auto newEntity = world.createEntity();
 
-  // Helper lambda for copying components cleanly without C++20 template lambdas
+  // Helper lambda for copying components cleanly without C++20 template
+  // lambdas
   auto copyXYZ = [&](auto typeIdentity) {
     using T = typename decltype(typeIdentity)::type;
     T *comp = world.getComponent<T>(sourceEntity);
@@ -1787,8 +2196,8 @@ void SandboxState::renderSceneWindow() {
   // Handle Object Picking (Selection)
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
       m_gizmoActiveAxis == -1) {
-    // Create a dummy gizmo check context or just assume no gizmo if axis is -1
-    // Convert mouse to world space
+    // Create a dummy gizmo check context or just assume no gizmo if axis is
+    // -1 Convert mouse to world space
     ImVec2 mousePos = ImGui::GetMousePos();
     vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
 
@@ -1800,8 +2209,8 @@ void SandboxState::renderSceneWindow() {
     vec2 centeredMouse = {
         localMouse.x - m_viewportSize.x * 0.5f,
         -(localMouse.y -
-          m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y is
-                                   // down (pixel space)
+          m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y
+                                   // is down (pixel space)
     };
 
     vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
@@ -2007,10 +2416,10 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       // Convert to world units: divide by zoom
       float worldMove = proj / zoom;
 
-      // World axis matches screen axis conceptually but Y component is flipped
-      // for storage? No, trans->rotation tells us the world axis direction.
-      // X-Axis world vector is (c, s).
-      // So we move worldMove * (c, s)
+      // World axis matches screen axis conceptually but Y component is
+      // flipped for storage? No, trans->rotation tells us the world axis
+      // direction. X-Axis world vector is (c, s). So we move worldMove * (c,
+      // s)
 
       vec2 worldDir = (m_gizmoActiveAxis == 0) ? vec2(c, s) : vec2(-s, c);
 

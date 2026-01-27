@@ -63,6 +63,9 @@ public:
   void renderImGui(Core::Time *timer) override;
 
 private:
+  // Debug Render
+  void renderDebugColliders(Graphics::RenderingManager &renderer);
+
   Platform::InputManager &m_input;
   GameStateManager &m_gsm;
 
@@ -78,6 +81,9 @@ private:
   bool m_showEntityWindow{true};
   bool m_showComponentWindow{true};
   bool m_showStatsWindow{true};
+  bool m_showColliders{false};
+  bool m_showHUD{true};
+  bool m_enableShadows{true};
   bool m_dockLayoutInitialized{false};
 
   // Entity spawning controls
@@ -111,7 +117,7 @@ private:
   // Editor Features
   bool m_showGrid{true};
   float m_gridSize{50.0f};
-  bool m_isPaused{false};
+  bool m_isPaused{true};
   bool m_showAssetBrowser{true};
   std::string m_selectedAsset;
   bool m_cameraFollowPlayer{true};

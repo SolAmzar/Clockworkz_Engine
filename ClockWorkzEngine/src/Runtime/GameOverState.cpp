@@ -21,7 +21,6 @@ reserved.
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-
 namespace Runtime {
 
 GameOverState::GameOverState(GameStateManager &gsm,
@@ -79,11 +78,13 @@ void GameOverState::update(double dt) {
 }
 
 void GameOverState::render(Core::Time *timer) {
+  (void)timer;
   // The PlayState underneath will still render the game world
   // We just overlay the game over UI in renderImGui
 }
 
 void GameOverState::renderImGui(Core::Time *timer) {
+  (void)timer;
   Core::Engine &engine = Core::Engine::Get();
   auto &window = engine.window();
 

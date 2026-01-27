@@ -15,6 +15,7 @@ reserved.
 
 #pragma once
 #include "ECS/World.hpp"
+#include <glm/vec2.hpp>
 #include <utility>
 #include <vector>
 
@@ -56,7 +57,19 @@ private:
   bool checkAABB(const Components::Transform &tA,
                  const Components::Collider &cA,
                  const Components::Transform &tB,
-                 const Components::Collider &cB);
+                 const Components::Collider &cB, glm::vec2 &penetration);
+
+  bool checkCircleCircle(const Components::Transform &tA,
+                         const Components::Collider &cA,
+                         const Components::Transform &tB,
+                         const Components::Collider &cB,
+                         glm::vec2 &penetration);
+
+  bool checkAABBCircle(const Components::Transform &tBox,
+                       const Components::Collider &cBox,
+                       const Components::Transform &tCirc,
+                       const Components::Collider &cCirc,
+                       glm::vec2 &penetration);
 };
 
 } // namespace Systems

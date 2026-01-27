@@ -1,18 +1,23 @@
-/*
- * @file LuaManager.h
- * @brief Lua scripting integration for ClockWorkz Engine
- * @author ClockWorkz Team
- */
+﻿/******************************************************************************/
+/*!
+\file           LuaManager.hpp
+\project        Lights Out
+\author(s)      [Syafiq]
+\brief          Create functions to run the lua scripts
 
+All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #pragma once
 
 #pragma warning(push, 0)
+
 // Disable Code Analysis warnings
 #pragma warning(disable : 26495) // type.6: variable uninitialized
 #pragma warning(disable : 26439) // f.6: noexcept
-#pragma warning(disable : 26496) // es.78: switch fallthrough (sometimes
-                                 // triggered in templated code)
+#pragma warning(disable : 26496) // es.78: switch fallthrough (sometimes triggered in templated code)
 #pragma warning(disable : 26488) // es
+
 #include <sol/sol.hpp>
 #pragma warning(pop)
 #include <memory>
@@ -26,37 +31,19 @@ public:
   LuaManager();
   ~LuaManager();
 
-  /*
-   * @brief Initialize the Lua state and register engine bindings
-   */
+  // Initialize the Lua state and register engine bindings
   void Initialize();
 
-  /**
-   * @brief Execute a Lua script file
-   * @param filepath Path to the .lua file
-   * @return true if execution succeeded, false otherwise
-   */
+  // Execute a Lua script file
   bool ExecuteScript(const std::string &filepath);
 
-  /**
-   * @brief Execute a Lua string directly
-   * @param script Lua code as a string
-   * @return true if execution succeeded, false otherwise
-   */
+  // Execute a Lua string directly
   bool ExecuteString(const std::string &script);
 
-  /**
-   * @brief Get the underlying Lua state for advanced operations
-   * @return Reference to the Sol2 state
-   */
+  // Get the underlying Lua state for advanced operations
   sol::state &GetState() { return m_LuaState; }
 
-  /**
-   * @brief Call a Lua function by name
-   * @tparam Args Variable template for function arguments
-   * @param functionName Name of the Lua function
-   * @param args Arguments to pass to the function
-   */
+  // Call a Lua function by name
   template <typename... Args>
   void CallFunction(const std::string &functionName, Args &&...args) {
     try {
@@ -71,36 +58,31 @@ public:
     }
   }
 
-  /**
-   * @brief Get a global Lua variable
-   * @tparam T Type to retrieve
-   * @param variableName Name of the global variable
-   * @return The value, or default-constructed T if not found
-   */
+  // Get a global Lua variable (template)
   template <typename T> T GetGlobal(const std::string &variableName) {
     return m_LuaState.get_or<T>(variableName, T{});
   }
 
-  /**
-   * @brief Set a global Lua variable
-   * @tparam T Type to set
-   * @param variableName Name of the global variable
-   * @param value Value to set
-   */
+  //Set a global Lua variable
   template <typename T>
   void SetGlobal(const std::string &variableName, T &&value) {
     m_LuaState[variableName] = std::forward<T>(value);
   }
 
-private:
-  /**
-   * @brief Register engine functions and types with Lua
-   */
+  // Create a sandboxed environment for script isolation
+  // Scripts executed in this environment can access globals 
+  // but cannot pollute the global namespace.
+  sol::environment CreateSandboxedEnvironment();
+
+  // Execute a script file in a sandboxed environment
+  sol::protected_function_result ExecuteScriptInEnvironment(const std::string& filepath, sol::environment& env);
+
+  private:
+
+  // Register engine functions and types with Lua       
   void RegisterEngineFunctions();
 
-  /**
-   * @brief Internal logging function
-   */
+  // Internal logging function
   void LogError(const std::string &message);
 
   sol::state m_LuaState;
