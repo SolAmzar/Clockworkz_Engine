@@ -26,8 +26,10 @@ reserved.
 #include "Assets/SoundManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Audio/SurfaceAudioSystem.hpp"
+#include "Components/Battery.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/LightExposure.hpp"
+#include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
@@ -1042,69 +1044,73 @@ void PlayState::render(Core::Time *timer) {
   m_scenes.render(*m_renderer);
   m_renderer->endScenePass();
 
-  // ==================== Torch Light Rendering & Enemy Interaction
-  // ====================
-  auto *scene = m_scenes.current();
-  if (!scene)
-    return;
+  // // ==================== Torch Light Rendering & Enemy Interaction
+  // // ====================
+  // auto *scene = m_scenes.current();
+  // if (!scene)
+  //   return;
 
-  auto *physics = scene->getLegacyPhysics();
+  // auto *physics = scene->getLegacyPhysics();
 
-  // Battery management code (keep all existing flashlight code)
-  if (m_player) {
-    float dt = static_cast<float>(timer->delta());
+  // // Battery management code (keep all existing flashlight code)
+  // if (m_player) {
+  //   float dt = static_cast<float>(timer->delta());
 
-    if (m_flashlightOn) {
-      currentBattery = m_player->checkBatt();
-      currentBattery -= m_player->checkDrain() * dt * 4.f;
-      m_player->setBatt(currentBattery);
+  //   if (m_flashlightOn) {
+  //     currentBattery = m_player->checkBatt();
+  //     currentBattery -= m_player->checkDrain() * dt * 4.f;
+  //     m_player->setBatt(currentBattery);
 
-      if (currentBattery <= 0.0f) {
-        m_player->setBatt(0.0f);
-        m_flashlightOn = false;
-      }
-    } else {
-      currentBattery = m_player->checkBatt();
-      currentBattery += m_player->checkCharge() * dt * 2.f;
-      m_player->setBatt(std::min(100.0f, currentBattery));
-    }
-  }
+  //     if (currentBattery <= 0.0f) {
+  //       m_player->setBatt(0.0f);
+  //       m_flashlightOn = false;
+  //     }
+  //   } else {
+  //     currentBattery = m_player->checkBatt();
+  //     currentBattery += m_player->checkCharge() * dt * 2.f;
+  //     m_player->setBatt(std::min(100.0f, currentBattery));
+  //   }
+  // }
 
-  // Render flashlight (keep all existing flashlight rendering code)
-  if (m_flashlightOn && physics && m_player && m_player->active() &&
-      m_player->checkBatt() > 0.0f) {
-    glm::vec2 torchOffsetLocal(35.0f, -20.0f);
-    vec2 origin = m_player->transform().position;
-    float angle = m_player->transform().rotationRad;
-    glm::vec2 torchOffsetWorld(
-        torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
-        torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle));
-    glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
+  // // Render flashlight (keep all existing flashlight rendering code)
+  // if (m_flashlightOn && physics && m_player && m_player->active() &&
+  //     m_player->checkBatt() > 0.0f) {
+  //   glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+  //   vec2 origin = m_player->transform().position;
+  //   float angle = m_player->transform().rotationRad;
+  //   glm::vec2 torchOffsetWorld(
+  //       torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+  //       torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle));
+  //   glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
-    std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
-    vec2 originVec2 = {originGLM.x, originGLM.y};
-    std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-        originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+  //   std::vector<std::unique_ptr<Gameplay::GameObject>> &objs =
+  //   scene->objects(); vec2 originVec2 = {originGLM.x, originGLM.y};
+  //   std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+  //       originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
 
-    std::vector<glm::vec2> lightPolyGLM;
-    for (const auto &point : lightPoly) {
-      lightPolyGLM.emplace_back(point.x, point.y);
-    }
+  //   std::vector<glm::vec2> lightPolyGLM;
+  //   for (const auto &point : lightPoly) {
+  //     lightPolyGLM.emplace_back(point.x, point.y);
+  //   }
 
-    // Render the light cone
-    float batteryPercent = currentBattery / maxBattery;
-    m_renderer->beginLightPass(engine.camera().viewProj(), originGLM,
-                               glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle,
-                               glm::radians(60.0f), batteryPercent);
-    m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
-    m_renderer->endLightPass();
-  } else {
-    // Flashlight is off - reset all enemy exposure times
-    for (auto &obj : scene->objects()) {
-      if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
-        obj->resetLightExposure();
-      }
-    }
+  //   // Render the light cone
+  //   float batteryPercent = currentBattery / maxBattery;
+  //   m_renderer->beginLightPass(engine.camera().viewProj(), originGLM,
+  //                              glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle,
+  //                              glm::radians(60.0f), batteryPercent);
+  //   m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
+  //   m_renderer->endLightPass();
+  // } else {
+  //   // Flashlight is off - reset all enemy exposure times
+  //   for (auto &obj : scene->objects()) {
+  //     if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+  //       obj->resetLightExposure();
+  //     }
+  //   }
+  // }
+
+  if (m_flashlightOn) {
+    renderTorchPass(*m_renderer);
   }
 
   // ==================== Battery UI Rendering ====================
@@ -1898,3 +1904,63 @@ void Runtime::PlayState::renderFragmentUI() {
   m_renderer->endFontPass();
 }
 #endif
+
+void Runtime::PlayState::renderTorchPass(Graphics::RenderingManager &renderer) {
+  auto *scene = m_scenes.current();
+  if (!scene)
+    return;
+
+  auto &world = scene->GetWorld();
+  Graphics::Camera2D &camera = Core::Engine::Get().camera();
+
+  world.each<Components::Transform, Components::TorchComponent>(
+      [&](ECS::Entity entity, Components::Transform &trans,
+          Components::TorchComponent &torch) {
+        if (!torch.active)
+          return;
+
+        // Check battery if present
+        float batteryFactor = 1.0f;
+        auto *batt = world.getComponent<Components::Battery>(entity);
+        if (batt) {
+          batteryFactor = batt->charge / batt->maxCharge;
+          if (batt->charge <= 0.0f)
+            return;
+        }
+
+        // Calculate Torch World Position
+        float angle = trans.rotation;
+
+        vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
+        vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
+                                  torchOffsetLocal.y * std::sin(angle),
+                              torchOffsetLocal.x * std::sin(angle) +
+                                  torchOffsetLocal.y * std::cos(angle));
+
+        glm::vec2 originGLM =
+            glm::vec2((trans.position.x + torchOffsetWorld.x),
+                      (trans.position.y + torchOffsetWorld.y));
+
+        // Create simple light polygon (Fan)
+        std::vector<glm::vec2> lightPoly;
+        int segments = 30;
+        float halfFov = glm::radians(torch.angle) * 0.5f;
+        float startAngle = angle - halfFov;
+        float step = glm::radians(torch.angle) / segments;
+
+        // Note: drawLightCone expects polygon points, not including origin (it
+        // adds origin itself)
+        for (int i = 0; i <= segments; ++i) {
+          float theta = startAngle + step * i;
+          lightPoly.emplace_back(originGLM.x + std::cos(theta) * torch.radius,
+                                 originGLM.y + std::sin(theta) * torch.radius);
+        }
+
+        // Render Light Pass
+        renderer.beginLightPass(camera.viewProj(), originGLM, torch.color,
+                                torch.radius, angle, torch.angle, batteryFactor,
+                                torch.intensity);
+        renderer.drawLightCone(originGLM, lightPoly, torch.color);
+        renderer.endLightPass();
+      });
+}

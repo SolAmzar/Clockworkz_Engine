@@ -9,6 +9,8 @@ public:
   Level1State(Platform::InputManager &input, GameStateManager &gsm);
   ~Level1State() = default;
 
+  void onEnter() override;
+
   const char *name() const override { return "Level1State"; }
 };
 
