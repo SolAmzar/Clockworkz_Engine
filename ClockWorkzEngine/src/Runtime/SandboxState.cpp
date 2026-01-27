@@ -121,26 +121,83 @@ void SandboxState::update(double dt) {
   }
 
   // Update Scene Logic
+  // Update Scene Logic
   if (!m_isPaused) {
     m_scene.Update(dt, m_input);
+  }
 
-    // Camera Logic
-    auto &camera = Core::Engine::Get().camera();
+  // Camera Logic
+  auto &camera = Core::Engine::Get().camera();
 
-    if (m_cameraFollowPlayer) {
-      // Camera Follow Logic
-      auto &world = m_scene.GetWorld();
-      world.each<Components::PlayerController, Components::Transform>(
-          [&](ECS::Entity, Components::PlayerController &,
-              Components::Transform &t) {
-            // Simple hard lock
-            camera.setPosition(glm::vec2(t.position.x, t.position.y));
-            m_editorCameraPos =
-                glm::vec2(t.position.x, t.position.y); // Sync pos
-          });
-    } else {
-      // Free Camera Logic
-      float camSpeed = 500.0f * static_cast<float>(dt);
+  // Only follow player if we are Playing AND Follow is enabled
+  if (!m_isPaused && m_cameraFollowPlayer) {
+    // Camera Follow Logic
+    auto &world = m_scene.GetWorld();
+    world.each<Components::PlayerController, Components::Transform>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Transform &t) {
+          // Simple hard lock
+          camera.setPosition(glm::vec2(t.position.x, t.position.y));
+          m_editorCameraPos = glm::vec2(t.position.x, t.position.y); // Sync pos
+        });
+  } else {
+    // Free Camera Logic (Editor Mode OR Playing with Free Cam)
+
+    // 1. Zoom Logic (Mouse Wheel)
+    float zoomSpeed = 0.1f;
+    float scroll = static_cast<float>(Platform::InputManager::GetScrollY());
+    if (scroll != 0.0f) {
+      float currentZoom = camera.zoom();
+      float newZoom = currentZoom + (scroll * zoomSpeed * currentZoom);
+      // Clamp zoom to reasonable values
+      if (newZoom < 0.1f)
+        newZoom = 0.1f;
+      if (newZoom > 5.0f)
+        newZoom = 5.0f;
+      camera.setZoom(newZoom);
+    }
+
+    // 2. Pan Logic (MMB or Alt+LMB)
+    static double lastMouseX = 0.0, lastMouseY = 0.0;
+    double currMouseX, currMouseY;
+    m_input.getMousePosition(currMouseX, currMouseY);
+
+    if (m_input.isMouseDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
+      // Calculate Delta
+      float dx = static_cast<float>(currMouseX - lastMouseX);
+      float dy = static_cast<float>(currMouseY - lastMouseY);
+
+      // Apply to camera position (inverted for drag feeling)
+      // Scale by zoom to keep panning constant relative to view
+      float panScale = 1.0f / camera.zoom();
+
+      m_editorCameraPos.x -= dx * panScale;
+      m_editorCameraPos.y += dy * panScale;
+    }
+
+    lastMouseX = currMouseX;
+    lastMouseY = currMouseY;
+
+    // Focus on Selected Entity (F)
+    if (m_input.wasKeyTriggered(GLFW_KEY_F)) {
+      if (m_selectedEntityIdx >= 0 &&
+          m_selectedEntityIdx < static_cast<int>(m_testEntities.size())) {
+        auto entity = m_testEntities[m_selectedEntityIdx];
+        auto *transform =
+            m_scene.GetWorld().getComponent<Components::Transform>(entity);
+        if (transform) {
+          m_editorCameraPos =
+              glm::vec2(transform->position.x, transform->position.y);
+          camera.setPosition(m_editorCameraPos);
+          camera.setZoom(1.0f);
+        }
+      }
+    }
+
+    // WASD Logic (Keep as backup or modifier)
+    // User requested Ctrl + WASD to avoid conflict with Player controls
+    if (m_input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+      float camSpeed = 500.0f / camera.zoom() * static_cast<float>(dt);
       if (m_input.isKeyDown(GLFW_KEY_W))
         m_editorCameraPos.y += camSpeed;
       if (m_input.isKeyDown(GLFW_KEY_S))
