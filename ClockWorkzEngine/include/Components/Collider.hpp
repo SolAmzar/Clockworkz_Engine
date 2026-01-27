@@ -23,7 +23,12 @@ namespace Components {
  * Used by CollisionSystem to detect and resolve collisions.
  */
 struct Collider {
-  vec2 size{100.f, 100.f}; ///< Collider dimensions (width, height)
+  enum class Shape : int { Box = 0, Circle = 1 };
+
+  Shape shape{Shape::Box}; ///< Box or Circle
+
+  vec2 size{100.f, 100.f}; ///< Box dimensions (width, height)
+  float radius{50.f};      ///< Circle radius
   vec2 offset{0.f, 0.f};   ///< Offset from Transform position
 
   // Collision filtering

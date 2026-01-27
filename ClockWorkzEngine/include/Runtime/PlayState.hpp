@@ -1,4 +1,4 @@
-#if 0
+#if 1
 /******************************************************************************/
 /*!
 \file           PlayState.hpp
@@ -22,9 +22,8 @@ reserved.
 #pragma once
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Gameplay/GameObject.hpp"
-#include "Platform/InputManager.hpp"
+#include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
-#include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneManager.hpp"
 #include <memory>
 #include <string>
@@ -37,13 +36,16 @@ class Time;
 
 namespace Platform {
 class LevelEditor;
-}
+class InputManager;
+} // namespace Platform
 
 namespace Graphics {
 class RenderingManager;
 }
 
 namespace Runtime {
+class GameStateManager;
+class GameStateManager;
 
 class PlayState final : public GameState {
 public:
@@ -132,6 +134,10 @@ private:
   bool m_showFragmentNotification = false;
   float m_fragmentNotificationTimer = 0.0f;
   std::string m_lastCollectedFragmentId;
+
+  bool m_showImGui{false};
 };
+
+} // namespace Runtime
 
 #endif

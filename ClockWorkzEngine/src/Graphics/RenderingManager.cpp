@@ -34,7 +34,6 @@ reserved.
 #include <cmath>
 #include <vector>
 
-
 namespace Graphics {
 // Call Stack: engine run -> engine init -> rendering manager init
 bool RenderingManager::init() {
@@ -395,14 +394,17 @@ void RenderingManager::beginLightPass(
   shader->setFloat("uRadius", 300.0f);
   shader->setVec3("uLightColor", glm::vec3(1.0f, 0.9f, 0.6f));
 
-  shader->setFloat("uBattery", batteryFactor);
+  // Clamped visual battery so it doesn't get too dim to see
+  float visualBattery = std::max(batteryFactor, 0.35f);
+  shader->setFloat("uBattery", visualBattery);
   shader->setFloat("uIntensity", intensity);
 
   float flicker = 1.0f;
 
   if (batteryFactor <= 0.125f) {
-    float low = 0.3f;
-    float high = 1.4f;
+    // More obvious flicker: wider range, brighter peaks, lower dips
+    float low = 0.2f;
+    float high = 1.8f;
     flicker = low + static_cast<float>(rand()) / RAND_MAX * (high - low);
   }
 

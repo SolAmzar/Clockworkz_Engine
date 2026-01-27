@@ -38,9 +38,8 @@ void main() {
     // Apply battery fading
     intensity *= uBattery;
 
-    // Apply flicker near low battery
-    float lowBatteryMix = smoothstep(0.1, 0.0, uBattery);
-    intensity *= mix(1.0, uFlicker, lowBatteryMix); 
+    // Apply flicker (controlled by C++)
+    intensity *= uFlicker; 
     
 
     //vec3 color = uLightColor * 0.5;
