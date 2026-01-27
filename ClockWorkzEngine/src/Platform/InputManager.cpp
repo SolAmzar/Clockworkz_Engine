@@ -67,6 +67,7 @@ bool InputManager::init(WindowManager &wm) {
   trackKey(GLFW_KEY_F1);
 
   trackKey(GLFW_KEY_R); // For Flashlight
+  trackKey(GLFW_KEY_F); // For Flashlight
   trackKey(GLFW_KEY_Z); //
   trackKey(GLFW_KEY_X);
   trackKey(GLFW_KEY_P); // For debugging

@@ -433,13 +433,71 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       world.addComponent(entity, battery);
     }
 
-    // Add more component deserialization as needed...
-  }
+    // Velocity
+    if (components.contains("velocity")) {
+      Components::Velocity velocity;
+      velocity.velocity.x = components["velocity"].value("x", 0.0f);
+      velocity.velocity.y = components["velocity"].value("y", 0.0f);
+      velocity.moveSpeed = components["velocity"].value("moveSpeed", 100.0f);
+      world.addComponent(entity, velocity);
+    }
 
-  // Track the entity
-  m_testEntities.push_back(entity);
-  std::cout << "[Prefab] Spawned: " << prefabName << " at (" << position.x
-            << ", " << position.y << ")\n";
+    // PlayerController
+    if (components.contains("playerController")) {
+      Components::PlayerController pc;
+      pc.walkMultiplier =
+          components["playerController"].value("walkMultiplier", 1.0f);
+      pc.sprintMultiplier =
+          components["playerController"].value("sprintMultiplier", 2.0f);
+      world.addComponent(entity, pc);
+    }
+
+    // TorchComponent
+    if (components.contains("torch")) {
+      Components::TorchComponent torch;
+      auto &tc = components["torch"];
+      torch.active = tc.value("active", true);
+      if (tc.contains("offset")) {
+        torch.offset.x = tc["offset"].value("x", 35.0f);
+        torch.offset.y = tc["offset"].value("y", -20.0f);
+      }
+      if (tc.contains("color")) {
+        torch.color.r = tc["color"].value("r", 1.0f);
+        torch.color.g = tc["color"].value("g", 0.9f);
+        torch.color.b = tc["color"].value("b", 0.6f);
+      }
+      torch.radius = tc.value("radius", 300.0f);
+      torch.angle = tc.value("angle", 60.0f);
+      torch.intensity = tc.value("intensity", 1.0f);
+      world.addComponent(entity, torch);
+    }
+
+    // SpriteAnimator
+    if (components.contains("spriteAnimator")) {
+      auto &sac = components["spriteAnimator"];
+      std::string filename = sac.value("filename", "");
+      if (!filename.empty()) {
+        Components::SpriteAnimator anim;
+        // Basic path assumption: assets/animations/ + filename
+        anim.loadFromPath("assets/animations/" + filename);
+        anim.filename = filename;
+        world.addComponent(entity, anim);
+      }
+    }
+
+    // StateMachine
+    if (components.contains("stateMachine")) {
+      Components::StateMachine sm;
+      sm.currentState =
+          components["stateMachine"].value("currentState", "idle");
+      world.addComponent(entity, sm);
+    }
+
+    // Track the entity
+    m_testEntities.push_back(entity);
+    std::cout << "[Prefab] Spawned: " << prefabName << " at (" << position.x
+              << ", " << position.y << ")\n";
+  }
 }
 
 void SandboxState::deletePrefab(const std::string &prefabName) {
@@ -681,8 +739,8 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
                         std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y));
 
                     // If hit, tmin is the distance along the ray.
-                    // Since rotation preserves distance, tmin is valid in World
-                    // Space too.
+                    // Since rotation preserves distance, tmin is valid in
+                    // World Space too.
                     if (tmax >= std::max(0.0f, tmin) && tmin < closestDist) {
                       closestDist = tmin;
                       closestPoint = start + dir * tmin;
@@ -690,9 +748,9 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
                   } else if (obsCol.shape ==
                              Components::Collider::Shape::Circle) {
                     // --- Circle Logic ---
-                    // Circle is rotation invariant, but we must use the correct
-                    // Center (offset logic above)
-                    // Apply Transform Scale to Radius
+                    // Circle is rotation invariant, but we must use the
+                    // correct Center (offset logic above) Apply Transform
+                    // Scale to Radius
                     float scaledRadius =
                         obsCol.radius *
                         std::max(obsTrans.scale.x, obsTrans.scale.y);
@@ -808,7 +866,8 @@ void SandboxState::renderImGui(Core::Time *timer) {
     ImGui::DockBuilderSplitNode(dock_right_id, ImGuiDir_Right, 0.25f,
                                 &dock_actual_right_id, &dock_center_col_id);
 
-    // 2.5 Split the Right Column (Components) into Top and Bottom (for Assets)
+    // 2.5 Split the Right Column (Components) into Top and Bottom (for
+    // Assets)
     ImGui::DockBuilderSplitNode(dock_actual_right_id, ImGuiDir_Down, 0.50f,
                                 &dock_right_bottom_id, &dock_right_top_id);
 
@@ -903,8 +962,8 @@ void SandboxState::renderEntityWindow() {
     // Attempt to save to source folder assuming standard build layout
     // (bin/Debug -> root)
     // 2. Save to Project Source directory (Persistence)
-    // We try multiple relative paths because the CWD can vary (e.g. 'build' vs
-    // 'build/bin/Debug')
+    // We try multiple relative paths because the CWD can vary (e.g. 'build'
+    // vs 'build/bin/Debug')
     std::string candidatePaths[] = {
         "../assets/scenes/" +
             std::string(currentLevelName), // If running from 'build'
@@ -1010,13 +1069,13 @@ void SandboxState::renderEntityWindow() {
     // Actually Scene::Clear might not clear m_testEntities in SandboxState.
     // We generated m_testEntities locally.
     // But deserialization probably adds to world directly and m_testEntities
-    // doesn't track them. This local tracking is legacy. Let's iterate world to
-    // destroy? Use a quick loop: This is just a debug tool. For now, assume
-    // Scene::Clear works or just skip. But since I updated Scene.cpp to have
-    // empty Clear(), I should implement it properly there or loop here. Let's
-    // rely on world.destroyEntity loop I wrote before, but adapted. Or better:
-    // Scene should implement `Clear` properly. I'll leave the button doing
-    // nothing useful for now or rely on reload.
+    // doesn't track them. This local tracking is legacy. Let's iterate world
+    // to destroy? Use a quick loop: This is just a debug tool. For now,
+    // assume Scene::Clear works or just skip. But since I updated Scene.cpp
+    // to have empty Clear(), I should implement it properly there or loop
+    // here. Let's rely on world.destroyEntity loop I wrote before, but
+    // adapted. Or better: Scene should implement `Clear` properly. I'll leave
+    // the button doing nothing useful for now or rely on reload.
     m_testEntities.clear();
   }
 
@@ -1625,6 +1684,22 @@ void SandboxState::spawnPlayer() {
                      Components::Battery{100.f, 100.f}); // Added Battery
   world.addComponent(entity, Components::Health{100.f, 100.f});
 
+  // Add Torch
+  Components::TorchComponent torch;
+  torch.active = false; // Start off
+  torch.offset = {35.f, -20.f};
+  torch.radius = 400.f;
+  torch.intensity = 1.0f;
+  torch.color = {1.0f, 0.9f, 0.7f}; // Warm light
+  world.addComponent(entity, torch);
+
+  // Add Animator
+  Components::SpriteAnimator anim;
+  anim.loadFromPath("assets/animations/player.json");
+  anim.filename = "player.json";
+  anim.play("idle");
+  world.addComponent(entity, anim);
+
   m_testEntities.push_back(entity);
   std::cout << "Spawned Player Entity: " << entity.id << "\n";
 }
@@ -1675,7 +1750,8 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   // Create new entity
   auto newEntity = world.createEntity();
 
-  // Helper lambda for copying components cleanly without C++20 template lambdas
+  // Helper lambda for copying components cleanly without C++20 template
+  // lambdas
   auto copyXYZ = [&](auto typeIdentity) {
     using T = typename decltype(typeIdentity)::type;
     T *comp = world.getComponent<T>(sourceEntity);
@@ -2063,8 +2139,8 @@ void SandboxState::renderSceneWindow() {
   // Handle Object Picking (Selection)
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
       m_gizmoActiveAxis == -1) {
-    // Create a dummy gizmo check context or just assume no gizmo if axis is -1
-    // Convert mouse to world space
+    // Create a dummy gizmo check context or just assume no gizmo if axis is
+    // -1 Convert mouse to world space
     ImVec2 mousePos = ImGui::GetMousePos();
     vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
 
@@ -2076,8 +2152,8 @@ void SandboxState::renderSceneWindow() {
     vec2 centeredMouse = {
         localMouse.x - m_viewportSize.x * 0.5f,
         -(localMouse.y -
-          m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y is
-                                   // down (pixel space)
+          m_viewportSize.y * 0.5f) // Flip Y because World Y is up, Screen Y
+                                   // is down (pixel space)
     };
 
     vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
@@ -2283,10 +2359,10 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       // Convert to world units: divide by zoom
       float worldMove = proj / zoom;
 
-      // World axis matches screen axis conceptually but Y component is flipped
-      // for storage? No, trans->rotation tells us the world axis direction.
-      // X-Axis world vector is (c, s).
-      // So we move worldMove * (c, s)
+      // World axis matches screen axis conceptually but Y component is
+      // flipped for storage? No, trans->rotation tells us the world axis
+      // direction. X-Axis world vector is (c, s). So we move worldMove * (c,
+      // s)
 
       vec2 worldDir = (m_gizmoActiveAxis == 0) ? vec2(c, s) : vec2(-s, c);
 
