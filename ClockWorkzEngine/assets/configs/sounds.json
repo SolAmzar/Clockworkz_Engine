@@ -5,91 +5,117 @@
       "path": "assets/audio/ui_move.wav",
       "loop": false,
       "stream": false,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.9,
+      "group": "SFX"
     },
     {
       "name": "ui_select",
       "path": "assets/audio/ui_select.wav",
       "loop": false,
       "stream": false,
-      "is3D": false
+      "is3D": false,
+      "volume": 1.0,
+      "group": "SFX"
     },
     {
       "name": "menu_bgm",
       "path": "assets/audio/menu_bgm.wav",
       "loop": true,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 1.4,
+      "group": "BGM"
     },
     {
       "name": "level_bgm",
       "path": "assets/audio/level_bgm.wav",
       "loop": true,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.5,
+      "group": "BGM"
     },
     {
       "name": "level_ambience",
       "path": "assets/audio/level_ambience.wav",
       "loop": true,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.5,
+      "group": "SFX"
     },
     {
       "name": "flashlight_on",
       "path": "assets/audio/sfx/flashlight_on.wav",
       "loop": false,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.5,
+      "group": "SFX"
     },
     {
       "name": "flashlight_off",
       "path": "assets/audio/sfx/flashlight_off.wav",
       "loop": false,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.5,
+      "group": "SFX"
     },
     {
       "name": "enemy_death_1",
       "path": "assets/audio/sfx/enemy_death_1.wav",
       "loop": false,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.7,
+      "group": "SFX"
     },
     {
       "name": "enemy_death_2",
       "path": "assets/audio/sfx/enemy_death_2.wav",
       "loop": false,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.7,
+      "group": "SFX"
     },
     {
       "name": "enemy_death_3",
       "path": "assets/audio/sfx/enemy_death_3.wav",
       "loop": false,
       "stream": true,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.7,
+      "group": "SFX"
     },
     {
       "name": "fs_concrete_1",
       "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
       "loop": false,
       "stream": false,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.4,
+      "group": "SFX"
     },
     {
       "name": "fs_concrete_2",
       "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
       "loop": false,
       "stream": false,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.4,
+      "group": "SFX"
     },
     {
       "name": "fs_concrete_3",
       "path": "assets/audio/fs/Concrete/fs_concrete_3.mp3",
       "loop": false,
       "stream": false,
-      "is3D": false
+      "is3D": false,
+      "volume": 0.4,
+      "group": "SFX"
     }
   ]
 }

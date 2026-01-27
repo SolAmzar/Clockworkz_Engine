@@ -31,7 +31,6 @@ reserved.
 #include <GLFW/glfw3.h>
 #include <cmath>
 
-
 namespace Platform {
 
 InputManager::InputManager() {
@@ -65,6 +64,7 @@ bool InputManager::init(WindowManager &wm) {
   trackKey(GLFW_KEY_L);
 
   trackKey(GLFW_KEY_F11);
+  trackKey(GLFW_KEY_F1);
 
   trackKey(GLFW_KEY_R); // For Flashlight
   trackKey(GLFW_KEY_Z); //

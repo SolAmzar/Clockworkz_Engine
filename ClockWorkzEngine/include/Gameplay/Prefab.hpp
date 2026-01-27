@@ -54,6 +54,9 @@ namespace Gameplay
 		// Get list of all prefab names
 		std::vector<std::string> getPrefabNames() const;
 
+		// In PrefabFactory class
+		void updatePrefabFromGameObject(const std::string& prefabName, const GameObject& obj);
+
 	private:
 		std::map<std::string, PrefabData> prefabs_;
 	};

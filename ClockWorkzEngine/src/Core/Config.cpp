@@ -11,7 +11,8 @@
                 Designed for integration with JSON configuration files to
                 control engine parameters such as window size and graphics.
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
+reserved.
 */
 /******************************************************************************/
 
@@ -21,20 +22,19 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Core/json.hpp" // nlohmann::json
 #pragma warning(pop)
 
-bool Core::Config::loadFromFile(const std::string &path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        return true; // fallback to defaults
-    }
-    nlohmann::json j;
-    file >> j;
+bool Core::Config::loadFromFile(const std::string &path) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    return true; // fallback to defaults
+  }
+  nlohmann::json j;
+  file >> j;
 
-    width = j.value("width", width);
-    height = j.value("height", height);
-    vsync = j.value("vsync", vsync);
-    title = j.value("title", title);
+  width = j.value("width", width);
+  height = j.value("height", height);
+  vsync = j.value("vsync", vsync);
+  title = j.value("title", title);
+  startState = j.value("startState", startState);
 
-    return true;
+  return true;
 }

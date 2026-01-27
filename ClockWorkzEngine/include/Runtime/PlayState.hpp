@@ -20,11 +20,13 @@ reserved.
 /******************************************************************************/
 
 #pragma once
+#include "ECS/Entity.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Gameplay/GameObject.hpp"
 #include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
 #include "Runtime/SceneManager.hpp"
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -47,7 +49,7 @@ namespace Runtime {
 class GameStateManager;
 class GameStateManager;
 
-class PlayState final : public GameState {
+class PlayState : public GameState {
 public:
   explicit PlayState(std::string initialSceneId, Platform::InputManager &input,
                      GameStateManager &gsm);
@@ -136,6 +138,10 @@ private:
   std::string m_lastCollectedFragmentId;
 
   bool m_showImGui{false};
+  // ECS Integration
+  std::map<uint32_t, ECS::Entity> m_enemyMap;
+  void clearEnemyAI();
+  void syncEnemyTransforms();
 };
 
 } // namespace Runtime

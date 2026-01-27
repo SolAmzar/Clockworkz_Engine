@@ -77,6 +77,13 @@ public:
    * @param component The component data
    */
   void insert(Entity entity, T component) {
+    // Check if component already exists
+    if (m_entityToIndex.find(entity.id) != m_entityToIndex.end()) {
+      size_t index = m_entityToIndex[entity.id];
+      m_components[index] = component;
+      return;
+    }
+
     if (m_size >= MAX_ENTITIES) {
       // TODO: Handle overflow (resize or error)
       return;

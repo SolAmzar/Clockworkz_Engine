@@ -26,6 +26,10 @@ reserved.
 #include "Assets/SoundManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Audio/SurfaceAudioSystem.hpp"
+#include "Components/EnemyAI.hpp"
+#include "Components/LightExposure.hpp"
+#include "Components/Transform.hpp"
+#include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
 #include "Gameplay/Components/Fragment.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
@@ -44,7 +48,9 @@ reserved.
 #include "Runtime/PauseState.hpp"
 #include "Runtime/Scene.hpp"
 #include "Runtime/SceneManager.hpp"
+#include "Runtime/SceneSerializer.hpp"
 #include <Assets/TextureManager.hpp>
+#include <Components/PlayerController.hpp>
 #include <Core/Engine.hpp>
 #include <Core/Time.hpp>
 #include <GLFW/glfw3.h>
@@ -60,6 +66,7 @@ reserved.
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -176,7 +183,7 @@ void PlayState::onEnter() {
 
   // 3) Construct the component in-place (NO new). Pass the ctor args.
   // ParticleEmitter(GameObject& owner, std::size_t max)
-  auto *emitter = fx->addComponent<Gameplay::ParticleEmitter>(1000);
+  auto *emitter = fx->addComponent<Components::ParticleEmitter>(1000);
 
   emitter->setRenderer(m_renderer);
 
@@ -197,8 +204,8 @@ void PlayState::onEnter() {
   auto &audio = engine.audio();
 
   // play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
-  m_bgmChannel = audio.play("level_bgm", Audio::Group::BGM, m_bgmVol, false);
-  audio.play("level_ambience", Audio::Group::SFX, m_sfxVol, false);
+  m_bgmChannel = Assets::SoundManager::Play("level_bgm");
+  Assets::SoundManager::Play("level_ambience");
 
   m_levelEditor = std::make_unique<Platform::LevelEditor>();
 
@@ -233,6 +240,25 @@ void PlayState::onEnter() {
                                 "assets/shaders/light.frag");
   if (m_scenes.loadScene(m_initialSceneId)) {
     m_loaded = true;
+
+    // Attempt to load scene content from JSON if exists
+    if (auto *scene = m_scenes.current()) {
+      std::string filename = m_initialSceneId;
+      // Check if path is relative or needs extension
+      if (filename.find(".json") == std::string::npos) {
+        filename += ".json";
+      }
+      std::string path = "assets/scenes/" + filename;
+
+      if (std::filesystem::exists(path)) {
+        std::cout << "[PlayState] Loading level file: " << path << "\n";
+        SceneSerializer::Deserialize(scene->GetWorld(), path);
+        scene->registerExistingObjectsToLayers();
+      } else {
+        std::cout << "[PlayState] Level file not found: " << path
+                  << " (starting empty)\n";
+      }
+    }
 
     // Print all GameObjects created by the loaded scene
     if (auto *scene = m_scenes.current()) {
@@ -329,6 +355,8 @@ void PlayState::onExit() {
     audio.stop(m_bgmChannel);
     m_bgmPlaying = false;
   }
+
+  clearEnemyAI();
 }
 
 void PlayState::update(double dt) {
@@ -420,12 +448,14 @@ void PlayState::update(double dt) {
     m_flashlightOn = !m_flashlightOn;
     std::cout << "Flashlight " << (m_flashlightOn ? "ON" : "OFF") << "\n";
 
-    Audio::AudioManager &sfx_audio = Core::Engine::Get().audio();
+    // Audio::AudioManager &sfx_audio = Core::Engine::Get().audio();
 
     if (m_flashlightOn == true) {
-      sfx_audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+      // sfx_audio.playOneShot("flashlight_on", Audio::Group::SFX, 0.5f);
+      Assets::SoundManager::Play("flashlight_on");
     } else {
-      sfx_audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+      // sfx_audio.playOneShot("flashlight_off", Audio::Group::SFX, 0.5f);
+      Assets::SoundManager::Play("flashlight_off");
     }
   }
 
@@ -463,9 +493,19 @@ void PlayState::update(double dt) {
   // Syafiq - Player movement
   if (auto *scene = m_scenes.current()) {
     m_scenes.update(dt, m_input);
-    // Syafiq - need find a way to cache the player.or do a unordered_map with
     // object unique name to array of objects. objMap["Player"][0] <- since only
     // 1 player. index 0 will work.
+
+    // ---- CAMERA FOLLOW (ECS Based) ----
+    // This ensures camera tracks player even if "m_player" GameObject pointer
+    // is stale
+    scene->GetWorld().each<Components::PlayerController, Components::Transform>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Transform &t) {
+          auto &camera = Core::Engine::Get().camera();
+          camera.setPosition(glm::vec2(t.position.x, t.position.y));
+        });
+
     for (auto &obj : scene->objects()) {
 
       if (obj->type() == Gameplay::GameObjectType::Player) {
@@ -564,6 +604,13 @@ void PlayState::update(double dt) {
           /// fx->getComponent<Gameplay::ParticleEmitter>()) /
           /// em->burst(80); // 80-particle puff /	}
           ////}
+          if (m_fx) {
+            if (auto *em = m_fx->getComponent<Components::ParticleEmitter>()) {
+              if (!em->active()) {
+                em->setActive(true);
+              }
+            }
+          }
           ////float moveAmount = moveSpeed * static_cast<float>(dt);
 
           // if (m_input.isKeyDown(GLFW_KEY_W))
@@ -692,8 +739,8 @@ void PlayState::update(double dt) {
   }
 
   if (m_fx && m_input.isKeyDown(GLFW_KEY_SPACE)) {
-    if (auto *em = m_fx->getComponent<Gameplay::ParticleEmitter>())
-      em->burst(80);
+    if (auto *pe = m_fx->getComponent<Components::ParticleEmitter>())
+      pe->burst(80);
   }
 
   if (m_input.wasKeyPressed(GLFW_KEY_Z)) {
@@ -817,6 +864,7 @@ void PlayState::update(double dt) {
 
   updateFragmentCollection(dt);
   m_scenes.update(dt, m_input);
+  syncEnemyTransforms();
   updateLightExposure(dt);
   updateBatteryDisplay();
 }
@@ -1168,23 +1216,108 @@ void PlayState::initializeEnemyAI(Runtime::Scene *scene) {
     return;
   }
 
+  // Clear any existing ECS mapping
+  clearEnemyAI();
+
+  auto &world = scene->GetWorld();
   auto &objs = scene->objects();
+
   for (auto &obj : objs) {
     if (obj && obj->type() == Gameplay::GameObjectType::Enemy &&
         obj->active()) {
-      // Check if Chase component already exists
-      if (!obj->getComponent<Gameplay::Chase>()) {
-        constexpr float CHASE_SPEED = 150.0f;
-        constexpr float ENGAGE_RADIUS = 300.0f;
 
-        obj->addComponent<Gameplay::Chase>(*obj, m_player, CHASE_SPEED,
-                                           ENGAGE_RADIUS);
-        std::cout << "[PlayState] Added Chase to enemy: " << obj->name()
-                  << "\n";
+      // Create ECS Entity
+      ECS::Entity e = world.createEntity();
+
+      // Add Transform (Sync from GameObject)
+      Components::Transform t;
+      t.position = obj->transform().position;
+      t.rotation = obj->transform().rotationRad;
+      t.scale = obj->transform().scale;
+      world.addComponent(e, t);
+
+      // Add Velocity (Default)
+      Components::Velocity v;
+      v.moveSpeed = 150.0f; // Default chase speed
+      v.velocity = {0.f, 0.f};
+      world.addComponent(e, v);
+
+      // Add EnemyAI (Default)
+      Components::EnemyAI ai;
+      ai.state = Components::AIState::Patrol;
+      ai.patrolSpeed = 50.0f;
+      ai.chaseSpeed = 150.0f;
+      ai.detectionRadius = 300.0f;
+      ai.lightSensitivity = 0.3f; // Slow down to 30% in light
+      world.addComponent(e, ai);
+
+      // Add LightExposure
+      world.addComponent(e, Components::LightExposure{});
+
+      // Map ID to Entity
+      m_enemyMap[obj->id()] = e;
+
+      std::cout << "[PlayState] Initialized ECS AI for enemy: " << obj->name()
+                << " (ID: " << obj->id() << ")\n";
+    }
+  }
+}
+
+void PlayState::clearEnemyAI() { m_enemyMap.clear(); }
+
+void PlayState::syncEnemyTransforms() {
+  auto *scene = m_scenes.current();
+  if (!scene)
+    return;
+
+  auto &world = scene->GetWorld();
+
+  // Iterate through GameObjects and sync from ECS if mapped
+  for (auto &obj : scene->objects()) {
+    if (!obj || !obj->active())
+      continue;
+
+    auto it = m_enemyMap.find(obj->id());
+    if (it != m_enemyMap.end()) {
+      ECS::Entity e = it->second;
+
+      // Check if entity still valid (in a real ECS, this might be complex, but
+      // here we assume sync)
+      auto *t = world.getComponent<Components::Transform>(e);
+      auto *v = world.getComponent<Components::Velocity>(e);
+      auto *light = world.getComponent<Components::LightExposure>(e);
+
+      if (t) {
+        obj->transform().position = t->position;
+        // obj->transform().rotationRad = t->rotation; // Should AI rotate? Yes.
+      }
+
+      if (v) {
+        // GameObject uses velocity per second for integration
+        // ECS velocity is direction * speed?
+        // PhysicsSystem: pos += vel.vel * vel.speed * dt
+        // GameObject: pos += velocity * dt
+        // So GameObject velocity = velocity * moveSpeed
+        obj->velocity() = v->velocity * v->moveSpeed;
+
+        // Rotation from velocity
+        if (v->velocity.x != 0 || v->velocity.y != 0) {
+          float angle = std::atan2(v->velocity.y, v->velocity.x);
+          obj->transform().rotationRad = angle;
+        }
+      }
+
+      if (light) {
+        obj->lightExposureTime(); // Getter
+        if (light) {
+          light->exposureTime = obj->lightExposureTime();
+          light->inLight = (light->exposureTime > 0.0f);
+        }
       }
     }
   }
 }
+
 // void PlayState::renderImGui(Core::Time *timer)
 //{
 //	if (!m_debug)

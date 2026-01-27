@@ -28,6 +28,10 @@ namespace Runtime { class GameStateManager; class MenuState; }
 
 namespace Audio { class AudioManager; class SurfaceAudioSystem; }
 
+namespace Scripting {
+	class LuaManager;
+}
+
 namespace Core {
 	class Config; class Logger; class Time;
 }
@@ -65,6 +69,8 @@ namespace Core {
 		Core::Logger& logger() { return *m_logger; }
 		Audio::SurfaceAudioSystem& surfaceAudio() { return *m_sfAudio; }
 		Audio::SurfaceAudioSystem const& surfaceAudio() const { return *m_sfAudio; }
+		Scripting::LuaManager& lua() { return *m_lua; }
+
 		//Audio::AudioManager& audio() { return *m_audio; }
 	private:
 		bool init();
@@ -93,6 +99,9 @@ namespace Core {
 		// Inside namespace Audio
 		std::unique_ptr<Audio::AudioManager>         m_audio;
 		std::unique_ptr<Audio::SurfaceAudioSystem>   m_sfAudio; // separate SFX audio manager for surface audio system
+
+		// Inside namespace Scripting
+		std::unique_ptr<Scripting::LuaManager>       m_lua;
 
 		// Inside namespace Runtime
 		std::unique_ptr<Runtime::GameStateManager>   m_gsm;
