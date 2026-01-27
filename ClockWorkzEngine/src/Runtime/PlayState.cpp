@@ -27,6 +27,7 @@ reserved.
 #include "Audio/AudioManager.hpp"
 #include "Audio/SurfaceAudioSystem.hpp"
 #include "Components/Battery.hpp"
+#include "Components/Collider.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/LightExposure.hpp"
 #include "Components/Torch.hpp"
@@ -1905,6 +1906,80 @@ void Runtime::PlayState::renderFragmentUI() {
 }
 #endif
 
+// Helper for ECS Raycasting (AABB only for now, matching Components::Collider)
+static std::optional<glm::vec2> raycastLightECS(const glm::vec2 &origin,
+                                                const glm::vec2 &dir,
+                                                float maxDist,
+                                                ECS::World &world) {
+  glm::vec2 closestHit = origin + dir * maxDist;
+  float closestDist = maxDist;
+  bool hitFound = false;
+
+  // Iterate all entities with Transform and Collider
+  world.each<Components::Transform, Components::Collider>(
+      [&](ECS::Entity, Components::Transform &t, Components::Collider &c) {
+        if (!c.blocksLight)
+          return;
+
+        // AABB World Bounds
+        // boxMin = pos + offset - size/2
+        // boxMax = pos + offset + size/2
+        // NOTE: Considering scale
+        float hx = c.size.x * 0.5f * t.scale.x;
+        float hy = c.size.y * 0.5f * t.scale.y;
+        glm::vec2 center = glm::vec2(t.position.x, t.position.y) +
+                           glm::vec2(c.offset.x, c.offset.y);
+        glm::vec2 boxMin = center - glm::vec2(hx, hy);
+        glm::vec2 boxMax = center + glm::vec2(hx, hy);
+
+        // Ray vs AABB (Slab method)
+        // Avoid div by zero
+        glm::vec2 invDir;
+        invDir.x = (std::abs(dir.x) < 1e-6f) ? 1e6f : 1.0f / dir.x;
+        invDir.y = (std::abs(dir.y) < 1e-6f) ? 1e6f : 1.0f / dir.y;
+
+        glm::vec2 t1 = (boxMin - origin) * invDir;
+        glm::vec2 t2 = (boxMax - origin) * invDir;
+
+        float tmin = std::max(
+            0.0f, std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)));
+        float tmax = std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y));
+
+        if (tmax >= tmin && tmin < closestDist) {
+          closestDist = tmin;
+          closestHit = origin + dir * tmin;
+          hitFound = true;
+        }
+      });
+
+  if (hitFound || closestDist < maxDist)
+    return closestHit;
+  return std::nullopt;
+}
+
+static std::vector<glm::vec2>
+computeVisibilityPolygonECS(const glm::vec2 &origin, float angleCenter,
+                            float fov, float radius, ECS::World &world) {
+  std::vector<glm::vec2> points;
+  points.push_back(origin);
+
+  const int numRays = 100; // Adjust for quality vs perf
+  float halfFov = fov * 0.5f;
+  float startAngle = angleCenter - halfFov;
+
+  for (int i = 0; i < numRays; ++i) {
+    float angle = startAngle + fov * (float(i) / (numRays - 1));
+    glm::vec2 dir = {std::cos(angle), std::sin(angle)};
+    auto hit = raycastLightECS(origin, dir, radius, world);
+    if (hit) {
+      points.push_back(*hit);
+    } else {
+      points.push_back(origin + dir * radius);
+    }
+  }
+  return points;
+}
+
 void Runtime::PlayState::renderTorchPass(Graphics::RenderingManager &renderer) {
   auto *scene = m_scenes.current();
   if (!scene)
@@ -1941,25 +2016,16 @@ void Runtime::PlayState::renderTorchPass(Graphics::RenderingManager &renderer) {
             glm::vec2((trans.position.x + torchOffsetWorld.x),
                       (trans.position.y + torchOffsetWorld.y));
 
-        // Create simple light polygon (Fan)
-        std::vector<glm::vec2> lightPoly;
-        int segments = 30;
-        float halfFov = glm::radians(torch.angle) * 0.5f;
-        float startAngle = angle - halfFov;
-        float step = glm::radians(torch.angle) / segments;
-
-        // Note: drawLightCone expects polygon points, not including origin (it
-        // adds origin itself)
-        for (int i = 0; i <= segments; ++i) {
-          float theta = startAngle + step * i;
-          lightPoly.emplace_back(originGLM.x + std::cos(theta) * torch.radius,
-                                 originGLM.y + std::sin(theta) * torch.radius);
-        }
+        // Use Raytracing for visibility
+        float fovRad = glm::radians(torch.angle);
+        std::vector<glm::vec2> lightPoly = computeVisibilityPolygonECS(
+            originGLM, angle, fovRad, torch.radius, world);
 
         // Render Light Pass
         renderer.beginLightPass(camera.viewProj(), originGLM, torch.color,
                                 torch.radius, angle, torch.angle, batteryFactor,
                                 torch.intensity);
+        // Note: drawLightCone expects polygon points
         renderer.drawLightCone(originGLM, lightPoly, torch.color);
         renderer.endLightPass();
       });
