@@ -100,6 +100,8 @@ void SandboxState::onExit() {
   // Reset viewport to full window size to prevent menu from being squashed
   auto &window = Core::Engine::Get().window();
   glViewport(0, 0, window.width(), window.height());
+  // Also reset camera projection to match window
+  Core::Engine::Get().camera().setViewport(window.width(), window.height());
 }
 
 void SandboxState::update(double dt) {
@@ -112,6 +114,16 @@ void SandboxState::update(double dt) {
   // Update Scene Logic
   if (!m_isPaused) {
     m_scene.Update(dt, m_input);
+
+    // Camera Follow Logic
+    auto &world = m_scene.GetWorld();
+    world.each<Components::PlayerController, Components::Transform>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Transform &t) {
+          auto &camera = Core::Engine::Get().camera();
+          // Simple hard lock for now, can add lerp later if requested
+          camera.setPosition(glm::vec2(t.position.x, t.position.y));
+        });
   }
 }
 
@@ -1595,6 +1607,12 @@ void SandboxState::renderSceneWindow() {
       m_viewportSize.y != viewportPanelSize.y) {
     m_viewportSize = vec2(viewportPanelSize.x, viewportPanelSize.y);
     m_framebuffer.resize((int)m_viewportSize.x, (int)m_viewportSize.y);
+  }
+
+  // Always enforce camera viewport to match the panel,
+  // overriding any external WindowResize events that might have reset it to
+  // window size.
+  if (m_viewportSize.x > 0 && m_viewportSize.y > 0) {
     Core::Engine::Get().camera().setViewport((int)m_viewportSize.x,
                                              (int)m_viewportSize.y);
   }
