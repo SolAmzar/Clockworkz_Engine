@@ -114,6 +114,18 @@ private:
   bool m_showAssetBrowser{true};
   std::string m_selectedAsset;
 
+  void renderPrefabEditor();
+  void savePrefabFromEntity(ECS::Entity entity, const std::string& name, const std::string& category);
+  void loadAvailablePrefabs();
+  void spawnPrefab(const std::string& prefabName, vec2 position);
+  void deletePrefab(const std::string& prefabName);
+
+  bool m_showPrefabEditor = false;
+  std::string m_newPrefabName;
+  std::string m_newPrefabCategory = "Custom";
+  int m_selectedPrefabIndex = -1;
+  std::vector<std::string> m_availablePrefabs;
+
 
 
   // Helper functions

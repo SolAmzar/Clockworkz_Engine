@@ -57,9 +57,19 @@ reserved.
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include "Math/Vec2.hpp"
+#include <filesystem>
+#include <fstream>
+
 
 namespace Runtime {
 
+vec2 snapToGrid(const vec2& pos, float gridSize) {
+    float halfGrid = gridSize * 0.5f;
+    return vec2(
+        std::round((pos.x - halfGrid) / gridSize) * gridSize + halfGrid,
+        std::round((pos.y - halfGrid) / gridSize) * gridSize + halfGrid
+    );
+}
 // Helper struct for type identity (moved to namespace scope)
 template <typename T> struct Identity {
   using type = T;
@@ -79,6 +89,8 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+  // Load prefabs
+  loadAvailablePrefabs();
 
   // Init Framebuffer for Scene View
   m_framebuffer.create(800, 600);
@@ -136,6 +148,307 @@ void SandboxState::render(Core::Time* timer) {
     renderer.endDebugPass();
 
     m_framebuffer.unbind();
+}
+
+void SandboxState::savePrefabFromEntity(ECS::Entity entity,
+    const std::string& name,
+    const std::string& category) {
+    auto& world = m_scene.GetWorld();
+
+    // Create JSON for prefab
+    nlohmann::json prefabJson;
+    prefabJson["name"] = name;
+    prefabJson["category"] = category;
+    prefabJson["components"] = nlohmann::json::object();
+
+    auto& components = prefabJson["components"];
+
+    // Serialize Transform
+    if (auto* trans = world.getComponent<Components::Transform>(entity)) {
+        components["transform"] = {
+            {"position", {{"x", trans->position.x}, {"y", trans->position.y}}},
+            {"rotation", trans->rotation},
+            {"scale", {{"x", trans->scale.x}, {"y", trans->scale.y}}}
+        };
+    }
+
+    // Serialize SpriteRenderer
+    if (auto* sprite = world.getComponent<Components::SpriteRenderer>(entity)) {
+        components["spriteRenderer"] = {
+            {"textureId", sprite->textureId},
+            {"color", {
+                {"r", sprite->color.r},
+                {"g", sprite->color.g},
+                {"b", sprite->color.b},
+                {"a", sprite->color.a}
+            }}
+        };
+    }
+
+    // Serialize Collider
+    if (auto* col = world.getComponent<Components::Collider>(entity)) {
+        components["collider"] = {
+            {"width", col->size.x},
+            {"height", col->size.y},
+            {"isSolid", col->isSolid},
+            {"isHazard", col->isHazard},
+            {"isTrigger", col->isTrigger},
+            {"moveable", col->moveable},
+            {"collisionCategory", col->collisionCategory},
+            {"collisionMask", col->collisionMask}
+        };
+    }
+
+    // Serialize Health
+    if (auto* health = world.getComponent<Components::Health>(entity)) {
+        components["health"] = {
+            {"hp", health->hp},
+            {"maxHp", health->maxHp}
+        };
+    }
+
+    // Serialize Battery
+    if (auto* battery = world.getComponent<Components::Battery>(entity)) {
+        components["battery"] = {
+            {"charge", battery->charge},
+            {"maxCharge", battery->maxCharge},
+            {"drainRate", battery->drainRate}
+        };
+    }
+
+    // Add more component serialization as needed...
+
+    // Save to file
+    std::string filepath = "assets/prefabs/" + name + ".json";
+    std::ofstream file(filepath);
+    if (file.is_open()) {
+        file << prefabJson.dump(4);
+        file.close();
+        std::cout << "[Prefab] Saved: " << filepath << "\n";
+
+        // Reload available prefabs
+        loadAvailablePrefabs();
+    }
+    else {
+        std::cerr << "[Prefab] Failed to save: " << filepath << "\n";
+    }
+}
+
+void SandboxState::loadAvailablePrefabs() {
+    namespace fs = std::filesystem;
+    m_availablePrefabs.clear();
+
+    std::string prefabDir = "assets/prefabs/";
+    if (fs::exists(prefabDir) && fs::is_directory(prefabDir)) {
+        for (const auto& entry : fs::directory_iterator(prefabDir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                m_availablePrefabs.push_back(entry.path().stem().string());
+            }
+        }
+    }
+
+    std::cout << "[Prefab] Loaded " << m_availablePrefabs.size() << " prefabs\n";
+}
+
+void SandboxState::spawnPrefab(const std::string& prefabName, vec2 position) {
+    std::string filepath = "assets/prefabs/" + prefabName + ".json";
+    std::ifstream file(filepath);
+
+    if (!file.is_open()) {
+        std::cerr << "[Prefab] Failed to load: " << filepath << "\n";
+        return;
+    }
+
+    nlohmann::json prefabJson;
+    file >> prefabJson;
+    file.close();
+
+    auto& world = m_scene.GetWorld();
+    auto entity = world.createEntity();
+
+    // Deserialize components
+    if (prefabJson.contains("components")) {
+        auto& components = prefabJson["components"];
+
+        // Transform
+        if (components.contains("transform")) {
+            Components::Transform trans;
+            trans.position = position; // Use spawn position
+            trans.rotation = components["transform"].value("rotation", 0.0f);
+            if (components["transform"].contains("scale")) {
+                trans.scale.x = components["transform"]["scale"].value("x", 1.0f);
+                trans.scale.y = components["transform"]["scale"].value("y", 1.0f);
+            }
+            world.addComponent(entity, trans);
+        }
+
+        // SpriteRenderer
+        if (components.contains("spriteRenderer")) {
+            Components::SpriteRenderer sprite;
+            sprite.textureId = components["spriteRenderer"].value("textureId", "");
+            if (components["spriteRenderer"].contains("color")) {
+                auto& color = components["spriteRenderer"]["color"];
+                sprite.color.r = color.value("r", 1.0f);
+                sprite.color.g = color.value("g", 1.0f);
+                sprite.color.b = color.value("b", 1.0f);
+                sprite.color.a = color.value("a", 1.0f);
+            }
+            world.addComponent(entity, sprite);
+        }
+
+        // Collider
+        if (components.contains("collider")) {
+            Components::Collider col;
+            col.size.x = components["collider"].value("width", 100.0f);
+            col.size.y = components["collider"].value("height", 100.0f);
+            col.isSolid = components["collider"].value("isSolid", true);
+            col.isHazard = components["collider"].value("isHazard", false);
+            col.isTrigger = components["collider"].value("isTrigger", false);
+            col.moveable = components["collider"].value("moveable", false);
+            col.collisionCategory = components["collider"].value("collisionCategory", 1);
+            col.collisionMask = components["collider"].value("collisionMask", 0xFFFFFFFF);
+            world.addComponent(entity, col);
+        }
+
+        // Health
+        if (components.contains("health")) {
+            Components::Health health;
+            health.hp = components["health"].value("hp", 100);
+            health.maxHp = components["health"].value("maxHp", 100);
+            world.addComponent(entity, health);
+        }
+
+        // Battery
+        if (components.contains("battery")) {
+            Components::Battery battery;
+            battery.charge = components["battery"].value("charge", 100.0f);
+            battery.maxCharge = components["battery"].value("maxCharge", 100.0f);
+            battery.drainRate = components["battery"].value("drainRate", 1.0f);
+            world.addComponent(entity, battery);
+        }
+
+        // Add more component deserialization as needed...
+    }
+
+    // Track the entity
+    m_testEntities.push_back(entity);
+    std::cout << "[Prefab] Spawned: " << prefabName << " at (" << position.x << ", " << position.y << ")\n";
+}
+
+void SandboxState::deletePrefab(const std::string& prefabName) {
+    std::string filepath = "assets/prefabs/" + prefabName + ".json";
+    namespace fs = std::filesystem;
+
+    if (fs::exists(filepath)) {
+        fs::remove(filepath);
+        std::cout << "[Prefab] Deleted: " << filepath << "\n";
+        loadAvailablePrefabs();
+    }
+}
+
+void SandboxState::renderPrefabEditor() {
+    if (!m_showPrefabEditor) return;
+
+    ImGui::Begin("Prefab Editor", &m_showPrefabEditor);
+
+    ImGui::Text("Prefab Management");
+    ImGui::Separator();
+
+    // === SAVE AS PREFAB ===
+    if (ImGui::CollapsingHeader("Save Selected Entity as Prefab", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (m_selectedEntityIdx >= 0 && m_selectedEntityIdx < (int)m_testEntities.size()) {
+            auto selectedEntity = m_testEntities[m_selectedEntityIdx];
+
+            ImGui::Text("Selected Entity: %u", selectedEntity);
+
+            // Prefab name input
+            static char prefabNameBuffer[128] = "";
+            ImGui::InputText("Prefab Name", prefabNameBuffer, 128);
+
+            // Category input
+            static char categoryBuffer[64] = "Custom";
+            ImGui::InputText("Category", categoryBuffer, 64);
+
+            // Save button
+            if (ImGui::Button("Save as Prefab")) {
+                if (strlen(prefabNameBuffer) > 0) {
+                    savePrefabFromEntity(selectedEntity, prefabNameBuffer, categoryBuffer);
+                    // Clear the buffer after saving
+                    prefabNameBuffer[0] = '\0';
+                }
+            }
+
+            ImGui::SameLine();
+            ImGui::TextDisabled("(?)");
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Save the selected entity as a reusable prefab");
+            }
+        }
+        else {
+            ImGui::TextDisabled("No entity selected. Select one from Entity Management.");
+        }
+    }
+
+    // === PREFAB LIBRARY ===
+    if (ImGui::CollapsingHeader("Prefab Library", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Refresh Prefabs")) {
+            loadAvailablePrefabs();
+        }
+
+        ImGui::SameLine();
+        ImGui::Text("Available Prefabs: %zu", m_availablePrefabs.size());
+
+        ImGui::Separator();
+
+        // Display prefabs as a list
+        ImGui::BeginChild("PrefabList", ImVec2(0, 200), true);
+
+        for (int i = 0; i < (int)m_availablePrefabs.size(); ++i) {
+            bool isSelected = (m_selectedPrefabIndex == i);
+            if (ImGui::Selectable(m_availablePrefabs[i].c_str(), isSelected)) {
+                m_selectedPrefabIndex = i;
+            }
+
+            // Drag and drop support
+            if (ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload("PREFAB_NAME",
+                    m_availablePrefabs[i].c_str(),
+                    m_availablePrefabs[i].length() + 1);
+                ImGui::Text("Drag: %s", m_availablePrefabs[i].c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            // Right-click context menu
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Spawn at Origin")) {
+                    spawnPrefab(m_availablePrefabs[i], vec2{ 0.0f, 0.0f });
+                }
+                if (ImGui::MenuItem("Delete Prefab")) {
+                    deletePrefab(m_availablePrefabs[i]);
+                }
+                ImGui::EndPopup();
+            }
+        }
+
+        ImGui::EndChild();
+
+        // Spawn selected prefab
+        if (m_selectedPrefabIndex >= 0 && m_selectedPrefabIndex < (int)m_availablePrefabs.size()) {
+            ImGui::Separator();
+            ImGui::Text("Spawn Position:");
+
+            static float spawnX = 0.0f;
+            static float spawnY = 0.0f;
+            ImGui::DragFloat("X", &spawnX, 1.0f);
+            ImGui::DragFloat("Y", &spawnY, 1.0f);
+
+            if (ImGui::Button("Spawn Selected Prefab")) {
+                spawnPrefab(m_availablePrefabs[m_selectedPrefabIndex], vec2{ spawnX, spawnY });
+            }
+        }
+    }
+
+    ImGui::End();
 }
 
 void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
@@ -246,6 +559,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderSceneWindow();
   renderToolbar();
   renderAssetBrowser();
+  renderPrefabEditor();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
@@ -928,42 +1242,47 @@ void SandboxState::renderSceneWindow() {
 
   // Drag and Drop Target
   if (ImGui::BeginDragDropTarget()) {
-    if (const ImGuiPayload *payload =
-            ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
-      const char *textureName = (const char *)payload->Data;
-      // Calculate drop position
-      ImVec2 mousePos = ImGui::GetMousePos();
-      vec2 localMouse = {mousePos.x - viewportMin.x,
-                              mousePos.y - viewportMin.y};
-      
-      Graphics::Camera2D &cam = Core::Engine::Get().camera();
-      float zoom = cam.zoom();
-      vec2 camPos = vec2(cam.position().x, cam.position().y);
+      if (const ImGuiPayload* payload =
+          ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+          const char* textureName = (const char*)payload->Data;
+          // Calculate drop position
+          ImVec2 mousePos = ImGui::GetMousePos();
+          vec2 localMouse = { mousePos.x - viewportMin.x,
+                                  mousePos.y - viewportMin.y };
 
-       vec2 centeredMouse = {
-          localMouse.x - m_viewportSize.x * 0.5f,
-          -(localMouse.y - m_viewportSize.y * 0.5f)};
+          Graphics::Camera2D& cam = Core::Engine::Get().camera();
+          float zoom = cam.zoom();
+          vec2 camPos = vec2(cam.position().x, cam.position().y);
 
-       vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+          vec2 centeredMouse = {
+             localMouse.x - m_viewportSize.x * 0.5f,
+             -(localMouse.y - m_viewportSize.y * 0.5f) };
 
-       // Spawn Entity
-       spawnTestEntity(vec2(worldPos.x, worldPos.y)); 
-       // Set texture of last spawned entity (hacky but works given spawnTestEntity pushes back)
-       if (!m_testEntities.empty()) {
-           auto& world = m_scene.GetWorld();
-           auto entity = m_testEntities.back();
-           auto* sprite = world.getComponent<Components::SpriteRenderer>(entity);
-           if (!sprite) {
-               world.addComponent(entity, Components::SpriteRenderer{});
-               sprite = world.getComponent<Components::SpriteRenderer>(entity);
-           }
-           if (sprite) {
-               sprite->textureId = textureName;
-               sprite->size = vec2(50, 50); // Default size
-           }
-       }
-    }
-    ImGui::EndDragDropTarget();
+          vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+          // Snap to grid if grid is enabled
+          if (m_showGrid) {
+              worldPos = snapToGrid(worldPos, m_gridSize);
+          }
+
+          // Spawn Entity
+          spawnTestEntity(vec2(worldPos.x, worldPos.y));
+          // Set texture of last spawned entity
+          if (!m_testEntities.empty()) {
+              auto& world = m_scene.GetWorld();
+              auto entity = m_testEntities.back();
+              auto* sprite = world.getComponent<Components::SpriteRenderer>(entity);
+              if (!sprite) {
+                  world.addComponent(entity, Components::SpriteRenderer{});
+                  sprite = world.getComponent<Components::SpriteRenderer>(entity);
+              }
+              if (sprite) {
+                  sprite->textureId = textureName;
+                  sprite->size = vec2(50, 50); // Default size
+              }
+          }
+      }
+      ImGui::EndDragDropTarget();
   }
 
   // Gizmos and Picking
@@ -1309,6 +1628,8 @@ void Runtime::SandboxState::renderToolbar() {
   ImGui::Checkbox("Show Grid", &m_showGrid);
   ImGui::SameLine();
   ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
+  ImGui::Separator();
+  ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
 
   ImGui::End();
 }
