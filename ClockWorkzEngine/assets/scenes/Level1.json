@@ -3,6 +3,23 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 20.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
                 "playerController": {
                     "sprintMultiplier": 2.0,
                     "walkMultiplier": 1.0
@@ -36,10 +53,10 @@
                 },
                 "transform": {
                     "position": {
-                        "x": -298.1892395019531,
-                        "y": 151.2607879638672
+                        "x": -329.25439453125,
+                        "y": 237.6593017578125
                     },
-                    "rotation": 2.532899856567383,
+                    "rotation": 2.5720372200012207,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -57,6 +74,7 @@
             "active": true,
             "components": {
                 "collider": {
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -68,6 +86,8 @@
                         "x": 0.0,
                         "y": 0.0
                     },
+                    "radius": 0.0,
+                    "shape": 0,
                     "width": 100.0
                 },
                 "spriteRenderer": {
@@ -97,6 +117,7 @@
             "active": true,
             "components": {
                 "collider": {
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -108,6 +129,8 @@
                         "x": 0.0,
                         "y": 0.0
                     },
+                    "radius": 0.0,
+                    "shape": 0,
                     "width": 100.0
                 },
                 "enemyAI": {
@@ -129,14 +152,19 @@
                 },
                 "transform": {
                     "position": {
-                        "x": 149.0,
-                        "y": 0.0
+                        "x": -609.3827514648438,
+                        "y": -3229.7099609375
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     }
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": 0.4628693163394928,
+                    "y": -0.8864265084266663
                 }
             },
             "name": "Entity_3"
@@ -145,6 +173,7 @@
             "active": true,
             "components": {
                 "collider": {
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 50.0,
@@ -156,6 +185,8 @@
                         "x": 0.0,
                         "y": 0.0
                     },
+                    "radius": 0.0,
+                    "shape": 0,
                     "width": 50.0
                 },
                 "enemyAI": {
@@ -214,8 +245,8 @@
                 },
                 "transform": {
                     "position": {
-                        "x": 77.39132690429688,
-                        "y": 250.66265869140625
+                        "x": -161.14976501464844,
+                        "y": -3726.624755859375
                     },
                     "rotation": -6.182765483856201,
                     "scale": {
@@ -225,8 +256,8 @@
                 },
                 "velocity": {
                     "moveSpeed": 50.0,
-                    "x": -0.6918615102767944,
-                    "y": -0.7220302224159241
+                    "x": -0.7850939035415649,
+                    "y": -0.6193767189979553
                 }
             },
             "name": "Entity_4"
@@ -234,6 +265,23 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "textureId": "wall_texture",
                     "uv": [
@@ -260,6 +308,23 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "textureId": "pot_texture",
                     "uv": [
@@ -282,6 +347,62 @@
                 }
             },
             "name": "Entity_6"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "enemyAI": {
+                    "chaseSpeed": 150.0,
+                    "detectionRadius": 300.0,
+                    "patrolSpeed": 50.0
+                },
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "textureId": "monster_texture",
+                    "uv": [
+                        0.75,
+                        0.5,
+                        0.25,
+                        0.25
+                    ]
+                },
+                "transform": {
+                    "position": {
+                        "x": 71.73310089111328,
+                        "y": 1004.9908447265625
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.2398994266986847,
+                    "y": 0.9707977175712585
+                }
+            },
+            "name": "Entity_7"
         }
     ]
 }

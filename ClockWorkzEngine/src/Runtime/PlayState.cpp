@@ -27,7 +27,6 @@ reserved.
 #include "Audio/AudioManager.hpp"
 #include "Audio/SurfaceAudioSystem.hpp"
 #include "Components/Battery.hpp"
-#include "Components/Collider.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/LightExposure.hpp"
 #include "Components/Torch.hpp"

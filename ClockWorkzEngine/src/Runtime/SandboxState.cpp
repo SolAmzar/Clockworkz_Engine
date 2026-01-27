@@ -1771,10 +1771,13 @@ void SandboxState::spawnEnemy() {
   transform.scale = vec2{1.f, 1.f};
   world.addComponent(entity, transform);
 
-  // Sprite (Red for Enemy)
+  // Sprite (White for Enemy with Texture)
+  // Sprite
   Components::SpriteRenderer sprite;
-  sprite.color = {1.0f, 0.2f, 0.2f, 1.0f}; // Red
+  sprite.color = {1.0f, 1.0f, 1.0f, 1.0f};
   sprite.size = {50.f, 50.f};
+  sprite.textureId = "monster_texture";
+  sprite.uv = {0.75f, 0.5f, 0.25f, 0.25f};
   world.addComponent(entity, sprite);
 
   // Physics
@@ -1796,6 +1799,13 @@ void SandboxState::spawnEnemy() {
   world.addComponent(entity, ai);
 
   world.addComponent(entity, Components::Health{50.f, 50.f});
+
+  // Animation
+  Components::SpriteAnimator anim;
+  anim.loadFromPath("assets/animations/enemy.json");
+  anim.filename = "enemy.json";
+  anim.play("walk");
+  world.addComponent(entity, anim);
 
   m_testEntities.push_back(entity);
   std::cout << "Spawned Enemy Entity: " << entity.id << "\n";
