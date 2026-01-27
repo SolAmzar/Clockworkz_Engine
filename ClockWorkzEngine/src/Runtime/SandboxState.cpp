@@ -86,6 +86,7 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+
   // Load prefabs
   loadAvailablePrefabs();
   refreshTilemapList();
@@ -205,15 +206,15 @@ void SandboxState::render(Core::Time *timer) {
             Components::Battery &batt) {
           float pct = batt.charge / batt.maxCharge;
 
-          std::string texId = "energy flat";
-          if (pct > 0.75f)
-            texId = "energy 4";
-          else if (pct > 0.50f)
-            texId = "energy 3";
-          else if (pct > 0.25f)
-            texId = "energy 2";
-          else if (pct > 0.0f)
-            texId = "energy 1";
+          std::string texId = "battery_empty";
+          if (pct > 0.875f)
+            texId = "battery_full";
+          else if (pct > 0.625f)
+            texId = "battery_3/4";
+          else if (pct > 0.375f)
+            texId = "battery_2/4";
+          else if (pct > 0.125f)
+            texId = "battery_1/4";
 
           glm::vec2 uiSize(128.0f, 64.0f);
           float margin = 20.0f;
@@ -894,14 +895,47 @@ void SandboxState::renderEntityWindow() {
   ImGui::InputText("Filename", currentLevelName, 256);
 
   if (ImGui::Button("Save Level")) {
+    // 1. Save to current runtime directory (Build folder)
     std::string path = "assets/scenes/" + std::string(currentLevelName);
     SceneSerializer::Serialize(world, path);
+
+    // 2. Save to Project Source directory (Persistence)
+    // Attempt to save to source folder assuming standard build layout
+    // (bin/Debug -> root)
+    // 2. Save to Project Source directory (Persistence)
+    // We try multiple relative paths because the CWD can vary (e.g. 'build' vs
+    // 'build/bin/Debug')
+    std::string candidatePaths[] = {
+        "../assets/scenes/" +
+            std::string(currentLevelName), // If running from 'build'
+        "../../../assets/scenes/" +
+            std::string(currentLevelName) // If running from 'build/bin/Debug'
+    };
+
+    bool foundSource = false;
+    for (const auto &relPath : candidatePaths) {
+      std::filesystem::path srcDir =
+          std::filesystem::path(relPath).parent_path();
+      if (std::filesystem::exists(srcDir)) {
+        SceneSerializer::Serialize(world, relPath);
+        foundSource = true;
+        break;
+      }
+    }
+
+    if (!foundSource) {
+      std::cout << "[Sandbox] Error: Could not find source 'assets/scenes' via "
+                   "relative paths.\n";
+      std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
+    }
+
     refreshTilemapList(); // Refresh list after saving
     ImGui::OpenPopup("Saved");
   }
 
   if (ImGui::BeginPopup("Saved")) {
     ImGui::Text("Level Saved Successfully!");
+    ImGui::TextDisabled("(To Build & Source)");
     if (ImGui::Button("Close"))
       ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
@@ -1587,6 +1621,8 @@ void SandboxState::spawnPlayer() {
 
   // Logic
   world.addComponent(entity, Components::PlayerController{});
+  world.addComponent(entity,
+                     Components::Battery{100.f, 100.f}); // Added Battery
   world.addComponent(entity, Components::Health{100.f, 100.f});
 
   m_testEntities.push_back(entity);

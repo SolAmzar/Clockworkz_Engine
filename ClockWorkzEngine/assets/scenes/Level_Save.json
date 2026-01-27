@@ -3,18 +3,26 @@
         {
             "active": true,
             "components": {
+                "battery": {
+                    "charge": 100.0,
+                    "isCharging": true,
+                    "maxCharge": 100.0
+                },
                 "collider": {
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
+                    "radius": 0.0,
+                    "shape": 0,
                     "width": 100.0
                 },
                 "playerController": {
@@ -53,7 +61,7 @@
                         "x": -97.3916244506836,
                         "y": -31.833097457885742
                     },
-                    "rotation": 2.371802806854248,
+                    "rotation": 2.5499331951141357,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -71,6 +79,7 @@
             "active": true,
             "components": {
                 "collider": {
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -82,6 +91,8 @@
                         "x": 0.0,
                         "y": 0.0
                     },
+                    "radius": 0.0,
+                    "shape": 0,
                     "width": 100.0
                 },
                 "spriteRenderer": {
