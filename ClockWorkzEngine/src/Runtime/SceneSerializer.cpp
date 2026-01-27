@@ -4,14 +4,17 @@
 \author(s)      [Lebon], 90%, [Amzar] 10%
 \brief          Loads and saves entire scenes to/from JSON files.
 
-				Takes an ECS World and serializes all entities with their components
+                                Takes an ECS World and serializes all entities
+with their components
 
-All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights
+reserved.
 */
 /******************************************************************************/
 
 #include "Runtime/SceneSerializer.hpp"
 #include "Components/AudioSource.hpp"
+#include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/Fragment.hpp"
@@ -23,6 +26,7 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
+
 
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -111,12 +115,22 @@ void SceneSerializer::Serialize(ECS::World &world,
           {"width", cc->size.x},
           {"height", cc->size.y},
           {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}},
+          {"shape", (int)cc->shape},
+          {"radius", cc->radius},
           {"isSolid", cc->isSolid},
+          {"blocksLight", cc->blocksLight},
           {"isHazard", cc->isHazard},
           {"isTrigger", cc->isTrigger},
           {"moveable", cc->moveable},
           {"collisionCategory", cc->collisionCategory},
           {"collisionMask", cc->collisionMask}};
+    }
+
+    // Battery
+    if (auto *bat = world.getComponent<Components::Battery>(entity)) {
+      obj["components"]["battery"] = {{"charge", bat->charge},
+                                      {"maxCharge", bat->maxCharge},
+                                      {"isCharging", bat->isCharging}};
     }
 
     // Fragment
@@ -303,6 +317,15 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         Components::Collider collider;
         collider.size.x = cc.value("width", 100.f);
         collider.size.y = cc.value("height", 100.f);
+
+        if (cc.contains("offset")) {
+          collider.offset.x = cc["offset"].value("x", 0.0f);
+          collider.offset.y = cc["offset"].value("y", 0.0f);
+        }
+
+        collider.shape = (Components::Collider::Shape)cc.value("shape", 0);
+        collider.radius = cc.value("radius", 0.0f);
+        collider.blocksLight = cc.value("blocksLight", false);
         collider.isSolid = cc.value("isSolid", true);
         collider.isHazard = cc.value("isHazard", false);
         collider.isTrigger = cc.value("isTrigger", false);
@@ -315,6 +338,16 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         // JSON already has them.
 
         world.addComponent(entity, collider);
+      }
+
+      // Battery
+      if (components.contains("battery")) {
+        auto &bc = components["battery"];
+        Components::Battery battery;
+        battery.charge = bc.value("charge", 100.f);
+        battery.maxCharge = bc.value("maxCharge", 100.f);
+        battery.isCharging = bc.value("isCharging", false);
+        world.addComponent(entity, battery);
       }
 
       // Fragment

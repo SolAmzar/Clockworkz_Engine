@@ -117,7 +117,7 @@ private:
   // Editor Features
   bool m_showGrid{true};
   float m_gridSize{50.0f};
-  bool m_isPaused{false};
+  bool m_isPaused{true};
   bool m_showAssetBrowser{true};
   std::string m_selectedAsset;
   bool m_cameraFollowPlayer{true};

@@ -3,11 +3,11 @@
 \file           InputManager.hpp
 \project        Lights Out
 \author(s)      [Lebon], 100%
-\brief          Declares InputManager, a system for handling user input with GLFW.
-                Responsibilities include:
+\brief          Declares InputManager, a system for handling user input with
+GLFW. Responsibilities include:
                 - Tracking specific keys and mouse buttons
-                - Polling current and previous states to detect presses, releases,
-                  and clicks
+                - Polling current and previous states to detect presses,
+releases, and clicks
                 - Storing mouse position and simple click detection thresholds
                 - Providing queries such as isKeyDown(), wasKeyPressed(),
                   wasMouseClicked(), etc.
@@ -16,117 +16,139 @@
 
 References:
 - GLFW Input Guide: https://www.glfw.org/docs/latest/input_guide.html
-- GLFW Mouse Input: https://www.glfw.org/docs/latest/input_guide.html#input_mouse
-- GLFW Keyboard Input: https://www.glfw.org/docs/latest/input_guide.html#input_keyboard
+- GLFW Mouse Input:
+https://www.glfw.org/docs/latest/input_guide.html#input_mouse
+- GLFW Keyboard Input:
+https://www.glfw.org/docs/latest/input_guide.html#input_keyboard
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
+reserved.
 */
 /******************************************************************************/
 
 #pragma once
+#include "Math/Vec2.hpp"
+#include "Math/config.hpp"
+#include <cstdint>
+#include <glm/vec2.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-#include <cstdint>
-#include "Math/Vec2.hpp"
-#include "Math/config.hpp"
-#include <glm/vec2.hpp>
+
 
 struct GLFWwindow;
 
 namespace Graphics {
-    class Camera2D;
+class Camera2D;
 }
 
 namespace Platform {
 
-    class WindowManager; // fwd
+class WindowManager; // fwd
 
-    class InputManager {
-    public:
-        InputManager();
+class InputManager {
+public:
+  InputManager();
 
-        // Preferred: grab GLFWwindow* from WindowManager
-        // Returns false if window handle is null.
-        bool init(WindowManager& wm);
+  // Preferred: grab GLFWwindow* from WindowManager
+  // Returns false if window handle is null.
+  bool init(WindowManager &wm);
 
-        // Call once per frame AFTER WindowManager::poll()
-        void update();
+  // Call once per frame AFTER WindowManager::poll()
+  void update();
 
-        // ---------- Keyboard ----------
-        void trackKey(int key);                // begin polling this key every frame
-        void untrackKey(int key);              // stop polling
-        bool isKeyTracked(int key) const;
+  // ---------- Keyboard ----------
+  void trackKey(int key);   // begin polling this key every frame
+  void untrackKey(int key); // stop polling
+  bool isKeyTracked(int key) const;
 
-        bool isKeyDown(int key) const;         // held right now
-        bool wasKeyPressed(int key) const;     // edge: up -> down this frame
-        bool wasKeyTriggered(int key) const { return wasKeyPressed(key); } // alias
-        bool wasKeyReleased(int key) const;    // edge: down -> up this frame
+  bool isKeyDown(int key) const;     // held right now
+  bool wasKeyPressed(int key) const; // edge: up -> down this frame
+  bool wasKeyTriggered(int key) const { return wasKeyPressed(key); } // alias
+  bool wasKeyReleased(int key) const; // edge: down -> up this frame
 
-        // ---------- Mouse ----------
-        void trackMouseButton(int button);
-        void untrackMouseButton(int button);
-        bool isMouseButtonTracked(int button) const;
+  // ---------- Mouse ----------
+  void trackMouseButton(int button);
+  void untrackMouseButton(int button);
+  bool isMouseButtonTracked(int button) const;
 
-        bool isMouseDown(int button) const;        // held
-        bool wasMousePressed(int button) const;    // edge: up -> down
-        bool wasMouseReleased(int button) const;   // edge: down -> up
-        bool wasMouseClicked(int button) const;    // press->release within thresholds
+  bool isMouseDown(int button) const;      // held
+  bool wasMousePressed(int button) const;  // edge: up -> down
+  bool wasMouseReleased(int button) const; // edge: down -> up
+  bool wasMouseClicked(int button) const;  // press->release within thresholds
 
-        // TODO swap to own math vec2
-        vec2 mousePosition() const { return { static_cast<float>(m_mouseX), static_cast<float>(m_mouseY) }; }
-        void getMousePosition(double& x, double& y) const { x = m_mouseX; y = m_mouseY; }
+  // TODO swap to own math vec2
+  vec2 mousePosition() const {
+    return {static_cast<float>(m_mouseX), static_cast<float>(m_mouseY)};
+  }
+  void getMousePosition(double &x, double &y) const {
+    x = m_mouseX;
+    y = m_mouseY;
+  }
 
-        // Click detection thresholds (defaults: 0.25s, 6px)
-        void setClickThresholds(double maxSeconds, double maxPixels) {
-            if (maxSeconds >= 0.0) m_clickTimeMax = maxSeconds;
-            if (maxPixels >= 0.0) m_clickMoveMax = maxPixels;
-        }
+  // Click detection thresholds (defaults: 0.25s, 6px)
+  void setClickThresholds(double maxSeconds, double maxPixels) {
+    if (maxSeconds >= 0.0)
+      m_clickTimeMax = maxSeconds;
+    if (maxPixels >= 0.0)
+      m_clickMoveMax = maxPixels;
+  }
 
-        vec2 getMouseWorldPos(const Graphics::Camera2D& camera,
-            float windowWidth,
-            float windowHeight) const;
+  vec2 getMouseWorldPos(const Graphics::Camera2D &camera, float windowWidth,
+                        float windowHeight) const;
 
+  void clearState();
 
-        void clearState();
+  static void ScrollCallback(GLFWwindow *window, double xoffset,
+                             double yoffset);
+  static double GetScrollY(); // Gets and clears the scroll value for this frame
 
-    private:
-        // Internals
-        void ensureKeySlot(int key);
-        void ensureMouseSlot(int button);
+private:
+  static double s_scrollX;
+  static double s_scrollY;
 
-        bool keyCurr(int key)   const;
-        bool keyPrev(int key)   const;
-        bool mouseCurr(int btn) const;
-        bool mousePrev(int btn) const;
+private:
+  // Internals
+  void ensureKeySlot(int key);
+  void ensureMouseSlot(int button);
 
-        static bool isPressedUChar(unsigned char v) { return v != 0; }
+  bool keyCurr(int key) const;
+  bool keyPrev(int key) const;
+  bool mouseCurr(int btn) const;
+  bool mousePrev(int btn) const;
 
-    private:
-        GLFWwindow* m_window{ nullptr };
+  static bool isPressedUChar(unsigned char v) { return v != 0; }
 
-        // Which inputs to poll each frame
-        std::unordered_set<int> m_trackedKeys;
-        std::unordered_set<int> m_trackedMouse;
+private:
+  GLFWwindow *m_window{nullptr};
 
-        // State maps (GLFW_PRESS = 1, GLFW_RELEASE = 0 copied as unsigned char)
-        mutable std::unordered_map<int, unsigned char> m_prevKeys;
-        mutable std::unordered_map<int, unsigned char> m_currKeys;
-        mutable std::unordered_map<int, unsigned char> m_prevMouse;
-        mutable std::unordered_map<int, unsigned char> m_currMouse;
+  // Which inputs to poll each frame
+  std::unordered_set<int> m_trackedKeys;
+  std::unordered_set<int> m_trackedMouse;
 
-        // Mouse position (window client coords)
-        double m_mouseX{ 0.0 }, m_mouseY{ 0.0 };
-        double m_prevMouseX{ 0.0 }, m_prevMouseY{ 0.0 };
+  // State maps (GLFW_PRESS = 1, GLFW_RELEASE = 0 copied as unsigned char)
+  mutable std::unordered_map<int, unsigned char> m_prevKeys;
+  mutable std::unordered_map<int, unsigned char> m_currKeys;
+  mutable std::unordered_map<int, unsigned char> m_prevMouse;
+  mutable std::unordered_map<int, unsigned char> m_currMouse;
 
-        // Click bookkeeping
-        struct PressInfo { double t{ 0.0 }; double x{ 0.0 }; double y{ 0.0 }; bool valid{ false }; };
-        std::unordered_map<int, PressInfo> m_mousePressInfo;
-        std::unordered_map<int, bool>      m_mouseClickedThisFrame;
+  // Mouse position (window client coords)
+  double m_mouseX{0.0}, m_mouseY{0.0};
+  double m_prevMouseX{0.0}, m_prevMouseY{0.0};
 
-        // Click thresholds
-        double m_clickTimeMax{ 0.25 }; // seconds
-        double m_clickMoveMax{ 6.0 };  // pixels
-    };
+  // Click bookkeeping
+  struct PressInfo {
+    double t{0.0};
+    double x{0.0};
+    double y{0.0};
+    bool valid{false};
+  };
+  std::unordered_map<int, PressInfo> m_mousePressInfo;
+  std::unordered_map<int, bool> m_mouseClickedThisFrame;
+
+  // Click thresholds
+  double m_clickTimeMax{0.25}; // seconds
+  double m_clickMoveMax{6.0};  // pixels
+};
 
 } // namespace Platform
