@@ -33,6 +33,10 @@ reserved.
 
 namespace Platform {
 
+// Initialize static members
+double InputManager::s_scrollX = 0.0;
+double InputManager::s_scrollY = 0.0;
+
 InputManager::InputManager() {
   // Tracking defaults set in init(), once we know GLFW is ready.
 }
@@ -41,6 +45,9 @@ bool InputManager::init(WindowManager &wm) {
   m_window = wm.handle();
   if (!m_window)
     return false;
+
+  // Register Scroll Callback
+  glfwSetScrollCallback(m_window, ScrollCallback);
 
   // Reasonable defaults for menus + gameplay
   trackKey(GLFW_KEY_UP);
@@ -67,6 +74,7 @@ bool InputManager::init(WindowManager &wm) {
   trackKey(GLFW_KEY_F1);
 
   trackKey(GLFW_KEY_R); // For Flashlight
+  trackKey(GLFW_KEY_F); // For Flashlight
   trackKey(GLFW_KEY_Z); //
   trackKey(GLFW_KEY_X);
   trackKey(GLFW_KEY_P); // For debugging
@@ -76,9 +84,11 @@ bool InputManager::init(WindowManager &wm) {
   trackKey(GLFW_KEY_M); // Sprite Editor from Menu Screen
   trackKey(GLFW_KEY_LEFT_SHIFT);
   trackKey(GLFW_KEY_RIGHT_SHIFT);
+  trackKey(GLFW_KEY_LEFT_CONTROL);
 
   trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
   trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
+  trackMouseButton(GLFW_MOUSE_BUTTON_MIDDLE);
 
   // Seed mouse pos
   glfwGetCursorPos(m_window, &m_mouseX, &m_mouseY);
@@ -274,6 +284,19 @@ void InputManager::clearState() {
   m_currMouse.clear();
   m_mouseClickedThisFrame.clear();
   m_mousePressInfo.clear();
+}
+
+void InputManager::ScrollCallback(GLFWwindow *window, double xoffset,
+                                  double yoffset) {
+  (void)window;
+  s_scrollX += xoffset;
+  s_scrollY += yoffset;
+}
+
+double InputManager::GetScrollY() {
+  double val = s_scrollY;
+  s_scrollY = 0.0; // Reset after reading
+  return val;
 }
 
 } // namespace Platform

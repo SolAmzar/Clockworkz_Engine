@@ -29,6 +29,8 @@ reserved.
 #include <iostream>
 #include <string>
 
+#include "Assets/SoundManager.hpp"
+#include "Components/Battery.hpp"
 
 namespace Components {
 
@@ -54,11 +56,61 @@ struct PlayerController {
     auto *anim = world.getComponent<SpriteAnimator>(entity);
     auto *torch = world.getComponent<TorchComponent>(entity);
     auto *col = world.getComponent<Components::Collider>(entity);
+    auto *batt = world.getComponent<Components::Battery>(entity);
 
     // Enforce Physics Interaction: Player must be moveable to collide with
     // walls
     if (col) {
       col->moveable = true;
+    }
+
+    // --- Flashlight Logic ---
+    if (torch) {
+      // Toggle Flashlight with 'F'
+      if (input.wasKeyPressed(GLFW_KEY_F)) {
+        if (batt && batt->charge > 0.0f) {
+          torch->active = !torch->active;
+          std::cout << "Flashlight Toggled: " << (torch->active ? "ON" : "OFF")
+                    << "\n";
+
+          if (torch->active) {
+            Assets::SoundManager::Play("flashlight_on");
+          } else {
+            Assets::SoundManager::Play("flashlight_off");
+          }
+        } else if (batt && batt->charge <= 0.0f && !torch->active) {
+          // Optional: Play "click" sound for empty battery?
+          Assets::SoundManager::Play("flashlight_off");
+        }
+      }
+
+      // Battery Management
+      if (batt) {
+        if (torch->active) {
+          // Drain Battery
+          batt->isCharging = false;
+          batt->charge -=
+              batt->drainRate * static_cast<float>(dt); // Drain per second
+
+          // Force off if empty
+          if (batt->charge <= 0.0f) {
+            batt->charge = 0.0f;
+            torch->active = false;
+            Assets::SoundManager::Play("flashlight_off");
+            std::cout << "Flashlight Drained!\n";
+          }
+        } else {
+          // Recharge Battery
+          batt->isCharging = true;
+          batt->charge +=
+              batt->chargeRate * static_cast<float>(dt); // Charge per second
+          if (batt->charge > batt->maxCharge) {
+            batt->charge = batt->maxCharge;
+            // batt->isCharging = false; // Keep charging status true while
+            // torch is off
+          }
+        }
+      }
     }
 
     std::string currentState = "idle";
