@@ -23,9 +23,8 @@ reserved.
 #include "ECS/Entity.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Gameplay/GameObject.hpp"
-#include "Platform/InputManager.hpp"
+#include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
-#include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneManager.hpp"
 #include <map>
 #include <memory>
@@ -39,13 +38,16 @@ class Time;
 
 namespace Platform {
 class LevelEditor;
-}
+class InputManager;
+} // namespace Platform
 
 namespace Graphics {
 class RenderingManager;
 }
 
 namespace Runtime {
+class GameStateManager;
+class GameStateManager;
 
 class PlayState : public GameState {
 public:
@@ -135,6 +137,7 @@ private:
   float m_fragmentNotificationTimer = 0.0f;
   std::string m_lastCollectedFragmentId;
 
+  bool m_showImGui{false};
   // ECS Integration
   std::map<uint32_t, ECS::Entity> m_enemyMap;
   void clearEnemyAI();

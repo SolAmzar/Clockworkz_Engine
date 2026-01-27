@@ -16,6 +16,7 @@ reserved.
 #include "Platform/WindowManager.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -183,6 +184,55 @@ void SandboxState::render(Core::Time *timer) {
   renderer.beginDebugPass(camera.viewProj());
   renderGrid();
   renderer.endDebugPass();
+
+  // Debug Collider Pass
+  if (m_showColliders)
+    renderDebugColliders(renderer);
+
+  // Render HUD (Battery)
+  if (m_showHUD && m_viewportSize.x > 0 && m_viewportSize.y > 0) {
+    // Determine Ortho Projection for UI (0,0 bottom-left, to matches GL
+    // default)
+    glm::mat4 uiProj =
+        glm::ortho(0.0f, m_viewportSize.x, 0.0f, m_viewportSize.y, -1.0f, 1.0f);
+
+    // Begin UI Pass (reuses Scene Pass setup but with UI projection)
+    renderer.beginScenePass(uiProj);
+
+    auto &world = m_scene.GetWorld();
+    world.each<Components::PlayerController, Components::Battery>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Battery &batt) {
+          float pct = batt.charge / batt.maxCharge;
+
+          std::string texId = "energy flat";
+          if (pct > 0.75f)
+            texId = "energy 4";
+          else if (pct > 0.50f)
+            texId = "energy 3";
+          else if (pct > 0.25f)
+            texId = "energy 2";
+          else if (pct > 0.0f)
+            texId = "energy 1";
+
+          glm::vec2 uiSize(128.0f, 64.0f);
+          float margin = 20.0f;
+          // Top-Right positioning
+          // x = ViewportWidth - Margin - Width
+          // y = ViewportHeight - Margin - Height (Top anchor for BottomLeft
+          // origin)
+          glm::vec2 uiPos(m_viewportSize.x - margin - uiSize.x,
+                          m_viewportSize.y - margin - uiSize.y);
+
+          auto tex = Assets::TextureManager::Get(texId);
+          if (tex) {
+            renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
+                                glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
+          }
+        });
+
+    renderer.endScenePass();
+  }
 
   m_framebuffer.unbind();
 }
@@ -547,17 +597,131 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
 
         // Create simple light polygon (Fan)
         std::vector<glm::vec2> lightPoly;
-        int segments = 30;
+        int segments = 100; // Increased segments for smoother shadows
         float halfFov = glm::radians(torch.angle) * 0.5f;
         float startAngle = angle - halfFov;
-        float step = glm::radians(torch.angle) / segments;
+        float totalAngle = glm::radians(torch.angle);
+        float step = totalAngle / segments;
 
-        // Note: drawLightCone expects polygon points, not including origin (it
-        // adds origin itself)
-        for (int i = 0; i <= segments; ++i) {
-          float theta = startAngle + step * i;
-          lightPoly.emplace_back(originGLM.x + std::cos(theta) * torch.radius,
-                                 originGLM.y + std::sin(theta) * torch.radius);
+        if (!m_enableShadows) {
+          // SIMPLE FAN (No Shadows)
+          for (int i = 0; i <= segments; ++i) {
+            float theta = startAngle + step * i;
+            lightPoly.emplace_back(originGLM.x + std::cos(theta) * torch.radius,
+                                   originGLM.y +
+                                       std::sin(theta) * torch.radius);
+          }
+        } else {
+          // RAYCAST SHADOWS
+          // Local Raycast Helper
+          auto Raycast = [&](glm::vec2 start, glm::vec2 dir,
+                             float maxDist) -> glm::vec2 {
+            float closestDist = maxDist;
+            glm::vec2 closestPoint = start + dir * maxDist;
+
+            // Helper to rotate vector by angle (radians)
+            auto RotateVec = [](glm::vec2 v, float angle) -> glm::vec2 {
+              float s = std::sin(angle);
+              float c = std::cos(angle);
+              return glm::vec2(v.x * c - v.y * s, v.x * s + v.y * c);
+            };
+
+            // Iterate all potential occluders
+            world.each<Components::Transform, Components::Collider>(
+                [&](ECS::Entity, Components::Transform &obsTrans,
+                    Components::Collider &obsCol) {
+                  if (!obsCol.isSolid || !obsCol.blocksLight)
+                    return;
+
+                  // 1. Calculate World Center with Rotated Offset
+                  glm::vec2 offsetRotated =
+                      RotateVec(glm::vec2(obsCol.offset.x, obsCol.offset.y),
+                                obsTrans.rotation);
+                  glm::vec2 obsCenter =
+                      glm::vec2(obsTrans.position.x, obsTrans.position.y) +
+                      offsetRotated;
+
+                  if (obsCol.shape == Components::Collider::Shape::Box) {
+                    // --- OBB Logic (Oriented Bounding Box) ---
+                    // Transform Ray into Box's Local Space
+                    // Local Ray Origin = Rotate(WorldRayStart - BoxCenter,
+                    // -Angle) Local Ray Dir    = Rotate(WorldRayDir, -Angle)
+
+                    glm::vec2 localStart =
+                        RotateVec(start - obsCenter, -obsTrans.rotation);
+                    glm::vec2 localDir = RotateVec(dir, -obsTrans.rotation);
+
+                    // AABB in Local Space is centered at (0,0) with
+                    // half-extents
+                    // Apply Transform Scale to Box Size
+                    glm::vec2 scaledSize =
+                        glm::vec2(obsCol.size.x * obsTrans.scale.x,
+                                  obsCol.size.y * obsTrans.scale.y);
+                    glm::vec2 halfSize = scaledSize * 0.5f;
+
+                    glm::vec2 min = -halfSize;
+                    glm::vec2 max = halfSize;
+
+                    // Standard Slab Method in Local Space
+                    glm::vec2 invDir;
+                    invDir.x = (std::abs(localDir.x) < 1e-6f)
+                                   ? 1e6f
+                                   : 1.0f / localDir.x;
+                    invDir.y = (std::abs(localDir.y) < 1e-6f)
+                                   ? 1e6f
+                                   : 1.0f / localDir.y;
+
+                    glm::vec2 t1 = (min - localStart) * invDir;
+                    glm::vec2 t2 = (max - localStart) * invDir;
+
+                    float tmin =
+                        std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y));
+                    float tmax =
+                        std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y));
+
+                    // If hit, tmin is the distance along the ray.
+                    // Since rotation preserves distance, tmin is valid in World
+                    // Space too.
+                    if (tmax >= std::max(0.0f, tmin) && tmin < closestDist) {
+                      closestDist = tmin;
+                      closestPoint = start + dir * tmin;
+                    }
+                  } else if (obsCol.shape ==
+                             Components::Collider::Shape::Circle) {
+                    // --- Circle Logic ---
+                    // Circle is rotation invariant, but we must use the correct
+                    // Center (offset logic above)
+                    // Apply Transform Scale to Radius
+                    float scaledRadius =
+                        obsCol.radius *
+                        std::max(obsTrans.scale.x, obsTrans.scale.y);
+
+                    float r = scaledRadius;
+                    glm::vec2 oc = start - obsCenter;
+                    float b = 2.0f * glm::dot(oc, dir);
+                    float c = glm::dot(oc, oc) - r * r;
+                    float discriminant = b * b - 4.0f * c;
+
+                    if (discriminant >= 0.0f) {
+                      float sqrtD = std::sqrt(discriminant);
+                      // t1 is entry, t2 is exit
+                      float t1 = (-b - sqrtD) * 0.5f;
+
+                      if (t1 > 0.0f && t1 < closestDist) {
+                        closestDist = t1;
+                        closestPoint = start + dir * t1;
+                      }
+                    }
+                  }
+                });
+            return closestPoint;
+          };
+
+          for (int i = 0; i <= segments; ++i) {
+            float theta = startAngle + step * i;
+            glm::vec2 rayDir(std::cos(theta), std::sin(theta));
+            lightPoly.push_back(Raycast(originGLM, rayDir, torch.radius));
+          }
         }
 
         // Render Light Pass
@@ -567,6 +731,50 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
         renderer.drawLightCone(originGLM, lightPoly, torch.color);
         renderer.endLightPass();
       });
+}
+
+void SandboxState::renderDebugColliders(Graphics::RenderingManager &renderer) {
+  auto &world = m_scene.GetWorld();
+  renderer.beginDebugPass(Core::Engine::Get().camera().viewProj());
+
+  world.each<Components::Transform, Components::Collider>(
+      [&](ECS::Entity, Components::Transform &t, Components::Collider &c) {
+        // Rotate Offset
+        auto RotateVec = [](glm::vec2 v, float angle) -> glm::vec2 {
+          float s = std::sin(angle);
+          float c_ang = std::cos(angle);
+          return glm::vec2(v.x * c_ang - v.y * s, v.x * s + v.y * c_ang);
+        };
+
+        glm::vec2 offsetRot =
+            RotateVec(glm::vec2(c.offset.x, c.offset.y), t.rotation);
+        glm::vec2 pos(t.position.x + offsetRot.x, t.position.y + offsetRot.y);
+
+        glm::vec3 color = c.isTrigger ? glm::vec3(1.0f, 1.0f, 0.0f)  // Yellow
+                                      : glm::vec3(0.0f, 1.0f, 0.0f); // Green
+
+        if (c.shape == Components::Collider::Shape::Box) {
+          // Draw Rotated Rect using Lines
+          glm::vec2 half = glm::vec2(c.size.x, c.size.y) * 0.5f;
+          // Corners in local space
+          glm::vec2 p1 =
+              RotateVec(glm::vec2(-half.x, -half.y), t.rotation) + pos;
+          glm::vec2 p2 =
+              RotateVec(glm::vec2(half.x, -half.y), t.rotation) + pos;
+          glm::vec2 p3 = RotateVec(glm::vec2(half.x, half.y), t.rotation) + pos;
+          glm::vec2 p4 =
+              RotateVec(glm::vec2(-half.x, half.y), t.rotation) + pos;
+
+          renderer.drawLine(p1.x, p1.y, p2.x, p2.y, color.r, color.g, color.b);
+          renderer.drawLine(p2.x, p2.y, p3.x, p3.y, color.r, color.g, color.b);
+          renderer.drawLine(p3.x, p3.y, p4.x, p4.y, color.r, color.g, color.b);
+          renderer.drawLine(p4.x, p4.y, p1.x, p1.y, color.r, color.g, color.b);
+        } else {
+          renderer.drawCircle(pos.x, pos.y, c.radius, color.r, color.g,
+                              color.b);
+        }
+      });
+  renderer.endDebugPass();
 }
 
 void SandboxState::renderImGui(Core::Time *timer) {
@@ -744,6 +952,12 @@ void SandboxState::renderEntityWindow() {
       spawnTestEntity(vec2{m_spawnX, m_spawnY});
     }
   }
+
+  ImGui::Separator();
+  ImGui::Text("View Options");
+  // Debug Toggle
+  ImGui::Checkbox("Show Colliders", &m_showColliders);
+  ImGui::Checkbox("Show HUD", &m_showHUD);
 
   // AI Testing Buttons
   ImGui::Separator();
@@ -989,14 +1203,40 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
-  // Collider
   if (ImGui::CollapsingHeader("Collider")) {
     auto *c = world.getComponent<Components::Collider>(entity);
     if (c) {
-      ImGui::InputFloat2("Size", &c->size.x);
+      // Shape Selector
+      const char *shapeNames[] = {"Box", "Circle"};
+      int currentShape = (int)c->shape;
+      if (ImGui::Combo("Shape", &currentShape, shapeNames, 2)) {
+        c->shape = (Components::Collider::Shape)currentShape;
+      }
+
+      if (c->shape == Components::Collider::Shape::Box) {
+        ImGui::InputFloat2("Size", &c->size.x);
+      } else {
+        ImGui::InputFloat("Radius", &c->radius);
+      }
+
       ImGui::InputFloat2("Offset", &c->offset.x);
       ImGui::Checkbox("Is Solid", &c->isSolid);
       ImGui::Checkbox("Trigger", &c->isTrigger);
+      ImGui::Checkbox("Blocks Light", &c->blocksLight);
+      ImGui::Checkbox("Moveable", &c->moveable);
+
+      if (ImGui::Button("Fit to Sprite")) {
+        auto *spr = world.getComponent<Components::SpriteRenderer>(entity);
+        if (spr) {
+          if (c->shape == Components::Collider::Shape::Box) {
+            c->size = spr->size;
+          } else {
+            // Radius is half the max dimension
+            c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+          }
+        }
+      }
+
       if (ImGui::Button("Remove Collider"))
         world.removeComponent<Components::Collider>(entity);
     } else {

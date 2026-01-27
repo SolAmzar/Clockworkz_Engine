@@ -13,6 +13,7 @@ reserved.
 
 #pragma once
 
+#include "Components/Collider.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/Torch.hpp"
@@ -27,6 +28,7 @@ reserved.
 #include <cmath>
 #include <iostream>
 #include <string>
+
 
 namespace Components {
 
@@ -51,6 +53,13 @@ struct PlayerController {
     auto *sm = world.getComponent<StateMachine>(entity);
     auto *anim = world.getComponent<SpriteAnimator>(entity);
     auto *torch = world.getComponent<TorchComponent>(entity);
+    auto *col = world.getComponent<Components::Collider>(entity);
+
+    // Enforce Physics Interaction: Player must be moveable to collide with
+    // walls
+    if (col) {
+      col->moveable = true;
+    }
 
     std::string currentState = "idle";
 

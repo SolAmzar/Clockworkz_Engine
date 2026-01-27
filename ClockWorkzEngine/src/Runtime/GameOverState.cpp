@@ -21,7 +21,6 @@ reserved.
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-
 namespace Runtime {
 
 GameOverState::GameOverState(GameStateManager &gsm,

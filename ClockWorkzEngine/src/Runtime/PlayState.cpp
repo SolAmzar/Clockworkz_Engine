@@ -460,10 +460,18 @@ void PlayState::update(double dt) {
   }
 
   if (m_input.wasKeyPressed(GLFW_KEY_Z)) {
-    if (m_levelEditor && m_editorInitialized) {
-      bool newState = !m_levelEditor->isActive();
-      m_levelEditor->setActive(newState);
-      std::cout << "[PlayState] Level editor "
+    // Toggle generic ImGui overlay
+    m_showImGui = !m_showImGui;
+    std::cout << "[PlayState] ImGui " << (m_showImGui ? "ENABLED" : "DISABLED")
+              << "\n";
+
+    /*
+    // Decoupled Level Editor from Z key locally to prioritize ImGui toggle
+    request.
+    // Editor can still be toggled via F10 (if logic exists) or we can rebind
+    it. if (m_levelEditor && m_editorInitialized) { bool newState =
+    !m_levelEditor->isActive(); m_levelEditor->setActive(newState); std::cout <<
+    "[PlayState] Level editor "
                 << (newState ? "activated" : "deactivated") << "\n";
 
       if (auto *scene = m_scenes.current()) {
@@ -474,6 +482,7 @@ void PlayState::update(double dt) {
         }
       }
     }
+    */
   }
 
   if (m_levelEditor && m_levelEditor->isActive()) {
@@ -998,7 +1007,22 @@ void PlayState::updateLightExposure(double dt) {
 }
 
 void PlayState::renderImGui(Core::Time *timer) {
+  (void)timer;
+
 #ifdef _DEBUG
+  // Toggleable Debug UI
+  if (m_showImGui) {
+    ImGui::Begin("PlayState Debug");
+    ImGui::Text("Play State ImGui Enabled");
+    ImGui::Checkbox("Show ImGui (Z)", &m_showImGui);
+
+    if (ImGui::Button("Return to Menu")) {
+      m_shouldReturnToMenu = true;
+    }
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    ImGui::End();
+  }
+
   // Only render editor UI if editor is active
   if (m_levelEditor && m_levelEditor->isActive()) {
     Core::Engine &engine = Core::Engine::Get();
@@ -1008,8 +1032,6 @@ void PlayState::renderImGui(Core::Time *timer) {
     m_levelEditor->renderUI();
     imgui.endDockspace();
   }
-
-  (void)timer;
 #endif
 }
 
@@ -1898,3 +1920,5 @@ void Runtime::PlayState::renderFragmentUI() {
   m_renderer->endFontPass();
 }
 #endif
+
+namespace Runtime {} // namespace Runtime
