@@ -9,6 +9,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# --- MSVC: Replace /Zi with /ZI for Edit and Continue support ---
+if(MSVC)
+  string(REPLACE "/Zi" "/ZI" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+  string(REPLACE "/Zi" "/ZI" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+endif()
+
 # --- Import dependencies ---
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(ImportDependencies)
@@ -40,14 +46,14 @@ add_executable(${PROJECT_NAME} ${ENGINE_SOURCES} ${ENGINE_HEADERS}  "src/Graphic
 import_lua(${PROJECT_NAME})
 
 if (MSVC)
-    # Strong warnings
-    target_compile_options(${PROJECT_NAME} PRIVATE 
-        /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus
+    # Strong warnings + /bigobj for Sol2 template-heavy files
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj
     )
 
-    # Enable Edit and Continue for Debug only
-    target_compile_options(${PROJECT_NAME} PRIVATE 
-        $<$<CONFIG:Debug>:/ZI /Od>
+    # Debug optimization level (Edit and Continue /ZI is set globally above)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:/Od>
     )
 
     target_link_options(${PROJECT_NAME} PRIVATE 
@@ -67,11 +73,8 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-# --- Warnings & MSVC niceties ---
-if(MSVC)
-  add_compile_options(/W4 /permissive- /Zc:preprocessor /Zc:__cplusplus)
-  add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
-else()
+# --- Warnings for non-MSVC compilers (MSVC handled above) ---
+if(NOT MSVC)
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 

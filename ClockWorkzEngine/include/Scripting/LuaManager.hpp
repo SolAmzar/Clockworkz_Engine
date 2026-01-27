@@ -1,9 +1,13 @@
-/*
- * @file LuaManager.h
- * @brief Lua scripting integration for ClockWorkz Engine
- * @author ClockWorkz Team
- */
+﻿/******************************************************************************/
+/*!
+\file           LuaManager.hpp
+\project        Lights Out
+\author(s)      [Syafiq]
+\brief          Create functions to run the lua scripts
 
+All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+*/
+/******************************************************************************/
 #pragma once
 
 #include <sol/sol.hpp>
@@ -86,6 +90,23 @@ namespace Scripting {
         void SetGlobal(const std::string& variableName, T&& value) {
             m_LuaState[variableName] = std::forward<T>(value);
         }
+
+        /**
+         * @brief Create a sandboxed environment for script isolation
+         * Scripts executed in this environment can access globals but cannot
+         * pollute the global namespace.
+         * @return A new sandboxed environment
+         */
+        sol::environment CreateSandboxedEnvironment();
+
+        /**
+         * @brief Execute a script file in a sandboxed environment
+         * @param filepath Path to the .lua file
+         * @param env The sandboxed environment to use
+         * @return The result of script execution (typically a table)
+         */
+        sol::protected_function_result ExecuteScriptInEnvironment(
+            const std::string& filepath, sol::environment& env);
 
     private:
         /**

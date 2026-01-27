@@ -134,6 +134,9 @@ void SpriteEditorState::update(double dt) {
 }
 
 void SpriteEditorState::render(Core::Time *timer) {
+    
+  (void)timer;
+
   if (!m_loaded || !m_renderer)
     return;
 
@@ -183,6 +186,9 @@ void SpriteEditorState::render(Core::Time *timer) {
 }
 
 void SpriteEditorState::renderImGui(Core::Time *timer) {
+
+  (void)timer;
+
   if (!m_debug || !m_spriteEntity.isValid())
     return;
 
