@@ -13,116 +13,111 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Scripting/LuaBindings.hpp"
 #include <iostream>
 #include <fstream>
+#include <iostream>
+
+
+// Disable warnings for Sol2 template instantiations
+#pragma warning(push, 0)
+#pragma warning(disable : 26495) // variable uninitialized
+#pragma warning(disable : 26439) // noexcept
+#pragma warning(disable : 26496) // switch fallthrough in templates
+#pragma warning(disable : 26488) // es
 
 namespace Scripting {
 
-    LuaManager::LuaManager() {
-    }
+LuaManager::LuaManager() {}
 
-    LuaManager::~LuaManager() {
-    }
+LuaManager::~LuaManager() {}
 
-    void LuaManager::Initialize() {
-        if (m_Initialized) {
-            std::cout << "[LuaManager] Already initialized" << std::endl;
-            return;
-        }
+void LuaManager::Initialize() {
+  if (m_Initialized) {
+    std::cout << "[LuaManager] Already initialized" << std::endl;
+    return;
+  }
 
-        // Open standard Lua libraries
-        m_LuaState.open_libraries(
-            sol::lib::base,
-            sol::lib::package,
-            sol::lib::coroutine,
-            sol::lib::string,
-            sol::lib::os,
-            sol::lib::math,
-            sol::lib::table,
-            sol::lib::debug,
-            sol::lib::bit32,
-            sol::lib::io,
-            sol::lib::utf8
-        );
+  // Open standard Lua libraries
+  m_LuaState.open_libraries(sol::lib::base, sol::lib::package,
+                            sol::lib::coroutine, sol::lib::string, sol::lib::os,
+                            sol::lib::math, sol::lib::table, sol::lib::debug,
+                            sol::lib::bit32, sol::lib::io, sol::lib::utf8);
 
-        // Register engine-specific bindings
-        RegisterEngineFunctions();
+  // Register engine-specific bindings
+  RegisterEngineFunctions();
 
-        m_Initialized = true;
-        std::cout << "[LuaManager] Initialized with Lua "
-            << LUA_VERSION_MAJOR << "." << LUA_VERSION_MINOR << "." << LUA_VERSION_RELEASE
-            << std::endl;
-    }
+  m_Initialized = true;
+  std::cout << "[LuaManager] Initialized with Lua " << LUA_VERSION_MAJOR << "."
+            << LUA_VERSION_MINOR << "." << LUA_VERSION_RELEASE << std::endl;
+}
 
-    bool LuaManager::ExecuteScript(const std::string& filepath) {
-        if (!m_Initialized) {
-            LogError("LuaManager not initialized");
-            return false;
-        }
+bool LuaManager::ExecuteScript(const std::string &filepath) {
+  if (!m_Initialized) {
+    LogError("LuaManager not initialized");
+    return false;
+  }
 
-        // Check if file exists
-        std::ifstream file(filepath);
-        if (!file.good()) {
-            LogError("Script file not found: " + filepath);
-            return false;
-        }
-        file.close();
+  // Check if file exists
+  std::ifstream file(filepath);
+  if (!file.good()) {
+    LogError("Script file not found: " + filepath);
+    return false;
+  }
+  file.close();
 
-        try {
-            m_LuaState.script_file(filepath);
-            std::cout << "[LuaManager] Executed script: " << filepath << std::endl;
-            return true;
-        }
-        catch (const sol::error& e) {
-            LogError("Error executing script '" + filepath + "': " + e.what());
-            return false;
-        }
-    }
+  try {
+    m_LuaState.script_file(filepath);
+    std::cout << "[LuaManager] Executed script: " << filepath << std::endl;
+    return true;
+  } catch (const sol::error &e) {
+    LogError("Error executing script '" + filepath + "': " + e.what());
+    return false;
+  }
+}
 
-    bool LuaManager::ExecuteString(const std::string& script) {
-        if (!m_Initialized) {
-            LogError("LuaManager not initialized");
-            return false;
-        }
+bool LuaManager::ExecuteString(const std::string &script) {
+  if (!m_Initialized) {
+    LogError("LuaManager not initialized");
+    return false;
+  }
 
-        try {
-            m_LuaState.script(script);
-            return true;
-        }
-        catch (const sol::error& e) {
-            LogError("Error executing Lua string: " + std::string(e.what()));
-            return false;
-        }
-    }
+  try {
+    m_LuaState.script(script);
+    return true;
+  } catch (const sol::error &e) {
+    LogError("Error executing Lua string: " + std::string(e.what()));
+    return false;
+  }
+}
 
-    void LuaManager::RegisterEngineFunctions() {
-        // Register basic logging functions
-        m_LuaState.set_function("Log", [](const std::string& message) {
-            std::cout << "[Lua] " << message << std::endl;
-            });
+void LuaManager::RegisterEngineFunctions() {
+  // Register basic logging functions
+  m_LuaState.set_function("Log", [](const std::string& message) {
+    std::cout << "[Lua] " << message << std::endl;
+ });
 
-        m_LuaState.set_function("LogWarning", [](const std::string& message) {
-            std::cout << "[Lua Warning] " << message << std::endl;
-            });
+  m_LuaState.set_function("LogWarning", [](const std::string& message) {
+    std::cout << "[Lua Warning] " << message << std::endl;
+  });
 
-        m_LuaState.set_function("LogError", [](const std::string& message) {
-            std::cerr << "[Lua Error] " << message << std::endl;
-            });
+  m_LuaState.set_function("LogError", [](const std::string& message) {
+     std::cerr << "[Lua Error] " << message << std::endl;
+  });
 
-        // Register math helper functions
-        m_LuaState.set_function("Clamp", [](float value, float min, float max) {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
-            });
+  // Register math helper functions
+  m_LuaState.set_function("Clamp", [](float value, float min, float max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+  });
 
-        m_LuaState.set_function("Lerp", [](float a, float b, float t) {
-            return a + (b - a) * t;
-            });
+  m_LuaState.set_function("Lerp", [](float a, float b, float t) {
+    return a + (b - a) * t;
+  });
 
-        // Register all engine type bindings (vec2, Transform2D, GameObject, Components, Input)
-        RegisterAllBindings(m_LuaState);
+  // Register all engine type bindings (vec2, Transform2D, GameObject, Components, Input)
+  RegisterAllBindings(m_LuaState);
 
-        std::cout << "[LuaManager] Engine functions registered" << std::endl;
-    }
+  std::cout << "[LuaManager] Engine functions registered" << std::endl;
+}
 
     sol::environment LuaManager::CreateSandboxedEnvironment() {
         // Create an environment that inherits from globals
@@ -153,4 +148,4 @@ namespace Scripting {
         std::cerr << "[LuaManager Error] " << message << std::endl;
     }
 
-} // namespace ClockWorkz
+} // namespace Scripting

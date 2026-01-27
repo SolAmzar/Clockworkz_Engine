@@ -50,6 +50,7 @@ reserved.
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <Assets/TextureManager.hpp>
+#include <Components/PlayerController.hpp>
 #include <Core/Engine.hpp>
 #include <Core/Time.hpp>
 #include <GLFW/glfw3.h>
@@ -483,9 +484,19 @@ void PlayState::update(double dt) {
   // Syafiq - Player movement
   if (auto *scene = m_scenes.current()) {
     m_scenes.update(dt, m_input);
-    // Syafiq - need find a way to cache the player.or do a unordered_map with
     // object unique name to array of objects. objMap["Player"][0] <- since only
     // 1 player. index 0 will work.
+
+    // ---- CAMERA FOLLOW (ECS Based) ----
+    // This ensures camera tracks player even if "m_player" GameObject pointer
+    // is stale
+    scene->GetWorld().each<Components::PlayerController, Components::Transform>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Transform &t) {
+          auto &camera = Core::Engine::Get().camera();
+          camera.setPosition(glm::vec2(t.position.x, t.position.y));
+        });
+
     for (auto &obj : scene->objects()) {
 
       if (obj->type() == Gameplay::GameObjectType::Player) {
