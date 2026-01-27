@@ -177,6 +177,7 @@ void SandboxState::savePrefabFromEntity(ECS::Entity entity,
     if (auto* sprite = world.getComponent<Components::SpriteRenderer>(entity)) {
         components["spriteRenderer"] = {
             {"textureId", sprite->textureId},
+            {"size", {{"x", sprite->size.x}, {"y", sprite->size.y}}},
             {"color", {
                 {"r", sprite->color.r},
                 {"g", sprite->color.g},
@@ -287,6 +288,12 @@ void SandboxState::spawnPrefab(const std::string& prefabName, vec2 position) {
         if (components.contains("spriteRenderer")) {
             Components::SpriteRenderer sprite;
             sprite.textureId = components["spriteRenderer"].value("textureId", "");
+
+            if (components["spriteRenderer"].contains("size")) {
+                sprite.size.x = components["spriteRenderer"]["size"].value("x", 50.0f);
+                sprite.size.y = components["spriteRenderer"]["size"].value("y", 50.0f);
+            }
+
             if (components["spriteRenderer"].contains("color")) {
                 auto& color = components["spriteRenderer"]["color"];
                 sprite.color.r = color.value("r", 1.0f);
@@ -300,8 +307,8 @@ void SandboxState::spawnPrefab(const std::string& prefabName, vec2 position) {
         // Collider
         if (components.contains("collider")) {
             Components::Collider col;
-            col.size.x = components["collider"].value("width", 100.0f);
-            col.size.y = components["collider"].value("height", 100.0f);
+            col.size.x = components["collider"].value("width", 50.0f);
+            col.size.y = components["collider"].value("height", 50.0f);
             col.isSolid = components["collider"].value("isSolid", true);
             col.isHazard = components["collider"].value("isHazard", false);
             col.isTrigger = components["collider"].value("isTrigger", false);
@@ -1343,6 +1350,34 @@ void SandboxState::renderSceneWindow() {
                   sprite->size = vec2(50, 50); // Default size
               }
           }
+      }
+
+      if (const ImGuiPayload* payload =
+          ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
+          const char* prefabName = (const char*)payload->Data;
+
+          // Calculate drop position
+          ImVec2 mousePos = ImGui::GetMousePos();
+          vec2 localMouse = { mousePos.x - viewportMin.x,
+                                  mousePos.y - viewportMin.y };
+
+          Graphics::Camera2D& cam = Core::Engine::Get().camera();
+          float zoom = cam.zoom();
+          vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+          vec2 centeredMouse = {
+             localMouse.x - m_viewportSize.x * 0.5f,
+             -(localMouse.y - m_viewportSize.y * 0.5f) };
+
+          vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+          // Snap to grid if enabled
+          if (m_showGrid) {
+              worldPos = snapToGrid(worldPos, m_gridSize);
+          }
+
+          // Spawn the prefab at drop position
+          spawnPrefab(prefabName, worldPos);
       }
       ImGui::EndDragDropTarget();
   }

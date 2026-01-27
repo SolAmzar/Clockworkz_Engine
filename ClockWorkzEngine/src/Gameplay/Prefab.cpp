@@ -71,6 +71,21 @@ namespace Gameplay
         return GameObjectType::Unknown;
     }
 
+    void PrefabFactory::updatePrefabFromGameObject(const std::string& prefabName, const GameObject& obj)
+    {
+        // Serialize the GameObject to get its current component data
+        json objJson = GameObjectSerializer::serializeGameObject(obj);
+
+        // Extract just the components section
+        if (objJson.contains("components"))
+        {
+            // Register/update the prefab with the current component data
+            registerPrefab(prefabName, objJson["components"]);
+            std::cout << "[PrefabFactory] Updated prefab '" << prefabName
+                << "' from GameObject instance\n";
+        }
+    }
+
     bool PrefabFactory::loadPrefabFromFile(const std::string &filepath)
     {
         try
