@@ -114,6 +114,8 @@ private:
   bool m_isPaused{false};
   bool m_showAssetBrowser{true};
   std::string m_selectedAsset;
+  bool m_cameraFollowPlayer{true};
+  glm::vec2 m_editorCameraPos{0.f, 0.f};
 
   // prefab editor
   void renderPrefabEditor();

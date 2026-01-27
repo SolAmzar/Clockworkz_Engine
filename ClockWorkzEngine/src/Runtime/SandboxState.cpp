@@ -122,15 +122,34 @@ void SandboxState::update(double dt) {
   if (!m_isPaused) {
     m_scene.Update(dt, m_input);
 
-    // Camera Follow Logic
-    auto &world = m_scene.GetWorld();
-    world.each<Components::PlayerController, Components::Transform>(
-        [&](ECS::Entity, Components::PlayerController &,
-            Components::Transform &t) {
-          auto &camera = Core::Engine::Get().camera();
-          // Simple hard lock for now, can add lerp later if requested
-          camera.setPosition(glm::vec2(t.position.x, t.position.y));
-        });
+    // Camera Logic
+    auto &camera = Core::Engine::Get().camera();
+
+    if (m_cameraFollowPlayer) {
+      // Camera Follow Logic
+      auto &world = m_scene.GetWorld();
+      world.each<Components::PlayerController, Components::Transform>(
+          [&](ECS::Entity, Components::PlayerController &,
+              Components::Transform &t) {
+            // Simple hard lock
+            camera.setPosition(glm::vec2(t.position.x, t.position.y));
+            m_editorCameraPos =
+                glm::vec2(t.position.x, t.position.y); // Sync pos
+          });
+    } else {
+      // Free Camera Logic
+      float camSpeed = 500.0f * static_cast<float>(dt);
+      if (m_input.isKeyDown(GLFW_KEY_W))
+        m_editorCameraPos.y += camSpeed;
+      if (m_input.isKeyDown(GLFW_KEY_S))
+        m_editorCameraPos.y -= camSpeed;
+      if (m_input.isKeyDown(GLFW_KEY_A))
+        m_editorCameraPos.x -= camSpeed;
+      if (m_input.isKeyDown(GLFW_KEY_D))
+        m_editorCameraPos.x += camSpeed;
+
+      camera.setPosition(m_editorCameraPos);
+    }
   }
 }
 
@@ -1473,6 +1492,8 @@ void Runtime::SandboxState::renderToolbar() {
   ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
   ImGui::Separator();
   ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
+  ImGui::SameLine();
+  ImGui::Checkbox("Camera Follow", &m_cameraFollowPlayer);
 
   // TILEMAP CONTROLS
   if (m_tileMapMode) {
