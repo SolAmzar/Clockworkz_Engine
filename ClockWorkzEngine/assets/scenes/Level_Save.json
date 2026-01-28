@@ -68,10 +68,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -205.94920349121094,
-                        "y": -29.63298225402832
+                        "x": -216.2124481201172,
+                        "y": -31.152664184570313
                     },
-                    "rotation": 2.2169106006622314,
+                    "rotation": 2.5427587032318115,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -174,7 +174,7 @@
                     },
                     "position": {
                         "x": -121.0,
-                        "y": 220.21839904785156
+                        "y": 224.1268310546875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -226,7 +226,7 @@
                     },
                     "position": {
                         "x": -386.0,
-                        "y": 214.21839904785156
+                        "y": 218.1268310546875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -365,6 +365,14 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 200.0
+                },
+                "doorSwing": {
+                    "clockwise": true,
+                    "initialRotation": 0.0,
+                    "initialized": true,
+                    "isOpen": false,
+                    "speed": 90.0,
+                    "swingAngle": 90.0
                 },
                 "spriteRenderer": {
                     "textureId": "wall_texture",

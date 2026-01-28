@@ -17,7 +17,9 @@ reserved.
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/PlayerController.hpp"
@@ -135,6 +137,17 @@ void SceneSerializer::Serialize(ECS::World &world,
           {"isOpen", door->isOpen},
           {"openTexture", door->openTexture},
           {"closedTexture", door->closedTexture}};
+    }
+
+    // DoorSwing
+    if (auto *ds = world.getComponent<Components::DoorSwing>(entity)) {
+      obj["components"]["doorSwing"] = {
+          {"isOpen", ds->isOpen},
+          {"swingAngle", ds->swingAngle},
+          {"clockwise", ds->clockwise},
+          {"speed", ds->speed},
+          {"initialRotation", ds->initialRotation},
+          {"initialized", ds->initialized}};
     }
 
     // Battery
@@ -365,6 +378,19 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         door.openTexture = dc.value("openTexture", "door_open");
         door.closedTexture = dc.value("closedTexture", "door_close");
         world.addComponent(entity, door);
+      }
+
+      // DoorSwing
+      if (components.contains("doorSwing")) {
+        auto &dsc = components["doorSwing"];
+        Components::DoorSwing ds;
+        ds.isOpen = dsc.value("isOpen", false);
+        ds.swingAngle = dsc.value("swingAngle", 90.f);
+        ds.clockwise = dsc.value("clockwise", true);
+        ds.speed = dsc.value("speed", 90.f);
+        ds.initialRotation = dsc.value("initialRotation", 0.f);
+        ds.initialized = dsc.value("initialized", false);
+        world.addComponent(entity, ds);
       }
 
       // Battery

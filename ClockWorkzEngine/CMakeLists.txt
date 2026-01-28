@@ -176,5 +176,9 @@ add_custom_target(copy_assets ALL
 add_dependencies(${PROJECT_NAME} copy_assets)
 
 
+
+
+
+
 # --- Default startup project in Visual Studio ---
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})

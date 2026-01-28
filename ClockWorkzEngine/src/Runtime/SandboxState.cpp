@@ -26,7 +26,9 @@ reserved.
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/Health.hpp"
@@ -1738,7 +1740,34 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
+  // DoorSwing
+  if (ImGui::CollapsingHeader("DoorSwing")) {
+    auto *ds = world.getComponent<Components::DoorSwing>(entity);
+    if (ds) {
+      ImGui::Checkbox("Is Open", &ds->isOpen);
+      ImGui::DragFloat("Swing Angle", &ds->swingAngle, 1.0f, 0.0f, 360.0f);
+      ImGui::Checkbox("Clockwise", &ds->clockwise);
+      ImGui::DragFloat("Speed", &ds->speed, 1.0f, 0.0f, 720.0f);
+
+      ImGui::Text("Debug Info:");
+      ImGui::Text("Initialized: %s", ds->initialized ? "Yes" : "No");
+      ImGui::Text("Initial Rot: %.2f", ds->initialRotation);
+
+      if (ImGui::Button("Reset Init")) {
+        // Force re-initialization of rotation
+        ds->initialized = false;
+      }
+
+      if (ImGui::Button("Remove DoorSwing"))
+        world.removeComponent<Components::DoorSwing>(entity);
+    } else {
+      if (ImGui::Button("Add DoorSwing"))
+        world.addComponent(entity, Components::DoorSwing{});
+    }
+  }
+
   // ParticleEmitter
+
   if (ImGui::CollapsingHeader("ParticleEmitter")) {
     auto *pe = world.getComponent<Components::ParticleEmitter>(entity);
     if (pe) {
@@ -1968,7 +1997,7 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   copyXYZ(Identity<Components::StateMachine>{});
   copyXYZ(Identity<Components::PlayerController>{});
   copyXYZ(Identity<Components::Door>{});
-  copyXYZ(Identity<Components::Door>{});
+  copyXYZ(Identity<Components::DoorSwing>{});
 
   // Transform (Offset slightly so we see it)
   auto *trans = world.getComponent<Components::Transform>(sourceEntity);

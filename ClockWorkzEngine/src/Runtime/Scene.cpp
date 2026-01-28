@@ -5,6 +5,7 @@
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
@@ -16,6 +17,7 @@
 #include "Components/StateMachine.hpp"
 #include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
+
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 
@@ -39,6 +41,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::FragmentCollector>();
   m_world.registerComponent<Components::TorchComponent>();
   m_world.registerComponent<Components::Door>();
+  m_world.registerComponent<Components::DoorSwing>();
   m_world.registerComponent<Components::ParticleEmitter>();
 }
 
@@ -73,6 +76,9 @@ void Scene::Update(double dt, Platform::InputManager &input) {
 
   if (m_doorSystemEnabled)
     m_doorSystem.update(m_world, dt);
+
+  if (m_doorSwingSystemEnabled)
+    m_doorSwingSystem.update(m_world, dt);
 
   // --- Update Legacy GameObjects ---
   for (auto &obj : m_gameObjects) {
