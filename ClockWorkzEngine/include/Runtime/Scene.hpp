@@ -16,6 +16,7 @@
 #include "Systems/AudioSystem.hpp"
 #include "Systems/BatterySystem.hpp"
 #include "Systems/CollisionSystem.hpp"
+#include "Systems/DoorSystem.hpp"
 #include "Systems/FragmentSystem.hpp"
 #include "Systems/LightExposureSystem.hpp"
 #include "Systems/PhysicsSystem.hpp"
@@ -67,6 +68,7 @@ public:
   bool m_animSystemEnabled{true};
   bool m_stateMachineSystemEnabled{true};
   bool m_playerSystemEnabled{true};
+  bool m_doorSystemEnabled{true};
 
   // Public access to systems if needed for debug overlay (e.g. collision list)
   Systems::CollisionSystem &GetCollisionSystem() { return m_collisionSystem; }
@@ -89,6 +91,7 @@ private:
   Systems::AnimationSystem m_animSystem;
   Systems::StateMachineSystem m_stateMachineSystem;
   Systems::PlayerSystem m_playerSystem;
+  Systems::DoorSystem m_doorSystem;
 
   std::string m_name;
 

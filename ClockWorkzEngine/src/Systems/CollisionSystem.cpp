@@ -106,17 +106,19 @@ void CollisionSystem::update(ECS::World &world) {
               tA->position.x += penetration.x;
               tA->position.y += penetration.y;
             } else if (!aMoves && bMoves) {
-              // B moves full amount (opposite direction of penetration valid
-              // for A) penetration vector is calculated as correction for A. So
-              // correction for B is -penetration.
+              // B moves full amount (correction for B is -penetration)
               tB->position.x -= penetration.x;
               tB->position.y -= penetration.y;
             } else if (aMoves && bMoves) {
-              // Both move half
-              tA->position.x += penetration.x * 0.5f;
-              tA->position.y += penetration.y * 0.5f;
-              tB->position.x -= penetration.x * 0.5f;
-              tB->position.y -= penetration.y * 0.5f;
+              // Both move based on Mass Ratio
+              float totalMass = cA->mass + cB->mass;
+              float ratioA = cB->mass / totalMass; // Inverse mass ratio
+              float ratioB = cA->mass / totalMass;
+
+              tA->position.x += penetration.x * ratioA;
+              tA->position.y += penetration.y * ratioA;
+              tB->position.x -= penetration.x * ratioB;
+              tB->position.y -= penetration.y * ratioB;
             }
           }
         }

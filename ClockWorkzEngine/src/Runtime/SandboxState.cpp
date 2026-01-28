@@ -25,6 +25,7 @@ reserved.
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Door.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
@@ -1415,6 +1416,51 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
+  // Door Component
+  if (ImGui::CollapsingHeader("Door")) {
+    auto *door = world.getComponent<Components::Door>(entity);
+    if (door) {
+      ImGui::InputInt("Required Fragments", &door->requiredFragments);
+      ImGui::Checkbox("Is Open", &door->isOpen);
+
+      // Open Texture Dropdown
+      if (ImGui::BeginCombo("Open Texture", door->openTexture.c_str())) {
+        for (const auto &name :
+             Assets::TextureManager::GetLoadedTextureNames()) {
+          bool isSelected = (door->openTexture == name);
+          if (ImGui::Selectable(name.c_str(), isSelected)) {
+            door->openTexture = name;
+          }
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
+
+      // Closed Texture Dropdown
+      if (ImGui::BeginCombo("Closed Texture", door->closedTexture.c_str())) {
+        for (const auto &name :
+             Assets::TextureManager::GetLoadedTextureNames()) {
+          bool isSelected = (door->closedTexture == name);
+          if (ImGui::Selectable(name.c_str(), isSelected)) {
+            door->closedTexture = name;
+          }
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
+
+      if (ImGui::Button("Remove Door")) {
+        world.removeComponent<Components::Door>(entity);
+      }
+    } else {
+      if (ImGui::Button("Add Door")) {
+        world.addComponent(entity, Components::Door{});
+      }
+    }
+  }
+
   if (ImGui::CollapsingHeader("Collider")) {
     auto *c = world.getComponent<Components::Collider>(entity);
     if (c) {
@@ -1435,7 +1481,18 @@ void SandboxState::renderComponentWindow() {
       ImGui::Checkbox("Is Solid", &c->isSolid);
       ImGui::Checkbox("Trigger", &c->isTrigger);
       ImGui::Checkbox("Blocks Light", &c->blocksLight);
+      ImGui::Checkbox("Blocks Light", &c->blocksLight);
       ImGui::Checkbox("Moveable", &c->moveable);
+
+      // Mass (Always show, even if not moveable, so we can configure it)
+      if (c->moveable) {
+        ImGui::InputFloat("Mass", &c->mass);
+      } else {
+        // Optional: Display as disabled or just normal?
+        // User asked for "update mass", implying they want to edit it.
+        // Let's just show it.
+        ImGui::InputFloat("Mass", &c->mass);
+      }
 
       if (ImGui::Button("Fit to Sprite")) {
         auto *spr = world.getComponent<Components::SpriteRenderer>(entity);
@@ -1894,6 +1951,8 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   copyXYZ(Identity<Components::TorchComponent>{});
   copyXYZ(Identity<Components::StateMachine>{});
   copyXYZ(Identity<Components::PlayerController>{});
+  copyXYZ(Identity<Components::Door>{});
+  copyXYZ(Identity<Components::Door>{});
 
   // Transform (Offset slightly so we see it)
   auto *trans = world.getComponent<Components::Transform>(sourceEntity);

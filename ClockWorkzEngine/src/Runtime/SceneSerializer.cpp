@@ -16,6 +16,7 @@ reserved.
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Door.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
@@ -26,7 +27,6 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
-
 
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -123,7 +123,17 @@ void SceneSerializer::Serialize(ECS::World &world,
           {"isTrigger", cc->isTrigger},
           {"moveable", cc->moveable},
           {"collisionCategory", cc->collisionCategory},
-          {"collisionMask", cc->collisionMask}};
+          {"collisionMask", cc->collisionMask},
+          {"mass", cc->mass}};
+    }
+
+    // Door
+    if (auto *door = world.getComponent<Components::Door>(entity)) {
+      obj["components"]["door"] = {
+          {"requiredFragments", door->requiredFragments},
+          {"isOpen", door->isOpen},
+          {"openTexture", door->openTexture},
+          {"closedTexture", door->closedTexture}};
     }
 
     // Battery
@@ -332,12 +342,24 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         collider.moveable = cc.value("moveable", false);
         collider.collisionCategory = cc.value("collisionCategory", 1);
         collider.collisionMask = cc.value("collisionMask", 0xFFFFFFFF);
+        collider.mass = cc.value("mass", 1.0f);
 
         // Handle layer mapping from legacy json if present ("layer": 4)
         // For now, mapping directly to collisionCategory/Mask seems best if
         // JSON already has them.
 
         world.addComponent(entity, collider);
+      }
+
+      // Door
+      if (components.contains("door")) {
+        auto &dc = components["door"];
+        Components::Door door;
+        door.requiredFragments = dc.value("requiredFragments", 1);
+        door.isOpen = dc.value("isOpen", false);
+        door.openTexture = dc.value("openTexture", "door_open");
+        door.closedTexture = dc.value("closedTexture", "door_close");
+        world.addComponent(entity, door);
       }
 
       // Battery
