@@ -1316,8 +1316,15 @@ void SandboxState::renderComponentWindow() {
 
     if (transform) {
       ImGui::InputFloat2("Position", &transform->position.x);
-      ImGui::InputFloat("Rotation", &transform->rotation);
+
+      // Rotation (Radians -> Degrees for Editor)
+      float deg = glm::degrees(transform->rotation);
+      if (ImGui::DragFloat("Rotation (Deg)", &deg)) {
+        transform->rotation = glm::radians(deg);
+      }
+
       ImGui::InputFloat2("Scale", &transform->scale.x);
+      ImGui::InputFloat2("Pivot", &transform->pivot.x);
       ImGui::TextDisabled("(Transform is required on all entities)");
     } else {
       if (ImGui::Button("Add Transform")) {
@@ -1481,7 +1488,6 @@ void SandboxState::renderComponentWindow() {
       ImGui::Checkbox("Is Solid", &c->isSolid);
       ImGui::Checkbox("Trigger", &c->isTrigger);
       ImGui::Checkbox("Blocks Light", &c->blocksLight);
-      ImGui::Checkbox("Blocks Light", &c->blocksLight);
       ImGui::Checkbox("Moveable", &c->moveable);
 
       // Mass (Always show, even if not moveable, so we can configure it)
@@ -1502,6 +1508,16 @@ void SandboxState::renderComponentWindow() {
           } else {
             // Radius is half the max dimension
             c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+          }
+
+          // Also apply pivot offset if Transform exists
+          auto *t = world.getComponent<Components::Transform>(entity);
+          if (t) {
+            // Renderer subtracts pivot from local pos.
+            // So visual center is at -pivot relative to Transform.position.
+            // Collider offset is added to Transform.position.
+            // So offset should be -pivot.
+            c->offset = -t->pivot;
           }
         }
       }

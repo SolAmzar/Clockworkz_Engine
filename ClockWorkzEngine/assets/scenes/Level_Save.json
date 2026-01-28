@@ -41,7 +41,7 @@
                 "spriteRenderer": {
                     "textureId": "player_texture",
                     "uv": [
-                        0.125,
+                        0.375,
                         0.875,
                         0.125,
                         0.125
@@ -63,11 +63,15 @@
                     "radius": 300.0
                 },
                 "transform": {
-                    "position": {
-                        "x": -173.21070861816406,
-                        "y": 50.108116149902344
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
                     },
-                    "rotation": 2.565150737762451,
+                    "position": {
+                        "x": -205.94920349121094,
+                        "y": -29.63298225402832
+                    },
+                    "rotation": 2.2169106006622314,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -112,6 +116,10 @@
                     ]
                 },
                 "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "position": {
                         "x": 100.0,
                         "y": 101.59027099609375
@@ -160,9 +168,13 @@
                     ]
                 },
                 "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "position": {
                         "x": -121.0,
-                        "y": 211.7154998779297
+                        "y": 220.21839904785156
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -208,9 +220,13 @@
                     ]
                 },
                 "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "position": {
                         "x": -386.0,
-                        "y": 205.7154998779297
+                        "y": 214.21839904785156
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -258,6 +274,10 @@
                     ]
                 },
                 "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "position": {
                         "x": 101.01419067382813,
                         "y": -98.65104675292969
@@ -308,6 +328,10 @@
                     ]
                 },
                 "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "position": {
                         "x": 88.01419067382813,
                         "y": -269.65106201171875
@@ -320,6 +344,54 @@
                 }
             },
             "name": "Entity_6"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 31.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 100.0,
+                        "y": -0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 200.0
+                },
+                "spriteRenderer": {
+                    "textureId": "wall_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "pivot": {
+                        "x": -100.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -708.3333740234375,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 2.0,
+                        "y": 0.30000001192092896
+                    }
+                }
+            },
+            "name": "Entity_7"
         }
     ]
 }

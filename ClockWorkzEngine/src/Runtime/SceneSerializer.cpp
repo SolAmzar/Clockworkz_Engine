@@ -55,7 +55,8 @@ void SceneSerializer::Serialize(ECS::World &world,
     obj["components"]["transform"] = {
         {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
         {"rotation", tc.rotation},
-        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}}};
+        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
+        {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
 
     // Velocity
     if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
@@ -245,6 +246,10 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         if (tc["scale"].is_object()) {
           transform.scale.x = tc["scale"].value("x", 1.0f);
           transform.scale.y = tc["scale"].value("y", 1.0f);
+        }
+        if (tc.contains("pivot") && tc["pivot"].is_object()) {
+          transform.pivot.x = tc["pivot"].value("x", 0.0f);
+          transform.pivot.y = tc["pivot"].value("y", 0.0f);
         }
         world.addComponent(entity, transform);
       }
