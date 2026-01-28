@@ -21,9 +21,14 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 0.0,
-                    "shape": 0,
+                    "radius": 30.0,
+                    "shape": 1,
                     "width": 100.0
+                },
+                "fragmentCollector": {
+                    "collectedCount": 0,
+                    "pickupRadius": 50.0,
+                    "requiredFragments": 10
                 },
                 "playerController": {
                     "sprintMultiplier": 2.0,
@@ -35,14 +40,14 @@
                 "spriteRenderer": {
                     "textureId": "player_texture",
                     "uv": [
-                        0.0,
-                        0.0,
+                        0.125,
+                        0.875,
                         0.125,
                         0.125
                     ]
                 },
                 "torch": {
-                    "active": true,
+                    "active": false,
                     "angle": 60.0,
                     "color": {
                         "b": 0.6000000238418579,
@@ -58,10 +63,10 @@
                 },
                 "transform": {
                     "position": {
-                        "x": -97.3916244506836,
-                        "y": -31.833097457885742
+                        "x": -173.21070861816406,
+                        "y": 50.108116149902344
                     },
-                    "rotation": 2.5499331951141357,
+                    "rotation": 2.565150737762451,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -117,6 +122,100 @@
                 }
             },
             "name": "Entity_2"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 30.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "textureId": "fragment_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "position": {
+                        "x": -121.0,
+                        "y": 211.7154998779297
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_3"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 30.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "textureId": "fragment_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "position": {
+                        "x": -386.0,
+                        "y": 205.7154998779297
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_4"
         }
     ]
 }

@@ -86,6 +86,12 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+  Assets::ResourceManager<Graphics::Shader>::Load(
+      "text", "assets/shaders/text.vert", "assets/shaders/text.frag");
+
+  // Load Debug Font for HUD
+  Assets::ResourceManager<Assets::FontManager>::Load(
+      "Debug", "assets/fonts/MANIC1.TTF", 24);
 
   // Load prefabs
   loadAvailablePrefabs();
@@ -287,6 +293,62 @@ void SandboxState::render(Core::Time *timer) {
             renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
                                 glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
           }
+        });
+
+    // --- Render Fragment HUD ---
+    // Make sure we are in Scene Pass (UI Projection) which we are from Battery
+    // HUD
+
+    world.each<Components::FragmentCollector, Components::PlayerController>(
+        [&](ECS::Entity, Components::FragmentCollector &col,
+            Components::PlayerController &) {
+          glm::vec2 uiSize(64.0f, 64.0f);
+          float margin = 20.0f;
+
+          // Position to the left of Battery (which is at right edge)
+          // Battery ~ 128px wide + margin.
+          float batteryWidth = 128.0f;
+          float spacing = 20.0f;
+
+          // x = ViewportW - margin - BatteryW - spacing - FragIconW
+          float fragIconX =
+              m_viewportSize.x - margin - batteryWidth - spacing - uiSize.x;
+          float fragIconY = m_viewportSize.y - margin - uiSize.y;
+
+          glm::vec2 uiPos(fragIconX, fragIconY);
+
+          // 1. Draw Icon
+          auto tex = Assets::TextureManager::Get("fragment_texture");
+          if (tex) {
+            renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
+                                glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
+          }
+
+          // 2. Draw Text (Collected Count)
+          // Switch to Font Pass for text
+          renderer.endScenePass(); // End Sprite Pass temporarily
+          renderer.beginFontPass(uiProj);
+
+          auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+          auto font =
+              Assets::ResourceManager<Assets::FontManager>::Get("Debug");
+
+          if (shader && font) {
+            std::string text = std::to_string(col.collectedCount) + " / " +
+                               std::to_string(col.requiredFragments);
+
+            // Rough centering vertically relative to icon
+            float textY = fragIconY + (uiSize.y * 0.25f);
+            float textX =
+                fragIconX - (text.length() * 15.0f) - 10.0f; // Estimate width
+
+            font->RenderText(text, textX, textY, 1.0f, glm::vec3(1.0f),
+                             *shader);
+          }
+
+          // Restart Scene Pass to restore state for next operations (or clean
+          // exit)
+          renderer.beginScenePass(uiProj);
         });
 
     renderer.endScenePass();
