@@ -16,14 +16,20 @@
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
+                    "mass": 1.0,
                     "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 0.0,
-                    "shape": 0,
+                    "radius": 30.0,
+                    "shape": 1,
                     "width": 100.0
+                },
+                "fragmentCollector": {
+                    "collectedCount": 0,
+                    "pickupRadius": 50.0,
+                    "requiredFragments": 10
                 },
                 "playerController": {
                     "sprintMultiplier": 2.0,
@@ -35,14 +41,14 @@
                 "spriteRenderer": {
                     "textureId": "player_texture",
                     "uv": [
-                        0.0,
-                        0.0,
+                        0.375,
+                        0.875,
                         0.125,
                         0.125
                     ]
                 },
                 "torch": {
-                    "active": true,
+                    "active": false,
                     "angle": 60.0,
                     "color": {
                         "b": 0.6000000238418579,
@@ -57,11 +63,15 @@
                     "radius": 300.0
                 },
                 "transform": {
-                    "position": {
-                        "x": -97.3916244506836,
-                        "y": -31.833097457885742
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
                     },
-                    "rotation": 2.5499331951141357,
+                    "position": {
+                        "x": -216.2124481201172,
+                        "y": -31.152664184570313
+                    },
+                    "rotation": 2.5427587032318115,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -86,6 +96,7 @@
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
+                    "mass": 1.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
@@ -105,9 +116,13 @@
                     ]
                 },
                 "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "position": {
                         "x": 100.0,
-                        "y": 137.0
+                        "y": 101.59027099609375
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -117,6 +132,274 @@
                 }
             },
             "name": "Entity_2"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 30.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "textureId": "fragment_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -121.0,
+                        "y": 224.1268310546875
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_3"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 30.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "textureId": "fragment_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -386.0,
+                        "y": 218.1268310546875
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_4"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 3.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "door": {
+                    "closedTexture": "door_close",
+                    "isOpen": false,
+                    "openTexture": "door_open",
+                    "requiredFragments": 1
+                },
+                "spriteRenderer": {
+                    "textureId": "door_close",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 101.01419067382813,
+                        "y": -98.65104675292969
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_5"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "door": {
+                    "closedTexture": "door_close",
+                    "isOpen": false,
+                    "openTexture": "door_open",
+                    "requiredFragments": 2
+                },
+                "spriteRenderer": {
+                    "textureId": "door_close",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 88.01419067382813,
+                        "y": -269.65106201171875
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_6"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 31.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 100.0,
+                        "y": -0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 200.0
+                },
+                "doorSwing": {
+                    "clockwise": true,
+                    "initialRotation": 0.0,
+                    "initialized": true,
+                    "isOpen": false,
+                    "speed": 90.0,
+                    "swingAngle": 90.0
+                },
+                "spriteRenderer": {
+                    "textureId": "wall_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "transform": {
+                    "pivot": {
+                        "x": -100.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -708.3333740234375,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 2.0,
+                        "y": 0.30000001192092896
+                    }
+                }
+            },
+            "name": "Entity_7"
         }
     ]
 }
