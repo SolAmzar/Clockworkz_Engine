@@ -129,6 +129,10 @@ private:
   bool m_cameraFollowPlayer{true};
   glm::vec2 m_editorCameraPos{0.f, 0.f};
 
+  // Renaming State
+  int m_renamingEntityIdx{-1};
+  char m_renameBuffer[256] = "";
+
   // prefab editor
   void renderPrefabEditor();
   void savePrefabFromEntity(ECS::Entity entity, const std::string &name,
@@ -145,6 +149,9 @@ private:
   // Tilemap painting
   enum class PaintMode { Paint, Erase, Select };
   PaintMode m_paintMode = PaintMode::Paint;
+
+  // Game Logic State
+  float m_playerDeathTimer{-1.f};
 
   // Optional: Store tilemap data for serialization
   struct TileData {

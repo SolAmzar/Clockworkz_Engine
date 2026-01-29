@@ -45,6 +45,7 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
+#include "Runtime/GameOverState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/MenuState.hpp"
 #include "Runtime/PauseState.hpp"
@@ -857,7 +858,8 @@ void PlayState::update(double dt) {
 
             // Kill the player, killing at Physics2D, need to use event bus
             // later on.
-            // playerSpriteComp->play("death");
+            playerSpriteComp->play("death");
+            m_playerRespawning = 7.0f;
             // m_player->setActive(false);
             break;
           }
@@ -866,6 +868,19 @@ void PlayState::update(double dt) {
     } else {
       m_flashlightOn = false;
       m_playerRespawning -= (float)dt;
+
+      // Immediately trigger Game Over state after a short delay (e.g. 1 second
+      // of death animation)
+      if (m_playerRespawning <= 6.0f) { // Assuming starts at 7.0f, wait 1s
+        m_GameOver = true;
+        std::cout << "[PlayState] Transitioning to GameOverState\n";
+        m_gsm.push(
+            std::make_shared<GameOverState>(m_gsm, m_input, m_initialSceneId));
+        return; // Stop updating PlayState
+      }
+
+      // Old auto-respawn logic removed
+      /*
       if (m_playerRespawning <= 5.f) {
         m_GameOver = true;
       }
@@ -877,6 +892,7 @@ void PlayState::update(double dt) {
         resetScene();
         return;
       }
+      */
     }
   }
 

@@ -15,6 +15,7 @@
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
+#include "Components/Tag.hpp"
 #include "Components/Torch.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
@@ -48,6 +49,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::ParticleEmitter>();
   m_world.registerComponent<Components::ActivationZone>();
   m_world.registerComponent<Components::TextRenderer>();
+  m_world.registerComponent<Components::Tag>();
 }
 
 void Scene::Clear() {

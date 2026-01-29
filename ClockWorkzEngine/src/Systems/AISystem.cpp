@@ -12,6 +12,7 @@ reserved.
 
 #include "Systems/AISystem.hpp"
 #include "Components/EnemyAI.hpp"
+#include "Components/Health.hpp" // Added
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/SpriteAnimator.hpp"
@@ -61,11 +62,44 @@ void AISystem::update(ECS::World &world, double dt) {
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
           Components::Velocity &vel) {
+        // Dead Check
+        if (ai.state == Components::AIState::Death) {
+          vel.velocity = {0.f, 0.f};
+          return;
+        }
+
         // --- Light Sensitivity Check ---
         float speedMultiplier = 1.0f;
         auto *lightExp = world.getComponent<Components::LightExposure>(e);
-        if (lightExp && lightExp->exposureTime > 0.0f) {
+
+        // Check if in light (immediate)
+        if (lightExp && lightExp->inLight) {
           speedMultiplier = ai.lightSensitivity;
+
+          // Damage over time
+          auto *health = world.getComponent<Components::Health>(e);
+          if (health && !health->isDead) {
+            const float DAMAGE_RATE = 20.0f; // DPS
+            health->hp -= DAMAGE_RATE * fDt;
+
+            if (health->hp <= 0.0f) {
+              health->hp = 0.0f;
+              health->isDead = true;
+              ai.state = Components::AIState::Death;
+            }
+          }
+        }
+        // Fallback: if exposureTime > 0 but not currently in light directly?
+        // Original logic checked exposureTime. Let's keep exposureTime check
+        // for consistency if needed, but 'inLight' is accurate for cones.
+        else if (lightExp && lightExp->exposureTime > 0.0f) {
+          speedMultiplier = ai.lightSensitivity;
+        }
+
+        // Re-Check Death after damage
+        if (ai.state == Components::AIState::Death) {
+          vel.velocity = {0.f, 0.f};
+          return;
         }
 
         // --- Animation Control ---
