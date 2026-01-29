@@ -15,37 +15,50 @@ PlayerController.sprintMultiplier = 1.5
 
 -- Internal state
 PlayerController.isMoving = false
+PlayerController.vel = nil
 
 function PlayerController:onStart(gameObject)
     Log("[Controller Lua] Player controller initialized for: " .. gameObject.name)
     gameObject.moveSpeed = self.moveSpeed
+    -- Create reusable vec2 once
+    self.vel = Vec2(0, 0)
 end
 
 function PlayerController:onUpdate(gameObject, dt)
-    -- Get input manager from Engine
     local input = Engine.input()
-    local vel = Vec2(0, 0)
 
-    -- WS movement
-    if input:isKeyDown(Keys.W) then vel.y = vel.y + 1 end
-    if input:isKeyDown(Keys.S) then vel.y = vel.y - 1 end
+    local velX = 0
+    local velY = 0
 
-    -- Normalize and apply speed
-    if vel:length() > 0 then
-        vel = vel:normalized()
+    -- W = forward, S = backward
+    if input:isKeyDown(Keys.W) then
+        velY = velY + 1
+    end
+    if input:isKeyDown(Keys.S) then
+        velY = velY - 1
+    end
+
+    -- Normalize and apply speed using raw math
+    local len = math.sqrt(velX * velX + velY * velY)
+    if len > 0 then
+        velX = velX / len
+        velY = velY / len
 
         local speed = self.moveSpeed
         if input:isKeyDown(Keys.LEFT_SHIFT) then
             speed = speed * self.sprintMultiplier
         end
 
-        vel = vel * speed
+        velX = velX * speed
+        velY = velY * speed
         self.isMoving = true
     else
         self.isMoving = false
     end
 
-    gameObject.velocity = vel
+    -- Reuse existing vec2 object
+    self.vel:set(velX, velY)
+    gameObject.velocity = self.vel
 end
 
 function PlayerController:onCollision(gameObject, other)

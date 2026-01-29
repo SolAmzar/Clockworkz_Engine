@@ -28,6 +28,7 @@ reserved.
 #include "Components/Door.hpp"
 #include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+#include "Components/TextRenderer.hpp"
 
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
@@ -156,12 +157,12 @@ void SandboxState::update(double dt) {
     // Free Camera Logic (Editor Mode OR Playing with Free Cam)
 
     // 1. Zoom Logic (Mouse Wheel)
-    float zoomSpeed = 0.1f;
+    // Always consume scroll value to prevent stale values carrying over
     float scroll = static_cast<float>(Platform::InputManager::GetScrollY());
-    if (scroll != 0.0f) {
+    if (m_viewportHovered && scroll != 0.0f) {
+      float zoomSpeed = 0.1f;
       float currentZoom = camera.zoom();
       float newZoom = currentZoom + (scroll * zoomSpeed * currentZoom);
-      // Clamp zoom to reasonable values
       if (newZoom < 0.1f)
         newZoom = 0.1f;
       if (newZoom > 5.0f)
@@ -246,6 +247,63 @@ void SandboxState::render(Core::Time *timer) {
 
   // End Scene Pass
   renderer.endScenePass();
+
+  // Render Text Entities (Font Pass in world space)
+  if (m_scene.m_textRenderSystemEnabled) {
+    auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+    if (shader) {
+      renderer.beginFontPass(camera.viewProj());
+
+      auto &world = m_scene.GetWorld();
+      world.each<Components::Transform, Components::TextRenderer>(
+          [&](ECS::Entity, Components::Transform &transform,
+              Components::TextRenderer &text) {
+            if (!text.visible || text.text.empty())
+              return;
+
+            auto font =
+                Assets::ResourceManager<Assets::FontManager>::Get(text.fontId);
+            if (!font)
+              return;
+
+            float x = transform.position.x;
+            float y = transform.position.y;
+            float scale = text.fontSize * transform.scale.x;
+            float boxW = text.boxSize.x * transform.scale.x;
+            float boxH = text.boxSize.y * transform.scale.y;
+
+            font->RenderTextInBox(text.text, x, y, boxW, boxH, scale,
+                                  text.color, *shader,
+                                  static_cast<int>(text.alignment));
+          });
+
+      renderer.endFontPass();
+    }
+  }
+
+  // Draw bounding boxes for text entities (debug overlay)
+  renderer.beginDebugPass(camera.viewProj());
+  {
+    auto &world = m_scene.GetWorld();
+    world.each<Components::Transform, Components::TextRenderer>(
+        [&](ECS::Entity, Components::Transform &transform,
+            Components::TextRenderer &text) {
+          if (!text.visible)
+            return;
+
+          float x = transform.position.x;
+          float y = transform.position.y;
+          float boxW = text.boxSize.x * transform.scale.x;
+          float boxH = text.boxSize.y * transform.scale.y;
+
+          // drawRect expects (centerX, centerY, w, h)
+          // Text renders from (x, y) as top-left, extending right and down
+          float centerX = x + boxW * 0.5f;
+          float centerY = y - boxH * 0.5f;
+          renderer.drawRect(centerX, centerY, boxW, boxH, 1.0f, 1.0f, 0.0f);
+        });
+  }
+  renderer.endDebugPass();
 
   // Render Torch Pass
   renderTorchPass(renderer);
@@ -1017,6 +1075,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
 
     // Right Bottom (Assets)
     ImGui::DockBuilderDockWindow("Asset Browser", dock_right_bottom_id);
+    ImGui::DockBuilderDockWindow("Audio Browser", dock_right_bottom_id);
 
     // Center Column
     ImGui::DockBuilderDockWindow("Toolbar", dock_toolbar_id);
@@ -1033,6 +1092,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderSceneWindow();
   renderToolbar();
   renderAssetBrowser();
+  renderAudioBrowser();
   renderPrefabEditor();
   renderTilePalette();
 
@@ -1859,6 +1919,52 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
+  // TextRenderer Component
+  if (ImGui::CollapsingHeader("TextRenderer")) {
+    auto *tr = world.getComponent<Components::TextRenderer>(entity);
+    if (tr) {
+      // Text content input (256 char buffer)
+      static char textBuf[256] = {};
+      strncpy(textBuf, tr->text.c_str(), sizeof(textBuf) - 1);
+      textBuf[sizeof(textBuf) - 1] = '\0';
+      if (ImGui::InputTextMultiline("Text", textBuf, sizeof(textBuf),
+                                     ImVec2(-1, 80))) {
+        tr->text = textBuf;
+      }
+
+      ImGui::DragFloat("Font Size", &tr->fontSize, 0.05f, 0.1f, 10.0f);
+      ImGui::ColorEdit3("Text Color", &tr->color.x);
+      ImGui::Checkbox("Text Visible", &tr->visible);
+
+      // Bounding box size
+      ImGui::DragFloat2("Box Size", &tr->boxSize.x, 1.0f, 10.0f, 2000.0f);
+
+      // Text alignment
+      static const char *alignOptions[] = {"Left", "Center", "Right"};
+      int alignIdx = static_cast<int>(tr->alignment);
+      if (ImGui::Combo("Alignment", &alignIdx, alignOptions,
+                        IM_ARRAYSIZE(alignOptions))) {
+        tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
+      }
+
+      // Font selection
+      static const char *fontOptions[] = {"Debug"};
+      int fontIdx = 0;
+      if (ImGui::Combo("Font", &fontIdx, fontOptions,
+                        IM_ARRAYSIZE(fontOptions))) {
+        tr->fontId = fontOptions[fontIdx];
+      }
+
+      if (ImGui::Button("Remove TextRenderer")) {
+        world.removeComponent<Components::TextRenderer>(entity);
+      }
+    } else {
+      if (ImGui::Button("Add TextRenderer")) {
+        world.addComponent(entity, Components::TextRenderer{});
+      }
+    }
+  }
+
   ImGui::End();
 }
 
@@ -1978,10 +2084,13 @@ void SandboxState::spawnEnemy() {
   transform.scale = vec2{1.f, 1.f};
   world.addComponent(entity, transform);
 
-  // Sprite (Red for Enemy)
+  // Sprite (White for Enemy with Texture)
+  // Sprite
   Components::SpriteRenderer sprite;
-  sprite.color = {1.0f, 0.2f, 0.2f, 1.0f}; // Red
+  sprite.color = {1.0f, 1.0f, 1.0f, 1.0f};
   sprite.size = {50.f, 50.f};
+  sprite.textureId = "monster_texture";
+  sprite.uv = {0.75f, 0.5f, 0.25f, 0.25f};
   world.addComponent(entity, sprite);
 
   // Physics
@@ -2003,6 +2112,13 @@ void SandboxState::spawnEnemy() {
   world.addComponent(entity, ai);
 
   world.addComponent(entity, Components::Health{50.f, 50.f});
+
+  // Animation
+  Components::SpriteAnimator anim;
+  anim.loadFromPath("assets/animations/enemy.json");
+  anim.filename = "enemy.json";
+  anim.play("walk");
+  world.addComponent(entity, anim);
 
   m_testEntities.push_back(entity);
   auto *enemyTrans = world.getComponent<Components::Transform>(entity);
@@ -2327,6 +2443,7 @@ void SandboxState::renderSystemsWindow() {
   ImGui::Checkbox("AnimationSystem", &m_scene.m_animSystemEnabled);
   ImGui::Checkbox("StateMachineSystem", &m_scene.m_stateMachineSystemEnabled);
   ImGui::Checkbox("PlayerSystem", &m_scene.m_playerSystemEnabled);
+  ImGui::Checkbox("TextRenderSystem", &m_scene.m_textRenderSystemEnabled);
 
   ImGui::End();
 }
@@ -2764,7 +2881,54 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
   }
 }
 
-} // namespace Runtime
+void Runtime::SandboxState::renderAudioBrowser() {
+  if (!m_showAudioBrowser)
+    return;
+
+  ImGui::Begin("Audio Browser", &m_showAudioBrowser);
+
+  // Stop All Button
+  if (ImGui::Button("Stop All Sounds")) {
+    Core::Engine::Get().audio().stopAll();
+  }
+
+  ImGui::Separator();
+
+  // List all loaded sounds
+  auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
+
+  if (soundNames.empty()) {
+    ImGui::TextDisabled("No sounds loaded.");
+  } else {
+    static ImGuiTextFilter filter;
+    filter.Draw("Search");
+
+    ImGui::BeginChild("SoundList");
+    for (const auto &name : soundNames) {
+      if (!filter.PassFilter(name.c_str()))
+        continue;
+
+      ImGui::PushID(name.c_str());
+
+      if (ImGui::Button("Play")) {
+        Assets::SoundManager::Play(name);
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Stop")) {
+        Core::Engine::Get().audio().stop(name);
+      }
+      ImGui::SameLine();
+      ImGui::Text("%s", name.c_str());
+
+      ImGui::PopID();
+    }
+    ImGui::EndChild();
+  }
+
+  ImGui::End();
+}
+
+// namespace Runtime
 
 // void Runtime::SandboxState::renderToolbar() {
 //   ImGui::Begin("Toolbar");
@@ -2993,3 +3157,5 @@ void Runtime::SandboxState::clearTilemap() {
   m_tilemap.clear();
   std::cout << "[Tilemap] Cleared all entities and tile data\n";
 }
+
+} // namespace Runtime

@@ -37,6 +37,10 @@
           "requiredFragments": 1,
           "collectedCount": 0,
           "pickupRadius": 80.0
+        },
+        "luaScript": {
+          "scriptPath": "assets/scripts/player_controller.lua",
+          "enabled": true
         }
       },
       "name": "Player",

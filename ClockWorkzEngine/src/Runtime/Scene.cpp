@@ -16,6 +16,7 @@
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/Torch.hpp"
+#include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
 
 #include "Components/Velocity.hpp"
@@ -43,6 +44,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::Door>();
   m_world.registerComponent<Components::DoorSwing>();
   m_world.registerComponent<Components::ParticleEmitter>();
+  m_world.registerComponent<Components::TextRenderer>();
 }
 
 void Scene::Clear() {

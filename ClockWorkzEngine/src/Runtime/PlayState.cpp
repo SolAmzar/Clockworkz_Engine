@@ -26,8 +26,10 @@ reserved.
 #include "Assets/SoundManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Audio/SurfaceAudioSystem.hpp"
+#include "Components/Battery.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/LightExposure.hpp"
+#include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
@@ -58,6 +60,7 @@ reserved.
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include <Gameplay/Prefab.hpp>
+#include <Scripting/LuaScriptComponent.hpp>
 #include <Gameplay/WallTiles.hpp>
 #include <Graphics/Camera2D.hpp>
 #include <Graphics/GraphicsManager.hpp>
@@ -562,31 +565,35 @@ void PlayState::update(double dt) {
 
           vec2 move{0, 0};
 
-          // WASD input → movement vector
-          if (m_input.isKeyDown(GLFW_KEY_W))
-            move.y += 1;
-          if (m_input.isKeyDown(GLFW_KEY_S))
-            move.y -= 1;
-          if (m_input.isKeyDown(GLFW_KEY_A))
-            move.x -= 1;
-          if (m_input.isKeyDown(GLFW_KEY_D))
-            move.x += 1;
+          // Skip C++ movement if Lua script handles it
+          bool hasLuaScript = obj->getComponent<Scripting::LuaScriptComponent>() != nullptr;
+          if (!hasLuaScript) {
+            // WASD input → movement vector
+            if (m_input.isKeyDown(GLFW_KEY_W))
+              move.y += 1;
+            if (m_input.isKeyDown(GLFW_KEY_S))
+              move.y -= 1;
+            if (m_input.isKeyDown(GLFW_KEY_A))
+              move.x -= 1;
+            if (m_input.isKeyDown(GLFW_KEY_D))
+              move.x += 1;
 
-          // normalize diagonal
-          if (move.x != 0 || move.y != 0)
-            move = normalize(move);
+            // normalize diagonal
+            if (move.x != 0 || move.y != 0)
+              move = normalize(move);
 
-          // apply speed
-          float speedMove = obj->moveSpeed();
+            // apply speed
+            float speedMove = obj->moveSpeed();
 
-          // shift to run
-          if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
-            speedMove *= 2.0f;
-            isRunning = true;
+            // shift to run
+            if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+              speedMove *= 2.0f;
+              isRunning = true;
+            }
+
+            // final velocity
+            obj->velocity() = move * speedMove;
           }
-
-          // final velocity
-          obj->velocity() = move * speedMove;
 
           ////not used
           // if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
@@ -682,11 +689,20 @@ void PlayState::update(double dt) {
             // Normalize direction
             dir = normalize(dir);
 
-            // Compute angle in radians — atan2(y, x)
-            float angleRad = std::atan2(dir.y, dir.x);
+            // Compute target angle in radians — atan2(y, x)
+            float targetAngle = std::atan2(dir.y, dir.x);
+            float currentAngle = obj->transform().rotationRad;
 
-            // Convert to degrees if your transform uses degrees
-            obj->transform().rotationRad = angleRad;
+            // Calculate shortest angle difference
+            float angleDiff = targetAngle - currentAngle;
+
+            // Normalize angle difference to [-PI, PI] for shortest path
+            const float PI = 3.14159265358979f;
+            while (angleDiff > PI) angleDiff -= 2.0f * PI;
+            while (angleDiff < -PI) angleDiff += 2.0f * PI;
+
+            // Apply rotation (can add smoothing here if desired)
+            obj->transform().rotationRad = currentAngle + angleDiff;
           }
           if (obj->type() == Gameplay::GameObjectType::Player &&
               !obj->active()) {
@@ -696,8 +712,9 @@ void PlayState::update(double dt) {
           if (playerSpriteComp) {
             // Determine animation state
             std::string animState = m_flashlightOn ? "idle_torch" : "idle";
-            // std::string animState = m_flashlightOn ? "idle" : "idle";
-            bool isMoving = (move.x != 0 || move.y != 0);
+            // Check velocity for movement (works with both C++ and Lua movement)
+            vec2 vel = obj->velocity();
+            bool isMoving = (vel.x != 0 || vel.y != 0);
 
             if (isMoving) {
               animState = m_flashlightOn ? "walk_torch" : "walk";
@@ -1065,69 +1082,73 @@ void PlayState::render(Core::Time *timer) {
   m_scenes.render(*m_renderer);
   m_renderer->endScenePass();
 
-  // ==================== Torch Light Rendering & Enemy Interaction
-  // ====================
-  auto *scene = m_scenes.current();
-  if (!scene)
-    return;
+  // // ==================== Torch Light Rendering & Enemy Interaction
+  // // ====================
+  // auto *scene = m_scenes.current();
+  // if (!scene)
+  //   return;
 
-  auto *physics = scene->getLegacyPhysics();
+  // auto *physics = scene->getLegacyPhysics();
 
-  // Battery management code (keep all existing flashlight code)
-  if (m_player) {
-    float dt = static_cast<float>(timer->delta());
+  // // Battery management code (keep all existing flashlight code)
+  // if (m_player) {
+  //   float dt = static_cast<float>(timer->delta());
 
-    if (m_flashlightOn) {
-      currentBattery = m_player->checkBatt();
-      currentBattery -= m_player->checkDrain() * dt * 4.f;
-      m_player->setBatt(currentBattery);
+  //   if (m_flashlightOn) {
+  //     currentBattery = m_player->checkBatt();
+  //     currentBattery -= m_player->checkDrain() * dt * 4.f;
+  //     m_player->setBatt(currentBattery);
 
-      if (currentBattery <= 0.0f) {
-        m_player->setBatt(0.0f);
-        m_flashlightOn = false;
-      }
-    } else {
-      currentBattery = m_player->checkBatt();
-      currentBattery += m_player->checkCharge() * dt * 2.f;
-      m_player->setBatt(std::min(100.0f, currentBattery));
-    }
-  }
+  //     if (currentBattery <= 0.0f) {
+  //       m_player->setBatt(0.0f);
+  //       m_flashlightOn = false;
+  //     }
+  //   } else {
+  //     currentBattery = m_player->checkBatt();
+  //     currentBattery += m_player->checkCharge() * dt * 2.f;
+  //     m_player->setBatt(std::min(100.0f, currentBattery));
+  //   }
+  // }
 
-  // Render flashlight (keep all existing flashlight rendering code)
-  if (m_flashlightOn && physics && m_player && m_player->active() &&
-      m_player->checkBatt() > 0.0f) {
-    glm::vec2 torchOffsetLocal(35.0f, -20.0f);
-    vec2 origin = m_player->transform().position;
-    float angle = m_player->transform().rotationRad;
-    glm::vec2 torchOffsetWorld(
-        torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
-        torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle));
-    glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
+  // // Render flashlight (keep all existing flashlight rendering code)
+  // if (m_flashlightOn && physics && m_player && m_player->active() &&
+  //     m_player->checkBatt() > 0.0f) {
+  //   glm::vec2 torchOffsetLocal(35.0f, -20.0f);
+  //   vec2 origin = m_player->transform().position;
+  //   float angle = m_player->transform().rotationRad;
+  //   glm::vec2 torchOffsetWorld(
+  //       torchOffsetLocal.x * cos(angle) - torchOffsetLocal.y * sin(angle),
+  //       torchOffsetLocal.x * sin(angle) + torchOffsetLocal.y * cos(angle));
+  //   glm::vec2 originGLM = glm::vec2(origin.x, origin.y) + torchOffsetWorld;
 
-    std::vector<std::unique_ptr<Gameplay::GameObject>> &objs = scene->objects();
-    vec2 originVec2 = {originGLM.x, originGLM.y};
-    std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
-        originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
+  //   std::vector<std::unique_ptr<Gameplay::GameObject>> &objs =
+  //   scene->objects(); vec2 originVec2 = {originGLM.x, originGLM.y};
+  //   std::vector<vec2> lightPoly = m_renderer->computeVisibilityPolygon(
+  //       originVec2, angle, glm::radians(60.0f), 300.0f, *physics, objs);
 
-    std::vector<glm::vec2> lightPolyGLM;
-    for (const auto &point : lightPoly) {
-      lightPolyGLM.emplace_back(point.x, point.y);
-    }
+  //   std::vector<glm::vec2> lightPolyGLM;
+  //   for (const auto &point : lightPoly) {
+  //     lightPolyGLM.emplace_back(point.x, point.y);
+  //   }
 
-    // Render the light cone
-    float batteryPercent = currentBattery / maxBattery;
-    m_renderer->beginLightPass(engine.camera().viewProj(), originGLM,
-                               glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle,
-                               glm::radians(60.0f), batteryPercent);
-    m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
-    m_renderer->endLightPass();
-  } else {
-    // Flashlight is off - reset all enemy exposure times
-    for (auto &obj : scene->objects()) {
-      if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
-        obj->resetLightExposure();
-      }
-    }
+  //   // Render the light cone
+  //   float batteryPercent = currentBattery / maxBattery;
+  //   m_renderer->beginLightPass(engine.camera().viewProj(), originGLM,
+  //                              glm::vec3(1.0f, 0.9f, 0.6f), 300.0f, angle,
+  //                              glm::radians(60.0f), batteryPercent);
+  //   m_renderer->drawLightCone(originGLM, lightPolyGLM, {1.0f, 0.9f, 0.6f});
+  //   m_renderer->endLightPass();
+  // } else {
+  //   // Flashlight is off - reset all enemy exposure times
+  //   for (auto &obj : scene->objects()) {
+  //     if (obj && obj->type() == Gameplay::GameObjectType::Enemy) {
+  //       obj->resetLightExposure();
+  //     }
+  //   }
+  // }
+
+  if (m_flashlightOn) {
+    renderTorchPass(*m_renderer);
   }
 
   // ==================== Battery UI Rendering ====================
@@ -1922,4 +1943,128 @@ void Runtime::PlayState::renderFragmentUI() {
 }
 #endif
 
+// Helper for ECS Raycasting (AABB only for now, matching Components::Collider)
+static std::optional<glm::vec2> raycastLightECS(const glm::vec2 &origin,
+                                                const glm::vec2 &dir,
+                                                float maxDist,
+                                                ECS::World &world) {
+  glm::vec2 closestHit = origin + dir * maxDist;
+  float closestDist = maxDist;
+  bool hitFound = false;
+
+  // Iterate all entities with Transform and Collider
+  world.each<Components::Transform, Components::Collider>(
+      [&](ECS::Entity, Components::Transform &t, Components::Collider &c) {
+        if (!c.blocksLight)
+          return;
+
+        // AABB World Bounds
+        // boxMin = pos + offset - size/2
+        // boxMax = pos + offset + size/2
+        // NOTE: Considering scale
+        float hx = c.size.x * 0.5f * t.scale.x;
+        float hy = c.size.y * 0.5f * t.scale.y;
+        glm::vec2 center = glm::vec2(t.position.x, t.position.y) +
+                           glm::vec2(c.offset.x, c.offset.y);
+        glm::vec2 boxMin = center - glm::vec2(hx, hy);
+        glm::vec2 boxMax = center + glm::vec2(hx, hy);
+
+        // Ray vs AABB (Slab method)
+        // Avoid div by zero
+        glm::vec2 invDir;
+        invDir.x = (std::abs(dir.x) < 1e-6f) ? 1e6f : 1.0f / dir.x;
+        invDir.y = (std::abs(dir.y) < 1e-6f) ? 1e6f : 1.0f / dir.y;
+
+        glm::vec2 t1 = (boxMin - origin) * invDir;
+        glm::vec2 t2 = (boxMax - origin) * invDir;
+
+        float tmin = std::max(
+            0.0f, std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)));
+        float tmax = std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y));
+
+        if (tmax >= tmin && tmin < closestDist) {
+          closestDist = tmin;
+          closestHit = origin + dir * tmin;
+          hitFound = true;
+        }
+      });
+
+  if (hitFound || closestDist < maxDist)
+    return closestHit;
+  return std::nullopt;
+}
+
+static std::vector<glm::vec2>
+computeVisibilityPolygonECS(const glm::vec2 &origin, float angleCenter,
+                            float fov, float radius, ECS::World &world) {
+  std::vector<glm::vec2> points;
+  points.push_back(origin);
+
+  const int numRays = 100; // Adjust for quality vs perf
+  float halfFov = fov * 0.5f;
+  float startAngle = angleCenter - halfFov;
+
+  for (int i = 0; i < numRays; ++i) {
+    float angle = startAngle + fov * (float(i) / (numRays - 1));
+    glm::vec2 dir = {std::cos(angle), std::sin(angle)};
+    auto hit = raycastLightECS(origin, dir, radius, world);
+    if (hit) {
+      points.push_back(*hit);
+    } else {
+      points.push_back(origin + dir * radius);
+    }
+  }
+  return points;
+}
+
+void Runtime::PlayState::renderTorchPass(Graphics::RenderingManager &renderer) {
+  auto *scene = m_scenes.current();
+  if (!scene)
+    return;
+
+  auto &world = scene->GetWorld();
+  Graphics::Camera2D &camera = Core::Engine::Get().camera();
+
+  world.each<Components::Transform, Components::TorchComponent>(
+      [&](ECS::Entity entity, Components::Transform &trans,
+          Components::TorchComponent &torch) {
+        if (!torch.active)
+          return;
+
+        // Check battery if present
+        float batteryFactor = 1.0f;
+        auto *batt = world.getComponent<Components::Battery>(entity);
+        if (batt) {
+          batteryFactor = batt->charge / batt->maxCharge;
+          if (batt->charge <= 0.0f)
+            return;
+        }
+
+        // Calculate Torch World Position
+        float angle = trans.rotation;
+
+        vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
+        vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
+                                  torchOffsetLocal.y * std::sin(angle),
+                              torchOffsetLocal.x * std::sin(angle) +
+                                  torchOffsetLocal.y * std::cos(angle));
+
+        glm::vec2 originGLM =
+            glm::vec2((trans.position.x + torchOffsetWorld.x),
+                      (trans.position.y + torchOffsetWorld.y));
+
+        // Use Raytracing for visibility
+        float fovRad = glm::radians(torch.angle);
+        std::vector<glm::vec2> lightPoly = computeVisibilityPolygonECS(
+            originGLM, angle, fovRad, torch.radius, world);
+
+        // Render Light Pass
+        renderer.beginLightPass(camera.viewProj(), originGLM, torch.color,
+                                torch.radius, angle, torch.angle, batteryFactor,
+                                torch.intensity);
+        // Note: drawLightCone expects polygon points
+        renderer.drawLightCone(originGLM, lightPoly, torch.color);
+        renderer.endLightPass();
+      });
+}
 namespace Runtime {} // namespace Runtime

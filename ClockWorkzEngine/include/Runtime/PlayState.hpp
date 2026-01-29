@@ -73,9 +73,12 @@ public:
   Gameplay::SurfaceType getSurfaceUnder(Gameplay::GameObject *player);
   void requestReturnToMenu() { m_returnToMenuRequested = true; }
 
+protected:
+  SceneManager m_scenes; // your existing scene manager
+
 private:
   std::string m_initialSceneId;
-  SceneManager m_scenes; // your existing scene manager
+  // SceneManager m_scenes; // Moved to protected
   Platform::InputManager &m_input;
   GameStateManager &m_gsm;
   Gameplay::GameObject *m_fx{nullptr};
@@ -128,6 +131,12 @@ private:
   // Fragment system
   void updateFragmentCollection(double dt);
   void renderFragmentUI();
+
+  // ECS Rendering
+  void renderTorchPass(Graphics::RenderingManager &renderer);
+
+  // Legacy (commented out/deprecated)
+  // void updateLightExposure(double dt);
   void handleFragmentPickup(Gameplay::GameObject *player,
                             Gameplay::GameObject *fragment);
   std::string m_fragmentIconTexture = "fragment_texture";

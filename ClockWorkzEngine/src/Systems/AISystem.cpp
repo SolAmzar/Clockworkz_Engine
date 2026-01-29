@@ -14,6 +14,7 @@ reserved.
 #include "Components/EnemyAI.hpp"
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
+#include "Components/SpriteAnimator.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include <cmath>
@@ -65,6 +66,31 @@ void AISystem::update(ECS::World &world, double dt) {
         auto *lightExp = world.getComponent<Components::LightExposure>(e);
         if (lightExp && lightExp->exposureTime > 0.0f) {
           speedMultiplier = ai.lightSensitivity;
+        }
+
+        // --- Animation Control ---
+        auto *animPtr = world.getComponent<Components::SpriteAnimator>(e);
+        if (animPtr) {
+          auto &anim = *animPtr;
+          // Threshold for movement
+          if (std::abs(vel.velocity.x) > 0.1f ||
+              std::abs(vel.velocity.y) > 0.1f) {
+            anim.play("walk");
+
+            // Sprite Flipping (Flip X based on movement direction)
+            // Assuming default sprite faces right
+            if (vel.velocity.x > 0.1f) {
+              if (t.scale.x < 0)
+                t.scale.x = -t.scale.x; // Make positive
+            } else if (vel.velocity.x < -0.1f) {
+              if (t.scale.x > 0)
+                t.scale.x = -t.scale.x; // Make negative
+            }
+          } else {
+            // If not moving, stop animation (or play idle if available)
+            // For now, just stop playing walk to freeze frame or reset
+            anim.playing = false;
+          }
         }
 
         // --- State Machine ---

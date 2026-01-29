@@ -84,6 +84,10 @@ private:
   static json serializeAudioSource(const GameObject &obj);
   static void deserializeAudioSource(GameObject &obj, const json &j);
 
+  // Lua Script component serialization/deserialization
+  static json serializeLuaScript(const GameObject &obj);
+  static void deserializeLuaScript(GameObject &obj, const json &j);
+
   // Helper functions for GameObject deserialization
   static std::unique_ptr<GameObject> deserializePrefabObject(const json &j);
   static std::unique_ptr<GameObject> deserializeLegacyObject(const json &j);
