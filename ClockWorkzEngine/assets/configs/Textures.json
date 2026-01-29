@@ -83,6 +83,18 @@
 			"path": "assets/textures/fragmentsample.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "door_open",
+			"path": "assets/textures/door_open.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "door_close",
+			"path": "assets/textures/door_close.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
 		}
 	]
 }
