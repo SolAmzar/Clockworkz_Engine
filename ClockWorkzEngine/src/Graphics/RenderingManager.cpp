@@ -178,11 +178,12 @@ void RenderingManager::drawVelocity(const glm::vec2 &pos, const glm::vec2 &vel,
 void RenderingManager::drawSprite(unsigned texId, const glm::vec2 &pos,
                                   const glm::vec2 &size, float angleRad,
                                   const glm::vec4 &uv, const glm::vec4 &color,
-                                  bool isUI) {
+                                  bool isUI, const glm::vec2 &pivot) {
   /*std::cout << "draw Sprite: " << texId << std::endl;*/
   m_renderer2D.submitQuad(
       pos, size, texId, color, angleRad, uv,
-      ((isUI) ? Graphics::Anchor::BottomLeft : Graphics::Anchor::Center));
+      ((isUI) ? Graphics::Anchor::BottomLeft : Graphics::Anchor::Center),
+      pivot);
 }
 
 std::vector<vec2> RenderingManager::computeVisibilityPolygon(
@@ -279,9 +280,9 @@ void RenderingManager::beginDebugPass(const glm::mat4 &vp) {
 }
 
 void RenderingManager::endDebugPass() {
-    glDepthMask(GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
-    glUseProgram(0);
+  glDepthMask(GL_FALSE);
+  glDisable(GL_DEPTH_TEST);
+  glUseProgram(0);
 }
 
 void RenderingManager::beginFontPass(const glm::mat4 &vp) {

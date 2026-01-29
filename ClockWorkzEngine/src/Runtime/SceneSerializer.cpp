@@ -16,7 +16,10 @@ reserved.
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/PlayerController.hpp"
@@ -26,7 +29,6 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
-
 
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -55,7 +57,8 @@ void SceneSerializer::Serialize(ECS::World &world,
     obj["components"]["transform"] = {
         {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
         {"rotation", tc.rotation},
-        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}}};
+        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
+        {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
 
     // Velocity
     if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
@@ -123,7 +126,28 @@ void SceneSerializer::Serialize(ECS::World &world,
           {"isTrigger", cc->isTrigger},
           {"moveable", cc->moveable},
           {"collisionCategory", cc->collisionCategory},
-          {"collisionMask", cc->collisionMask}};
+          {"collisionMask", cc->collisionMask},
+          {"mass", cc->mass}};
+    }
+
+    // Door
+    if (auto *door = world.getComponent<Components::Door>(entity)) {
+      obj["components"]["door"] = {
+          {"requiredFragments", door->requiredFragments},
+          {"isOpen", door->isOpen},
+          {"openTexture", door->openTexture},
+          {"closedTexture", door->closedTexture}};
+    }
+
+    // DoorSwing
+    if (auto *ds = world.getComponent<Components::DoorSwing>(entity)) {
+      obj["components"]["doorSwing"] = {
+          {"isOpen", ds->isOpen},
+          {"swingAngle", ds->swingAngle},
+          {"clockwise", ds->clockwise},
+          {"speed", ds->speed},
+          {"initialRotation", ds->initialRotation},
+          {"initialized", ds->initialized}};
     }
 
     // Battery
@@ -236,6 +260,10 @@ bool SceneSerializer::Deserialize(ECS::World &world,
           transform.scale.x = tc["scale"].value("x", 1.0f);
           transform.scale.y = tc["scale"].value("y", 1.0f);
         }
+        if (tc.contains("pivot") && tc["pivot"].is_object()) {
+          transform.pivot.x = tc["pivot"].value("x", 0.0f);
+          transform.pivot.y = tc["pivot"].value("y", 0.0f);
+        }
         world.addComponent(entity, transform);
       }
 
@@ -332,12 +360,37 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         collider.moveable = cc.value("moveable", false);
         collider.collisionCategory = cc.value("collisionCategory", 1);
         collider.collisionMask = cc.value("collisionMask", 0xFFFFFFFF);
+        collider.mass = cc.value("mass", 1.0f);
 
         // Handle layer mapping from legacy json if present ("layer": 4)
         // For now, mapping directly to collisionCategory/Mask seems best if
         // JSON already has them.
 
         world.addComponent(entity, collider);
+      }
+
+      // Door
+      if (components.contains("door")) {
+        auto &dc = components["door"];
+        Components::Door door;
+        door.requiredFragments = dc.value("requiredFragments", 1);
+        door.isOpen = dc.value("isOpen", false);
+        door.openTexture = dc.value("openTexture", "door_open");
+        door.closedTexture = dc.value("closedTexture", "door_close");
+        world.addComponent(entity, door);
+      }
+
+      // DoorSwing
+      if (components.contains("doorSwing")) {
+        auto &dsc = components["doorSwing"];
+        Components::DoorSwing ds;
+        ds.isOpen = dsc.value("isOpen", false);
+        ds.swingAngle = dsc.value("swingAngle", 90.f);
+        ds.clockwise = dsc.value("clockwise", true);
+        ds.speed = dsc.value("speed", 90.f);
+        ds.initialRotation = dsc.value("initialRotation", 0.f);
+        ds.initialized = dsc.value("initialized", false);
+        world.addComponent(entity, ds);
       }
 
       // Battery
