@@ -198,7 +198,6 @@ private:
   void renderAssetBrowser();
   void renderAudioBrowser();
   void renderUndoRedoPanel();
-  void renderAudioBrowser();
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
