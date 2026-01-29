@@ -190,6 +190,7 @@ private:
   void renderGrid();
   void renderAssetBrowser();
   void renderUndoRedoPanel();
+  void renderAudioBrowser();
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
