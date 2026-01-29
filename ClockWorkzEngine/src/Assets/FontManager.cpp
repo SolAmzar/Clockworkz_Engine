@@ -26,6 +26,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <sstream>
 
 namespace Assets
 {
@@ -181,6 +182,149 @@ namespace Assets
             // advance is in 1/64 pixels, so shift by 6
             // 2^6 is 64, this is to offset the next character x position
             x += (ch.Advance >> 6) * scale;
+        }
+
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_BLEND);
+    }
+
+    float FontManager::MeasureTextWidth(const std::string &text, float scale) const
+    {
+        float width = 0.0f;
+        for (auto c : text)
+        {
+            auto it = characters.find(c);
+            if (it != characters.end())
+            {
+                width += (it->second.Advance >> 6) * scale;
+            }
+        }
+        return width;
+    }
+
+    float FontManager::GetLineHeight(float scale) const
+    {
+        // Use the tallest glyph (capital H is a good reference) as line height
+        auto it = characters.find('H');
+        if (it != characters.end())
+        {
+            return it->second.Size.y * scale * 1.4f; // 1.4x for line spacing
+        }
+        return 24.0f * scale; // fallback
+    }
+
+    std::vector<std::string> FontManager::WrapText(const std::string &text, float maxWidth, float scale) const
+    {
+        std::vector<std::string> lines;
+        std::istringstream stream(text);
+        std::string paragraph;
+
+        // Split by newlines first
+        while (std::getline(stream, paragraph))
+        {
+            if (paragraph.empty())
+            {
+                lines.push_back("");
+                continue;
+            }
+
+            // Word-wrap each paragraph
+            std::istringstream wordStream(paragraph);
+            std::string word;
+            std::string currentLine;
+
+            while (wordStream >> word)
+            {
+                std::string testLine = currentLine.empty() ? word : currentLine + " " + word;
+                float testWidth = MeasureTextWidth(testLine, scale);
+
+                if (testWidth > maxWidth && !currentLine.empty())
+                {
+                    lines.push_back(currentLine);
+                    currentLine = word;
+                }
+                else
+                {
+                    currentLine = testLine;
+                }
+            }
+
+            if (!currentLine.empty())
+            {
+                lines.push_back(currentLine);
+            }
+        }
+
+        return lines;
+    }
+
+    void FontManager::RenderTextInBox(const std::string &text, float x, float y,
+                                       float boxWidth, float boxHeight, float scale,
+                                       glm::vec3 color, Graphics::Shader &shader, int alignment)
+    {
+        std::vector<std::string> lines = WrapText(text, boxWidth, scale);
+        float lineHeight = GetLineHeight(scale);
+
+        // Start rendering from top of box, going downward
+        // y is the top-left of the box in world space (OpenGL: y increases upward)
+        float cursorY = y - lineHeight;
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(VAO);
+        shader.setVec3("textColor", color);
+
+        for (const auto &line : lines)
+        {
+            // Stop rendering if we've gone past the bottom of the box
+            if (cursorY < y - boxHeight)
+                break;
+
+            // Calculate x offset based on alignment
+            float lineWidth = MeasureTextWidth(line, scale);
+            float lineX = x; // Left aligned by default
+
+            if (alignment == 1) // Center
+            {
+                lineX = x + (boxWidth - lineWidth) * 0.5f;
+            }
+            else if (alignment == 2) // Right
+            {
+                lineX = x + boxWidth - lineWidth;
+            }
+
+            // Render each character in the line
+            float penX = lineX;
+            for (auto c : line)
+            {
+                Character ch = characters[c];
+
+                float xpos = penX + ch.Bearing.x * scale;
+                float ypos = cursorY - (ch.Size.y - ch.Bearing.y) * scale;
+
+                float w = ch.Size.x * scale;
+                float h = ch.Size.y * scale;
+
+                float vertices[6][4] = {
+                    {xpos, ypos + h, 0.0f, 0.0f},
+                    {xpos, ypos, 0.0f, 1.0f},
+                    {xpos + w, ypos, 1.0f, 1.0f},
+
+                    {xpos, ypos + h, 0.0f, 0.0f},
+                    {xpos + w, ypos, 1.0f, 1.0f},
+                    {xpos + w, ypos + h, 1.0f, 0.0f}};
+
+                glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+
+                penX += (ch.Advance >> 6) * scale;
+            }
+
+            cursorY -= lineHeight;
         }
 
         glBindVertexArray(0);
