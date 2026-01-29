@@ -25,7 +25,10 @@ reserved.
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/Health.hpp"
@@ -86,6 +89,12 @@ void SandboxState::onEnter() {
       "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
   Assets::ResourceManager<Graphics::Shader>::Load(
       "light", "assets/shaders/light.vert", "assets/shaders/light.frag");
+  Assets::ResourceManager<Graphics::Shader>::Load(
+      "text", "assets/shaders/text.vert", "assets/shaders/text.frag");
+
+  // Load Debug Font for HUD
+  Assets::ResourceManager<Assets::FontManager>::Load(
+      "Debug", "assets/fonts/MANIC1.TTF", 24);
 
   // Load prefabs
   loadAvailablePrefabs();
@@ -287,6 +296,62 @@ void SandboxState::render(Core::Time *timer) {
             renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
                                 glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
           }
+        });
+
+    // --- Render Fragment HUD ---
+    // Make sure we are in Scene Pass (UI Projection) which we are from Battery
+    // HUD
+
+    world.each<Components::FragmentCollector, Components::PlayerController>(
+        [&](ECS::Entity, Components::FragmentCollector &col,
+            Components::PlayerController &) {
+          glm::vec2 uiSize(64.0f, 64.0f);
+          float margin = 20.0f;
+
+          // Position to the left of Battery (which is at right edge)
+          // Battery ~ 128px wide + margin.
+          float batteryWidth = 128.0f;
+          float spacing = 20.0f;
+
+          // x = ViewportW - margin - BatteryW - spacing - FragIconW
+          float fragIconX =
+              m_viewportSize.x - margin - batteryWidth - spacing - uiSize.x;
+          float fragIconY = m_viewportSize.y - margin - uiSize.y;
+
+          glm::vec2 uiPos(fragIconX, fragIconY);
+
+          // 1. Draw Icon
+          auto tex = Assets::TextureManager::Get("fragment_texture");
+          if (tex) {
+            renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
+                                glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
+          }
+
+          // 2. Draw Text (Collected Count)
+          // Switch to Font Pass for text
+          renderer.endScenePass(); // End Sprite Pass temporarily
+          renderer.beginFontPass(uiProj);
+
+          auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+          auto font =
+              Assets::ResourceManager<Assets::FontManager>::Get("Debug");
+
+          if (shader && font) {
+            std::string text = std::to_string(col.collectedCount) + " / " +
+                               std::to_string(col.requiredFragments);
+
+            // Rough centering vertically relative to icon
+            float textY = fragIconY + (uiSize.y * 0.25f);
+            float textX =
+                fragIconX - (text.length() * 15.0f) - 10.0f; // Estimate width
+
+            font->RenderText(text, textX, textY, 1.0f, glm::vec3(1.0f),
+                             *shader);
+          }
+
+          // Restart Scene Pass to restore state for next operations (or clean
+          // exit)
+          renderer.beginScenePass(uiProj);
         });
 
     renderer.endScenePass();
@@ -1253,8 +1318,15 @@ void SandboxState::renderComponentWindow() {
 
     if (transform) {
       ImGui::InputFloat2("Position", &transform->position.x);
-      ImGui::InputFloat("Rotation", &transform->rotation);
+
+      // Rotation (Radians -> Degrees for Editor)
+      float deg = glm::degrees(transform->rotation);
+      if (ImGui::DragFloat("Rotation (Deg)", &deg)) {
+        transform->rotation = glm::radians(deg);
+      }
+
       ImGui::InputFloat2("Scale", &transform->scale.x);
+      ImGui::InputFloat2("Pivot", &transform->pivot.x);
       ImGui::TextDisabled("(Transform is required on all entities)");
     } else {
       if (ImGui::Button("Add Transform")) {
@@ -1353,6 +1425,51 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
+  // Door Component
+  if (ImGui::CollapsingHeader("Door")) {
+    auto *door = world.getComponent<Components::Door>(entity);
+    if (door) {
+      ImGui::InputInt("Required Fragments", &door->requiredFragments);
+      ImGui::Checkbox("Is Open", &door->isOpen);
+
+      // Open Texture Dropdown
+      if (ImGui::BeginCombo("Open Texture", door->openTexture.c_str())) {
+        for (const auto &name :
+             Assets::TextureManager::GetLoadedTextureNames()) {
+          bool isSelected = (door->openTexture == name);
+          if (ImGui::Selectable(name.c_str(), isSelected)) {
+            door->openTexture = name;
+          }
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
+
+      // Closed Texture Dropdown
+      if (ImGui::BeginCombo("Closed Texture", door->closedTexture.c_str())) {
+        for (const auto &name :
+             Assets::TextureManager::GetLoadedTextureNames()) {
+          bool isSelected = (door->closedTexture == name);
+          if (ImGui::Selectable(name.c_str(), isSelected)) {
+            door->closedTexture = name;
+          }
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
+
+      if (ImGui::Button("Remove Door")) {
+        world.removeComponent<Components::Door>(entity);
+      }
+    } else {
+      if (ImGui::Button("Add Door")) {
+        world.addComponent(entity, Components::Door{});
+      }
+    }
+  }
+
   if (ImGui::CollapsingHeader("Collider")) {
     auto *c = world.getComponent<Components::Collider>(entity);
     if (c) {
@@ -1375,6 +1492,16 @@ void SandboxState::renderComponentWindow() {
       ImGui::Checkbox("Blocks Light", &c->blocksLight);
       ImGui::Checkbox("Moveable", &c->moveable);
 
+      // Mass (Always show, even if not moveable, so we can configure it)
+      if (c->moveable) {
+        ImGui::InputFloat("Mass", &c->mass);
+      } else {
+        // Optional: Display as disabled or just normal?
+        // User asked for "update mass", implying they want to edit it.
+        // Let's just show it.
+        ImGui::InputFloat("Mass", &c->mass);
+      }
+
       if (ImGui::Button("Fit to Sprite")) {
         auto *spr = world.getComponent<Components::SpriteRenderer>(entity);
         if (spr) {
@@ -1383,6 +1510,16 @@ void SandboxState::renderComponentWindow() {
           } else {
             // Radius is half the max dimension
             c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+          }
+
+          // Also apply pivot offset if Transform exists
+          auto *t = world.getComponent<Components::Transform>(entity);
+          if (t) {
+            // Renderer subtracts pivot from local pos.
+            // So visual center is at -pivot relative to Transform.position.
+            // Collider offset is added to Transform.position.
+            // So offset should be -pivot.
+            c->offset = -t->pivot;
           }
         }
       }
@@ -1603,7 +1740,34 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
+  // DoorSwing
+  if (ImGui::CollapsingHeader("DoorSwing")) {
+    auto *ds = world.getComponent<Components::DoorSwing>(entity);
+    if (ds) {
+      ImGui::Checkbox("Is Open", &ds->isOpen);
+      ImGui::DragFloat("Swing Angle", &ds->swingAngle, 1.0f, 0.0f, 360.0f);
+      ImGui::Checkbox("Clockwise", &ds->clockwise);
+      ImGui::DragFloat("Speed", &ds->speed, 1.0f, 0.0f, 720.0f);
+
+      ImGui::Text("Debug Info:");
+      ImGui::Text("Initialized: %s", ds->initialized ? "Yes" : "No");
+      ImGui::Text("Initial Rot: %.2f", ds->initialRotation);
+
+      if (ImGui::Button("Reset Init")) {
+        // Force re-initialization of rotation
+        ds->initialized = false;
+      }
+
+      if (ImGui::Button("Remove DoorSwing"))
+        world.removeComponent<Components::DoorSwing>(entity);
+    } else {
+      if (ImGui::Button("Add DoorSwing"))
+        world.addComponent(entity, Components::DoorSwing{});
+    }
+  }
+
   // ParticleEmitter
+
   if (ImGui::CollapsingHeader("ParticleEmitter")) {
     auto *pe = world.getComponent<Components::ParticleEmitter>(entity);
     if (pe) {
@@ -1832,6 +1996,8 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   copyXYZ(Identity<Components::TorchComponent>{});
   copyXYZ(Identity<Components::StateMachine>{});
   copyXYZ(Identity<Components::PlayerController>{});
+  copyXYZ(Identity<Components::Door>{});
+  copyXYZ(Identity<Components::DoorSwing>{});
 
   // Transform (Offset slightly so we see it)
   auto *trans = world.getComponent<Components::Transform>(sourceEntity);

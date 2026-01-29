@@ -44,8 +44,8 @@ void RenderSystem::update(ECS::World &world,
         renderer.drawSprite(texture->id(), position, size, transform.rotation,
                             sprite.uv, // Use UV from component
                             sprite.color,
-                            false // not UI
-        );
+                            false, // not UI
+                            glm::vec2(transform.pivot.x, transform.pivot.y));
       });
 }
 

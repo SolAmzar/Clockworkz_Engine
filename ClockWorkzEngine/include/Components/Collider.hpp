@@ -43,6 +43,7 @@ struct Collider {
   bool isTrigger{false};   ///< Doesn't block, just detects overlap
   bool blocksLight{false}; ///< Blocks light rays
   bool moveable{false};    ///< Can be pushed
+  float mass{1.0f}; ///< Mass for physics resolution (heavier objects move less)
 };
 
 } // namespace Components

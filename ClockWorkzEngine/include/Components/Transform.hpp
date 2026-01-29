@@ -26,6 +26,7 @@ struct Transform {
   vec2 position{0.f, 0.f}; ///< World position
   float rotation{0.f};     ///< Rotation in radians
   vec2 scale{1.f, 1.f};    ///< Scale factors (x, y)
+  vec2 pivot{0.f, 0.f};    ///< Pivot offset from center (in local space units)
 };
 
 } // namespace Components
