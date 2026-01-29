@@ -74,7 +74,9 @@ bool AudioManager::isPlaying(const std::string &id) {
   return findChannel(id) != 0;
 }
 
-AudioManager::~AudioManager() {}
+AudioManager::~AudioManager() {
+  shutdown();
+}
 
 AudioManager &AudioManager::get() {
   static AudioManager instance; // <--- created once, destroyed once

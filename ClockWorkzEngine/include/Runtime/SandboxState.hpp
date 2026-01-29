@@ -27,6 +27,9 @@ reserved.
 
 #include "Graphics/FrameBuffer.hpp"
 #include "Runtime/Scene.hpp"
+#include "SandboxCommands.hpp"
+#include "UndoableImGui.hpp"
+#include <memory>
 
 namespace Platform {
 class InputManager;
@@ -68,6 +71,8 @@ private:
 
   Platform::InputManager &m_input;
   GameStateManager &m_gsm;
+
+  static constexpr size_t MAX_UNDO_LEVELS = 20;
 
   // Scene (Runtime Logic)
   Scene m_scene;
@@ -145,10 +150,17 @@ private:
   struct TileData {
     std::string prefabName;
     vec2 position;
+    int layer = 0;
+    ECS::Entity entity{0, 0};
   };
   std::vector<TileData> m_tilemap;
   std::vector<std::string> m_availableTilemaps;
   int m_selectedTilemapIdx = 0;
+
+  // Layer system
+  int m_currentLayer = 0;
+  int m_numLayers = 3;
+  std::vector<bool> m_layerVisible;
   void refreshTilemapList();
 
   // Prefab editor features
@@ -164,12 +176,20 @@ private:
   void saveTilemap(const std::string &filepath);
   void loadTilemap(const std::string &filepath);
   void clearTilemap();
+  bool isCellOccupied(vec2 worldPos, int layer) const;
+
+  std::vector<std::unique_ptr<Sandbox::SandboxCommand>> m_undoStack;
+  std::vector<std::unique_ptr<Sandbox::SandboxCommand>> m_redoStack;
+
+  void executeCommand(std::unique_ptr<Sandbox::SandboxCommand> cmd);
+  void undo();
+  void redo();
 
   // Helper functions
   void renderToolbar();
   void renderGrid();
   void renderAssetBrowser();
-  void renderAudioBrowser();
+  void renderUndoRedoPanel();
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();

@@ -25,6 +25,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 
 #pragma once
 #include <string>
+#include <vector>
 #include <map>
 #include <glm/glm.hpp>
 #include <ft2build.h> // Free Type Library
@@ -54,6 +55,18 @@ namespace Assets
     // Render text with this font
     void RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color, Graphics::Shader& s);
 
+    // Render text constrained to a bounding box with word wrap and alignment
+    // alignment: 0=Left, 1=Center, 2=Right
+    void RenderTextInBox(const std::string &text, float x, float y,
+                         float boxWidth, float boxHeight, float scale,
+                         glm::vec3 color, Graphics::Shader &s, int alignment);
+
+    // Measure the width of a text string in pixels (before scaling)
+    float MeasureTextWidth(const std::string &text, float scale) const;
+
+    // Get the line height for this font at the given scale
+    float GetLineHeight(float scale) const;
+
     inline const std::map<char, Character> &GetCharacters() const { return characters; }
 
   private:
@@ -63,6 +76,8 @@ namespace Assets
     unsigned int VAO, VBO;
 
     void SetupRenderData();
+    // Break text into lines that fit within maxWidth
+    std::vector<std::string> WrapText(const std::string &text, float maxWidth, float scale) const;
   };
 
 } // namespace ClockWorkz::Assets

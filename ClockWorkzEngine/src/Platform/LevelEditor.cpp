@@ -27,6 +27,7 @@ reserved.
 #include "Runtime/Scene.hpp"
 #include "Runtime/SceneManager.hpp"
 #include "math/VecCompatGLM.hpp"
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
 

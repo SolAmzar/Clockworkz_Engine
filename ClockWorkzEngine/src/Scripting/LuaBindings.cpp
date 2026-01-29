@@ -17,6 +17,8 @@ All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Components/DamageDealer.hpp"
 #include "Gameplay/Components/SpriteRenderer.hpp"
 #include "Platform/InputManager.hpp"
+#include "Platform/WindowManager.hpp"
+#include "Graphics/Camera2D.hpp"
 #include "Core/Engine.hpp"
 
 #include <GLFW/glfw3.h>
@@ -452,6 +454,15 @@ namespace Scripting {
         sol::table engine = lua.create_table();
         engine.set_function("input", []() -> Platform::InputManager& {
             return Core::Engine::Get().input();
+        });
+        engine.set_function("mouseWorldPos", []() -> vec2 {
+            auto& eng = Core::Engine::Get();
+            auto& input = eng.input();
+            auto& cam = eng.camera();
+            auto& window = eng.window();
+            return input.getMouseWorldPos(cam,
+                static_cast<float>(window.width()),
+                static_cast<float>(window.height()));
         });
         lua["Engine"] = engine;
         std::cout << "[LuaBindings] Registered Engine global table" << std::endl;

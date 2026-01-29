@@ -25,6 +25,7 @@
 #include "Systems/PlayerSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "Systems/StateMachineSystem.hpp"
+#include "Systems/TextRenderSystem.hpp"
 
 
 namespace Runtime {
@@ -74,6 +75,7 @@ public:
   bool m_doorSystemEnabled{true};
   bool m_doorSwingSystemEnabled{true};
   bool m_activationSystemEnabled{true};
+  bool m_textRenderSystemEnabled{true};
 
   // Public access to systems if needed for debug overlay (e.g. collision list)
   Systems::CollisionSystem &GetCollisionSystem() { return m_collisionSystem; }
@@ -99,6 +101,7 @@ private:
   Systems::DoorSystem m_doorSystem;
   Systems::DoorSwingSystem m_doorSwingSystem;
   Systems::ActivationSystem m_activationSystem;
+  Systems::TextRenderSystem m_textRenderSystem;
 
   std::string m_name;
 

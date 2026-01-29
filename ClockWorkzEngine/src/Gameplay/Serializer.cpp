@@ -24,6 +24,7 @@ reserved.
 #include "Math/Vec2.hpp"
 #include <Gameplay/Components/AudioSource.hpp>
 #include <Gameplay/Components/Fragment.hpp>
+#include <Scripting/LuaScriptComponent.hpp>
 
 namespace {
 // JSON Keys
@@ -44,6 +45,7 @@ constexpr const char *KEY_SPRITE_ANIMATOR = "spriteAnimator";
 constexpr const char *KEY_AUDIO = "audio";
 constexpr const char *KEY_FRAGMENT = "fragment";
 constexpr const char *KEY_FRAGMENT_COLLECTOR = "fragmentCollector";
+constexpr const char *KEY_LUA_SCRIPT = "luaScript";
 } // namespace
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
@@ -183,6 +185,17 @@ json GameObjectSerializer::serializeAudioSource(const GameObject &obj) {
     j["playOnStart"] = audio->playOnStart;
     j["group"] = static_cast<int>(audio->group);
   }
+  return j;
+}
+
+json GameObjectSerializer::serializeLuaScript(const GameObject &obj) {
+  auto *script = obj.getComponent<Scripting::LuaScriptComponent>();
+  if (!script)
+    return json();
+
+  json j;
+  j["scriptPath"] = script->scriptPath();
+  j["enabled"] = script->isEnabled();
   return j;
 }
 
@@ -388,6 +401,27 @@ void GameObjectSerializer::deserializeAudioSource(GameObject &obj,
       j.value("group", static_cast<int>(Audio::Group::SFX)));
 }
 
+void GameObjectSerializer::deserializeLuaScript(GameObject &obj,
+                                                const json &j) {
+  if (!j.is_object())
+    return;
+
+  std::string scriptPath = j.value("scriptPath", "");
+  if (scriptPath.empty()) {
+    std::cerr << "[Serializer] LuaScript missing scriptPath for: " << obj.name()
+              << "\n";
+    return;
+  }
+
+  auto *script = obj.addComponent<Scripting::LuaScriptComponent>(scriptPath);
+  if (script && j.contains("enabled")) {
+    script->setEnabled(j["enabled"].get<bool>());
+  }
+
+  std::cout << "[Serializer] Attached Lua script '" << scriptPath << "' to "
+            << obj.name() << "\n";
+}
+
 // ========================================================================
 // GAMEOBJECT SERIALIZATION
 // ========================================================================
@@ -441,6 +475,10 @@ json GameObjectSerializer::serializeGameObject(const GameObject &obj) {
 
   if (obj.getComponent<AudioSourceComponent>()) {
     components[KEY_AUDIO] = serializeAudioSource(obj);
+  }
+
+  if (obj.getComponent<Scripting::LuaScriptComponent>()) {
+    components[KEY_LUA_SCRIPT] = serializeLuaScript(obj);
   }
 
   if (auto *fragment = obj.getComponent<FragmentComponent>()) {
@@ -540,6 +578,10 @@ GameObjectSerializer::deserializePrefabObject(const json &j) {
       GameObjectSerializer::deserializeSpriteAnimator(
           *obj, comps[KEY_SPRITE_ANIMATOR].value("filename", ""));
     }
+
+    if (comps.contains(KEY_LUA_SCRIPT)) {
+      GameObjectSerializer::deserializeLuaScript(*obj, comps[KEY_LUA_SCRIPT]);
+    }
   }
 
   // 4️⃣ Apply generic fields
@@ -594,6 +636,10 @@ GameObjectSerializer::deserializeLegacyObject(const json &j) {
     if (comps.contains(KEY_FRAGMENT_COLLECTOR)) {
       GameObjectSerializer::deserializeFragmentCollector(
           *obj, comps[KEY_FRAGMENT_COLLECTOR]);
+    }
+
+    if (comps.contains(KEY_LUA_SCRIPT)) {
+      GameObjectSerializer::deserializeLuaScript(*obj, comps[KEY_LUA_SCRIPT]);
     }
   }
   return obj;

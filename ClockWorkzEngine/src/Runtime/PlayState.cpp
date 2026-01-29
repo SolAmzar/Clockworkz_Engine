@@ -55,10 +55,12 @@ reserved.
 #include <Components/PlayerController.hpp>
 #include <Core/Engine.hpp>
 #include <Core/Time.hpp>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include <Gameplay/Prefab.hpp>
+#include <Scripting/LuaScriptComponent.hpp>
 #include <Gameplay/WallTiles.hpp>
 #include <Graphics/Camera2D.hpp>
 #include <Graphics/GraphicsManager.hpp>
@@ -563,31 +565,35 @@ void PlayState::update(double dt) {
 
           vec2 move{0, 0};
 
-          // WASD input → movement vector
-          if (m_input.isKeyDown(GLFW_KEY_W))
-            move.y += 1;
-          if (m_input.isKeyDown(GLFW_KEY_S))
-            move.y -= 1;
-          if (m_input.isKeyDown(GLFW_KEY_A))
-            move.x -= 1;
-          if (m_input.isKeyDown(GLFW_KEY_D))
-            move.x += 1;
+          // Skip C++ movement if Lua script handles it
+          bool hasLuaScript = obj->getComponent<Scripting::LuaScriptComponent>() != nullptr;
+          if (!hasLuaScript) {
+            // WASD input → movement vector
+            if (m_input.isKeyDown(GLFW_KEY_W))
+              move.y += 1;
+            if (m_input.isKeyDown(GLFW_KEY_S))
+              move.y -= 1;
+            if (m_input.isKeyDown(GLFW_KEY_A))
+              move.x -= 1;
+            if (m_input.isKeyDown(GLFW_KEY_D))
+              move.x += 1;
 
-          // normalize diagonal
-          if (move.x != 0 || move.y != 0)
-            move = normalize(move);
+            // normalize diagonal
+            if (move.x != 0 || move.y != 0)
+              move = normalize(move);
 
-          // apply speed
-          float speedMove = obj->moveSpeed();
+            // apply speed
+            float speedMove = obj->moveSpeed();
 
-          // shift to run
-          if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
-            speedMove *= 2.0f;
-            isRunning = true;
+            // shift to run
+            if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+              speedMove *= 2.0f;
+              isRunning = true;
+            }
+
+            // final velocity
+            obj->velocity() = move * speedMove;
           }
-
-          // final velocity
-          obj->velocity() = move * speedMove;
 
           ////not used
           // if (m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
@@ -683,11 +689,20 @@ void PlayState::update(double dt) {
             // Normalize direction
             dir = normalize(dir);
 
-            // Compute angle in radians — atan2(y, x)
-            float angleRad = std::atan2(dir.y, dir.x);
+            // Compute target angle in radians — atan2(y, x)
+            float targetAngle = std::atan2(dir.y, dir.x);
+            float currentAngle = obj->transform().rotationRad;
 
-            // Convert to degrees if your transform uses degrees
-            obj->transform().rotationRad = angleRad;
+            // Calculate shortest angle difference
+            float angleDiff = targetAngle - currentAngle;
+
+            // Normalize angle difference to [-PI, PI] for shortest path
+            const float PI = 3.14159265358979f;
+            while (angleDiff > PI) angleDiff -= 2.0f * PI;
+            while (angleDiff < -PI) angleDiff += 2.0f * PI;
+
+            // Apply rotation (can add smoothing here if desired)
+            obj->transform().rotationRad = currentAngle + angleDiff;
           }
           if (obj->type() == Gameplay::GameObjectType::Player &&
               !obj->active()) {
@@ -697,8 +712,9 @@ void PlayState::update(double dt) {
           if (playerSpriteComp) {
             // Determine animation state
             std::string animState = m_flashlightOn ? "idle_torch" : "idle";
-            // std::string animState = m_flashlightOn ? "idle" : "idle";
-            bool isMoving = (move.x != 0 || move.y != 0);
+            // Check velocity for movement (works with both C++ and Lua movement)
+            vec2 vel = obj->velocity();
+            bool isMoving = (vel.x != 0 || vel.y != 0);
 
             if (isMoving) {
               animState = m_flashlightOn ? "walk_torch" : "walk";
