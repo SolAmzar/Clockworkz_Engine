@@ -100,6 +100,9 @@ void SandboxState::onEnter() {
   loadAvailablePrefabs();
   refreshTilemapList();
 
+  // Initialize layer visibility
+  m_layerVisible.resize(m_numLayers, true);
+
   // Init Framebuffer for Scene View
   m_framebuffer.create(800, 600);
 
@@ -713,6 +716,9 @@ void SandboxState::renderPrefabEditor() {
       if (ImGui::BeginPopupContextItem()) {
         if (ImGui::MenuItem("Spawn at Origin")) {
           spawnPrefab(m_availablePrefabs[i], vec2{0.0f, 0.0f});
+          m_tilemap.push_back(
+              {m_availablePrefabs[i], vec2{0.0f, 0.0f}, 0,
+               m_testEntities.back()});
         }
         if (ImGui::MenuItem("Delete Prefab")) {
           deletePrefab(m_availablePrefabs[i]);
@@ -737,6 +743,9 @@ void SandboxState::renderPrefabEditor() {
       if (ImGui::Button("Spawn Selected Prefab")) {
         spawnPrefab(m_availablePrefabs[m_selectedPrefabIndex],
                     vec2{spawnX, spawnY});
+        m_tilemap.push_back(
+            {m_availablePrefabs[m_selectedPrefabIndex],
+             vec2{spawnX, spawnY}, 0, m_testEntities.back()});
       }
     }
   }
@@ -1127,13 +1136,15 @@ void SandboxState::renderEntityWindow() {
   if (ImGui::Button("Load Level")) {
     m_scene.Clear();
     m_testEntities.clear(); // Clear old tracked entities
+    m_tilemap.clear();
 
     std::string path = "assets/scenes/" + std::string(currentLevelName);
     if (SceneSerializer::Deserialize(world, path)) {
       // Success - populate m_testEntities with loaded entities
       world.each<Components::Transform>(
-          [&](ECS::Entity entity, Components::Transform &) {
+          [&](ECS::Entity entity, Components::Transform &trans) {
             m_testEntities.push_back(entity);
+            m_tilemap.push_back({"", trans.position, 0, entity});
           });
     } else {
       ImGui::OpenPopup("LoadError");
@@ -1311,6 +1322,36 @@ void SandboxState::renderComponentWindow() {
   ImGui::Text("Inspecting: Entity %u (gen %u)", entity.id, entity.generation);
 
   ImGui::Separator();
+
+  // Tilemap Layer
+  if (ImGui::CollapsingHeader("Tilemap Layer")) {
+    // Find matching tile data for this entity
+    TileData *tileData = nullptr;
+    for (auto &tile : m_tilemap) {
+      if (tile.entity.id == entity.id &&
+          tile.entity.generation == entity.generation) {
+        tileData = &tile;
+        break;
+      }
+    }
+
+    if (tileData) {
+      int layer = tileData->layer;
+      if (ImGui::InputInt("Layer", &layer)) {
+        if (layer >= 0 && layer < m_numLayers) {
+          auto *trans =
+              world.getComponent<Components::Transform>(entity);
+          vec2 pos = trans ? trans->position : vec2{0.f, 0.f};
+          if (!isCellOccupied(pos, layer)) {
+            tileData->layer = layer;
+          }
+        }
+      }
+      ImGui::Text("Current: Layer %d", tileData->layer);
+    } else {
+      ImGui::TextDisabled("Not a tilemap entity");
+    }
+  }
 
   // Transform Component
   if (ImGui::CollapsingHeader("Transform")) {
@@ -1871,6 +1912,7 @@ void SandboxState::spawnTestEntity(vec2 position) {
 
   // Track it
   m_testEntities.push_back(entity);
+  m_tilemap.push_back({"", position, 0, entity});
 }
 
 void SandboxState::spawnPlayer() {
@@ -1922,6 +1964,7 @@ void SandboxState::spawnPlayer() {
   world.addComponent(entity, anim);
 
   m_testEntities.push_back(entity);
+  m_tilemap.push_back({"Player", transform.position, 0, entity});
   std::cout << "Spawned Player Entity: " << entity.id << "\n";
 }
 
@@ -1962,6 +2005,9 @@ void SandboxState::spawnEnemy() {
   world.addComponent(entity, Components::Health{50.f, 50.f});
 
   m_testEntities.push_back(entity);
+  auto *enemyTrans = world.getComponent<Components::Transform>(entity);
+  vec2 enemyPos = enemyTrans ? enemyTrans->position : vec2{0.f, 0.f};
+  m_tilemap.push_back({"Enemy", enemyPos, 0, entity});
   std::cout << "Spawned Enemy Entity: " << entity.id << "\n";
 }
 
@@ -2010,6 +2056,23 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
 
   // Track it
   m_testEntities.push_back(newEntity);
+
+  // Add tilemap data for cloned entity
+  auto *cloneTrans = world.getComponent<Components::Transform>(newEntity);
+  vec2 clonePos = cloneTrans ? cloneTrans->position : vec2{0.f, 0.f};
+  // Find source tile data to inherit prefab name and layer
+  int cloneLayer = 0;
+  std::string clonePrefab;
+  for (const auto &tile : m_tilemap) {
+    if (tile.entity.id == sourceEntity.id &&
+        tile.entity.generation == sourceEntity.generation) {
+      cloneLayer = tile.layer;
+      clonePrefab = tile.prefabName;
+      break;
+    }
+  }
+  m_tilemap.push_back({clonePrefab, clonePos, cloneLayer, newEntity});
+
   // Select the new one
   m_selectedEntityIdx = (int)m_testEntities.size() - 1;
 }
@@ -2078,6 +2141,40 @@ void Runtime::SandboxState::renderToolbar() {
     if (ImGui::Button("Clear Tilemap")) {
       clearTilemap();
     }
+
+    // Layer system
+    ImGui::Separator();
+    ImGui::Text("Layers");
+    ImGui::SameLine();
+    if (ImGui::Button("+##addlayer")) {
+      m_numLayers++;
+      m_layerVisible.push_back(true);
+    }
+    ImGui::SameLine();
+    if (m_numLayers > 1 && ImGui::Button("-##remlayer")) {
+      // Don't remove layer if current layer would become invalid
+      if (m_currentLayer >= m_numLayers - 1) {
+        m_currentLayer = m_numLayers - 2;
+      }
+      m_numLayers--;
+      m_layerVisible.pop_back();
+    }
+
+    for (int i = 0; i < m_numLayers; i++) {
+      ImGui::PushID(i);
+      bool vis = m_layerVisible[i];
+      if (ImGui::Checkbox("##vis", &vis)) {
+        m_layerVisible[i] = vis;
+      }
+      ImGui::SameLine();
+      bool selected = (m_currentLayer == i);
+      char label[32];
+      snprintf(label, sizeof(label), "Layer %d", i);
+      if (ImGui::Selectable(label, selected)) {
+        m_currentLayer = i;
+      }
+      ImGui::PopID();
+    }
   }
 
   ImGui::End();
@@ -2144,22 +2241,14 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
         ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 
-      // Check if tile already exists at this position
-      bool tileExists = false;
-      for (const auto &tile : m_tilemap) {
-        float dist = magnitude(tile.position - worldPos);
-        if (dist < m_gridSize * 0.1f) { // Close enough
-          tileExists = true;
-          break;
-        }
-      }
-
-      if (!tileExists) {
+      if (!isCellOccupied(worldPos, m_currentLayer)) {
         // Spawn the tile
         spawnPrefab(m_selectedTilePrefab, worldPos);
 
-        // Record in tilemap
-        m_tilemap.push_back({m_selectedTilePrefab, worldPos});
+        // Record in tilemap with layer and entity reference
+        ECS::Entity spawned = m_testEntities.back();
+        m_tilemap.push_back(
+            {m_selectedTilePrefab, worldPos, m_currentLayer, spawned});
       }
     }
   }
@@ -2170,29 +2259,29 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
 
       auto &world = m_scene.GetWorld();
 
-      // Find and remove entities at this position
-      for (int i = (int)m_testEntities.size() - 1; i >= 0; --i) {
-        auto entity = m_testEntities[i];
-        auto *trans = world.getComponent<Components::Transform>(entity);
-
-        if (trans) {
-          float dist =
-              magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
-          if (dist < m_gridSize * 0.5f) {
-            // Remove from tilemap data
-            m_tilemap.erase(std::remove_if(m_tilemap.begin(), m_tilemap.end(),
-                                           [&](const TileData &tile) {
-                                             return magnitude(tile.position -
-                                                              worldPos) <
-                                                    m_gridSize * 0.1f;
-                                           }),
-                            m_tilemap.end());
-
-            // Destroy entity
-            world.destroyEntity(entity);
-            m_testEntities.erase(m_testEntities.begin() + i);
-            break; // Only erase one per click
+      // Find tile on the current layer at this position
+      for (auto it = m_tilemap.begin(); it != m_tilemap.end(); ++it) {
+        if (it->layer != m_currentLayer)
+          continue;
+        float dist = magnitude(it->position - worldPos);
+        if (dist < m_gridSize * 0.1f) {
+          // Remove entity from m_testEntities
+          auto entIt = std::find_if(
+              m_testEntities.begin(), m_testEntities.end(),
+              [&](const ECS::Entity &e) {
+                return e.id == it->entity.id &&
+                       e.generation == it->entity.generation;
+              });
+          if (entIt != m_testEntities.end()) {
+            m_testEntities.erase(entIt);
           }
+
+          // Destroy entity from ECS
+          world.destroyEntity(it->entity);
+
+          // Remove from tilemap
+          m_tilemap.erase(it);
+          break; // Only erase one per click
         }
       }
     }
@@ -2346,6 +2435,8 @@ void SandboxState::renderSceneWindow() {
 
       // Spawn the prefab at drop position
       spawnPrefab(prefabName, worldPos);
+      m_tilemap.push_back(
+          {prefabName, worldPos, 0, m_testEntities.back()});
     }
     ImGui::EndDragDropTarget();
   }
@@ -2797,12 +2888,14 @@ void Runtime::SandboxState::renderAssetBrowser() {
 void Runtime::SandboxState::saveTilemap(const std::string &filepath) {
   nlohmann::json tilemapJson;
   tilemapJson["gridSize"] = m_gridSize;
+  tilemapJson["numLayers"] = m_numLayers;
   tilemapJson["tiles"] = nlohmann::json::array();
 
   for (const auto &tile : m_tilemap) {
     nlohmann::json tileJson;
     tileJson["prefab"] = tile.prefabName;
     tileJson["position"] = {{"x", tile.position.x}, {"y", tile.position.y}};
+    tileJson["layer"] = tile.layer;
     tilemapJson["tiles"].push_back(tileJson);
   }
 
@@ -2842,10 +2935,17 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
     m_gridSize = tilemapJson["gridSize"].get<float>();
   }
 
+  // Load layer count
+  if (tilemapJson.contains("numLayers")) {
+    m_numLayers = tilemapJson["numLayers"].get<int>();
+  }
+  m_layerVisible.resize(m_numLayers, true);
+
   // Load tiles
   if (tilemapJson.contains("tiles")) {
     for (const auto &tileJson : tilemapJson["tiles"]) {
       std::string prefabName = tileJson.value("prefab", "");
+      int layer = tileJson.value("layer", 0);
       vec2 position;
       if (tileJson.contains("position")) {
         position.x = tileJson["position"].value("x", 0.0f);
@@ -2855,13 +2955,26 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
       // Spawn the tile
       spawnPrefab(prefabName, position);
 
-      // Record in tilemap
-      m_tilemap.push_back({prefabName, position});
+      // Record in tilemap with layer and entity
+      ECS::Entity spawned = m_testEntities.back();
+      m_tilemap.push_back({prefabName, position, layer, spawned});
     }
   }
 
   std::cout << "[Tilemap] Loaded: " << filepath << " (" << m_tilemap.size()
             << " tiles)\n";
+}
+
+bool Runtime::SandboxState::isCellOccupied(vec2 worldPos, int layer) const {
+  for (const auto &tile : m_tilemap) {
+    if (tile.layer == layer) {
+      float dist = magnitude(tile.position - worldPos);
+      if (dist < m_gridSize * 0.1f) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 void Runtime::SandboxState::clearTilemap() {

@@ -25,6 +25,9 @@ importDependencies()  # fetch/build GLFW, GLEW, GLM, FreeType, ImGui
 # ----Compiling using GLEW (For IMGUI) ----
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
 
+# Prevent GLFW from including gl.h — GLEW must be included first
+add_compile_definitions(GLFW_INCLUDE_NONE)
+
 # --- Sources & Headers ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/src/*.cpp"

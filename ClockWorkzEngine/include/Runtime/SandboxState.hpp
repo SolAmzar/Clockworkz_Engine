@@ -149,10 +149,17 @@ private:
   struct TileData {
     std::string prefabName;
     vec2 position;
+    int layer = 0;
+    ECS::Entity entity{0, 0};
   };
   std::vector<TileData> m_tilemap;
   std::vector<std::string> m_availableTilemaps;
   int m_selectedTilemapIdx = 0;
+
+  // Layer system
+  int m_currentLayer = 0;
+  int m_numLayers = 3;
+  std::vector<bool> m_layerVisible;
   void refreshTilemapList();
 
   // Prefab editor features
@@ -168,6 +175,7 @@ private:
   void saveTilemap(const std::string &filepath);
   void loadTilemap(const std::string &filepath);
   void clearTilemap();
+  bool isCellOccupied(vec2 worldPos, int layer) const;
 
   std::vector<std::unique_ptr<Sandbox::SandboxCommand>> m_undoStack;
   std::vector<std::unique_ptr<Sandbox::SandboxCommand>> m_redoStack;

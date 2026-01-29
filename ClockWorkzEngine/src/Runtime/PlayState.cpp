@@ -53,6 +53,7 @@ reserved.
 #include <Components/PlayerController.hpp>
 #include <Core/Engine.hpp>
 #include <Core/Time.hpp>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
