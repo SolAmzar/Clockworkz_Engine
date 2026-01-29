@@ -1008,6 +1008,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
 
     // Right Bottom (Assets)
     ImGui::DockBuilderDockWindow("Asset Browser", dock_right_bottom_id);
+    ImGui::DockBuilderDockWindow("Audio Browser", dock_right_bottom_id);
 
     // Center Column
     ImGui::DockBuilderDockWindow("Toolbar", dock_toolbar_id);
@@ -1024,6 +1025,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderSceneWindow();
   renderToolbar();
   renderAssetBrowser();
+  renderAudioBrowser();
   renderPrefabEditor();
   renderTilePalette();
 
@@ -2683,7 +2685,54 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
   }
 }
 
-} // namespace Runtime
+void Runtime::SandboxState::renderAudioBrowser() {
+  if (!m_showAudioBrowser)
+    return;
+
+  ImGui::Begin("Audio Browser", &m_showAudioBrowser);
+
+  // Stop All Button
+  if (ImGui::Button("Stop All Sounds")) {
+    Core::Engine::Get().audio().stopAll();
+  }
+
+  ImGui::Separator();
+
+  // List all loaded sounds
+  auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
+
+  if (soundNames.empty()) {
+    ImGui::TextDisabled("No sounds loaded.");
+  } else {
+    static ImGuiTextFilter filter;
+    filter.Draw("Search");
+
+    ImGui::BeginChild("SoundList");
+    for (const auto &name : soundNames) {
+      if (!filter.PassFilter(name.c_str()))
+        continue;
+
+      ImGui::PushID(name.c_str());
+
+      if (ImGui::Button("Play")) {
+        Assets::SoundManager::Play(name);
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Stop")) {
+        Core::Engine::Get().audio().stop(name);
+      }
+      ImGui::SameLine();
+      ImGui::Text("%s", name.c_str());
+
+      ImGui::PopID();
+    }
+    ImGui::EndChild();
+  }
+
+  ImGui::End();
+}
+
+// namespace Runtime
 
 // void Runtime::SandboxState::renderToolbar() {
 //   ImGui::Begin("Toolbar");
@@ -2890,3 +2939,5 @@ void Runtime::SandboxState::clearTilemap() {
   m_tilemap.clear();
   std::cout << "[Tilemap] Cleared all entities and tile data\n";
 }
+
+} // namespace Runtime

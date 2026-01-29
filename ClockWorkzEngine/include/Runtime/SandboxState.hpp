@@ -118,7 +118,8 @@ private:
   bool m_showGrid{true};
   float m_gridSize{50.0f};
   bool m_isPaused{true};
-  bool m_showAssetBrowser{true};
+  bool m_showAssetBrowser = true;
+  bool m_showAudioBrowser = true;
   std::string m_selectedAsset;
   bool m_cameraFollowPlayer{true};
   glm::vec2 m_editorCameraPos{0.f, 0.f};
@@ -168,6 +169,7 @@ private:
   void renderToolbar();
   void renderGrid();
   void renderAssetBrowser();
+  void renderAudioBrowser();
   void renderSystemsWindow();
   void renderEntityWindow();
   void renderComponentWindow();
