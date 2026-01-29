@@ -7,8 +7,80 @@
 			"alphaOnlyIsRed": false
 		},
 		{
+			"name": "floor_texture_1",
+			"path": "assets/textures/floor1.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "floor_texture_2",
+			"path": "assets/textures/floor2.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "floor_texture_3",
+			"path": "assets/textures/floor3.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "floor_texture_4",
+			"path": "assets/textures/floor4.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
 			"name": "wall_texture",
 			"path": "assets/textures/wall_atlas.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_1",
+			"path": "assets/textures/wall1.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_2",
+			"path": "assets/textures/wall2.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_3",
+			"path": "assets/textures/wall3.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_4",
+			"path": "assets/textures/wall4.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_6",
+			"path": "assets/textures/wall6.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_7",
+			"path": "assets/textures/wall7.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_8",
+			"path": "assets/textures/wall8.png",
+			"flipY": true,
+			"alphaOnlyIsRed": false
+		},
+		{
+			"name": "wall_texture_9",
+			"path": "assets/textures/wall9.png",
 			"flipY": true,
 			"alphaOnlyIsRed": false
 		},
