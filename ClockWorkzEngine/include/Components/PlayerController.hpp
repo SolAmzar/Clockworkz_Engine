@@ -58,6 +58,13 @@ struct PlayerController {
     auto *col = world.getComponent<Components::Collider>(entity);
     auto *batt = world.getComponent<Components::Battery>(entity);
 
+    // Disable control if dead
+    if (anim && anim->currentClip == "death") {
+      if (vel)
+        vel->velocity = {0.f, 0.f};
+      return;
+    }
+
     // Enforce Physics Interaction: Player must be moveable to collide with
     // walls
     if (col) {

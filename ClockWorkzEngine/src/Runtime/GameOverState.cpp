@@ -67,8 +67,8 @@ void GameOverState::update(double dt) {
   if (m_restartRequested) {
     m_gsm.pop(); // Remove GameOverState
     m_gsm.pop(); // Remove PlayState
-    // m_gsm.push(std::make_shared<PlayState>(m_sceneId, m_input, m_gsm));
-    std::cout << "PlayState is disabled for refactoring.\n";
+    m_gsm.push(std::make_shared<PlayState>(m_sceneId, m_input, m_gsm));
+    std::cout << "[GameOverState] Restarting PlayState...\n";
     return;
   } else if (m_menuRequested) {
     m_gsm.pop(); // Remove GameOverState

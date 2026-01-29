@@ -20,6 +20,7 @@ reserved.
 #include <algorithm> // for min, max
 #include <cmath>
 #include <glm/glm.hpp> // For radians
+#include <iostream>
 
 namespace Systems {
 
@@ -184,11 +185,16 @@ void LightExposureSystem::update(ECS::World &world, double dt) {
 
                 if (!occluded) {
                   hit = true;
+                  // std::cout << "Light Hit Entity " << targetEnt.id << "\n";
                   break;
                 }
               }
 
               if (hit) {
+                if (!light.inLight) {
+                  std::cout << "[LightSystem] Entity " << targetEnt.id
+                            << " entered light.\n";
+                }
                 light.inLight = true;
               }
             });

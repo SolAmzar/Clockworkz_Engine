@@ -26,6 +26,11 @@ struct Fragment {
   float bobSpeed{2.f};       ///< Visual bobbing speed
   float bobAmount{10.f};     ///< Visual bobbing amplitude
   float animationTimer{0.f}; ///< Tracks animation phase
+
+  // Visibility
+  mutable float currentAlpha{0.0f}; ///< Current opacity for fading
+  float fadeSpeed{5.0f};            ///< Fade speed
+  bool requiresLight{true};         ///< If true, requires light to be visible
 };
 
 } // namespace Components

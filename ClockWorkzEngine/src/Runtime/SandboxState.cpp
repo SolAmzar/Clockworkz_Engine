@@ -36,6 +36,7 @@ reserved.
 #include "Components/PlayerController.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
+#include "Components/Tag.hpp"
 #include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
 #include "Core/Engine.hpp"
@@ -133,6 +134,76 @@ void SandboxState::update(double dt) {
   // Update Scene Logic
   if (!m_isPaused) {
     m_scene.Update(dt, m_input);
+
+    // --- GAME LOGIC (Sandbox) ---
+    auto &world = m_scene.GetWorld();
+
+    // 1. Handle Death Timer
+    if (m_playerDeathTimer > 0.0f) {
+      m_playerDeathTimer -= static_cast<float>(dt);
+      if (m_playerDeathTimer <= 0.0f) {
+        // Reset Player
+        world.each<Components::PlayerController, Components::Transform,
+                   Components::SpriteAnimator>(
+            [&](ECS::Entity entity, Components::PlayerController &,
+                Components::Transform &t, Components::SpriteAnimator &anim) {
+              t.position = vec2(0, 0);
+              anim.play("idle");
+              if (auto *col =
+                      world.getComponent<Components::Collider>(entity)) {
+                col->isSolid = true; // Re-enable physics
+              }
+            });
+        m_playerDeathTimer = -1.f;
+        std::cout << "[Sandbox] Player Respawned\n";
+      }
+    } else {
+      // 2. Check Collision (Player vs Enemy) only if alive
+      world.each<Components::PlayerController, Components::Transform,
+                 Components::Collider>(
+          [&](ECS::Entity playerEntity, Components::PlayerController &,
+              Components::Transform &pTrans, Components::Collider &pCol) {
+            // Skip if already dead
+            auto *pAnim =
+                world.getComponent<Components::SpriteAnimator>(playerEntity);
+            if (pAnim && pAnim->currentClip == "death")
+              return;
+
+            world.each<Components::EnemyAI, Components::Transform,
+                       Components::Collider>(
+                [&](ECS::Entity, Components::EnemyAI &,
+                    Components::Transform &eTrans, Components::Collider &eCol) {
+                  // Calculate AABB
+                  // Size is full width/height. Half is * 0.5.
+                  // Scale applies to size.
+                  // Assuming non-rotated AABB check for simplicity (matching
+                  // PlayState)
+
+                  float pW = pCol.size.x * pTrans.scale.x;
+                  float pH = pCol.size.y * pTrans.scale.y;
+                  float eW = eCol.size.x * eTrans.scale.x;
+                  float eH = eCol.size.y * eTrans.scale.y;
+
+                  float dx = std::abs(pTrans.position.x - eTrans.position.x);
+                  float dy = std::abs(pTrans.position.y - eTrans.position.y);
+
+                  // Check overlap
+                  float sumHalfW = (pW + eW) * 0.5f;
+                  float sumHalfH = (pH + eH) * 0.5f;
+
+                  if (dx < sumHalfW && dy < sumHalfH) {
+                    // COLLISION!
+                    std::cout << "[Sandbox] Player died!\n";
+                    if (pAnim) {
+                      pAnim->play("death");
+                    }
+                    // Disable physics
+                    pCol.isSolid = false;
+                    m_playerDeathTimer = 3.0f; // 3 seconds to respawn
+                  }
+                });
+          });
+    }
   }
 
   // Camera Logic
@@ -501,6 +572,9 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       }
       world.addComponent(entity, trans);
     }
+
+    // Default Tag from Prefab Name
+    world.addComponent(entity, Components::Tag{prefabName});
 
     // SpriteRenderer
     if (components.contains("spriteRenderer")) {
@@ -1217,29 +1291,83 @@ void SandboxState::renderEntityWindow() {
     ImGui::PushID(static_cast<int>(i));
 
     char label[64];
-    snprintf(label, sizeof(label), "Entity %u (gen %u)", entity.id,
-             entity.generation);
-
-    // Selection Logic
-    bool isSelected = (m_selectedEntityIdx == (int)i);
-    float availWidth = ImGui::GetContentRegionAvail().x;
-
-    // Limit Selectable width to leave room for buttons (approx 60px)
-    if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
-      m_selectedEntityIdx = (int)i;
+    auto *tag = m_scene.GetWorld().getComponent<Components::Tag>(entity);
+    if (tag && !tag->tag.empty()) {
+      snprintf(label, sizeof(label), "%s (id %u)", tag->tag.c_str(), entity.id);
+    } else {
+      snprintf(label, sizeof(label), "Entity %u (gen %u)", entity.id,
+               entity.generation);
     }
 
-    // Right Click Context Menu
-    if (ImGui::BeginPopupContextItem()) {
-      if (ImGui::Selectable("Clone")) {
-        entityToClone = (int)i;
-        ImGui::CloseCurrentPopup();
+    // Renaming Logic
+    if (m_renamingEntityIdx == (int)i) {
+      // Set keyboard focus when first entering rename mode
+      if (ImGui::IsWindowAppearing() || m_renameBuffer[0] == '\0') {
+        // This condition is a bit loose but InputText will take focus if
+        // SetKeyboardFocusHere is called
       }
-      if (ImGui::Selectable("Delete")) {
-        entityToDelete = (int)i;
-        ImGui::CloseCurrentPopup();
+      // Actually we just need to ensure focus once.
+      // But simplifying: rely on auto-focus or user click.
+      // Better: Use SetKeyboardFocusHere(-1) on the exact frame we started?
+      // We can't easily detect "start frame" here without another flag.
+      // Let's just render InputText.
+
+      // Auto-focus if we just switched (we can check if buffer is empty? No, we
+      // populate it). Let's just rely on the user typing. Actually, standard
+      // behavior:
+
+      ImGui::SetKeyboardFocusHere();
+      if (ImGui::InputText("##rename", m_renameBuffer, sizeof(m_renameBuffer),
+                           ImGuiInputTextFlags_EnterReturnsTrue |
+                               ImGuiInputTextFlags_AutoSelectAll)) {
+        // Apply Rename
+        if (tag) {
+          tag->tag = std::string(m_renameBuffer);
+        } else {
+          // Create if missing (shouldn't happen with new spawn logic, but safe)
+          world.addComponent(entity, Components::Tag{m_renameBuffer});
+        }
+        m_renamingEntityIdx = -1;
       }
-      ImGui::EndPopup();
+
+      // Cancel on Escape or Click Away (Check focus lost?)
+      if (!ImGui::IsItemActive() &&
+          (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) {
+        // Apply or Cancel? Usually Apply.
+        if (tag)
+          tag->tag = std::string(m_renameBuffer);
+        m_renamingEntityIdx = -1;
+      }
+    } else {
+      // Selection Logic
+      bool isSelected = (m_selectedEntityIdx == (int)i);
+      float availWidth = ImGui::GetContentRegionAvail().x;
+
+      // Limit Selectable width to leave room for buttons (approx 60px)
+      if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
+        m_selectedEntityIdx = (int)i;
+      }
+
+      // Right Click Context Menu
+      if (ImGui::BeginPopupContextItem()) {
+        if (ImGui::Selectable("Rename")) {
+          m_renamingEntityIdx = (int)i;
+          // Populate buffer
+          memset(m_renameBuffer, 0, sizeof(m_renameBuffer));
+          if (tag)
+            strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer));
+          ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Selectable("Clone")) {
+          entityToClone = (int)i;
+          ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Selectable("Delete")) {
+          entityToDelete = (int)i;
+          ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+      }
     }
 
     ImGui::SameLine();
@@ -1309,6 +1437,21 @@ void SandboxState::renderComponentWindow() {
 
   auto entity = m_testEntities[m_selectedEntityIdx];
   ImGui::Text("Inspecting: Entity %u (gen %u)", entity.id, entity.generation);
+
+  // Tag / Name
+  auto *tag = world.getComponent<Components::Tag>(entity);
+  if (tag) {
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strncpy_s(buffer, tag->tag.c_str(), sizeof(buffer));
+    if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
+      tag->tag = std::string(buffer);
+    }
+  } else {
+    if (ImGui::Button("Add Tag")) {
+      world.addComponent(entity, Components::Tag{"Entity"});
+    }
+  }
 
   ImGui::Separator();
 
@@ -1581,6 +1724,18 @@ void SandboxState::renderComponentWindow() {
     if (f) {
       ImGui::InputInt("ID", &f->fragmentId);
       ImGui::Checkbox("Collected", &f->collected);
+
+      ImGui::Separator();
+      ImGui::Text("Visibility");
+      ImGui::Checkbox("Requires Light", &f->requiresLight);
+      ImGui::DragFloat("Fade Speed", &f->fadeSpeed, 0.1f, 0.1f, 20.0f);
+      ImGui::Text("Current Alpha: %.2f", f->currentAlpha);
+
+      ImGui::Separator();
+      ImGui::Text("Animation");
+      ImGui::DragFloat("Bob Speed", &f->bobSpeed, 0.1f);
+      ImGui::DragFloat("Bob Amount", &f->bobAmount, 0.1f);
+
       if (ImGui::Button("Remove Fragment"))
         world.removeComponent<Components::Fragment>(entity);
     } else {
@@ -1871,6 +2026,10 @@ void SandboxState::spawnTestEntity(vec2 position) {
 
   // Track it
   m_testEntities.push_back(entity);
+
+  // Default Name
+  world.addComponent(entity,
+                     Components::Tag{"Entity " + std::to_string(entity.id)});
 }
 
 void SandboxState::spawnPlayer() {
@@ -1922,6 +2081,7 @@ void SandboxState::spawnPlayer() {
   world.addComponent(entity, anim);
 
   m_testEntities.push_back(entity);
+  world.addComponent(entity, Components::Tag{"Player"});
   std::cout << "Spawned Player Entity: " << entity.id << "\n";
 }
 
@@ -1960,8 +2120,11 @@ void SandboxState::spawnEnemy() {
   world.addComponent(entity, ai);
 
   world.addComponent(entity, Components::Health{50.f, 50.f});
+  world.addComponent(
+      entity, Components::LightExposure{}); // Needed for light interaction
 
   m_testEntities.push_back(entity);
+  world.addComponent(entity, Components::Tag{"Enemy"});
   std::cout << "Spawned Enemy Entity: " << entity.id << "\n";
 }
 
@@ -1997,7 +2160,16 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   copyXYZ(Identity<Components::StateMachine>{});
   copyXYZ(Identity<Components::PlayerController>{});
   copyXYZ(Identity<Components::Door>{});
+  copyXYZ(Identity<Components::Door>{});
   copyXYZ(Identity<Components::DoorSwing>{});
+  copyXYZ(Identity<Components::Tag>{}); // Copy tag (will be same name)
+
+  // Append (Clone) to name if it exists
+  if (auto *tag = world.getComponent<Components::Tag>(newEntity)) {
+    tag->tag += " (Clone)";
+  } else {
+    world.addComponent(newEntity, Components::Tag{"Entity (Clone)"});
+  }
 
   // Transform (Offset slightly so we see it)
   auto *trans = world.getComponent<Components::Transform>(sourceEntity);

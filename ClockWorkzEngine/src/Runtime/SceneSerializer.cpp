@@ -26,6 +26,7 @@ reserved.
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
+#include "Components/Tag.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
@@ -50,7 +51,12 @@ void SceneSerializer::Serialize(ECS::World &world,
                                         Components::Transform &tc) {
     json obj;
     obj["active"] = true; // Assuming all serialized entities are active for now
-    obj["name"] = "Entity_" + std::to_string(entity.id); // Placeholder name
+
+    std::string name = "Entity_" + std::to_string(entity.id);
+    if (auto *tag = world.getComponent<Components::Tag>(entity)) {
+      name = tag->tag;
+    }
+    obj["name"] = name;
     obj["components"] = json::object();
 
     // Transform
@@ -411,8 +417,8 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         // Legacy check: JSON says "fragmentId": "fragment_1"
         // Class definition says: int fragmentId
         // WE HAVE A MISMATCH.
-        // I will use a simple hash or parsing for now, or change the component
-        // to string. Let's check if json value is string or number.
+        // I will use a simple hash or parsing for now, or change the
+        // component to string. Let's check if json value is string or number.
         if (fc["fragmentId"].is_string()) {
           // quick hash or atoi if it contains number?
           // "fragment_1" -> 1?
