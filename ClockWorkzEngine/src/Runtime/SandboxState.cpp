@@ -22,6 +22,7 @@ reserved.
 #include "Assets/ResourceManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Audio/AudioManager.hpp"
+#include "Components/ActivationZone.hpp"
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
@@ -241,6 +242,9 @@ void SandboxState::render(Core::Time *timer) {
   // Run Scene Render
   m_scene.Render(renderer);
 
+  // Render Activation Zones
+  renderActivationZones(renderer);
+
   // End Scene Pass
   renderer.endScenePass();
 
@@ -419,6 +423,15 @@ void SandboxState::savePrefabFromEntity(ECS::Entity entity,
 
   // Add more component serialization as needed...
 
+  // Serialize ActivationZone
+  if (auto *zone = world.getComponent<Components::ActivationZone>(entity)) {
+    components["activationZone"] = {{"active", zone->active},
+                                    {"actionType", (int)zone->actionType},
+                                    {"payload", zone->payload},
+                                    {"oneShot", zone->oneShot},
+                                    {"triggered", zone->triggered}};
+  }
+
   // Save to file
   std::string filepath = "assets/prefabs/" + name + ".json";
   std::ofstream file(filepath);
@@ -592,6 +605,19 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       torch.angle = tc.value("angle", 60.0f);
       torch.intensity = tc.value("intensity", 1.0f);
       world.addComponent(entity, torch);
+    }
+
+    // ActivationZone
+    if (components.contains("activationZone")) {
+      Components::ActivationZone zone;
+      auto &azc = components["activationZone"];
+      zone.active = azc.value("active", true);
+      zone.actionType =
+          (Components::ActivationZone::ActionType)azc.value("actionType", 0);
+      zone.payload = azc.value("payload", "");
+      zone.oneShot = azc.value("oneShot", false);
+      zone.triggered = azc.value("triggered", false);
+      world.addComponent(entity, zone);
     }
 
     // SpriteAnimator
@@ -1628,10 +1654,18 @@ void SandboxState::renderComponentWindow() {
   if (ImGui::CollapsingHeader("AudioSource")) {
     auto *a = world.getComponent<Components::AudioSource>(entity);
     if (a) {
-      char buf[64];
-      strcpy_s(buf, sizeof(buf), a->soundId.c_str());
-      if (ImGui::InputText("Sound ID", buf, 64))
-        a->soundId = buf;
+      auto loadedSounds = Assets::SoundManager::GetLoadedSoundNames();
+      if (ImGui::BeginCombo("Sound ID", a->soundId.c_str())) {
+        for (const auto &soundName : loadedSounds) {
+          bool isSelected = (a->soundId == soundName);
+          if (ImGui::Selectable(soundName.c_str(), isSelected)) {
+            a->soundId = soundName;
+          }
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+      }
       ImGui::SliderFloat("Volume", &a->volume, 0.0f, 1.0f);
       if (ImGui::Button("Play OneShot"))
         Core::Engine::Get().audio().playOneShot(a->soundId, Audio::Group::SFX,
@@ -1768,16 +1802,72 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
-  // ParticleEmitter
+  // ActivationZone
+  if (ImGui::CollapsingHeader("ActivationZone")) {
+    auto *zone = world.getComponent<Components::ActivationZone>(entity);
+    if (zone) {
+      bool active = zone->active;
+      if (ImGui::Checkbox("Active", &active))
+        zone->active = active;
 
+      bool loop = !zone->oneShot;
+      if (ImGui::Checkbox("Loop (Not OneShot)", &loop))
+        zone->oneShot = !loop;
+
+      ImGui::Text("Has Triggered: %s", zone->triggered ? "Yes" : "No");
+      if (ImGui::Button("Reset Trigger"))
+        zone->triggered = false;
+
+      // Action Type
+      const char *actionItems[] = {"None", "PlayAudio", "SpawnEnemy",
+                                   "ChangeVariable"};
+      int currentAction = (int)zone->actionType;
+      if (ImGui::Combo("Action", &currentAction, actionItems, 4)) {
+        zone->actionType =
+            (Components::ActivationZone::ActionType)currentAction;
+      }
+
+      // Payload
+      char buffer[128] = "";
+      if (!zone->payload.empty()) {
+        strncpy_s(buffer, zone->payload.c_str(), sizeof(buffer));
+      }
+
+      if (ImGui::InputText("Payload", buffer, sizeof(buffer))) {
+        zone->payload = std::string(buffer);
+      }
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Audio Name, Prefab Name, etc.");
+
+      // UI Hint for AudioSource Link
+      if (zone->actionType ==
+              Components::ActivationZone::ActionType::PlayAudio &&
+          zone->payload.empty()) {
+        auto *audio = world.getComponent<Components::AudioSource>(entity);
+        if (audio && !audio->soundId.empty()) {
+          ImGui::TextDisabled("Using AudioSource: %s", audio->soundId.c_str());
+        } else {
+          ImGui::TextColored({1.0f, 0.5f, 0.0f, 1.0f},
+                             "Warning: No Audio Provided");
+        }
+      }
+
+      if (ImGui::Button("Remove ActivationZone"))
+        world.removeComponent<Components::ActivationZone>(entity);
+    } else {
+      if (ImGui::Button("Add ActivationZone"))
+        world.addComponent(entity, Components::ActivationZone{});
+    }
+  }
+
+  // ParticleEmitter
+  // Ensure renderer is set (fix for previously created components)
   if (ImGui::CollapsingHeader("ParticleEmitter")) {
     auto *pe = world.getComponent<Components::ParticleEmitter>(entity);
     if (pe) {
       bool active = pe->active();
       if (ImGui::Checkbox("Active", &active))
         pe->setActive(active);
-
-      // Ensure renderer is set (fix for previously created components)
       pe->setRenderer(&Core::Engine::Get().rendering());
 
       auto &sys = pe->system();
@@ -2941,3 +3031,42 @@ void Runtime::SandboxState::clearTilemap() {
 }
 
 } // namespace Runtime
+
+void Runtime::SandboxState::renderActivationZones(
+    Graphics::RenderingManager &renderer) {
+  auto &world = m_scene.GetWorld();
+  world.each<Components::Transform, Components::Collider,
+             Components::ActivationZone>(
+      [&](ECS::Entity, Components::Transform &t, Components::Collider &c,
+          Components::ActivationZone &zone) {
+        glm::vec4 color(0.0f, 1.0f, 0.0f, 0.3f); // Semi-transparent Green
+        if (zone.triggered)
+          color = glm::vec4(1.0f, 0.5f, 0.0f, 0.4f); // Orange if triggered
+        if (!zone.active)
+          color = glm::vec4(0.5f, 0.5f, 0.5f, 0.3f); // Gray if inactive
+
+        // Calculate position with offset
+        // Rotate offset by t.rotation
+        float cosR = cos(t.rotation);
+        float sinR = sin(t.rotation);
+        glm::vec2 rotatedOffset = {c.offset.x * cosR - c.offset.y * sinR,
+                                   c.offset.x * sinR + c.offset.y * cosR};
+        glm::vec2 pos = {t.position.x + rotatedOffset.x,
+                         t.position.y + rotatedOffset.y};
+
+        if (c.shape == Components::Collider::Shape::Box) {
+          // Draw filled box (Sprite)
+          renderer.drawSprite(0, pos, {c.size.x, c.size.y}, t.rotation,
+                              glm::vec4(0, 0, 1, 1), color);
+
+          // Draw border (Debug Line) - Use rendering manager's drawRect if
+          // available for rotated? drawRect only supports axis aligned in
+          // helper, but manual lines needed for rotated. For now, filled sprite
+          // is good enough as per request.
+        } else {
+          // Circle
+          renderer.drawSprite(0, pos, {c.radius * 2.0f, c.radius * 2.0f},
+                              t.rotation, glm::vec4(0, 0, 1, 1), color);
+        }
+      });
+}

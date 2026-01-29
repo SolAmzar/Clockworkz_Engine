@@ -182,6 +182,7 @@ private:
   void spawnEnemy();
   void cloneTestEntity(ECS::Entity entity);
   void renderTorchPass(Graphics::RenderingManager &renderer);
+  void renderActivationZones(Graphics::RenderingManager &renderer);
 };
 
 } // namespace Runtime

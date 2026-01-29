@@ -55,25 +55,30 @@ void CollisionSystem::update(ECS::World &world) {
 
       // Check for valid pointers (should be valid given the query above)
       if (tA && cA && tB && cB) {
-        // Only check solid objects for collision logic logic
-        if (cA->isSolid && cB->isSolid) {
+        // Check collision if both are solid OR if one is a trigger
+        bool isSolidCollision = cA->isSolid && cB->isSolid;
+        bool isTriggerCollision = cA->isTrigger || cB->isTrigger;
+
+        if (isSolidCollision || isTriggerCollision) {
           glm::vec2 penetration{0.0f, 0.0f};
+          bool collided = false;
+
           if (cA->shape == Components::Collider::Shape::Box &&
               cB->shape == Components::Collider::Shape::Box) {
             if (checkAABB(*tA, *cA, *tB, *cB, penetration)) {
-              m_collisions.push_back({eA, eB});
+              collided = true;
             }
           } else if (cA->shape == Components::Collider::Shape::Circle &&
                      cB->shape == Components::Collider::Shape::Circle) {
             if (checkCircleCircle(*tA, *cA, *tB, *cB, penetration)) {
-              m_collisions.push_back({eA, eB});
+              collided = true;
             }
           } else {
             // Mixed Shape
             if (cA->shape == Components::Collider::Shape::Box) {
               // A is Box, B is Circle
               if (checkAABBCircle(*tA, *cA, *tB, *cB, penetration)) {
-                m_collisions.push_back({eA, eB});
+                collided = true;
               }
             } else {
               // A is Circle, B is Box
@@ -81,44 +86,40 @@ void CollisionSystem::update(ECS::World &world) {
               if (checkAABBCircle(*tB, *cB, *tA, *cA, p)) {
                 // p is correction for B (Box). So for A (Circle), it is -p.
                 penetration = -p;
-                m_collisions.push_back({eA, eB});
+                collided = true;
               }
             }
           }
 
-          // Check if collision occurred (penetration non-zero or just flag)
-          // The check functions return true if collision.
-          // Note: check functions need to fill m_collisions only if they return
-          // true? No, the loop pushes back. Wait, my replaced code pushes back
-          // inside the ifs. Good.
+          if (collided) {
+            m_collisions.push_back({eA, eB});
 
-          if (!m_collisions.empty() && m_collisions.back().first == eA &&
-              m_collisions.back().second == eB) {
-            // Resolution Logic
+            // Only resolve if physically solid AND neither is a trigger
+            if (isSolidCollision && !isTriggerCollision) {
+              // Resolution Logic
+              // 1. Determine who moves
+              bool aMoves = cA->moveable;
+              bool bMoves = cB->moveable;
 
-            // Resolution Logic
-            // 1. Determine who moves
-            bool aMoves = cA->moveable;
-            bool bMoves = cB->moveable;
+              if (aMoves && !bMoves) {
+                // A moves full amount
+                tA->position.x += penetration.x;
+                tA->position.y += penetration.y;
+              } else if (!aMoves && bMoves) {
+                // B moves full amount (correction for B is -penetration)
+                tB->position.x -= penetration.x;
+                tB->position.y -= penetration.y;
+              } else if (aMoves && bMoves) {
+                // Both move based on Mass Ratio
+                float totalMass = cA->mass + cB->mass;
+                float ratioA = cB->mass / totalMass; // Inverse mass ratio
+                float ratioB = cA->mass / totalMass;
 
-            if (aMoves && !bMoves) {
-              // A moves full amount
-              tA->position.x += penetration.x;
-              tA->position.y += penetration.y;
-            } else if (!aMoves && bMoves) {
-              // B moves full amount (correction for B is -penetration)
-              tB->position.x -= penetration.x;
-              tB->position.y -= penetration.y;
-            } else if (aMoves && bMoves) {
-              // Both move based on Mass Ratio
-              float totalMass = cA->mass + cB->mass;
-              float ratioA = cB->mass / totalMass; // Inverse mass ratio
-              float ratioB = cA->mass / totalMass;
-
-              tA->position.x += penetration.x * ratioA;
-              tA->position.y += penetration.y * ratioA;
-              tB->position.x -= penetration.x * ratioB;
-              tB->position.y -= penetration.y * ratioB;
+                tA->position.x += penetration.x * ratioA;
+                tA->position.y += penetration.y * ratioA;
+                tB->position.x -= penetration.x * ratioB;
+                tB->position.y -= penetration.y * ratioB;
+              }
             }
           }
         }

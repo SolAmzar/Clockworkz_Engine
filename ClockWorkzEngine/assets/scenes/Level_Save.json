@@ -4,8 +4,8 @@
             "active": true,
             "components": {
                 "battery": {
-                    "charge": 43.913326263427734,
-                    "isCharging": false,
+                    "charge": 100.0,
+                    "isCharging": true,
                     "maxCharge": 100.0
                 },
                 "collider": {
@@ -41,14 +41,14 @@
                 "spriteRenderer": {
                     "textureId": "player_texture",
                     "uv": [
-                        0.75,
                         0.625,
+                        0.5,
                         0.125,
                         0.125
                     ]
                 },
                 "torch": {
-                    "active": true,
+                    "active": false,
                     "angle": 60.0,
                     "color": {
                         "b": 0.6000000238418579,
@@ -68,19 +68,19 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -816.6233520507813,
-                        "y": -250.10816955566406
+                        "x": -675.1593017578125,
+                        "y": -417.1082763671875
                     },
-                    "rotation": 2.1901040077209473,
+                    "rotation": 2.5582478046417236,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     }
                 },
                 "velocity": {
-                    "moveSpeed": 8.0,
-                    "x": -9.287548065185547,
-                    "y": 13.028486251831055
+                    "moveSpeed": 12.0,
+                    "x": -20.03099822998047,
+                    "y": 13.219648361206055
                 }
             },
             "name": "Entity_1"
@@ -161,7 +161,7 @@
                     }
                 }
             },
-            "name": "Entity_32"
+            "name": "Entity_3"
         },
         {
             "active": true,
@@ -195,7 +195,7 @@
                 "spriteRenderer": {
                     "textureId": "monster_texture",
                     "uv": [
-                        0.5,
+                        0.0,
                         0.25,
                         0.25,
                         0.25
@@ -207,8 +207,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -370.0880432128906,
-                        "y": 106.14496612548828
+                        "x": -418.11260986328125,
+                        "y": -510.4240417480469
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -218,11 +218,11 @@
                 },
                 "velocity": {
                     "moveSpeed": 150.0,
-                    "x": -0.5804477334022522,
-                    "y": 0.8142974972724915
+                    "x": -0.9399762153625488,
+                    "y": 0.34123995900154114
                 }
             },
-            "name": "Entity_33"
+            "name": "Entity_4"
         },
         {
             "active": true,
@@ -320,7 +320,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 88.01419067382813,
+                        "x": 151.01419067382813,
                         "y": -269.65106201171875
                     },
                     "rotation": 0.0,
@@ -1107,6 +1107,57 @@
                 }
             },
             "name": "Entity_31"
+        },
+        {
+            "active": true,
+            "components": {
+                "activationZone": {
+                    "actionType": 1,
+                    "active": true,
+                    "oneShot": true,
+                    "payload": "",
+                    "triggered": false
+                },
+                "audioSource": {
+                    "loop": false,
+                    "soundId": "enemy_death_1",
+                    "volume": 1.0
+                },
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 200.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -170.0,
+                        "y": -293.9696960449219
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity_32"
         }
     ]
 }

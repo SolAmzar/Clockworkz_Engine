@@ -13,12 +13,14 @@ reserved.
 /******************************************************************************/
 
 #include "Runtime/SceneSerializer.hpp"
+#include "Components/ActivationZone.hpp"
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Door.hpp"
 #include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+
 
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
@@ -91,6 +93,16 @@ void SceneSerializer::Serialize(ECS::World &world,
     if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
       obj["components"]["audioSource"] = {
           {"soundId", ac->soundId}, {"volume", ac->volume}, {"loop", ac->loop}};
+    }
+
+    // ActivationZone
+    if (auto *zone = world.getComponent<Components::ActivationZone>(entity)) {
+      obj["components"]["activationZone"] = {
+          {"active", zone->active},
+          {"actionType", (int)zone->actionType},
+          {"payload", zone->payload},
+          {"oneShot", zone->oneShot},
+          {"triggered", zone->triggered}};
     }
 
     // EnemyAI
@@ -510,6 +522,19 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         }
 
         world.addComponent(entity, pe);
+      }
+
+      // ActivationZone
+      if (components.contains("activationZone")) {
+        auto &azc = components["activationZone"];
+        Components::ActivationZone zone;
+        zone.active = azc.value("active", true);
+        zone.actionType =
+            (Components::ActivationZone::ActionType)azc.value("actionType", 0);
+        zone.payload = azc.value("payload", "");
+        zone.oneShot = azc.value("oneShot", false);
+        zone.triggered = azc.value("triggered", false);
+        world.addComponent(entity, zone);
       }
     }
   }

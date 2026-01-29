@@ -12,6 +12,7 @@
 // System Includes
 #include "Gameplay/Physics2D.hpp"
 #include "Systems/AISystem.hpp"
+#include "Systems/ActivationSystem.hpp"
 #include "Systems/AnimationSystem.hpp"
 #include "Systems/AudioSystem.hpp"
 #include "Systems/BatterySystem.hpp"
@@ -24,6 +25,7 @@
 #include "Systems/PlayerSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "Systems/StateMachineSystem.hpp"
+
 
 namespace Runtime {
 
@@ -71,6 +73,7 @@ public:
   bool m_playerSystemEnabled{true};
   bool m_doorSystemEnabled{true};
   bool m_doorSwingSystemEnabled{true};
+  bool m_activationSystemEnabled{true};
 
   // Public access to systems if needed for debug overlay (e.g. collision list)
   Systems::CollisionSystem &GetCollisionSystem() { return m_collisionSystem; }
@@ -95,6 +98,7 @@ private:
   Systems::PlayerSystem m_playerSystem;
   Systems::DoorSystem m_doorSystem;
   Systems::DoorSwingSystem m_doorSwingSystem;
+  Systems::ActivationSystem m_activationSystem;
 
   std::string m_name;
 

@@ -18,8 +18,10 @@
 #include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
 
+#include "Components/ActivationZone.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
+
 
 namespace Runtime {
 
@@ -43,6 +45,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::Door>();
   m_world.registerComponent<Components::DoorSwing>();
   m_world.registerComponent<Components::ParticleEmitter>();
+  m_world.registerComponent<Components::ActivationZone>();
 }
 
 void Scene::Clear() {
@@ -55,6 +58,8 @@ void Scene::Update(double dt, Platform::InputManager &input) {
     m_physicsSystem.update(m_world, dt);
   if (m_collisionSystemEnabled)
     m_collisionSystem.update(m_world);
+  if (m_activationSystemEnabled)
+    m_activationSystem.update(m_world, m_collisionSystem);
   if (m_batterySystemEnabled)
     m_batterySystem.update(m_world, dt);
   if (m_lightSystemEnabled)
