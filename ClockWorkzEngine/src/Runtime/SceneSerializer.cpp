@@ -79,7 +79,12 @@ void SceneSerializer::Serialize(ECS::World &world,
     if (auto *sc = world.getComponent<Components::SpriteRenderer>(entity)) {
       obj["components"]["spriteRenderer"] = {
           {"textureId", sc->textureId},
-          {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}}};
+          {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}},
+          {"size", {{"x", sc->size.x}, {"y", sc->size.y}}},
+          {"color", {{"r", sc->color.r}, {"g", sc->color.g}, {"b", sc->color.b}, {"a", sc->color.a}}},
+          {"visible", sc->visible},
+          {"sortOrder", sc->sortOrder}
+      };
     }
 
     // SpriteAnimator
@@ -305,6 +310,19 @@ bool SceneSerializer::Deserialize(ECS::World &world,
             sprite.uv = {sc["uv"][0], sc["uv"][1], sc["uv"][2], sc["uv"][3]};
           }
         }
+        if (sc.contains("size")) {
+          sprite.size.x = sc["size"].value("x", 100.0f);
+          sprite.size.y = sc["size"].value("y", 100.0f);
+        }
+        if (sc.contains("color")) {
+          sprite.color.r = sc["color"].value("r", 1.0f);
+          sprite.color.g = sc["color"].value("g", 1.0f);
+          sprite.color.b = sc["color"].value("b", 1.0f);
+          sprite.color.a = sc["color"].value("a", 1.0f);
+        }
+        sprite.visible = sc.value("visible", true);
+        sprite.sortOrder = sc.value("sortOrder", 0);
+
         world.addComponent(entity, sprite);
       }
 
@@ -361,8 +379,8 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("collider")) {
         auto &cc = components["collider"];
         Components::Collider collider;
-        collider.size.x = cc.value("width", 100.f);
-        collider.size.y = cc.value("height", 100.f);
+        collider.size.x = cc.value("width", 50.f);
+        collider.size.y = cc.value("height", 50.f);
 
         if (cc.contains("offset")) {
           collider.offset.x = cc["offset"].value("x", 0.0f);

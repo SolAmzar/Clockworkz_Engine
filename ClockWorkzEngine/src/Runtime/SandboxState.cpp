@@ -3812,7 +3812,7 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
 
 bool Runtime::SandboxState::isCellOccupied(vec2 worldPos, int layer) const {
   for (const auto &tile : m_tilemap) {
-    if (tile.layer == layer) {
+    if (tile.layer == layer && tile.entity.isValid()) {
       float dist = magnitude(tile.position - worldPos);
       if (dist < m_gridSize * 0.1f) {
         return true;
