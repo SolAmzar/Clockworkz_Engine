@@ -135,6 +135,17 @@ void SandboxState::update(double dt) {
                                                Core::Engine::Get().audio()));
   }
 
+  // Undo/Redo shortcuts (Ctrl+Z / Ctrl+Y)
+  if (m_input.isKeyDown(GLFW_KEY_LEFT_CONTROL) ||
+      m_input.isKeyDown(GLFW_KEY_RIGHT_CONTROL)) {
+    if (m_input.wasKeyTriggered(GLFW_KEY_Z)) {
+      undo();
+    }
+    if (m_input.wasKeyTriggered(GLFW_KEY_Y)) {
+      redo();
+    }
+  }
+
   // Update Scene Logic
   // Update Scene Logic
   if (!m_isPaused) {
@@ -1195,6 +1206,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderAudioBrowser();
   renderPrefabEditor();
   renderTilePalette();
+  renderUndoRedoPanel();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
@@ -1487,9 +1499,11 @@ void SandboxState::renderEntityWindow() {
 
   if (entityToDelete != -1) {
     if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
-
-      world.destroyEntity(m_testEntities[entityToDelete]);
-      m_testEntities.erase(m_testEntities.begin() + entityToDelete);
+      // Use DeleteEntityCommand for undo/redo support
+      auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
+          m_scene, m_testEntities, m_testEntities[entityToDelete],
+          static_cast<size_t>(entityToDelete));
+      executeCommand(std::move(cmd));
 
       // Fix selection index if needed
       if (m_selectedEntityIdx == entityToDelete)
@@ -2261,13 +2275,16 @@ void SandboxState::spawnTestEntity(vec2 position) {
   transform.scale = vec2{1.f, 1.f};
   world.addComponent(entity, transform);
 
-  // Track it
-  m_testEntities.push_back(entity);
   m_tilemap.push_back({"", position, 0, entity});
 
   // Default Name
   world.addComponent(entity,
                      Components::Tag{"Entity " + std::to_string(entity.id)});
+
+  // Track via undo system (adds to m_testEntities)
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
+                                                            m_testEntities, entity);
+  executeCommand(std::move(cmd));
 }
 
 void SandboxState::spawnPlayer() {
@@ -2318,9 +2335,13 @@ void SandboxState::spawnPlayer() {
   anim.play("idle");
   world.addComponent(entity, anim);
 
-  m_testEntities.push_back(entity);
   m_tilemap.push_back({"Player", transform.position, 0, entity});
   world.addComponent(entity, Components::Tag{"Player"});
+
+  // Track via undo system (adds to m_testEntities)
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
+                                                            m_testEntities, entity);
+  executeCommand(std::move(cmd));
   std::cout << "Spawned Player Entity: " << entity.id << "\n";
 }
 
@@ -2372,11 +2393,15 @@ void SandboxState::spawnEnemy() {
   anim.play("walk");
   world.addComponent(entity, anim);
 
-  m_testEntities.push_back(entity);
   auto *enemyTrans = world.getComponent<Components::Transform>(entity);
   vec2 enemyPos = enemyTrans ? enemyTrans->position : vec2{0.f, 0.f};
   m_tilemap.push_back({"Enemy", enemyPos, 0, entity});
   world.addComponent(entity, Components::Tag{"Enemy"});
+
+  // Track via undo system (adds to m_testEntities)
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
+                                                            m_testEntities, entity);
+  executeCommand(std::move(cmd));
   std::cout << "Spawned Enemy Entity: " << entity.id << "\n";
 }
 
@@ -2432,9 +2457,6 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
     world.addComponent(newEntity, newTrans);
   }
 
-  // Track it
-  m_testEntities.push_back(newEntity);
-
   // Add tilemap data for cloned entity
   auto *cloneTrans = world.getComponent<Components::Transform>(newEntity);
   vec2 clonePos = cloneTrans ? cloneTrans->position : vec2{0.f, 0.f};
@@ -2450,6 +2472,11 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
     }
   }
   m_tilemap.push_back({clonePrefab, clonePos, cloneLayer, newEntity});
+
+  // Track via undo system (adds to m_testEntities)
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
+                                                            m_testEntities, newEntity);
+  executeCommand(std::move(cmd));
 
   // Select the new one
   m_selectedEntityIdx = (int)m_testEntities.size() - 1;
@@ -2952,7 +2979,11 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
   bool mouseReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
   bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
-  if (mouseReleased) {
+  int releasedAxis = -1;
+  if (mouseReleased && m_gizmoActiveAxis != -1) {
+    releasedAxis = m_gizmoActiveAxis;
+    m_gizmoActiveAxis = -1;
+  } else if (mouseReleased) {
     m_gizmoActiveAxis = -1;
   }
 
@@ -3139,6 +3170,37 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
         trans->scale.x = m_gizmoOriginalScale.x + scaleDelta;
       if (m_gizmoActiveAxis == 1)
         trans->scale.y = m_gizmoOriginalScale.y + scaleDelta;
+    }
+  }
+
+  // Create undo command when gizmo drag finishes
+  if (releasedAxis != -1) {
+    if (m_gizmoMode == GizmoMode::Translation) {
+      vec2 newPos = trans->position;
+      if (m_gizmoOriginalPos.x != newPos.x ||
+          m_gizmoOriginalPos.y != newPos.y) {
+        auto cmd = Sandbox::makePropertyCommand(
+            world, entity, &Components::Transform::position,
+            m_gizmoOriginalPos, newPos, "Move Entity");
+        executeCommand(std::move(cmd));
+      }
+    } else if (m_gizmoMode == GizmoMode::Rotation) {
+      float newRot = trans->rotation;
+      if (m_gizmoOriginalRotation != newRot) {
+        auto cmd = Sandbox::makePropertyCommand(
+            world, entity, &Components::Transform::rotation,
+            m_gizmoOriginalRotation, newRot, "Rotate Entity");
+        executeCommand(std::move(cmd));
+      }
+    } else if (m_gizmoMode == GizmoMode::Scale) {
+      vec2 newScale = trans->scale;
+      if (m_gizmoOriginalScale.x != newScale.x ||
+          m_gizmoOriginalScale.y != newScale.y) {
+        auto cmd = Sandbox::makePropertyCommand(
+            world, entity, &Components::Transform::scale,
+            m_gizmoOriginalScale, newScale, "Scale Entity");
+        executeCommand(std::move(cmd));
+      }
     }
   }
 }
@@ -3459,4 +3521,101 @@ void Runtime::SandboxState::renderActivationZones(
                               t.rotation, glm::vec4(0, 0, 1, 1), color);
         }
       });
+}
+
+// =============================================================================
+// Undo / Redo
+// =============================================================================
+
+void Runtime::SandboxState::executeCommand(
+    std::unique_ptr<Sandbox::SandboxCommand> cmd) {
+  cmd->execute();
+  m_undoStack.push_back(std::move(cmd));
+
+  // Trim to max undo levels
+  while (m_undoStack.size() > MAX_UNDO_LEVELS) {
+    m_undoStack.erase(m_undoStack.begin());
+  }
+
+  // Any new action invalidates the redo history
+  m_redoStack.clear();
+}
+
+void Runtime::SandboxState::undo() {
+  if (m_undoStack.empty())
+    return;
+
+  auto cmd = std::move(m_undoStack.back());
+  m_undoStack.pop_back();
+
+  cmd->undo();
+  m_redoStack.push_back(std::move(cmd));
+}
+
+void Runtime::SandboxState::redo() {
+  if (m_redoStack.empty())
+    return;
+
+  auto cmd = std::move(m_redoStack.back());
+  m_redoStack.pop_back();
+
+  cmd->execute();
+  m_undoStack.push_back(std::move(cmd));
+}
+
+void Runtime::SandboxState::renderUndoRedoPanel() {
+  ImGui::Begin("Undo / Redo");
+
+  // Undo / Redo buttons
+  {
+    bool canUndo = !m_undoStack.empty();
+    bool canRedo = !m_redoStack.empty();
+
+    if (!canUndo)
+      ImGui::BeginDisabled();
+    if (ImGui::Button("Undo (Ctrl+Z)")) {
+      undo();
+    }
+    if (!canUndo)
+      ImGui::EndDisabled();
+
+    ImGui::SameLine();
+
+    if (!canRedo)
+      ImGui::BeginDisabled();
+    if (ImGui::Button("Redo (Ctrl+Y)")) {
+      redo();
+    }
+    if (!canRedo)
+      ImGui::EndDisabled();
+  }
+
+  ImGui::Separator();
+
+  // History list
+  ImGui::Text("History (%zu / %zu)", m_undoStack.size(), MAX_UNDO_LEVELS);
+
+  if (ImGui::BeginChild("UndoHistory", ImVec2(0, 0), true)) {
+    // Show redo stack (future actions) in grey, top-to-bottom
+    for (int i = static_cast<int>(m_redoStack.size()) - 1; i >= 0; --i) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+      ImGui::Text("  %s", m_redoStack[i]->getName().c_str());
+      ImGui::PopStyleColor();
+    }
+
+    // Current position marker
+    if (!m_undoStack.empty() || !m_redoStack.empty()) {
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+      ImGui::Text(">> Current");
+      ImGui::PopStyleColor();
+    }
+
+    // Show undo stack (past actions), most recent first
+    for (int i = static_cast<int>(m_undoStack.size()) - 1; i >= 0; --i) {
+      ImGui::Text("  %s", m_undoStack[i]->getName().c_str());
+    }
+  }
+  ImGui::EndChild();
+
+  ImGui::End();
 }

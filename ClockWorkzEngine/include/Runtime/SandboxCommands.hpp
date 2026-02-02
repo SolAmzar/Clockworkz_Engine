@@ -160,6 +160,8 @@ namespace Sandbox {  // Changed from Platform to avoid conflicts
             // Restore Transform
             if (auto* t = world.getComponent<Components::Transform>(entity)) {
                 *t = transform;
+            } else {
+                world.addComponent(entity, transform);
             }
 
             // Restore optional components
@@ -295,12 +297,20 @@ namespace Sandbox {  // Changed from Platform to avoid conflicts
 
         void execute() override {
             if (!m_wasExecuted) {
+                // First time: entity was already created, just add to tracked list
                 m_entityList.push_back(m_entity);
                 m_wasExecuted = true;
+            } else {
+                // Redo: recreate entity from snapshot
+                m_entity = m_scene.GetWorld().createEntity();
+                m_snapshot.restoreTo(m_scene.GetWorld(), m_entity);
+                m_entityList.push_back(m_entity);
             }
         }
 
         void undo() override {
+            // Re-capture snapshot so redo restores latest state
+            m_snapshot.captureFrom(m_scene.GetWorld(), m_entity);
             // Remove from list
             auto it = std::find(m_entityList.begin(), m_entityList.end(), m_entity);
             if (it != m_entityList.end()) {
@@ -383,15 +393,10 @@ namespace Sandbox {  // Changed from Platform to avoid conflicts
         }
 
         void execute() override {
-            if (!m_wasExecuted) {
-                // Create new entity
-                m_clonedEntity = m_scene.GetWorld().createEntity();
-                // Restore snapshot to new entity
-                m_snapshot.restoreTo(m_scene.GetWorld(), m_clonedEntity);
-                // Add to list
-                m_entityList.push_back(m_clonedEntity);
-                m_wasExecuted = true;
-            }
+            // Create (or recreate on redo) the cloned entity from snapshot
+            m_clonedEntity = m_scene.GetWorld().createEntity();
+            m_snapshot.restoreTo(m_scene.GetWorld(), m_clonedEntity);
+            m_entityList.push_back(m_clonedEntity);
         }
 
         void undo() override {
@@ -403,7 +408,6 @@ namespace Sandbox {  // Changed from Platform to avoid conflicts
             }
             // Destroy cloned entity
             m_scene.GetWorld().destroyEntity(m_clonedEntity);
-            m_wasExecuted = false;
         }
 
         std::string getName() const override { return "Clone Entity"; }
