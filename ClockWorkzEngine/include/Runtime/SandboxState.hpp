@@ -29,7 +29,10 @@ reserved.
 #include "Runtime/Scene.hpp"
 #include "SandboxCommands.hpp"
 #include "UndoableImGui.hpp"
+#include <filesystem>
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace Platform {
 class InputManager;
@@ -211,6 +214,29 @@ private:
   void cloneTestEntity(ECS::Entity entity);
   void renderTorchPass(Graphics::RenderingManager &renderer);
   void renderActivationZones(Graphics::RenderingManager &renderer);
+
+  // Feature 1: Texture Replacement Dialog
+  void renderTextureReplaceDialog();
+  bool m_showReplaceDialog{false};
+  std::string m_replacingTexture;
+  char m_replacePathBuffer[256]{};
+
+  // Feature 2: Asset Hot-Reloading
+  void initTextureFilePaths();
+  void checkAssetHotReload();
+  std::unordered_map<std::string, std::string> m_textureFilePaths;
+  std::unordered_map<std::string, std::filesystem::file_time_type>
+      m_assetFileTimestamps;
+  bool m_hotReloadEnabled{true};
+  float m_hotReloadTimer{0.f};
+  static constexpr float HOT_RELOAD_INTERVAL = 1.0f;
+
+  // Feature 3: Asset Dependency Tracking
+  void renderAssetDependencies(const std::string &textureName);
+
+  // Add Asset popup buffers
+  char m_newAssetNameBuffer[128]{};
+  char m_newAssetPathBuffer[256]{};
 };
 
 } // namespace Runtime

@@ -60,6 +60,9 @@ reserved.
 #include "Systems/AnimationSystem.hpp"
 #include "Systems/AudioSystem.hpp"
 #include "Systems/StateMachineSystem.hpp"
+#pragma warning(push, 0)
+#include "Core/json.hpp"
+#pragma warning(pop)
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cmath>
@@ -103,6 +106,9 @@ void SandboxState::onEnter() {
   loadAvailablePrefabs();
   refreshTilemapList();
 
+  // Initialize texture file path mapping for hot-reload
+  initTextureFilePaths();
+
   // Initialize layer visibility
   m_layerVisible.resize(m_numLayers, true);
 
@@ -127,7 +133,35 @@ void SandboxState::onExit() {
 }
 
 void SandboxState::update(double dt) {
-  (void)dt;
+  // Asset hot-reload polling
+  m_hotReloadTimer += static_cast<float>(dt);
+  if (m_hotReloadTimer >= HOT_RELOAD_INTERVAL) {
+    m_hotReloadTimer = 0.f;
+    checkAssetHotReload();
+  }
+
+  // Handle OS file drops (textures dragged onto the window)
+  {
+    auto &window = Core::Engine::Get().window();
+    auto dropped = window.consumeDroppedFiles();
+    for (const auto &path : dropped) {
+      namespace fs = std::filesystem;
+      fs::path filePath(path);
+      if (filePath.extension() == ".png" || filePath.extension() == ".jpg") {
+        std::string name = filePath.stem().string();
+        auto loaded = Assets::TextureManager::LoadTexture(name, path);
+        if (loaded) {
+          m_textureFilePaths[name] = path;
+          if (fs::exists(path)) {
+            m_assetFileTimestamps[name] = fs::last_write_time(path);
+          }
+          std::cout << "[Sandbox] Loaded dropped texture: " << name
+                    << " from " << path << std::endl;
+        }
+      }
+    }
+  }
+
   // Handle ESC to return to menu
   if (m_input.wasKeyTriggered(GLFW_KEY_ESCAPE)) {
     m_gsm.switchTo(std::make_shared<MenuState>(m_gsm, m_input,
@@ -864,36 +898,101 @@ void SandboxState::renderPrefabEditor() {
 
     ImGui::Separator();
 
-    // Display prefabs as a list
-    ImGui::BeginChild("PrefabList", ImVec2(0, 200), true);
+    // Display prefabs as a thumbnail grid
+    float thumbnailSize = 64.f;
+    float padding = 8.f;
+    float cellSize = thumbnailSize + padding;
+    float panelWidth = ImGui::GetContentRegionAvail().x;
+    int columnCount = (int)(panelWidth / cellSize);
+    if (columnCount < 1)
+      columnCount = 1;
 
-    for (int i = 0; i < (int)m_availablePrefabs.size(); ++i) {
-      bool isSelected = (m_selectedPrefabIndex == i);
-      if (ImGui::Selectable(m_availablePrefabs[i].c_str(), isSelected)) {
-        m_selectedPrefabIndex = i;
-      }
+    ImGui::BeginChild("PrefabList", ImVec2(0, 250), true);
 
-      // Drag and drop support
-      if (ImGui::BeginDragDropSource()) {
-        ImGui::SetDragDropPayload("PREFAB_NAME", m_availablePrefabs[i].c_str(),
-                                  m_availablePrefabs[i].length() + 1);
-        ImGui::Text("Drag: %s", m_availablePrefabs[i].c_str());
-        ImGui::EndDragDropSource();
-      }
+    if (ImGui::BeginTable("PrefabGrid", columnCount)) {
+      for (int i = 0; i < (int)m_availablePrefabs.size(); ++i) {
+        ImGui::TableNextColumn();
+        ImGui::PushID(i);
 
-      // Right-click context menu
-      if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Spawn at Origin")) {
-          spawnPrefab(m_availablePrefabs[i], vec2{0.0f, 0.0f});
-          m_tilemap.push_back(
-              {m_availablePrefabs[i], vec2{0.0f, 0.0f}, 0,
-               m_testEntities.back()});
+        const auto &prefabName = m_availablePrefabs[i];
+        bool isSelected = (m_selectedPrefabIndex == i);
+
+        // Try to read texture from prefab JSON
+        std::string textureId;
+        {
+          std::string prefabPath =
+              "assets/prefabs/" + prefabName + ".json";
+          std::ifstream pf(prefabPath);
+          if (pf.is_open()) {
+            try {
+              nlohmann::json pj;
+              pf >> pj;
+              if (pj.contains("components") &&
+                  pj["components"].contains("spriteRenderer") &&
+                  pj["components"]["spriteRenderer"].contains("textureId")) {
+                textureId =
+                    pj["components"]["spriteRenderer"]["textureId"]
+                        .get<std::string>();
+              }
+            } catch (...) {
+            }
+          }
         }
-        if (ImGui::MenuItem("Delete Prefab")) {
-          deletePrefab(m_availablePrefabs[i]);
+
+        // Render thumbnail or fallback
+        auto tex = textureId.empty()
+                       ? nullptr
+                       : Assets::TextureManager::Get(textureId);
+        if (tex && tex->id() != 0) {
+          if (ImGui::ImageButton("##prefab_thumb",
+                                 (ImTextureID)(intptr_t)tex->id(),
+                                 ImVec2(thumbnailSize, thumbnailSize))) {
+            m_selectedPrefabIndex = i;
+          }
+        } else {
+          // Colored fallback button
+          ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.f));
+          if (ImGui::Button("##prefab_fallback",
+                            ImVec2(thumbnailSize, thumbnailSize))) {
+            m_selectedPrefabIndex = i;
+          }
+          ImGui::PopStyleColor();
         }
-        ImGui::EndPopup();
+
+        // Highlight selected
+        if (isSelected) {
+          ImVec2 rmin = ImGui::GetItemRectMin();
+          ImVec2 rmax = ImGui::GetItemRectMax();
+          ImGui::GetWindowDrawList()->AddRect(
+              rmin, rmax, IM_COL32(255, 200, 0, 255), 0.f, 0, 2.f);
+        }
+
+        // Drag and drop support
+        if (ImGui::BeginDragDropSource()) {
+          ImGui::SetDragDropPayload("PREFAB_NAME", prefabName.c_str(),
+                                    prefabName.length() + 1);
+          ImGui::Text("Drag: %s", prefabName.c_str());
+          ImGui::EndDragDropSource();
+        }
+
+        // Right-click context menu
+        if (ImGui::BeginPopupContextItem()) {
+          if (ImGui::MenuItem("Spawn at Origin")) {
+            spawnPrefab(prefabName, vec2{0.0f, 0.0f});
+            m_tilemap.push_back(
+                {prefabName, vec2{0.0f, 0.0f}, 0, m_testEntities.back()});
+          }
+          if (ImGui::MenuItem("Delete Prefab")) {
+            deletePrefab(prefabName);
+          }
+          ImGui::EndPopup();
+        }
+
+        // Label below thumbnail
+        ImGui::TextWrapped("%s", prefabName.c_str());
+        ImGui::PopID();
       }
+      ImGui::EndTable();
     }
 
     ImGui::EndChild();
@@ -1203,6 +1302,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderSceneWindow();
   renderToolbar();
   renderAssetBrowser();
+  renderTextureReplaceDialog();
   renderAudioBrowser();
   renderPrefabEditor();
   renderTilePalette();
@@ -3327,6 +3427,57 @@ void Runtime::SandboxState::renderGrid() {
 void Runtime::SandboxState::renderAssetBrowser() {
   ImGui::Begin("Asset Browser", &m_showAssetBrowser);
 
+  // Hot-reload toggle at the top
+  ImGui::Checkbox("Hot Reload", &m_hotReloadEnabled);
+  ImGui::SameLine();
+
+  // "Add Asset" button
+  if (ImGui::Button("Add Asset")) {
+    ImGui::OpenPopup("AddAssetPopup");
+    m_newAssetNameBuffer[0] = '\0';
+    m_newAssetPathBuffer[0] = '\0';
+  }
+
+  // Add Asset popup
+  if (ImGui::BeginPopupModal("AddAssetPopup", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Load a new texture asset");
+    ImGui::Separator();
+    ImGui::InputText("Asset Name", m_newAssetNameBuffer,
+                     sizeof(m_newAssetNameBuffer));
+    ImGui::InputText("File Path", m_newAssetPathBuffer,
+                     sizeof(m_newAssetPathBuffer));
+    if (ImGui::Button("Load")) {
+      if (strlen(m_newAssetNameBuffer) > 0 &&
+          strlen(m_newAssetPathBuffer) > 0) {
+        auto loaded = Assets::TextureManager::LoadTexture(
+            m_newAssetNameBuffer, m_newAssetPathBuffer);
+        if (loaded) {
+          // Update hot-reload tracking
+          m_textureFilePaths[m_newAssetNameBuffer] = m_newAssetPathBuffer;
+          namespace fs = std::filesystem;
+          if (fs::exists(m_newAssetPathBuffer)) {
+            m_assetFileTimestamps[m_newAssetNameBuffer] =
+                fs::last_write_time(m_newAssetPathBuffer);
+          }
+          std::cout << "[Sandbox] Loaded new asset: " << m_newAssetNameBuffer
+                    << " from " << m_newAssetPathBuffer << std::endl;
+        } else {
+          std::cerr << "[Sandbox] Failed to load: " << m_newAssetPathBuffer
+                    << std::endl;
+        }
+        ImGui::CloseCurrentPopup();
+      }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel")) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
+  ImGui::Separator();
+
   if (ImGui::BeginTabBar("AssetTabs")) {
     if (ImGui::BeginTabItem("Textures")) {
       auto names = Assets::TextureManager::GetLoadedTextureNames();
@@ -3351,6 +3502,50 @@ void Runtime::SandboxState::renderAssetBrowser() {
               m_selectedAsset = name;
             }
 
+            // Context menu (right-click) - Replace / Rename / Delete
+            if (ImGui::BeginPopupContextItem()) {
+              if (ImGui::MenuItem("Replace")) {
+                m_showReplaceDialog = true;
+                m_replacingTexture = name;
+                m_replacePathBuffer[0] = '\0';
+              }
+              if (ImGui::MenuItem("Rename")) {
+                // Rename placeholder - could be extended later
+              }
+              if (ImGui::MenuItem("Delete")) {
+                Assets::TextureManager::Unload(name);
+              }
+              ImGui::EndPopup();
+            }
+
+            // Tooltip on hover - dependency info (only if no popup is open)
+            if (ImGui::IsItemHovered() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
+              auto &world = m_scene.GetWorld();
+              int usageCount = 0;
+              std::vector<std::string> entityNames;
+              world.each<Components::SpriteRenderer>(
+                  [&](ECS::Entity e, Components::SpriteRenderer &sr) {
+                    if (sr.textureId == name) {
+                      ++usageCount;
+                      auto *tag =
+                          world.getComponent<Components::Tag>(e);
+                      if (tag) {
+                        entityNames.push_back(tag->tag);
+                      } else {
+                        entityNames.push_back(
+                            "Entity " + std::to_string(e.id));
+                      }
+                    }
+                  });
+              ImGui::BeginTooltip();
+              ImGui::Text("Used by %d entit%s", usageCount,
+                          usageCount == 1 ? "y" : "ies");
+              for (const auto &ename : entityNames) {
+                ImGui::BulletText("%s", ename.c_str());
+              }
+              ImGui::EndTooltip();
+            }
+
             // Drag and Drop Source
             if (ImGui::BeginDragDropSource()) {
               ImGui::SetDragDropPayload("TEXTURE_ASSET", name.c_str(),
@@ -3366,11 +3561,173 @@ void Runtime::SandboxState::renderAssetBrowser() {
         }
         ImGui::EndTable();
       }
+
+      // Dependencies section for selected asset
+      if (!m_selectedAsset.empty()) {
+        ImGui::Separator();
+        renderAssetDependencies(m_selectedAsset);
+      }
+
+      // Drop zone hint at bottom of Textures tab
+      ImGui::Separator();
+      ImGui::PushStyleColor(ImGuiCol_Button,
+                            ImVec4(0.15f, 0.15f, 0.2f, 1.f));
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                            ImVec4(0.25f, 0.25f, 0.35f, 1.f));
+      ImGui::Button("Drop image files onto the window or use Add Asset",
+                    ImVec2(-1, 30));
+      ImGui::PopStyleColor(2);
+
+      // Accept internal drag-drop payloads (for future use)
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *payload =
+                ImGui::AcceptDragDropPayload("ASSET_FILE_PATH")) {
+          const char *droppedPath = (const char *)payload->Data;
+          namespace fs = std::filesystem;
+          fs::path filePath(droppedPath);
+          std::string name = filePath.stem().string();
+          auto loaded = Assets::TextureManager::LoadTexture(name, droppedPath);
+          if (loaded) {
+            m_textureFilePaths[name] = droppedPath;
+            if (fs::exists(droppedPath)) {
+              m_assetFileTimestamps[name] = fs::last_write_time(droppedPath);
+            }
+            std::cout << "[Sandbox] Loaded asset from drop: " << name
+                      << std::endl;
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
   }
   ImGui::End();
+}
+
+// Feature 1: Texture Replace Dialog
+void Runtime::SandboxState::renderTextureReplaceDialog() {
+  if (!m_showReplaceDialog)
+    return;
+
+  ImGui::OpenPopup("Replace Texture");
+  if (ImGui::BeginPopupModal("Replace Texture", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Replacing: %s", m_replacingTexture.c_str());
+    ImGui::InputText("New PNG path", m_replacePathBuffer,
+                     sizeof(m_replacePathBuffer));
+    if (ImGui::Button("OK")) {
+      Assets::TextureManager::Unload(m_replacingTexture);
+      Assets::TextureManager::LoadTexture(m_replacingTexture,
+                                          m_replacePathBuffer);
+      // Update file path mapping for hot-reload
+      m_textureFilePaths[m_replacingTexture] = m_replacePathBuffer;
+      if (std::filesystem::exists(m_replacePathBuffer)) {
+        m_assetFileTimestamps[m_replacingTexture] =
+            std::filesystem::last_write_time(m_replacePathBuffer);
+      }
+      std::cout << "[Sandbox] Replaced texture: " << m_replacingTexture
+                << " -> " << m_replacePathBuffer << std::endl;
+      m_showReplaceDialog = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel")) {
+      m_showReplaceDialog = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+}
+
+// Feature 2: Asset Hot-Reloading
+void Runtime::SandboxState::initTextureFilePaths() {
+  m_textureFilePaths.clear();
+  m_assetFileTimestamps.clear();
+
+  // Parse the textures config to build name -> path mapping
+  const std::string configPath = "assets/configs/textures.json";
+  std::ifstream file(configPath);
+  if (!file.is_open())
+    return;
+
+  try {
+    nlohmann::json j;
+    file >> j;
+    if (j.contains("textures") && j["textures"].is_array()) {
+      for (const auto &item : j["textures"]) {
+        if (item.contains("name") && item.contains("path")) {
+          std::string name = item["name"].get<std::string>();
+          std::string path = item["path"].get<std::string>();
+          m_textureFilePaths[name] = path;
+
+          // Record initial modification time
+          if (std::filesystem::exists(path)) {
+            m_assetFileTimestamps[name] =
+                std::filesystem::last_write_time(path);
+          }
+        }
+      }
+    }
+  } catch (const std::exception &e) {
+    std::cerr << "[Sandbox] Failed to parse texture config for hot-reload: "
+              << e.what() << std::endl;
+  }
+}
+
+void Runtime::SandboxState::checkAssetHotReload() {
+  if (!m_hotReloadEnabled)
+    return;
+
+  for (auto &[name, path] : m_textureFilePaths) {
+    if (!std::filesystem::exists(path))
+      continue;
+
+    auto currentTime = std::filesystem::last_write_time(path);
+    auto it = m_assetFileTimestamps.find(name);
+    if (it != m_assetFileTimestamps.end() && currentTime != it->second) {
+      // File has been modified — reload
+      Assets::TextureManager::Unload(name);
+      Assets::TextureManager::LoadTexture(name, path);
+      it->second = currentTime;
+      std::cout << "[Sandbox] Hot-reloaded texture: " << name << std::endl;
+    }
+  }
+}
+
+// Feature 3: Asset Dependency Tracking
+void Runtime::SandboxState::renderAssetDependencies(
+    const std::string &textureName) {
+  if (ImGui::CollapsingHeader("Dependencies",
+                              ImGuiTreeNodeFlags_DefaultOpen)) {
+    auto &world = m_scene.GetWorld();
+    int usageCount = 0;
+    std::vector<std::pair<unsigned int, std::string>> entities;
+
+    world.each<Components::SpriteRenderer>(
+        [&](ECS::Entity e, Components::SpriteRenderer &sr) {
+          if (sr.textureId == textureName) {
+            ++usageCount;
+            auto *tag = world.getComponent<Components::Tag>(e);
+            std::string label =
+                tag ? tag->tag : ("Entity " + std::to_string(e.id));
+            entities.emplace_back(e.id, label);
+          }
+        });
+
+    ImGui::Text("Texture: %s", textureName.c_str());
+    ImGui::Text("Used by %d entit%s", usageCount,
+                usageCount == 1 ? "y" : "ies");
+
+    if (!entities.empty()) {
+      ImGui::Indent();
+      for (const auto &[id, label] : entities) {
+        ImGui::BulletText("[%u] %s", id, label.c_str());
+      }
+      ImGui::Unindent();
+    }
+  }
 }
 
 void Runtime::SandboxState::saveTilemap(const std::string &filepath) {
