@@ -124,112 +124,113 @@ void Scene::Update(double dt, Platform::InputManager &input) {
           pe.update(pos, dt);
         }
       });
-});
 
-// --- Game Logic ---
-// 1. Handle Level Transition
-if (!m_pendingLevel.empty()) {
-  LoadFromFile(m_pendingLevel);
-  m_pendingLevel.clear();
-  // Return early to avoid updating a just-cleared or fresh scene with old input
-  return;
-}
+  // --- Game Logic ---
+  // 1. Handle Level Transition
+  if (!m_pendingLevel.empty()) {
+    LoadFromFile(m_pendingLevel);
+    m_pendingLevel.clear();
+    // Return early to avoid updating a just-cleared or fresh scene with old
+    // input
+    return;
+  }
 
-// 2. Handle Death Timer
-if (m_playerDeathTimer > 0.0f) {
-  m_playerDeathTimer -= static_cast<float>(dt);
-  if (m_playerDeathTimer <= 0.0f) {
-    // Reset Player
+  // 2. Handle Death Timer
+  if (m_playerDeathTimer > 0.0f) {
+    m_playerDeathTimer -= static_cast<float>(dt);
+    if (m_playerDeathTimer <= 0.0f) {
+      // Reset Player
+      m_world.each<Components::PlayerController, Components::Transform,
+                   Components::SpriteAnimator>(
+          [&](ECS::Entity entity, Components::PlayerController &,
+              Components::Transform &t, Components::SpriteAnimator &anim) {
+            t.position = {0, 0}; // Reset to origin or spawn point
+            anim.play("idle");
+            if (auto *col =
+                    m_world.getComponent<Components::Collider>(entity)) {
+              col->isSolid = true; // Re-enable physics
+            }
+          });
+      m_playerDeathTimer = -1.f;
+      std::cout << "[Scene] Player Respawned\n";
+    }
+  } else {
+    // 3. Check Collision (Player vs Enemy) only if alive
     m_world.each<Components::PlayerController, Components::Transform,
-                 Components::SpriteAnimator>(
-        [&](ECS::Entity entity, Components::PlayerController &,
-            Components::Transform &t, Components::SpriteAnimator &anim) {
-          t.position = {0, 0}; // Reset to origin or spawn point
-          anim.play("idle");
-          if (auto *col = m_world.getComponent<Components::Collider>(entity)) {
-            col->isSolid = true; // Re-enable physics
-          }
-        });
-    m_playerDeathTimer = -1.f;
-    std::cout << "[Scene] Player Respawned\n";
-  }
-} else {
-  // 3. Check Collision (Player vs Enemy) only if alive
-  m_world.each<Components::PlayerController, Components::Transform,
-               Components::Collider>([&](ECS::Entity playerEntity,
-                                         Components::PlayerController &,
-                                         Components::Transform &pTrans,
-                                         Components::Collider &pCol) {
-    // Skip if already dead
-    auto *pAnim =
-        m_world.getComponent<Components::SpriteAnimator>(playerEntity);
-    if (pAnim && pAnim->currentClip == "death")
-      return;
+                 Components::Collider>(
+        [&](ECS::Entity playerEntity, Components::PlayerController &,
+            Components::Transform &pTrans, Components::Collider &pCol) {
+          // Skip if already dead
+          auto *pAnim =
+              m_world.getComponent<Components::SpriteAnimator>(playerEntity);
+          if (pAnim && pAnim->currentClip == "death")
+            return;
 
-    m_world
-        .each<Components::EnemyAI, Components::Transform, Components::Collider>(
-            [&](ECS::Entity, Components::EnemyAI &,
-                Components::Transform &eTrans, Components::Collider &eCol) {
-              // Calculate AABB
-              float pW = pCol.size.x * pTrans.scale.x;
-              float pH = pCol.size.y * pTrans.scale.y;
-              float eW = eCol.size.x * eTrans.scale.x;
-              float eH = eCol.size.y * eTrans.scale.y;
+          m_world.each<Components::EnemyAI, Components::Transform,
+                       Components::Collider>(
+              [&](ECS::Entity, Components::EnemyAI &,
+                  Components::Transform &eTrans, Components::Collider &eCol) {
+                // Calculate AABB
+                float pW = pCol.size.x * pTrans.scale.x;
+                float pH = pCol.size.y * pTrans.scale.y;
+                float eW = eCol.size.x * eTrans.scale.x;
+                float eH = eCol.size.y * eTrans.scale.y;
 
-              float dx = std::abs(pTrans.position.x - eTrans.position.x);
-              float dy = std::abs(pTrans.position.y - eTrans.position.y);
+                float dx = std::abs(pTrans.position.x - eTrans.position.x);
+                float dy = std::abs(pTrans.position.y - eTrans.position.y);
 
-              // Check overlap
-              float sumHalfW = (pW + eW) * 0.5f;
-              float sumHalfH = (pH + eH) * 0.5f;
+                // Check overlap
+                float sumHalfW = (pW + eW) * 0.5f;
+                float sumHalfH = (pH + eH) * 0.5f;
 
-              if (dx < sumHalfW && dy < sumHalfH) {
-                // COLLISION!
-                std::cout << "[Scene] Player died!\n";
-                if (pAnim) {
-                  pAnim->play("death");
+                if (dx < sumHalfW && dy < sumHalfH) {
+                  // COLLISION!
+                  std::cout << "[Scene] Player died!\n";
+                  if (pAnim) {
+                    pAnim->play("death");
+                  }
+                  // Disable physics
+                  pCol.isSolid = false;
+                  m_playerDeathTimer = 3.0f; // 3 seconds to respawn
                 }
-                // Disable physics
-                pCol.isSolid = false;
-                m_playerDeathTimer = 3.0f; // 3 seconds to respawn
-              }
-            });
-  });
-}
-
-// 4. Portal Logic
-auto &collisions = m_collisionSystem.getCollisions();
-for (const auto &pair : collisions) {
-  auto entityA = pair.first;
-  auto entityB = pair.second;
-
-  if (!m_world.isValid(entityA) || !m_world.isValid(entityB))
-    continue;
-
-  // Use safe component check helper to avoid crashes if component not
-  // registered
-  bool portalA = m_world.hasComponent<Components::Portal>(entityA);
-  bool portalB = m_world.hasComponent<Components::Portal>(entityB);
-  bool playerA = m_world.hasComponent<Components::PlayerController>(entityA);
-  bool playerB = m_world.hasComponent<Components::PlayerController>(entityB);
-
-  ECS::Entity portalEntity = {0, 0};
-
-  if (playerA && portalB) {
-    portalEntity = entityB;
-  } else if (playerB && portalA) {
-    portalEntity = entityA;
+              });
+        });
   }
 
-  if (portalEntity.isValid()) {
-    auto *portal = m_world.getComponent<Components::Portal>(portalEntity);
-    if (portal && !portal->levelName.empty()) {
-      m_pendingLevel = portal->levelName;
-      std::cout << "[Scene] Transitioning to level: " << m_pendingLevel << "\n";
-      break; // Only one transition per frame
+  // 4. Portal Logic
+  auto &collisions = m_collisionSystem.getCollisions();
+  for (const auto &pair : collisions) {
+    auto entityA = pair.first;
+    auto entityB = pair.second;
+
+    if (!m_world.isValid(entityA) || !m_world.isValid(entityB))
+      continue;
+
+    // Use safe component check helper to avoid crashes if component not
+    // registered
+    bool portalA = m_world.hasComponent<Components::Portal>(entityA);
+    bool portalB = m_world.hasComponent<Components::Portal>(entityB);
+    bool playerA = m_world.hasComponent<Components::PlayerController>(entityA);
+    bool playerB = m_world.hasComponent<Components::PlayerController>(entityB);
+
+    ECS::Entity portalEntity = {0, 0};
+
+    if (playerA && portalB) {
+      portalEntity = entityB;
+    } else if (playerB && portalA) {
+      portalEntity = entityA;
+    }
+
+    if (portalEntity.isValid()) {
+      auto *portal = m_world.getComponent<Components::Portal>(portalEntity);
+      if (portal && !portal->levelName.empty()) {
+        m_pendingLevel = portal->levelName;
+        std::cout << "[Scene] Transitioning to level: " << m_pendingLevel
+                  << "\n";
+        break; // Only one transition per frame
+      }
     }
   }
-}
 }
 
 void Scene::Render(Graphics::RenderingManager &renderer) {

@@ -41,7 +41,6 @@ reserved.
 #include <filesystem>
 #include <iostream>
 
-
 namespace Runtime {
 
 TestLevelState::TestLevelState(Platform::InputManager &input,
@@ -83,11 +82,6 @@ void TestLevelState::onExit() { m_scene.Clear(); }
 
 void TestLevelState::update(double dt) {
   // Check pending level load
-  if (!m_pendingLevel.empty()) {
-    loadLevel(m_pendingLevel);
-    m_pendingLevel.clear();
-    return;
-  }
 
   // ESC -> MenuState
   if (m_input.wasKeyTriggered(GLFW_KEY_ESCAPE)) {
@@ -112,40 +106,6 @@ void TestLevelState::update(double dt) {
       });
 
   // If no player, maybe retain previous pos or do nothing
-
-  // --- PORTAL LOGIC ---
-  // Check collisions for portals
-  auto &collisions = m_scene.GetCollisionSystem().getCollisions();
-  // world is already defined above
-
-  for (const auto &pair : collisions) {
-    auto entityA = pair.first;
-    auto entityB = pair.second;
-
-    if (!world.isValid(entityA) || !world.isValid(entityB))
-      continue;
-
-    bool playerA = world.hasComponent<Components::PlayerController>(entityA);
-    bool portalA = world.hasComponent<Components::Portal>(entityA);
-    bool playerB = world.hasComponent<Components::PlayerController>(entityB);
-    bool portalB = world.hasComponent<Components::Portal>(entityB);
-
-    ECS::Entity portalEntity = {0, 0};
-
-    if (playerA && portalB) {
-      portalEntity = entityB;
-    } else if (playerB && portalA) {
-      portalEntity = entityA;
-    }
-
-    if (portalEntity.isValid()) {
-      auto *portal = world.getComponent<Components::Portal>(portalEntity);
-      if (portal && !portal->levelName.empty()) {
-        m_pendingLevel = portal->levelName;
-        break; // Only one transition per frame
-      }
-    }
-  }
 }
 
 void TestLevelState::render(Core::Time *timer) {
@@ -367,9 +327,3 @@ void TestLevelState::renderTorchPass(Graphics::RenderingManager &renderer) {
 }
 
 } // namespace Runtime
-
-void Runtime::TestLevelState::loadLevel(const std::string &levelName) {
-  std::string path = "assets/scenes/" + levelName;
-  std::cout << "[TestLevelState] Loading level: " << path << "\n";
-  m_scene.LoadFromFile(path);
-}

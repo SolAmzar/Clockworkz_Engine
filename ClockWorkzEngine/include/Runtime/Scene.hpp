@@ -42,6 +42,10 @@ public:
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
 
+  // Pending Level Accessors for Editor
+  std::string GetPendingLevel() const { return m_pendingLevel; }
+  void ClearPendingLevel() { m_pendingLevel.clear(); }
+
   // "SceneManager" Interface (Legacy/Manager expectation)
   bool load() {
     Init();

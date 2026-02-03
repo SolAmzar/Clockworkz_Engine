@@ -268,8 +268,8 @@ private:
   void renderUnsupportedDropPopup();
 
   // Portal / Level Loading
-  // std::string m_pendingLevel; // Moved to Scene
-  // void loadLevel(const std::string &levelName); // Use m_scene.LoadFromFile
+  std::string m_pendingLevel; // Restored for Editor logic
+  void loadLevel(const std::string &levelName);
 };
 
 } // namespace Runtime
