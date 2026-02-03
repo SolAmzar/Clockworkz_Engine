@@ -27,7 +27,6 @@
 #include "Systems/StateMachineSystem.hpp"
 #include "Systems/TextRenderSystem.hpp"
 
-
 namespace Runtime {
 
 class Scene {
@@ -40,6 +39,7 @@ public:
   void Update(double dt, Platform::InputManager &input);
   void Render(Graphics::RenderingManager &renderer);
   void Clear();
+  bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
 
   // "SceneManager" Interface (Legacy/Manager expectation)
@@ -88,6 +88,11 @@ private:
   // Systems
   Systems::RenderSystem m_renderSystem;
   Systems::PhysicsSystem m_physicsSystem;
+  // --- Game Logic State ---
+  float m_playerDeathTimer = -1.0f;
+  std::string m_pendingLevel;
+
+  // --- Systems ---
   Gameplay::Physics2D m_legacyPhysics;
   Systems::CollisionSystem m_collisionSystem;
   Systems::BatterySystem m_batterySystem;

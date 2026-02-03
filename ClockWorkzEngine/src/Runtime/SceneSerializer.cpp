@@ -27,6 +27,7 @@ reserved.
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/PlayerController.hpp"
+#include "Components/Portal.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
@@ -283,6 +284,11 @@ void SceneSerializer::Serialize(ECS::World &world,
             {"visible", tr->visible},
             {"boxSize", {{"x", tr->boxSize.x}, {"y", tr->boxSize.y}}},
             {"alignment", (int)tr->alignment}};
+      }
+
+      // Portal
+      if (auto *portal = world.getComponent<Components::Portal>(entity)) {
+        obj["components"]["portal"] = {{"levelName", portal->levelName}};
       }
 
       root["objects"].push_back(obj);
@@ -645,6 +651,14 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         }
         tr.alignment = (Components::TextAlignment)trc.value("alignment", 0);
         world.addComponent(entity, tr);
+      }
+
+      // Portal
+      if (components.contains("portal")) {
+        auto &pc = components["portal"];
+        Components::Portal portal;
+        portal.levelName = pc.value("levelName", "");
+        world.addComponent(entity, portal);
       }
     }
   }

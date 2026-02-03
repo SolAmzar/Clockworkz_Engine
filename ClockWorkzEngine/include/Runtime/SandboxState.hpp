@@ -103,7 +103,8 @@ private:
 
   // Component management
   int m_selectedEntityIdx{0};       // Primary selection for inspector
-  std::set<int> m_selectedEntities; // Multi-selection (Shift+Click range, Ctrl+Click toggle)
+  std::set<int> m_selectedEntities; // Multi-selection (Shift+Click range,
+                                    // Ctrl+Click toggle)
   int m_lastClickedEntityIdx{-1};   // anchor for Shift+Click range
 
   // Drag and Drop State
@@ -158,7 +159,7 @@ private:
   PaintMode m_paintMode = PaintMode::Paint;
 
   // Game Logic State
-  float m_playerDeathTimer{-1.f};
+  // float m_playerDeathTimer{-1.f}; // Moved to Scene
 
   // Optional: Store tilemap data for serialization
   struct TileData {
@@ -265,6 +266,10 @@ private:
   std::string m_unsupportedDropPath;
   std::string m_unsupportedDropExt;
   void renderUnsupportedDropPopup();
+
+  // Portal / Level Loading
+  // std::string m_pendingLevel; // Moved to Scene
+  // void loadLevel(const std::string &levelName); // Use m_scene.LoadFromFile
 };
 
 } // namespace Runtime

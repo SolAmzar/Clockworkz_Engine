@@ -56,6 +56,10 @@ private:
   bool m_showHUD{true};
   bool m_enableShadows{true};
   vec2 m_viewportSize{0.f, 0.f};
+
+  // Portal / Level Loading
+  std::string m_pendingLevel;
+  void loadLevel(const std::string &levelName);
 };
 
 } // namespace Runtime

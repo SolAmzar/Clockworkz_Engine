@@ -207,7 +207,10 @@ public:
    * @return True if component exists
    */
   template <typename T> bool hasComponent(Entity entity) const {
-    return getComponentArray<T>()->has(entity);
+    auto *array = getComponentArray<T>();
+    if (!array)
+      return false;
+    return array->has(entity);
   }
 
   /**
