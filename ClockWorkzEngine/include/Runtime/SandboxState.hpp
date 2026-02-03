@@ -102,13 +102,9 @@ private:
   float m_spawnY{0.f};
 
   // Component management
-  // Component management
   int m_selectedEntityIdx{0};       // Primary selection for inspector
-  std::set<int> m_selectedEntities; // Multi-selection support
-
-  // Multi-selection (Shift+Click range, Ctrl+Click toggle)
-  std::set<int> m_selectedEntities;  // set of m_testEntities indices
-  int m_lastClickedEntityIdx{-1};    // anchor for Shift+Click range
+  std::set<int> m_selectedEntities; // Multi-selection (Shift+Click range, Ctrl+Click toggle)
+  int m_lastClickedEntityIdx{-1};   // anchor for Shift+Click range
 
   // Drag and Drop State
   ECS::Entity m_draggedEntity{0, 0}; // Invalid entity by default

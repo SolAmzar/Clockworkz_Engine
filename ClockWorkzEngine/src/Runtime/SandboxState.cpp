@@ -1545,6 +1545,7 @@ void SandboxState::renderEntityWindow() {
           tag->tag = std::string(m_renameBuffer);
         } else {
           world.addComponent(entity, Components::Tag{m_renameBuffer});
+        }
         m_renamingEntityIdx = -1;
       }
       if (!ImGui::IsItemActive() &&
@@ -1844,27 +1845,6 @@ void SandboxState::renderEntityWindow() {
   }
 
   // Handle deferred actions
-  if (deleteSelected) {
-    std::vector<int> indices(m_selectedEntities.begin(),
-                             m_selectedEntities.end());
-    std::sort(indices.rbegin(), indices.rend());
-
-    auto compositeCmd =
-        std::make_unique<Sandbox::CompositeCommand>("Batch Delete Entities");
-    for (int idx : indices) {
-      if (idx >= 0 && idx < (int)m_testEntities.size()) {
-        auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
-            m_scene, m_testEntities, m_testEntities[idx],
-            static_cast<size_t>(idx));
-        compositeCmd->addCommand(std::move(cmd));
-      }
-    }
-    executeCommand(std::move(compositeCmd));
-
-    m_selectedEntities.clear();
-    m_selectedEntityIdx = -1;
-  }
-
   if (entityToClone != -1) {
     if (entityToClone >= 0 && entityToClone < (int)m_testEntities.size())
       cloneTestEntity(m_testEntities[entityToClone]);
