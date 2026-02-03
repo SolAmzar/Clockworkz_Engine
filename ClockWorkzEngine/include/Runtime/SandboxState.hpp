@@ -23,6 +23,7 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
 #include <glm/vec2.hpp>
+#include <set>
 #include <vector>
 
 #include "Graphics/FrameBuffer.hpp"
@@ -100,7 +101,9 @@ private:
   float m_spawnY{0.f};
 
   // Component management
-  int m_selectedEntityIdx{0};
+  // Component management
+  int m_selectedEntityIdx{0};       // Primary selection for inspector
+  std::set<int> m_selectedEntities; // Multi-selection support
 
   // Drag and Drop State
   ECS::Entity m_draggedEntity{0, 0}; // Invalid entity by default

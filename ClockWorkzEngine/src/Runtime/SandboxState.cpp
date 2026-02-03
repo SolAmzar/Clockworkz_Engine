@@ -16,6 +16,7 @@ reserved.
 #include "Platform/WindowManager.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Assets/FontManager.hpp"
@@ -68,6 +69,7 @@ reserved.
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <map>
 
 namespace Runtime {
 
@@ -155,8 +157,8 @@ void SandboxState::update(double dt) {
           if (fs::exists(path)) {
             m_assetFileTimestamps[name] = fs::last_write_time(path);
           }
-          std::cout << "[Sandbox] Loaded dropped texture: " << name
-                    << " from " << path << std::endl;
+          std::cout << "[Sandbox] Loaded dropped texture: " << name << " from "
+                    << path << std::endl;
         }
       }
     }
@@ -821,6 +823,16 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       world.addComponent(entity, sm);
     }
 
+    // Add ParticleEmitter for death effects
+    Components::ParticleEmitter emitter;
+    emitter.system().colorStart = {0.f, 0.f, 0.f, 1.f}; // Black particles
+    emitter.system().colorEnd = {0.f, 0.f, 0.f, 0.f};   // Fade out
+    emitter.system().sizeStart = 5.0f;
+    emitter.system().sizeEnd = 1.0f;
+    emitter.system().lifeMin = 0.5f;
+    emitter.system().lifeMax = 1.0f;
+    world.addComponent(entity, emitter);
+
     // Track the entity
     m_testEntities.push_back(entity);
     std::cout << "[Prefab] Spawned: " << prefabName << " at (" << position.x
@@ -920,8 +932,7 @@ void SandboxState::renderPrefabEditor() {
         // Try to read texture from prefab JSON
         std::string textureId;
         {
-          std::string prefabPath =
-              "assets/prefabs/" + prefabName + ".json";
+          std::string prefabPath = "assets/prefabs/" + prefabName + ".json";
           std::ifstream pf(prefabPath);
           if (pf.is_open()) {
             try {
@@ -930,9 +941,8 @@ void SandboxState::renderPrefabEditor() {
               if (pj.contains("components") &&
                   pj["components"].contains("spriteRenderer") &&
                   pj["components"]["spriteRenderer"].contains("textureId")) {
-                textureId =
-                    pj["components"]["spriteRenderer"]["textureId"]
-                        .get<std::string>();
+                textureId = pj["components"]["spriteRenderer"]["textureId"]
+                                .get<std::string>();
               }
             } catch (...) {
             }
@@ -940,9 +950,8 @@ void SandboxState::renderPrefabEditor() {
         }
 
         // Render thumbnail or fallback
-        auto tex = textureId.empty()
-                       ? nullptr
-                       : Assets::TextureManager::Get(textureId);
+        auto tex = textureId.empty() ? nullptr
+                                     : Assets::TextureManager::Get(textureId);
         if (tex && tex->id() != 0) {
           if (ImGui::ImageButton("##prefab_thumb",
                                  (ImTextureID)(intptr_t)tex->id(),
@@ -1011,9 +1020,8 @@ void SandboxState::renderPrefabEditor() {
       if (ImGui::Button("Spawn Selected Prefab")) {
         spawnPrefab(m_availablePrefabs[m_selectedPrefabIndex],
                     vec2{spawnX, spawnY});
-        m_tilemap.push_back(
-            {m_availablePrefabs[m_selectedPrefabIndex],
-             vec2{spawnX, spawnY}, 0, m_testEntities.back()});
+        m_tilemap.push_back({m_availablePrefabs[m_selectedPrefabIndex],
+                             vec2{spawnX, spawnY}, 0, m_testEntities.back()});
       }
     }
   }
@@ -1289,6 +1297,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
 
     // Center Column
     ImGui::DockBuilderDockWindow("Toolbar", dock_toolbar_id);
+    ImGui::DockBuilderDockWindow("Undo / Redo", dock_toolbar_id);
     ImGui::DockBuilderDockWindow("Scene", dock_center_id);
 
     ImGui::DockBuilderFinish(dockspace_id);
@@ -1493,14 +1502,18 @@ void SandboxState::renderEntityWindow() {
 
   int entityToClone = -1;
   int entityToDelete = -1;
+  bool deleteSelected = false;
 
-  for (size_t i = 0; i < m_testEntities.size(); ++i) {
+  // Group popup state
+  // REMOVED GROUP POPUP VARIABLES
+
+  // Lambda to render individual item
+  auto renderEntityItem = [&](size_t i) {
     auto entity = m_testEntities[i];
-
     ImGui::PushID(static_cast<int>(i));
 
     char label[64];
-    auto *tag = m_scene.GetWorld().getComponent<Components::Tag>(entity);
+    auto *tag = world.getComponent<Components::Tag>(entity);
     if (tag && !tag->tag.empty()) {
       snprintf(label, sizeof(label), "%s (id %u)", tag->tag.c_str(), entity.id);
     } else {
@@ -1510,88 +1523,106 @@ void SandboxState::renderEntityWindow() {
 
     // Renaming Logic
     if (m_renamingEntityIdx == (int)i) {
-      // Set keyboard focus when first entering rename mode
-      if (ImGui::IsWindowAppearing() || m_renameBuffer[0] == '\0') {
-        // This condition is a bit loose but InputText will take focus if
-        // SetKeyboardFocusHere is called
-      }
-      // Actually we just need to ensure focus once.
-      // But simplifying: rely on auto-focus or user click.
-      // Better: Use SetKeyboardFocusHere(-1) on the exact frame we started?
-      // We can't easily detect "start frame" here without another flag.
-      // Let's just render InputText.
-
-      // Auto-focus if we just switched (we can check if buffer is empty? No, we
-      // populate it). Let's just rely on the user typing. Actually, standard
-      // behavior:
-
       ImGui::SetKeyboardFocusHere();
       if (ImGui::InputText("##rename", m_renameBuffer, sizeof(m_renameBuffer),
                            ImGuiInputTextFlags_EnterReturnsTrue |
                                ImGuiInputTextFlags_AutoSelectAll)) {
-        // Apply Rename
         if (tag) {
           tag->tag = std::string(m_renameBuffer);
         } else {
-          // Create if missing (shouldn't happen with new spawn logic, but safe)
           world.addComponent(entity, Components::Tag{m_renameBuffer});
         }
         m_renamingEntityIdx = -1;
       }
-
-      // Cancel on Escape or Click Away (Check focus lost?)
       if (!ImGui::IsItemActive() &&
           (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) {
-        // Apply or Cancel? Usually Apply.
         if (tag)
           tag->tag = std::string(m_renameBuffer);
         m_renamingEntityIdx = -1;
       }
     } else {
-      // Selection Logic
-      bool isSelected = (m_selectedEntityIdx == (int)i);
+      bool isSelected = (m_selectedEntities.count((int)i) > 0);
       float availWidth = ImGui::GetContentRegionAvail().x;
-
-      // Limit Selectable width to leave room for buttons (approx 60px)
       if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
-        m_selectedEntityIdx = (int)i;
-      }
+        // Selecting entity clears group selection (removed)
 
-      // Right Click Context Menu
+        if (ImGui::GetIO().KeyCtrl) {
+          if (isSelected) {
+            m_selectedEntities.erase((int)i);
+          } else {
+            m_selectedEntities.insert((int)i);
+            m_selectedEntityIdx = (int)i; // Update primary inspector
+          }
+        } else {
+          m_selectedEntities.clear();
+          m_selectedEntities.insert((int)i);
+          m_selectedEntityIdx = (int)i;
+        }
+      }
       if (ImGui::BeginPopupContextItem()) {
         if (ImGui::Selectable("Rename")) {
           m_renamingEntityIdx = (int)i;
-          // Populate buffer
           memset(m_renameBuffer, 0, sizeof(m_renameBuffer));
           if (tag)
             strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer));
           ImGui::CloseCurrentPopup();
         }
+
         if (ImGui::Selectable("Clone")) {
           entityToClone = (int)i;
           ImGui::CloseCurrentPopup();
         }
         if (ImGui::Selectable("Delete")) {
-          entityToDelete = (int)i;
+          if (m_selectedEntities.size() > 1 &&
+              m_selectedEntities.count((int)i)) {
+            deleteSelected = true;
+          } else {
+            entityToDelete = (int)i;
+          }
           ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
       }
     }
-
     ImGui::SameLine();
-    if (ImGui::Button("C")) { // Clone
+    if (ImGui::Button("C")) {
       entityToClone = (int)i;
     }
     ImGui::SameLine();
-    if (ImGui::Button("X")) { // Destroy
+    if (ImGui::Button("X")) {
       entityToDelete = (int)i;
     }
-
     ImGui::PopID();
+  };
+
+  // Render Groups
+  // Render flat entity list
+  for (size_t i = 0; i < m_testEntities.size(); ++i) {
+    renderEntityItem(i);
   }
 
   // Handle deferred actions
+  if (deleteSelected) {
+    std::vector<int> indices(m_selectedEntities.begin(),
+                             m_selectedEntities.end());
+    std::sort(indices.rbegin(), indices.rend());
+
+    auto compositeCmd =
+        std::make_unique<Sandbox::CompositeCommand>("Batch Delete Entities");
+    for (int idx : indices) {
+      if (idx >= 0 && idx < (int)m_testEntities.size()) {
+        auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
+            m_scene, m_testEntities, m_testEntities[idx],
+            static_cast<size_t>(idx));
+        compositeCmd->addCommand(std::move(cmd));
+      }
+    }
+    executeCommand(std::move(compositeCmd));
+
+    m_selectedEntities.clear();
+    m_selectedEntityIdx = -1;
+  }
+
   if (entityToClone != -1) {
     if (entityToClone >= 0 && entityToClone < (int)m_testEntities.size())
       cloneTestEntity(m_testEntities[entityToClone]);
@@ -1658,6 +1689,7 @@ void SandboxState::renderComponentWindow() {
     if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
       tag->tag = std::string(buffer);
     }
+
   } else {
     if (ImGui::Button("Add Tag")) {
       world.addComponent(entity, Components::Tag{"Entity"});
@@ -1682,8 +1714,7 @@ void SandboxState::renderComponentWindow() {
       int layer = tileData->layer;
       if (ImGui::InputInt("Layer", &layer)) {
         if (layer >= 0 && layer < m_numLayers) {
-          auto *trans =
-              world.getComponent<Components::Transform>(entity);
+          auto *trans = world.getComponent<Components::Transform>(entity);
           vec2 pos = trans ? trans->position : vec2{0.f, 0.f};
           if (!isCellOccupied(pos, layer)) {
             tileData->layer = layer;
@@ -2287,7 +2318,7 @@ void SandboxState::renderComponentWindow() {
       strncpy(textBuf, tr->text.c_str(), sizeof(textBuf) - 1);
       textBuf[sizeof(textBuf) - 1] = '\0';
       if (ImGui::InputTextMultiline("Text", textBuf, sizeof(textBuf),
-                                     ImVec2(-1, 80))) {
+                                    ImVec2(-1, 80))) {
         tr->text = textBuf;
       }
 
@@ -2302,7 +2333,7 @@ void SandboxState::renderComponentWindow() {
       static const char *alignOptions[] = {"Left", "Center", "Right"};
       int alignIdx = static_cast<int>(tr->alignment);
       if (ImGui::Combo("Alignment", &alignIdx, alignOptions,
-                        IM_ARRAYSIZE(alignOptions))) {
+                       IM_ARRAYSIZE(alignOptions))) {
         tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
       }
 
@@ -2310,7 +2341,7 @@ void SandboxState::renderComponentWindow() {
       static const char *fontOptions[] = {"Debug"};
       int fontIdx = 0;
       if (ImGui::Combo("Font", &fontIdx, fontOptions,
-                        IM_ARRAYSIZE(fontOptions))) {
+                       IM_ARRAYSIZE(fontOptions))) {
         tr->fontId = fontOptions[fontIdx];
       }
 
@@ -2382,8 +2413,8 @@ void SandboxState::spawnTestEntity(vec2 position) {
                      Components::Tag{"Entity " + std::to_string(entity.id)});
 
   // Track via undo system (adds to m_testEntities)
-  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
-                                                            m_testEntities, entity);
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(
+      m_scene, m_testEntities, entity);
   executeCommand(std::move(cmd));
 }
 
@@ -2439,8 +2470,8 @@ void SandboxState::spawnPlayer() {
   world.addComponent(entity, Components::Tag{"Player"});
 
   // Track via undo system (adds to m_testEntities)
-  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
-                                                            m_testEntities, entity);
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(
+      m_scene, m_testEntities, entity);
   executeCommand(std::move(cmd));
   std::cout << "Spawned Player Entity: " << entity.id << "\n";
 }
@@ -2499,8 +2530,8 @@ void SandboxState::spawnEnemy() {
   world.addComponent(entity, Components::Tag{"Enemy"});
 
   // Track via undo system (adds to m_testEntities)
-  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
-                                                            m_testEntities, entity);
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(
+      m_scene, m_testEntities, entity);
   executeCommand(std::move(cmd));
   std::cout << "Spawned Enemy Entity: " << entity.id << "\n";
 }
@@ -2574,8 +2605,8 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   m_tilemap.push_back({clonePrefab, clonePos, cloneLayer, newEntity});
 
   // Track via undo system (adds to m_testEntities)
-  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
-                                                            m_testEntities, newEntity);
+  auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(
+      m_scene, m_testEntities, newEntity);
   executeCommand(std::move(cmd));
 
   // Select the new one
@@ -2771,12 +2802,12 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
         float dist = magnitude(it->position - worldPos);
         if (dist < m_gridSize * 0.1f) {
           // Remove entity from m_testEntities
-          auto entIt = std::find_if(
-              m_testEntities.begin(), m_testEntities.end(),
-              [&](const ECS::Entity &e) {
-                return e.id == it->entity.id &&
-                       e.generation == it->entity.generation;
-              });
+          auto entIt =
+              std::find_if(m_testEntities.begin(), m_testEntities.end(),
+                           [&](const ECS::Entity &e) {
+                             return e.id == it->entity.id &&
+                                    e.generation == it->entity.generation;
+                           });
           if (entIt != m_testEntities.end()) {
             m_testEntities.erase(entIt);
           }
@@ -2941,8 +2972,7 @@ void SandboxState::renderSceneWindow() {
 
       // Spawn the prefab at drop position
       spawnPrefab(prefabName, worldPos);
-      m_tilemap.push_back(
-          {prefabName, worldPos, 0, m_testEntities.back()});
+      m_tilemap.push_back({prefabName, worldPos, 0, m_testEntities.back()});
     }
     ImGui::EndDragDropTarget();
   }
@@ -3280,8 +3310,8 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       if (m_gizmoOriginalPos.x != newPos.x ||
           m_gizmoOriginalPos.y != newPos.y) {
         auto cmd = Sandbox::makePropertyCommand(
-            world, entity, &Components::Transform::position,
-            m_gizmoOriginalPos, newPos, "Move Entity");
+            world, entity, &Components::Transform::position, m_gizmoOriginalPos,
+            newPos, "Move Entity");
         executeCommand(std::move(cmd));
       }
     } else if (m_gizmoMode == GizmoMode::Rotation) {
@@ -3297,8 +3327,8 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       if (m_gizmoOriginalScale.x != newScale.x ||
           m_gizmoOriginalScale.y != newScale.y) {
         auto cmd = Sandbox::makePropertyCommand(
-            world, entity, &Components::Transform::scale,
-            m_gizmoOriginalScale, newScale, "Scale Entity");
+            world, entity, &Components::Transform::scale, m_gizmoOriginalScale,
+            newScale, "Scale Entity");
         executeCommand(std::move(cmd));
       }
     }
@@ -3450,8 +3480,8 @@ void Runtime::SandboxState::renderAssetBrowser() {
     if (ImGui::Button("Load")) {
       if (strlen(m_newAssetNameBuffer) > 0 &&
           strlen(m_newAssetPathBuffer) > 0) {
-        auto loaded = Assets::TextureManager::LoadTexture(
-            m_newAssetNameBuffer, m_newAssetPathBuffer);
+        auto loaded = Assets::TextureManager::LoadTexture(m_newAssetNameBuffer,
+                                                          m_newAssetPathBuffer);
         if (loaded) {
           // Update hot-reload tracking
           m_textureFilePaths[m_newAssetNameBuffer] = m_newAssetPathBuffer;
@@ -3519,7 +3549,8 @@ void Runtime::SandboxState::renderAssetBrowser() {
             }
 
             // Tooltip on hover - dependency info (only if no popup is open)
-            if (ImGui::IsItemHovered() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
+            if (ImGui::IsItemHovered() &&
+                !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
               auto &world = m_scene.GetWorld();
               int usageCount = 0;
               std::vector<std::string> entityNames;
@@ -3527,13 +3558,11 @@ void Runtime::SandboxState::renderAssetBrowser() {
                   [&](ECS::Entity e, Components::SpriteRenderer &sr) {
                     if (sr.textureId == name) {
                       ++usageCount;
-                      auto *tag =
-                          world.getComponent<Components::Tag>(e);
+                      auto *tag = world.getComponent<Components::Tag>(e);
                       if (tag) {
                         entityNames.push_back(tag->tag);
                       } else {
-                        entityNames.push_back(
-                            "Entity " + std::to_string(e.id));
+                        entityNames.push_back("Entity " + std::to_string(e.id));
                       }
                     }
                   });
@@ -3570,8 +3599,7 @@ void Runtime::SandboxState::renderAssetBrowser() {
 
       // Drop zone hint at bottom of Textures tab
       ImGui::Separator();
-      ImGui::PushStyleColor(ImGuiCol_Button,
-                            ImVec4(0.15f, 0.15f, 0.2f, 1.f));
+      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.2f, 1.f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
                             ImVec4(0.25f, 0.25f, 0.35f, 1.f));
       ImGui::Button("Drop image files onto the window or use Add Asset",
@@ -3699,22 +3727,20 @@ void Runtime::SandboxState::checkAssetHotReload() {
 // Feature 3: Asset Dependency Tracking
 void Runtime::SandboxState::renderAssetDependencies(
     const std::string &textureName) {
-  if (ImGui::CollapsingHeader("Dependencies",
-                              ImGuiTreeNodeFlags_DefaultOpen)) {
+  if (ImGui::CollapsingHeader("Dependencies", ImGuiTreeNodeFlags_DefaultOpen)) {
     auto &world = m_scene.GetWorld();
     int usageCount = 0;
     std::vector<std::pair<unsigned int, std::string>> entities;
 
-    world.each<Components::SpriteRenderer>(
-        [&](ECS::Entity e, Components::SpriteRenderer &sr) {
-          if (sr.textureId == textureName) {
-            ++usageCount;
-            auto *tag = world.getComponent<Components::Tag>(e);
-            std::string label =
-                tag ? tag->tag : ("Entity " + std::to_string(e.id));
-            entities.emplace_back(e.id, label);
-          }
-        });
+    world.each<Components::SpriteRenderer>([&](ECS::Entity e,
+                                               Components::SpriteRenderer &sr) {
+      if (sr.textureId == textureName) {
+        ++usageCount;
+        auto *tag = world.getComponent<Components::Tag>(e);
+        std::string label = tag ? tag->tag : ("Entity " + std::to_string(e.id));
+        entities.emplace_back(e.id, label);
+      }
+    });
 
     ImGui::Text("Texture: %s", textureName.c_str());
     ImGui::Text("Used by %d entit%s", usageCount,

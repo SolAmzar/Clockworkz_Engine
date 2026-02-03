@@ -3009,6 +3009,15 @@ void LevelEditor::renderProperties() {
                 audio->soundId, audio->group, audio->volume);
           }
         }
+
+        ImGui::Separator();
+        if (ImGui::Button("Remove Audio Source")) {
+          m_selectedObject->removeComponent<AudioSourceComponent>();
+          markLevelDirty();
+          ImGui::TreePop(); // Close tree node
+          return;           // Exit early since 'audio' is now invalid
+        }
+
         ImGui::TreePop();
       }
     }
@@ -3119,10 +3128,28 @@ void LevelEditor::renderProperties() {
           }
         }
 
+        ImGui::Separator();
+        if (ImGui::Button("Remove Sprite Renderer")) {
+          m_selectedObject->removeComponent<SpriteRendererComponent>();
+          markLevelDirty();
+          ImGui::TreePop();
+          return; // Exit early
+        }
+
         ImGui::TreePop();
       }
     } else {
-      ImGui::TextDisabled("No SpriteRendererComponent on this object");
+      if (ImGui::Button("Add Sprite Renderer Component")) {
+        auto *sr =
+            m_selectedObject->addComponent<Gameplay::SpriteRendererComponent>();
+        // Set a default texture if available
+        auto textureNames = Assets::TextureManager::GetLoadedTextureNames();
+        if (!textureNames.empty()) {
+          sr->setTexture(textureNames[0]);
+          m_selectedObject->setTextureId(textureNames[0]);
+        }
+        markLevelDirty();
+      }
     }
   }
 

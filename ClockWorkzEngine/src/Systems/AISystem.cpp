@@ -16,8 +16,10 @@ reserved.
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/SpriteAnimator.hpp"
+#include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
+#include "Gameplay/Components/ParticleEmitter.hpp" // Added
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -65,6 +67,42 @@ void AISystem::update(ECS::World &world, double dt) {
         // Dead Check
         if (ai.state == Components::AIState::Death) {
           vel.velocity = {0.f, 0.f};
+
+          // 1. Sprite Fading
+          auto *sprite = world.getComponent<Components::SpriteRenderer>(e);
+          bool fullyFaded = false;
+          if (sprite) {
+            float fadeSpeed = 2.0f; // Fade out over 0.5s
+            sprite->color.a -= fadeSpeed * fDt;
+            if (sprite->color.a <= 0.0f) {
+              sprite->color.a = 0.0f;
+              fullyFaded = true;
+            }
+
+            // 2. Particle Burst on Death Start
+            // Using alpha as a flag: if alpha is just starting to fade, trigger
+            // burst Or use a flag in AI/Health? Using alpha > 0.9 check is a
+            // cheap hack, but let's assume we just entered death. Better: Check
+            // if we haven't burst yet. But we don't have a flag. WORKAROUND:
+            // Trigger burst if alpha is still high (e.g. > 0.9) AND we are in
+            // Death state. Since we subtract alpha immediately, we can use a
+            // range. Actually, best might be to use a static set or component
+            // flag. For now, let's use the alpha check: if (oldAlpha > 0 &&
+            // newAlpha <= 0) -> burst? No, burst at start. If alpha is near 1.0
+            // (start of death), trigger burst.
+            if (sprite->color.a > 0.8f) { // Trigger early
+              auto *emitter =
+                  world.getComponent<Components::ParticleEmitter>(e);
+              if (emitter) {
+                // Multiple bursts around center
+                for (int i = 0; i < 5; ++i) {
+                  float rx = (rand() % 100 - 50) / 10.0f; // -5 to 5 offset
+                  float ry = (rand() % 100 - 50) / 10.0f;
+                  emitter->burst(t.position + vec2{rx, ry}, 5);
+                }
+              }
+            }
+          }
           return;
         }
 
