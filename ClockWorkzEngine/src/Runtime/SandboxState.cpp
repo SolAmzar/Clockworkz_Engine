@@ -174,10 +174,9 @@ void SandboxState::update(double dt) {
 
       if (isImage) {
         std::string baseName = filePath.stem().string();
-        std::string name = makeUniqueName(
-            baseName, [](const std::string &n) {
-              return Assets::TextureManager::IsLoaded(n);
-            });
+        std::string name = makeUniqueName(baseName, [](const std::string &n) {
+          return Assets::TextureManager::IsLoaded(n);
+        });
 
         auto loaded = Assets::TextureManager::LoadTexture(name, path);
         if (loaded) {
@@ -190,10 +189,9 @@ void SandboxState::update(double dt) {
         }
       } else if (isAudio) {
         std::string baseName = filePath.stem().string();
-        std::string name = makeUniqueName(
-            baseName, [](const std::string &n) {
-              return Assets::SoundManager::IsLoaded(n);
-            });
+        std::string name = makeUniqueName(baseName, [](const std::string &n) {
+          return Assets::SoundManager::IsLoaded(n);
+        });
 
         auto clip = Assets::SoundManager::LoadSound(name, path);
         if (clip) {
@@ -875,7 +873,7 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
     // Add ParticleEmitter for death effects
     Components::ParticleEmitter emitter;
     emitter.system().colorStart = {255.f, 255.f, 255.f, 1.f}; // Black particles
-    emitter.system().colorEnd = {0.f, 0.f, 0.f, 0.f};   // Fade out
+    emitter.system().colorEnd = {0.f, 0.f, 0.f, 0.f};         // Fade out
     emitter.system().sizeStart = 5.0f;
     emitter.system().sizeEnd = 1.0f;
     emitter.system().lifeMin = 0.5f;
@@ -1261,16 +1259,21 @@ void SandboxState::renderDebugColliders(Graphics::RenderingManager &renderer) {
           return glm::vec2(v.x * c_ang - v.y * s, v.x * s + v.y * c_ang);
         };
 
-        glm::vec2 offsetRot =
-            RotateVec(glm::vec2(c.offset.x, c.offset.y), t.rotation);
+        // Correct Offset Logic: Effective = Offset - Pivot
+        glm::vec2 effectiveOffset =
+            glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y);
+        glm::vec2 offsetRot = RotateVec(effectiveOffset, t.rotation);
         glm::vec2 pos(t.position.x + offsetRot.x, t.position.y + offsetRot.y);
 
         glm::vec3 color = c.isTrigger ? glm::vec3(1.0f, 1.0f, 0.0f)  // Yellow
                                       : glm::vec3(0.0f, 1.0f, 0.0f); // Green
 
         if (c.shape == Components::Collider::Shape::Box) {
-          // Draw Rotated Rect using Lines
-          glm::vec2 half = glm::vec2(c.size.x, c.size.y) * 0.5f;
+          // Apply Scale to Size
+          glm::vec2 scaledSize =
+              glm::vec2(c.size.x * t.scale.x, c.size.y * t.scale.y);
+          glm::vec2 half = scaledSize * 0.5f;
+
           // Corners in local space
           glm::vec2 p1 =
               RotateVec(glm::vec2(-half.x, -half.y), t.rotation) + pos;
@@ -1285,7 +1288,9 @@ void SandboxState::renderDebugColliders(Graphics::RenderingManager &renderer) {
           renderer.drawLine(p3.x, p3.y, p4.x, p4.y, color.r, color.g, color.b);
           renderer.drawLine(p4.x, p4.y, p1.x, p1.y, color.r, color.g, color.b);
         } else {
-          renderer.drawCircle(pos.x, pos.y, c.radius, color.r, color.g,
+          // Apply Scale to Radius (Max Scaling)
+          float scaledRadius = c.radius * std::max(t.scale.x, t.scale.y);
+          renderer.drawCircle(pos.x, pos.y, scaledRadius, color.r, color.g,
                               color.b);
         }
       });
@@ -1589,7 +1594,8 @@ void SandboxState::renderEntityWindow() {
     if (tag && !tag->tag.empty())
       snprintf(buf, bufSize, "%s (id %u)", tag->tag.c_str(), entity.id);
     else
-      snprintf(buf, bufSize, "Entity %u (gen %u)", entity.id, entity.generation);
+      snprintf(buf, bufSize, "Entity %u (gen %u)", entity.id,
+               entity.generation);
   };
 
   // Lambda: render a single entity row (returns entity to clone/delete via
@@ -1625,12 +1631,12 @@ void SandboxState::renderEntityWindow() {
       }
     } else {
       bool isMultiSelected = m_selectedEntities.count(testIdx) > 0;
-      bool isSelected = isMultiSelected ||
+      bool isSelected =
+          isMultiSelected ||
           (!m_editingGroup && m_selectedEntityIdx == testIdx && testIdx >= 0);
       float availWidth = ImGui::GetContentRegionAvail().x;
 
-      if (ImGui::Selectable(label, isSelected, 0,
-                            ImVec2(availWidth - 60, 0))) {
+      if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
         m_editingGroup = false;
         m_selectedGroupIdx = -1;
 
@@ -1710,7 +1716,8 @@ void SandboxState::renderEntityWindow() {
           outClone = testIdx;
           ImGui::CloseCurrentPopup();
         }
-        if (ImGui::Selectable(selCount > 1 ? "Delete All Selected" : "Delete")) {
+        if (ImGui::Selectable(selCount > 1 ? "Delete All Selected"
+                                           : "Delete")) {
           outDelete = testIdx; // handled below for multi-select
           ImGui::CloseCurrentPopup();
         }
@@ -1774,8 +1781,8 @@ void SandboxState::renderEntityWindow() {
 
     // Group header
     bool groupSelected = (m_editingGroup && m_selectedGroupIdx == g);
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
-                               ImGuiTreeNodeFlags_AllowOverlap;
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_AllowOverlap;
     if (groupSelected)
       flags |= ImGuiTreeNodeFlags_Selected;
     if (!group.collapsed)
@@ -1798,8 +1805,8 @@ void SandboxState::renderEntityWindow() {
       }
     } else {
       char groupLabel[128];
-      snprintf(groupLabel, sizeof(groupLabel), "%s (%zu)",
-               group.name.c_str(), group.entities.size());
+      snprintf(groupLabel, sizeof(groupLabel), "%s (%zu)", group.name.c_str(),
+               group.entities.size());
 
       bool nodeOpen = ImGui::TreeNodeEx(groupLabel, flags);
       group.collapsed = !nodeOpen;
@@ -1969,9 +1976,7 @@ void SandboxState::renderEntityWindow() {
   for (auto &group : m_entityGroups) {
     group.entities.erase(
         std::remove_if(group.entities.begin(), group.entities.end(),
-                       [&](const ECS::Entity &e) {
-                         return !world.isValid(e);
-                       }),
+                       [&](const ECS::Entity &e) { return !world.isValid(e); }),
         group.entities.end());
   }
 
@@ -2143,8 +2148,8 @@ void SandboxState::renderComponentWindow() {
   // --- Multi-select bulk editing ---
   if (!m_editingGroup && m_selectedEntities.size() > 1) {
     int selCount = static_cast<int>(m_selectedEntities.size());
-    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
-                       "%d entities selected", selCount);
+    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%d entities selected",
+                       selCount);
     ImGui::Separator();
 
     // Collect valid selected entities
@@ -2300,7 +2305,7 @@ void SandboxState::renderComponentWindow() {
         layerGroup->entities.push_back(entity);
       }
       ImGui::Text("Layer %d of %d (0 = back, %d = front)", layer,
-                   m_numLayers - 1, m_numLayers - 1);
+                  m_numLayers - 1, m_numLayers - 1);
 
       // Show current group membership
       int groupIdx = findGroupForEntity(entity);
@@ -2519,11 +2524,10 @@ void SandboxState::renderComponentWindow() {
           // Also apply pivot offset if Transform exists
           auto *t = world.getComponent<Components::Transform>(entity);
           if (t) {
-            // Renderer subtracts pivot from local pos.
-            // So visual center is at -pivot relative to Transform.position.
-            // Collider offset is added to Transform.position.
-            // So offset should be -pivot.
-            c->offset = -t->pivot;
+            // Collider offset should be zero because CollisionSystem now
+            // automatically subtracts the pivot from the offset to align with
+            // the sprite.
+            c->offset = {0.f, 0.f};
           }
         }
       }
@@ -3258,7 +3262,7 @@ void Runtime::SandboxState::renderToolbar() {
   ImGui::SameLine();
 
   ImGui::Checkbox("Show Grid", &m_showGrid);
-  ImGui::SameLine(); 
+  ImGui::SameLine();
   ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
   ImGui::Separator();
   ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
@@ -3380,7 +3384,8 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
         // Record in tilemap with layer and entity reference
         ECS::Entity spawned = m_testEntities.back();
         // Set sprite sortOrder to match layer for correct render order
-        auto *spr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(spawned);
+        auto *spr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(
+            spawned);
         if (spr)
           spr->sortOrder = m_currentLayer;
         m_tilemap.push_back(
@@ -4435,7 +4440,8 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
       // Record in tilemap with layer and entity
       ECS::Entity spawned = m_testEntities.back();
       // Set sprite sortOrder to match layer for correct render order
-      auto *spr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(spawned);
+      auto *spr =
+          m_scene.GetWorld().getComponent<Components::SpriteRenderer>(spawned);
       if (spr)
         spr->sortOrder = layer;
       m_tilemap.push_back({prefabName, position, layer, spawned});
@@ -4505,11 +4511,11 @@ SandboxState::EntityGroup *SandboxState::getOrCreateLayerGroup(int layer) {
 
 void SandboxState::removeEntityFromGroups(ECS::Entity entity) {
   for (auto &group : m_entityGroups) {
-    auto it = std::find_if(
-        group.entities.begin(), group.entities.end(),
-        [&](const ECS::Entity &e) {
-          return e.id == entity.id && e.generation == entity.generation;
-        });
+    auto it = std::find_if(group.entities.begin(), group.entities.end(),
+                           [&](const ECS::Entity &e) {
+                             return e.id == entity.id &&
+                                    e.generation == entity.generation;
+                           });
     if (it != group.entities.end()) {
       group.entities.erase(it);
       return;

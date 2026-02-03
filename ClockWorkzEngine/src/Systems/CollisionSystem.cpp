@@ -134,10 +134,13 @@ bool CollisionSystem::checkAABB(const Components::Transform &tA,
                                 const Components::Collider &cB,
                                 glm::vec2 &penetration) {
   // Calculate bounds A
-  glm::vec2 offsetA =
-      rotateVec(glm::vec2(cA.offset.x, cA.offset.y), tA.rotation);
-  float centerAX = tA.position.x + offsetA.x;
-  float centerAY = tA.position.y + offsetA.y;
+  // Offset logic: Effective Offset = Rotate(ColliderOffset - Pivot)
+  glm::vec2 effectiveOffsetA =
+      glm::vec2(cA.offset.x - tA.pivot.x, cA.offset.y - tA.pivot.y);
+  glm::vec2 rotatedOffsetA = rotateVec(effectiveOffsetA, tA.rotation);
+
+  float centerAX = tA.position.x + rotatedOffsetA.x;
+  float centerAY = tA.position.y + rotatedOffsetA.y;
 
   glm::vec2 sizeA(cA.size.x * tA.scale.x, cA.size.y * tA.scale.y);
 
@@ -147,10 +150,12 @@ bool CollisionSystem::checkAABB(const Components::Transform &tA,
   float bottomA = centerAY - sizeA.y * 0.5f;
 
   // Calculate bounds B
-  glm::vec2 offsetB =
-      rotateVec(glm::vec2(cB.offset.x, cB.offset.y), tB.rotation);
-  float centerBX = tB.position.x + offsetB.x;
-  float centerBY = tB.position.y + offsetB.y;
+  glm::vec2 effectiveOffsetB =
+      glm::vec2(cB.offset.x - tB.pivot.x, cB.offset.y - tB.pivot.y);
+  glm::vec2 rotatedOffsetB = rotateVec(effectiveOffsetB, tB.rotation);
+
+  float centerBX = tB.position.x + rotatedOffsetB.x;
+  float centerBY = tB.position.y + rotatedOffsetB.y;
 
   glm::vec2 sizeB(cB.size.x * tB.scale.x, cB.size.y * tB.scale.y);
 
@@ -195,12 +200,14 @@ bool CollisionSystem::checkCircleCircle(const Components::Transform &tA,
                                         const Components::Transform &tB,
                                         const Components::Collider &cB,
                                         glm::vec2 &penetration) {
-  glm::vec2 offsetA =
-      rotateVec(glm::vec2(cA.offset.x, cA.offset.y), tA.rotation);
+  glm::vec2 effectiveOffsetA =
+      glm::vec2(cA.offset.x - tA.pivot.x, cA.offset.y - tA.pivot.y);
+  glm::vec2 offsetA = rotateVec(effectiveOffsetA, tA.rotation);
   glm::vec2 centerA = glm::vec2(tA.position.x, tA.position.y) + offsetA;
 
-  glm::vec2 offsetB =
-      rotateVec(glm::vec2(cB.offset.x, cB.offset.y), tB.rotation);
+  glm::vec2 effectiveOffsetB =
+      glm::vec2(cB.offset.x - tB.pivot.x, cB.offset.y - tB.pivot.y);
+  glm::vec2 offsetB = rotateVec(effectiveOffsetB, tB.rotation);
   glm::vec2 centerB = glm::vec2(tB.position.x, tB.position.y) + offsetB;
 
   glm::vec2 diff = centerA - centerB;
@@ -233,8 +240,9 @@ bool CollisionSystem::checkAABBCircle(const Components::Transform &tBox,
                                       const Components::Collider &cCirc,
                                       glm::vec2 &penetration) {
   // Box center and half-extents
-  glm::vec2 offsetBox =
-      rotateVec(glm::vec2(cBox.offset.x, cBox.offset.y), tBox.rotation);
+  glm::vec2 effectiveOffsetBox =
+      glm::vec2(cBox.offset.x - tBox.pivot.x, cBox.offset.y - tBox.pivot.y);
+  glm::vec2 offsetBox = rotateVec(effectiveOffsetBox, tBox.rotation);
   glm::vec2 boxCenter = glm::vec2(tBox.position.x, tBox.position.y) + offsetBox;
 
   glm::vec2 sizeBox(cBox.size.x * tBox.scale.x, cBox.size.y * tBox.scale.y);
@@ -244,8 +252,9 @@ bool CollisionSystem::checkAABBCircle(const Components::Transform &tBox,
   glm::vec2 boxMax = boxCenter + boxHalf;
 
   // Circle center
-  glm::vec2 offsetCirc =
-      rotateVec(glm::vec2(cCirc.offset.x, cCirc.offset.y), tCirc.rotation);
+  glm::vec2 effectiveOffsetCirc =
+      glm::vec2(cCirc.offset.x - tCirc.pivot.x, cCirc.offset.y - tCirc.pivot.y);
+  glm::vec2 offsetCirc = rotateVec(effectiveOffsetCirc, tCirc.rotation);
   glm::vec2 circCenter =
       glm::vec2(tCirc.position.x, tCirc.position.y) + offsetCirc;
 

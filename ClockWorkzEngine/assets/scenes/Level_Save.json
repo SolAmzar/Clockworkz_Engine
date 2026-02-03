@@ -109,19 +109,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 31.0,
+                    "height": 100.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 100.0,
-                        "y": -0.0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 200.0
+                    "width": 100.0
                 },
                 "doorSwing": {
                     "clockwise": true,
@@ -173,27 +173,13 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 0.0,
-                    "shape": 0,
-                    "width": 100.0
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
+                        "a": 0.0,
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
@@ -202,8 +188,8 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
-                    "textureId": "wall_texture",
+                    "sortOrder": 0,
+                    "textureId": "fragment_texture",
                     "uv": [
                         0.0,
                         0.0,
@@ -218,8 +204,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 100.0,
-                        "y": 101.59027099609375
+                        "x": -48.0,
+                        "y": -5.605249881744385
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -228,7 +214,7 @@
                     }
                 }
             },
-            "name": "Entity_1"
+            "name": "Fragment 2"
         },
         {
             "active": true,
@@ -389,8 +375,8 @@
                     "sortOrder": 2,
                     "textureId": "monster_texture",
                     "uv": [
+                        0.5,
                         0.25,
-                        0.0,
                         0.25,
                         0.25
                     ],
@@ -402,8 +388,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -927.1712646484375,
-                        "y": -90.45986938476563
+                        "x": -1159.066650390625,
+                        "y": -2.764181137084961
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -413,8 +399,8 @@
                 },
                 "velocity": {
                     "moveSpeed": 50.0,
-                    "x": 0.7758567333221436,
-                    "y": 0.6309091448783875
+                    "x": 0.6908736824989319,
+                    "y": -0.722975492477417
                 }
             },
             "name": "Enemy Test"
@@ -454,7 +440,7 @@
                     },
                     "position": {
                         "x": 101.0,
-                        "y": 364.760498046875
+                        "y": 358.9187927246094
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -1248,7 +1234,7 @@
                     "width": 100.0
                 },
                 "fragmentCollector": {
-                    "collectedCount": 3,
+                    "collectedCount": 0,
                     "pickupRadius": 50.0,
                     "requiredFragments": 10
                 },
@@ -1304,7 +1290,7 @@
                         "x": -421.2506408691406,
                         "y": 141.1156463623047
                     },
-                    "rotation": 2.218437671661377,
+                    "rotation": 2.5007717609405518,
                     "scale": {
                         "x": 1.5,
                         "y": 1.5
@@ -1557,6 +1543,52 @@
                 }
             },
             "name": "Wall Horizontal"
+        },
+        {
+            "active": true,
+            "components": {
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragment_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -193.0,
+                        "y": -5.605249881744385
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Fragement 1"
         }
     ]
 }

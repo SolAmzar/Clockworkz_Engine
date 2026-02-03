@@ -120,8 +120,19 @@ void LightExposureSystem::update(ECS::World &world, double dt) {
               if (light.inLight)
                 return;
 
+              // Helper for rotation
+              auto rotateVec = [](vec2 v, float angle) {
+                float c = std::cos(angle);
+                float s = std::sin(angle);
+                return vec2{v.x * c - v.y * s, v.x * s + v.y * c};
+              };
+
               // Calculate Target AABB Center
-              vec2 targetCenter = targetTrans.position + targetCol.offset;
+              // Center = Position + Rotate(Collider.Offset - Pivot)
+              vec2 effectiveOffset = targetCol.offset - targetTrans.pivot;
+              vec2 rotatedOffset =
+                  rotateVec(effectiveOffset, targetTrans.rotation);
+              vec2 targetCenter = targetTrans.position + rotatedOffset;
 
               // We check 5 points: Center + 4 Corners of the AABB
               // If ANY point is in the cone, the object is lit.
@@ -173,7 +184,11 @@ void LightExposureSystem::update(ECS::World &world, double dt) {
                         return; // Only solid objects block light
 
                       // Calculate Obstacle AABB
-                      vec2 obsCenter = obsTrans.position + obsCol.offset;
+                      vec2 obsEffectiveOffset = obsCol.offset - obsTrans.pivot;
+                      vec2 obsRotatedOffset =
+                          rotateVec(obsEffectiveOffset, obsTrans.rotation);
+                      vec2 obsCenter = obsTrans.position + obsRotatedOffset;
+
                       vec2 obsHalf = obsCol.size * 0.5f;
                       vec2 obsMin = obsCenter - obsHalf;
                       vec2 obsMax = obsCenter + obsHalf;
