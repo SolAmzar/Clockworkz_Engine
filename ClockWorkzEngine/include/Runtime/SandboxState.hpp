@@ -157,6 +157,7 @@ private:
   // Tilemap painting
   enum class PaintMode { Paint, Erase, Select };
   PaintMode m_paintMode = PaintMode::Paint;
+  bool m_paintedThisFrame = false; // Track if we painted/erased this frame to block selection
 
   // Game Logic State
   // float m_playerDeathTimer{-1.f}; // Moved to Scene
