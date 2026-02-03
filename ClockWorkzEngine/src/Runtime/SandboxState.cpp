@@ -17,6 +17,7 @@ reserved.
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <cctype>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Assets/FontManager.hpp"
@@ -143,15 +144,41 @@ void SandboxState::update(double dt) {
     checkAssetHotReload();
   }
 
-  // Handle OS file drops (textures dragged onto the window)
+  // Handle OS file drops (textures/audio dragged onto the window)
   {
     auto &window = Core::Engine::Get().window();
     auto dropped = window.consumeDroppedFiles();
     for (const auto &path : dropped) {
       namespace fs = std::filesystem;
       fs::path filePath(path);
-      if (filePath.extension() == ".png" || filePath.extension() == ".jpg") {
-        std::string name = filePath.stem().string();
+      std::string ext = filePath.extension().string();
+      std::transform(ext.begin(), ext.end(), ext.begin(),
+                     [](unsigned char c) { return (char)std::tolower(c); });
+
+      auto makeUniqueName = [](const std::string &base,
+                               auto isLoadedFn) -> std::string {
+        if (!isLoadedFn(base))
+          return base;
+        for (int i = 1; i < 10000; ++i) {
+          std::string candidate = base + "_" + std::to_string(i);
+          if (!isLoadedFn(candidate))
+            return candidate;
+        }
+        return base + "_copy";
+      };
+
+      const bool isImage = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
+                            ext == ".bmp" || ext == ".tga");
+      const bool isAudio = (ext == ".wav" || ext == ".mp3" || ext == ".ogg" ||
+                            ext == ".flac" || ext == ".aiff" || ext == ".aif");
+
+      if (isImage) {
+        std::string baseName = filePath.stem().string();
+        std::string name = makeUniqueName(
+            baseName, [](const std::string &n) {
+              return Assets::TextureManager::IsLoaded(n);
+            });
+
         auto loaded = Assets::TextureManager::LoadTexture(name, path);
         if (loaded) {
           m_textureFilePaths[name] = path;
@@ -161,6 +188,27 @@ void SandboxState::update(double dt) {
           std::cout << "[Sandbox] Loaded dropped texture: " << name << " from "
                     << path << std::endl;
         }
+      } else if (isAudio) {
+        std::string baseName = filePath.stem().string();
+        std::string name = makeUniqueName(
+            baseName, [](const std::string &n) {
+              return Assets::SoundManager::IsLoaded(n);
+            });
+
+        auto clip = Assets::SoundManager::LoadSound(name, path);
+        if (clip) {
+          std::cout << "[Sandbox] Loaded dropped sound: " << name << " from "
+                    << path << std::endl;
+        } else {
+          std::cerr << "[Sandbox] Failed to load dropped sound: " << path
+                    << std::endl;
+        }
+      } else {
+        std::cout << "[Sandbox] Dropped file ignored (unsupported type): "
+                  << path << std::endl;
+        m_showUnsupportedDropPopup = true;
+        m_unsupportedDropPath = path;
+        m_unsupportedDropExt = ext.empty() ? "(no extension)" : ext;
       }
     }
   }
@@ -1317,11 +1365,32 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderPrefabEditor();
   renderTilePalette();
   renderUndoRedoPanel();
+  renderUnsupportedDropPopup();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
 
   (void)timer;
+}
+
+void SandboxState::renderUnsupportedDropPopup() {
+  if (!m_showUnsupportedDropPopup)
+    return;
+
+  ImGui::OpenPopup("Unsupported File Type");
+  if (ImGui::BeginPopupModal("Unsupported File Type", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::TextWrapped("This file type isn't accepted.");
+    ImGui::Separator();
+    ImGui::TextWrapped("File: %s", m_unsupportedDropPath.c_str());
+    ImGui::Text("Extension: %s", m_unsupportedDropExt.c_str());
+    ImGui::Separator();
+    if (ImGui::Button("OK", ImVec2(120, 0))) {
+      m_showUnsupportedDropPopup = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
 }
 
 void SandboxState::renderEntityWindow() {

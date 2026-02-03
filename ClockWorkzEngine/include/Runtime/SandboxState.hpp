@@ -259,6 +259,12 @@ private:
   // Add Asset popup buffers
   char m_newAssetNameBuffer[128]{};
   char m_newAssetPathBuffer[256]{};
+
+  // Unsupported file drop popup
+  bool m_showUnsupportedDropPopup{false};
+  std::string m_unsupportedDropPath;
+  std::string m_unsupportedDropExt;
+  void renderUnsupportedDropPopup();
 };
 
 } // namespace Runtime
