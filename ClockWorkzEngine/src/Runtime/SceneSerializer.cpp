@@ -21,7 +21,6 @@ reserved.
 #include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
 
-
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/PlayerController.hpp"
@@ -55,196 +54,205 @@ void SceneSerializer::Serialize(ECS::World &world,
     obj["active"] = true; // Assuming all serialized entities are active for now
 
     std::string name = "Entity_" + std::to_string(entity.id);
+
     if (auto *tag = world.getComponent<Components::Tag>(entity)) {
       name = tag->tag;
-    }
-    obj["name"] = name;
-    obj["components"] = json::object();
+      obj["name"] = name;
+      obj["components"] = json::object();
 
-    // Transform
-    obj["components"]["transform"] = {
-        {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
-        {"rotation", tc.rotation},
-        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
-        {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
+      // Transform
+      obj["components"]["transform"] = {
+          {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
+          {"rotation", tc.rotation},
+          {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
+          {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
 
-    // Velocity
-    if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
-      obj["components"]["velocity"] = {{"x", vel->velocity.x},
-                                       {"y", vel->velocity.y},
-                                       {"moveSpeed", vel->moveSpeed}};
-    }
-
-    // SpriteRenderer
-    if (auto *sc = world.getComponent<Components::SpriteRenderer>(entity)) {
-      obj["components"]["spriteRenderer"] = {
-          {"textureId", sc->textureId},
-          {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}},
-          {"size", {{"x", sc->size.x}, {"y", sc->size.y}}},
-          {"color", {{"r", sc->color.r}, {"g", sc->color.g}, {"b", sc->color.b}, {"a", sc->color.a}}},
-          {"visible", sc->visible},
-          {"sortOrder", sc->sortOrder}
-      };
-    }
-
-    // SpriteAnimator
-    if (auto *sac = world.getComponent<Components::SpriteAnimator>(entity)) {
-      if (!sac->filename.empty()) {
-        std::string fname = sac->filename;
-        std::string prefix = "assets/animations/";
-        size_t pos = fname.find(prefix);
-        if (pos != std::string::npos) {
-          fname = fname.substr(pos + prefix.length());
-        }
-        obj["components"]["spriteAnimator"] = {{"filename", fname}};
+      // Velocity
+      if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
+        obj["components"]["velocity"] = {{"x", vel->velocity.x},
+                                         {"y", vel->velocity.y},
+                                         {"moveSpeed", vel->moveSpeed}};
       }
-    }
 
-    // AudioSource
-    if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
-      obj["components"]["audioSource"] = {
-          {"soundId", ac->soundId}, {"volume", ac->volume}, {"loop", ac->loop}};
-    }
+      // SpriteRenderer
+      if (auto *sc = world.getComponent<Components::SpriteRenderer>(entity)) {
+        obj["components"]["spriteRenderer"] = {
+            {"textureId", sc->textureId},
+            {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}},
+            {"size", {{"x", sc->size.x}, {"y", sc->size.y}}},
+            {"color",
+             {{"r", sc->color.r},
+              {"g", sc->color.g},
+              {"b", sc->color.b},
+              {"a", sc->color.a}}},
+            {"visible", sc->visible},
+            {"sortOrder", sc->sortOrder}};
+      }
 
-    // ActivationZone
-    if (auto *zone = world.getComponent<Components::ActivationZone>(entity)) {
-      obj["components"]["activationZone"] = {
-          {"active", zone->active},
-          {"actionType", (int)zone->actionType},
-          {"payload", zone->payload},
-          {"oneShot", zone->oneShot},
-          {"triggered", zone->triggered}};
-    }
+      // SpriteAnimator
+      if (auto *sac = world.getComponent<Components::SpriteAnimator>(entity)) {
+        if (!sac->filename.empty()) {
+          std::string fname = sac->filename;
+          std::string prefix = "assets/animations/";
+          size_t pos = fname.find(prefix);
+          if (pos != std::string::npos) {
+            fname = fname.substr(pos + prefix.length());
+          }
+          obj["components"]["spriteAnimator"] = {{"filename", fname}};
+        }
+      }
 
-    // EnemyAI
-    if (auto *ai = world.getComponent<Components::EnemyAI>(entity)) {
-      obj["components"]["enemyAI"] = {{"detectionRadius", ai->detectionRadius},
-                                      {"chaseSpeed", ai->chaseSpeed},
-                                      {"patrolSpeed", ai->patrolSpeed}};
-    }
+      // AudioSource
+      if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
+        obj["components"]["audioSource"] = {{"soundId", ac->soundId},
+                                            {"volume", ac->volume},
+                                            {"loop", ac->loop}};
+      }
 
-    // StateMachine
-    if (auto *sm = world.getComponent<Components::StateMachine>(entity)) {
-      obj["components"]["stateMachine"] = {{"currentState", sm->currentState}};
-    }
+      // ActivationZone
+      if (auto *zone = world.getComponent<Components::ActivationZone>(entity)) {
+        obj["components"]["activationZone"] = {
+            {"active", zone->active},
+            {"actionType", (int)zone->actionType},
+            {"payload", zone->payload},
+            {"oneShot", zone->oneShot},
+            {"triggered", zone->triggered}};
+      }
 
-    // PlayerController
-    if (auto *pc = world.getComponent<Components::PlayerController>(entity)) {
-      obj["components"]["playerController"] = {
-          {"walkMultiplier", pc->walkMultiplier},
-          {"sprintMultiplier", pc->sprintMultiplier}};
-    }
+      // EnemyAI
+      if (auto *ai = world.getComponent<Components::EnemyAI>(entity)) {
+        obj["components"]["enemyAI"] = {
+            {"detectionRadius", ai->detectionRadius},
+            {"chaseSpeed", ai->chaseSpeed},
+            {"patrolSpeed", ai->patrolSpeed}};
+      }
 
-    // Collider
-    if (auto *cc = world.getComponent<Components::Collider>(entity)) {
-      obj["components"]["collider"] = {
-          {"width", cc->size.x},
-          {"height", cc->size.y},
-          {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}},
-          {"shape", (int)cc->shape},
-          {"radius", cc->radius},
-          {"isSolid", cc->isSolid},
-          {"blocksLight", cc->blocksLight},
-          {"isHazard", cc->isHazard},
-          {"isTrigger", cc->isTrigger},
-          {"moveable", cc->moveable},
-          {"collisionCategory", cc->collisionCategory},
-          {"collisionMask", cc->collisionMask},
-          {"mass", cc->mass}};
-    }
+      // StateMachine
+      if (auto *sm = world.getComponent<Components::StateMachine>(entity)) {
+        obj["components"]["stateMachine"] = {
+            {"currentState", sm->currentState}};
+      }
 
-    // Door
-    if (auto *door = world.getComponent<Components::Door>(entity)) {
-      obj["components"]["door"] = {
-          {"requiredFragments", door->requiredFragments},
-          {"isOpen", door->isOpen},
-          {"openTexture", door->openTexture},
-          {"closedTexture", door->closedTexture}};
-    }
+      // PlayerController
+      if (auto *pc = world.getComponent<Components::PlayerController>(entity)) {
+        obj["components"]["playerController"] = {
+            {"walkMultiplier", pc->walkMultiplier},
+            {"sprintMultiplier", pc->sprintMultiplier}};
+      }
 
-    // DoorSwing
-    if (auto *ds = world.getComponent<Components::DoorSwing>(entity)) {
-      obj["components"]["doorSwing"] = {
-          {"isOpen", ds->isOpen},
-          {"swingAngle", ds->swingAngle},
-          {"clockwise", ds->clockwise},
-          {"speed", ds->speed},
-          {"initialRotation", ds->initialRotation},
-          {"initialized", ds->initialized}};
-    }
+      // Collider
+      if (auto *cc = world.getComponent<Components::Collider>(entity)) {
+        obj["components"]["collider"] = {
+            {"width", cc->size.x},
+            {"height", cc->size.y},
+            {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}},
+            {"shape", (int)cc->shape},
+            {"radius", cc->radius},
+            {"isSolid", cc->isSolid},
+            {"blocksLight", cc->blocksLight},
+            {"isHazard", cc->isHazard},
+            {"isTrigger", cc->isTrigger},
+            {"moveable", cc->moveable},
+            {"collisionCategory", cc->collisionCategory},
+            {"collisionMask", cc->collisionMask},
+            {"mass", cc->mass}};
+      }
 
-    // Battery
-    if (auto *bat = world.getComponent<Components::Battery>(entity)) {
-      obj["components"]["battery"] = {{"charge", bat->charge},
-                                      {"maxCharge", bat->maxCharge},
-                                      {"isCharging", bat->isCharging}};
-    }
+      // Door
+      if (auto *door = world.getComponent<Components::Door>(entity)) {
+        obj["components"]["door"] = {
+            {"requiredFragments", door->requiredFragments},
+            {"isOpen", door->isOpen},
+            {"openTexture", door->openTexture},
+            {"closedTexture", door->closedTexture}};
+      }
 
-    // Fragment
-    if (auto *fc = world.getComponent<Components::Fragment>(entity)) {
-      obj["components"]["fragment"] = {
-          {"fragmentId",
-           fc->fragmentId}, // Note: JSON uses int, ensure type match
-          {"collected", fc->collected}
-          // bob info usually not serialized if purely visual/runtime
-      };
-    }
+      // DoorSwing
+      if (auto *ds = world.getComponent<Components::DoorSwing>(entity)) {
+        obj["components"]["doorSwing"] = {
+            {"isOpen", ds->isOpen},
+            {"swingAngle", ds->swingAngle},
+            {"clockwise", ds->clockwise},
+            {"speed", ds->speed},
+            {"initialRotation", ds->initialRotation},
+            {"initialized", ds->initialized}};
+      }
 
-    // FragmentCollector
-    if (auto *fcc = world.getComponent<Components::FragmentCollector>(entity)) {
-      obj["components"]["fragmentCollector"] = {
-          {"requiredFragments", fcc->requiredFragments},
-          {"collectedCount", fcc->collectedCount},
-          {"pickupRadius", fcc->pickupRadius}};
-    }
+      // Battery
+      if (auto *bat = world.getComponent<Components::Battery>(entity)) {
+        obj["components"]["battery"] = {{"charge", bat->charge},
+                                        {"maxCharge", bat->maxCharge},
+                                        {"isCharging", bat->isCharging}};
+      }
 
-    // TorchComponent
-    if (auto *torch = world.getComponent<Components::TorchComponent>(entity)) {
-      obj["components"]["torch"] = {
-          {"active", torch->active},
-          {"offset", {{"x", torch->offset.x}, {"y", torch->offset.y}}},
-          {"color",
-           {{"r", torch->color.r},
-            {"g", torch->color.g},
-            {"b", torch->color.b}}},
-          {"radius", torch->radius},
-          {"angle", torch->angle},
-          {"intensity", torch->intensity}};
-    }
+      // Fragment
+      if (auto *fc = world.getComponent<Components::Fragment>(entity)) {
+        obj["components"]["fragment"] = {
+            {"fragmentId",
+             fc->fragmentId}, // Note: JSON uses int, ensure type match
+            {"collected", fc->collected}
+            // bob info usually not serialized if purely visual/runtime
+        };
+      }
 
-    // ParticleEmitter
-    if (auto *pe = world.getComponent<Components::ParticleEmitter>(entity)) {
-      auto &sys = pe->system();
-      obj["components"]["particleEmitter"] = {
-          {"active", pe->active()},
-          {"rate", sys.rate},
-          {"lifeMin", sys.lifeMin},
-          {"lifeMax", sys.lifeMax},
-          {"speedMin", sys.speedMin},
-          {"speedMax", sys.speedMax},
-          {"sizeStart", sys.sizeStart},
-          {"sizeEnd", sys.sizeEnd},
-          {"colorStart",
-           {{"r", sys.colorStart.r},
-            {"g", sys.colorStart.g},
-            {"b", sys.colorStart.b},
-            {"a", sys.colorStart.a}}},
-          {"colorEnd",
-           {{"r", sys.colorEnd.r},
-            {"g", sys.colorEnd.g},
-            {"b", sys.colorEnd.b},
-            {"a", sys.colorEnd.a}}},
-          {"spreadDeg", sys.spreadDeg},
-          {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
-          {"acceleration",
-           {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
-          {"looping", sys.looping},
-          {"worldSpace", sys.worldSpace},
-          {"localOffset",
-           {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
-    }
+      // FragmentCollector
+      if (auto *fcc =
+              world.getComponent<Components::FragmentCollector>(entity)) {
+        obj["components"]["fragmentCollector"] = {
+            {"requiredFragments", fcc->requiredFragments},
+            {"collectedCount", fcc->collectedCount},
+            {"pickupRadius", fcc->pickupRadius}};
+      }
 
-    root["objects"].push_back(obj);
+      // TorchComponent
+      if (auto *torch =
+              world.getComponent<Components::TorchComponent>(entity)) {
+        obj["components"]["torch"] = {
+            {"active", torch->active},
+            {"offset", {{"x", torch->offset.x}, {"y", torch->offset.y}}},
+            {"color",
+             {{"r", torch->color.r},
+              {"g", torch->color.g},
+              {"b", torch->color.b}}},
+            {"radius", torch->radius},
+            {"angle", torch->angle},
+            {"intensity", torch->intensity}};
+      }
+
+      // ParticleEmitter
+      if (auto *pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+        auto &sys = pe->system();
+        obj["components"]["particleEmitter"] = {
+            {"active", pe->active()},
+            {"rate", sys.rate},
+            {"lifeMin", sys.lifeMin},
+            {"lifeMax", sys.lifeMax},
+            {"speedMin", sys.speedMin},
+            {"speedMax", sys.speedMax},
+            {"sizeStart", sys.sizeStart},
+            {"sizeEnd", sys.sizeEnd},
+            {"colorStart",
+             {{"r", sys.colorStart.r},
+              {"g", sys.colorStart.g},
+              {"b", sys.colorStart.b},
+              {"a", sys.colorStart.a}}},
+            {"colorEnd",
+             {{"r", sys.colorEnd.r},
+              {"g", sys.colorEnd.g},
+              {"b", sys.colorEnd.b},
+              {"a", sys.colorEnd.a}}},
+            {"spreadDeg", sys.spreadDeg},
+            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+            {"acceleration",
+             {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+            {"looping", sys.looping},
+            {"worldSpace", sys.worldSpace},
+            {"localOffset",
+             {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
+      }
+
+      root["objects"].push_back(obj);
+    }
   });
 
   std::ofstream fout(filepath);
@@ -266,7 +274,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
 
       // Retrieve name if available (can store in a Tag component later)
       std::string name = obj.value("name", "Entity");
-      // TODO: Add TagComponent(name)
+      world.addComponent(entity, Components::Tag{name});
 
       auto components = obj["components"];
 
