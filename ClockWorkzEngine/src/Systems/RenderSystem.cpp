@@ -40,10 +40,10 @@ void RenderSystem::update(ECS::World &world,
         entries.push_back({&transform, &sprite});
       });
 
-  // Sort: higher sortOrder rendered first (behind), lower sortOrder on top
+  // Sort: lower sortOrder (layer) rendered first (behind), higher on top
   std::sort(entries.begin(), entries.end(),
             [](const RenderEntry &a, const RenderEntry &b) {
-              return a.sprite->sortOrder > b.sprite->sortOrder;
+              return a.sprite->sortOrder < b.sprite->sortOrder;
             });
 
   // Render in sorted order

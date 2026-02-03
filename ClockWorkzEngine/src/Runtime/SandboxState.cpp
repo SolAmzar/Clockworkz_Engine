@@ -65,6 +65,7 @@ reserved.
 #pragma warning(pop)
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -1407,8 +1408,13 @@ void SandboxState::renderEntityWindow() {
 
   if (ImGui::Button("Load Level")) {
     m_scene.Clear();
-    m_testEntities.clear(); // Clear old tracked entities
+    m_testEntities.clear();
     m_tilemap.clear();
+    m_entityGroups.clear();
+    m_selectedGroupIdx = -1;
+    m_editingGroup = false;
+    m_selectedEntities.clear();
+    m_lastClickedEntityIdx = -1;
 
     std::string path = "assets/scenes/" + std::string(currentLevelName);
     if (SceneSerializer::Deserialize(world, path)) {
@@ -1416,8 +1422,14 @@ void SandboxState::renderEntityWindow() {
       world.each<Components::Transform>(
           [&](ECS::Entity entity, Components::Transform &trans) {
             m_testEntities.push_back(entity);
-            m_tilemap.push_back({"", trans.position, 0, entity});
+            // Use sprite sortOrder as layer if available
+            int layer = 0;
+            auto *spr = world.getComponent<Components::SpriteRenderer>(entity);
+            if (spr)
+              layer = spr->sortOrder;
+            m_tilemap.push_back({"", trans.position, layer, entity});
           });
+      rebuildGroupsFromTilemap();
     } else {
       ImGui::OpenPopup("LoadError");
     }
@@ -1469,126 +1481,359 @@ void SandboxState::renderEntityWindow() {
 
   // ImGui::SameLine();
   if (ImGui::Button("Clear All")) {
-    m_scene.Clear(); // Use Scene Clear
-    // Also clear test entities vector if tracked?
-    // Actually Scene::Clear might not clear m_testEntities in SandboxState.
-    // We generated m_testEntities locally.
-    // But deserialization probably adds to world directly and m_testEntities
-    // doesn't track them. This local tracking is legacy. Let's iterate world
-    // to destroy? Use a quick loop: This is just a debug tool. For now,
-    // assume Scene::Clear works or just skip. But since I updated Scene.cpp
-    // to have empty Clear(), I should implement it properly there or loop
-    // here. Let's rely on world.destroyEntity loop I wrote before, but
-    // adapted. Or better: Scene should implement `Clear` properly. I'll leave
-    // the button doing nothing useful for now or rely on reload.
+    m_scene.Clear();
     m_testEntities.clear();
+    m_entityGroups.clear();
+    m_selectedGroupIdx = -1;
+    m_editingGroup = false;
+    m_selectedEntities.clear();
+    m_lastClickedEntityIdx = -1;
   }
 
   ImGui::Separator();
   ImGui::Text("Entity List:");
-  ImGui::Text("%zu entities", m_testEntities.size());
+  ImGui::Text("%zu entities, %zu groups", m_testEntities.size(),
+              m_entityGroups.size());
 
-  // Scrollable entity list
-  ImGui::BeginChild("EntityList", ImVec2(0, 200), true);
+  // New Group button
+  ImGui::SameLine();
+  if (ImGui::Button("+ Group")) {
+    m_entityGroups.push_back(
+        {"Group " + std::to_string(m_entityGroups.size()), {}, false});
+  }
 
-  int entityToClone = -1;
-  int entityToDelete = -1;
+  // Scrollable entity list with groups
+  ImGui::BeginChild("EntityList", ImVec2(0, 300), true);
 
-  for (size_t i = 0; i < m_testEntities.size(); ++i) {
-    auto entity = m_testEntities[i];
+  // Lambda: build entity label
+  auto makeLabel = [&](ECS::Entity entity, char *buf, size_t bufSize) {
+    auto *tag = world.getComponent<Components::Tag>(entity);
+    if (tag && !tag->tag.empty())
+      snprintf(buf, bufSize, "%s (id %u)", tag->tag.c_str(), entity.id);
+    else
+      snprintf(buf, bufSize, "Entity %u (gen %u)", entity.id, entity.generation);
+  };
 
-    ImGui::PushID(static_cast<int>(i));
+  // Lambda: render a single entity row (returns entity to clone/delete via
+  // out-params)
+  auto renderEntityRow = [&](ECS::Entity entity, int testIdx, int &outClone,
+                             int &outDelete) {
+    ImGui::PushID(static_cast<int>(entity.id) * 1000 +
+                  static_cast<int>(entity.generation));
 
     char label[64];
-    auto *tag = m_scene.GetWorld().getComponent<Components::Tag>(entity);
-    if (tag && !tag->tag.empty()) {
-      snprintf(label, sizeof(label), "%s (id %u)", tag->tag.c_str(), entity.id);
-    } else {
-      snprintf(label, sizeof(label), "Entity %u (gen %u)", entity.id,
-               entity.generation);
-    }
+    makeLabel(entity, label, sizeof(label));
 
-    // Renaming Logic
-    if (m_renamingEntityIdx == (int)i) {
-      // Set keyboard focus when first entering rename mode
-      if (ImGui::IsWindowAppearing() || m_renameBuffer[0] == '\0') {
-        // This condition is a bit loose but InputText will take focus if
-        // SetKeyboardFocusHere is called
-      }
-      // Actually we just need to ensure focus once.
-      // But simplifying: rely on auto-focus or user click.
-      // Better: Use SetKeyboardFocusHere(-1) on the exact frame we started?
-      // We can't easily detect "start frame" here without another flag.
-      // Let's just render InputText.
+    auto *tag = world.getComponent<Components::Tag>(entity);
 
-      // Auto-focus if we just switched (we can check if buffer is empty? No, we
-      // populate it). Let's just rely on the user typing. Actually, standard
-      // behavior:
-
+    // Renaming
+    if (m_renamingEntityIdx == testIdx && testIdx >= 0) {
       ImGui::SetKeyboardFocusHere();
       if (ImGui::InputText("##rename", m_renameBuffer, sizeof(m_renameBuffer),
                            ImGuiInputTextFlags_EnterReturnsTrue |
                                ImGuiInputTextFlags_AutoSelectAll)) {
-        // Apply Rename
-        if (tag) {
+        if (tag)
           tag->tag = std::string(m_renameBuffer);
-        } else {
-          // Create if missing (shouldn't happen with new spawn logic, but safe)
+        else
           world.addComponent(entity, Components::Tag{m_renameBuffer});
-        }
         m_renamingEntityIdx = -1;
       }
-
-      // Cancel on Escape or Click Away (Check focus lost?)
       if (!ImGui::IsItemActive() &&
           (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) {
-        // Apply or Cancel? Usually Apply.
         if (tag)
           tag->tag = std::string(m_renameBuffer);
         m_renamingEntityIdx = -1;
       }
     } else {
-      // Selection Logic
-      bool isSelected = (m_selectedEntityIdx == (int)i);
+      bool isMultiSelected = m_selectedEntities.count(testIdx) > 0;
+      bool isSelected = isMultiSelected ||
+          (!m_editingGroup && m_selectedEntityIdx == testIdx && testIdx >= 0);
       float availWidth = ImGui::GetContentRegionAvail().x;
 
-      // Limit Selectable width to leave room for buttons (approx 60px)
-      if (ImGui::Selectable(label, isSelected, 0, ImVec2(availWidth - 60, 0))) {
-        m_selectedEntityIdx = (int)i;
+      if (ImGui::Selectable(label, isSelected, 0,
+                            ImVec2(availWidth - 60, 0))) {
+        m_editingGroup = false;
+        m_selectedGroupIdx = -1;
+
+        bool shift = ImGui::GetIO().KeyShift;
+        bool ctrl = ImGui::GetIO().KeyCtrl;
+
+        if (shift && m_lastClickedEntityIdx >= 0 && testIdx >= 0) {
+          // Shift+Click: select range from last clicked to this one
+          int lo = std::min(m_lastClickedEntityIdx, testIdx);
+          int hi = std::max(m_lastClickedEntityIdx, testIdx);
+          if (!ctrl)
+            m_selectedEntities.clear();
+          for (int r = lo; r <= hi; ++r)
+            m_selectedEntities.insert(r);
+          m_selectedEntityIdx = testIdx;
+        } else if (ctrl) {
+          // Ctrl+Click: toggle this entity in/out of selection
+          if (m_selectedEntities.count(testIdx))
+            m_selectedEntities.erase(testIdx);
+          else
+            m_selectedEntities.insert(testIdx);
+          m_selectedEntityIdx = testIdx;
+          m_lastClickedEntityIdx = testIdx;
+        } else {
+          // Normal click: single select
+          m_selectedEntities.clear();
+          m_selectedEntities.insert(testIdx);
+          m_selectedEntityIdx = testIdx;
+          m_lastClickedEntityIdx = testIdx;
+        }
       }
 
-      // Right Click Context Menu
+      // Drag source: drag all selected entities (or just this one)
+      if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+        // Make sure the dragged entity is part of the selection
+        if (m_selectedEntities.empty() || !m_selectedEntities.count(testIdx)) {
+          m_selectedEntities.clear();
+          m_selectedEntities.insert(testIdx);
+          m_selectedEntityIdx = testIdx;
+        }
+        // Payload: send count of selected entities as marker
+        // (actual entities read from m_selectedEntities on drop)
+        int selCount = static_cast<int>(m_selectedEntities.size());
+        ImGui::SetDragDropPayload("ENTITY_MULTI_DND", &selCount, sizeof(int));
+        if (selCount == 1) {
+          ImGui::Text("Move: %s", label);
+        } else {
+          ImGui::Text("Move %d entities", selCount);
+        }
+        ImGui::EndDragDropSource();
+      }
+
+      // Right click context menu
       if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::Selectable("Rename")) {
-          m_renamingEntityIdx = (int)i;
-          // Populate buffer
+        // If right-clicking an unselected entity, select just it
+        if (!m_selectedEntities.count(testIdx)) {
+          m_selectedEntities.clear();
+          m_selectedEntities.insert(testIdx);
+          m_selectedEntityIdx = testIdx;
+          m_lastClickedEntityIdx = testIdx;
+        }
+
+        int selCount = static_cast<int>(m_selectedEntities.size());
+        if (selCount > 1) {
+          ImGui::TextDisabled("%d entities selected", selCount);
+          ImGui::Separator();
+        }
+
+        if (selCount <= 1 && ImGui::Selectable("Rename")) {
+          m_renamingEntityIdx = testIdx;
           memset(m_renameBuffer, 0, sizeof(m_renameBuffer));
           if (tag)
             strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer));
           ImGui::CloseCurrentPopup();
         }
-        if (ImGui::Selectable("Clone")) {
-          entityToClone = (int)i;
+        if (selCount <= 1 && ImGui::Selectable("Clone")) {
+          outClone = testIdx;
           ImGui::CloseCurrentPopup();
         }
-        if (ImGui::Selectable("Delete")) {
-          entityToDelete = (int)i;
+        if (ImGui::Selectable(selCount > 1 ? "Delete All Selected" : "Delete")) {
+          outDelete = testIdx; // handled below for multi-select
           ImGui::CloseCurrentPopup();
+        }
+        ImGui::Separator();
+        // Move to group submenu (operates on all selected)
+        if (ImGui::BeginMenu("Move to Group")) {
+          for (int g = 0; g < (int)m_entityGroups.size(); ++g) {
+            if (ImGui::MenuItem(m_entityGroups[g].name.c_str())) {
+              for (int si : m_selectedEntities) {
+                if (si >= 0 && si < (int)m_testEntities.size()) {
+                  removeEntityFromGroups(m_testEntities[si]);
+                  m_entityGroups[g].entities.push_back(m_testEntities[si]);
+                }
+              }
+            }
+          }
+          ImGui::Separator();
+          if (ImGui::MenuItem("Remove from Group")) {
+            for (int si : m_selectedEntities) {
+              if (si >= 0 && si < (int)m_testEntities.size())
+                removeEntityFromGroups(m_testEntities[si]);
+            }
+          }
+          ImGui::EndMenu();
         }
         ImGui::EndPopup();
       }
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("C")) { // Clone
-      entityToClone = (int)i;
+    if (ImGui::Button("C")) {
+      outClone = testIdx;
     }
     ImGui::SameLine();
-    if (ImGui::Button("X")) { // Destroy
-      entityToDelete = (int)i;
+    if (ImGui::Button("X")) {
+      outDelete = testIdx;
     }
 
     ImGui::PopID();
+  };
+
+  int entityToClone = -1;
+  int entityToDelete = -1;
+  int groupToDelete = -1;
+
+  // Collect entities that are in any group
+  std::vector<bool> inGroup(m_testEntities.size(), false);
+  for (const auto &group : m_entityGroups) {
+    for (const auto &ge : group.entities) {
+      for (size_t i = 0; i < m_testEntities.size(); ++i) {
+        if (m_testEntities[i].id == ge.id &&
+            m_testEntities[i].generation == ge.generation) {
+          inGroup[i] = true;
+        }
+      }
+    }
+  }
+
+  // --- Render Groups ---
+  for (int g = 0; g < (int)m_entityGroups.size(); ++g) {
+    auto &group = m_entityGroups[g];
+    ImGui::PushID(g + 100000); // Unique ID range for groups
+
+    // Group header
+    bool groupSelected = (m_editingGroup && m_selectedGroupIdx == g);
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                               ImGuiTreeNodeFlags_AllowOverlap;
+    if (groupSelected)
+      flags |= ImGuiTreeNodeFlags_Selected;
+    if (!group.collapsed)
+      flags |= ImGuiTreeNodeFlags_DefaultOpen;
+
+    // Renaming group
+    if (m_renamingGroupIdx == g) {
+      ImGui::SetKeyboardFocusHere();
+      if (ImGui::InputText("##grename", m_groupRenameBuffer,
+                           sizeof(m_groupRenameBuffer),
+                           ImGuiInputTextFlags_EnterReturnsTrue |
+                               ImGuiInputTextFlags_AutoSelectAll)) {
+        group.name = std::string(m_groupRenameBuffer);
+        m_renamingGroupIdx = -1;
+      }
+      if (!ImGui::IsItemActive() &&
+          (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) {
+        group.name = std::string(m_groupRenameBuffer);
+        m_renamingGroupIdx = -1;
+      }
+    } else {
+      char groupLabel[128];
+      snprintf(groupLabel, sizeof(groupLabel), "%s (%zu)",
+               group.name.c_str(), group.entities.size());
+
+      bool nodeOpen = ImGui::TreeNodeEx(groupLabel, flags);
+      group.collapsed = !nodeOpen;
+
+      // Click on group header (not arrow) selects the group for bulk editing
+      if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+        m_selectedGroupIdx = g;
+        m_editingGroup = true;
+        m_selectedEntityIdx = -1;
+        m_selectedEntities.clear();
+      }
+
+      // Drop target: drop selected entities into this group
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *payload =
+                ImGui::AcceptDragDropPayload("ENTITY_MULTI_DND")) {
+          // Parse "Layer N" once for layer sync
+          int layerNum = -1;
+          sscanf(group.name.c_str(), "Layer %d", &layerNum);
+
+          // Move all selected entities into this group
+          for (int si : m_selectedEntities) {
+            if (si < 0 || si >= (int)m_testEntities.size())
+              continue;
+            ECS::Entity dropped = m_testEntities[si];
+            removeEntityFromGroups(dropped);
+            group.entities.push_back(dropped);
+
+            // If this is a "Layer N" group, update entity layer to match
+            if (layerNum >= 0 && layerNum < m_numLayers) {
+              auto *spr =
+                  world.getComponent<Components::SpriteRenderer>(dropped);
+              if (spr)
+                spr->sortOrder = layerNum;
+              for (auto &tile : m_tilemap) {
+                if (tile.entity.id == dropped.id &&
+                    tile.entity.generation == dropped.generation) {
+                  tile.layer = layerNum;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      // Right click on group header
+      if (ImGui::BeginPopupContextItem()) {
+        if (ImGui::Selectable("Rename Group")) {
+          m_renamingGroupIdx = g;
+          memset(m_groupRenameBuffer, 0, sizeof(m_groupRenameBuffer));
+          strncpy_s(m_groupRenameBuffer, group.name.c_str(),
+                    sizeof(m_groupRenameBuffer));
+          ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Selectable("Delete Group (ungroup entities)")) {
+          groupToDelete = g;
+          ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+      }
+
+      if (nodeOpen) {
+        // Render entities inside this group
+        for (size_t ei = 0; ei < group.entities.size(); ++ei) {
+          auto ge = group.entities[ei];
+          // Find index in m_testEntities
+          int testIdx = -1;
+          for (int ti = 0; ti < (int)m_testEntities.size(); ++ti) {
+            if (m_testEntities[ti].id == ge.id &&
+                m_testEntities[ti].generation == ge.generation) {
+              testIdx = ti;
+              break;
+            }
+          }
+          if (testIdx < 0)
+            continue;
+
+          renderEntityRow(ge, testIdx, entityToClone, entityToDelete);
+        }
+        ImGui::TreePop();
+      }
+    }
+
+    ImGui::PopID();
+  }
+
+  // --- Render Ungrouped entities ---
+  bool hasUngrouped = false;
+  for (size_t i = 0; i < m_testEntities.size(); ++i) {
+    if (inGroup[i])
+      continue;
+    if (!hasUngrouped) {
+      ImGui::Separator();
+      ImGui::TextDisabled("Ungrouped");
+
+      // Drop target on "Ungrouped" header to remove from group
+      if (ImGui::BeginDragDropTarget()) {
+        if (ImGui::AcceptDragDropPayload("ENTITY_MULTI_DND")) {
+          for (int si : m_selectedEntities) {
+            if (si >= 0 && si < (int)m_testEntities.size())
+              removeEntityFromGroups(m_testEntities[si]);
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      hasUngrouped = true;
+    }
+    renderEntityRow(m_testEntities[i], (int)i, entityToClone, entityToDelete);
   }
 
   // Handle deferred actions
@@ -1598,19 +1843,59 @@ void SandboxState::renderEntityWindow() {
   }
 
   if (entityToDelete != -1) {
-    if (entityToDelete >= 0 && entityToDelete < (int)m_testEntities.size()) {
-      // Use DeleteEntityCommand for undo/redo support
+    if (m_selectedEntities.size() > 1) {
+      // Multi-delete: delete all selected entities (highest index first)
+      std::vector<int> sorted(m_selectedEntities.begin(),
+                              m_selectedEntities.end());
+      std::sort(sorted.rbegin(), sorted.rend());
+      for (int si : sorted) {
+        if (si >= 0 && si < (int)m_testEntities.size()) {
+          ECS::Entity toRemove = m_testEntities[si];
+          removeEntityFromGroups(toRemove);
+          auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
+              m_scene, m_testEntities, toRemove, static_cast<size_t>(si));
+          executeCommand(std::move(cmd));
+        }
+      }
+      m_selectedEntities.clear();
+      m_selectedEntityIdx = -1;
+    } else if (entityToDelete >= 0 &&
+               entityToDelete < (int)m_testEntities.size()) {
+      ECS::Entity toRemove = m_testEntities[entityToDelete];
+      removeEntityFromGroups(toRemove);
+
       auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
-          m_scene, m_testEntities, m_testEntities[entityToDelete],
+          m_scene, m_testEntities, toRemove,
           static_cast<size_t>(entityToDelete));
       executeCommand(std::move(cmd));
 
-      // Fix selection index if needed
+      m_selectedEntities.erase(entityToDelete);
       if (m_selectedEntityIdx == entityToDelete)
         m_selectedEntityIdx = -1;
       else if (m_selectedEntityIdx > entityToDelete)
         m_selectedEntityIdx--;
     }
+  }
+
+  if (groupToDelete != -1 && groupToDelete < (int)m_entityGroups.size()) {
+    // Ungroup: just remove the group, entities stay in m_testEntities
+    m_entityGroups.erase(m_entityGroups.begin() + groupToDelete);
+    if (m_selectedGroupIdx == groupToDelete) {
+      m_selectedGroupIdx = -1;
+      m_editingGroup = false;
+    } else if (m_selectedGroupIdx > groupToDelete) {
+      m_selectedGroupIdx--;
+    }
+  }
+
+  // Clean up empty groups (remove stale entity references)
+  for (auto &group : m_entityGroups) {
+    group.entities.erase(
+        std::remove_if(group.entities.begin(), group.entities.end(),
+                       [&](const ECS::Entity &e) {
+                         return !world.isValid(e);
+                       }),
+        group.entities.end());
   }
 
   ImGui::EndChild();
@@ -1634,6 +1919,256 @@ void SandboxState::renderComponentWindow() {
     ImGui::End();
     return;
   }
+
+  // --- Group-level bulk editing ---
+  if (m_editingGroup && m_selectedGroupIdx >= 0 &&
+      m_selectedGroupIdx < (int)m_entityGroups.size()) {
+    auto &group = m_entityGroups[m_selectedGroupIdx];
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f),
+                       "Editing Group: %s (%zu entities)", group.name.c_str(),
+                       group.entities.size());
+    ImGui::Separator();
+
+    if (group.entities.empty()) {
+      ImGui::TextDisabled("Group is empty");
+      ImGui::End();
+      return;
+    }
+
+    // Layer slider - apply to all entities in group
+    {
+      // Read layer from first entity as reference
+      auto *firstSprite =
+          world.getComponent<Components::SpriteRenderer>(group.entities[0]);
+      int groupLayer = firstSprite ? firstSprite->sortOrder : 0;
+
+      if (ImGui::SliderInt("Layer (all)", &groupLayer, 0, m_numLayers - 1)) {
+        // Get or create the target layer group
+        auto *targetGroup = getOrCreateLayerGroup(groupLayer);
+
+        for (auto &ge : group.entities) {
+          auto *spr = world.getComponent<Components::SpriteRenderer>(ge);
+          if (spr)
+            spr->sortOrder = groupLayer;
+          for (auto &tile : m_tilemap) {
+            if (tile.entity.id == ge.id &&
+                tile.entity.generation == ge.generation) {
+              tile.layer = groupLayer;
+              break;
+            }
+          }
+          // Move to target layer group if different from current
+          if (targetGroup != &group) {
+            targetGroup->entities.push_back(ge);
+          }
+        }
+        // If we moved entities to a different group, clear this group
+        if (targetGroup != &group) {
+          group.entities.clear();
+        }
+      }
+    }
+
+    ImGui::Separator();
+
+    // Visibility toggle for all
+    if (ImGui::CollapsingHeader("SpriteRenderer (Group)")) {
+      // Visible toggle
+      bool allVisible = true;
+      for (auto &ge : group.entities) {
+        auto *spr = world.getComponent<Components::SpriteRenderer>(ge);
+        if (spr && !spr->visible)
+          allVisible = false;
+      }
+      if (ImGui::Checkbox("Visible (all)", &allVisible)) {
+        for (auto &ge : group.entities) {
+          auto *spr = world.getComponent<Components::SpriteRenderer>(ge);
+          if (spr)
+            spr->visible = allVisible;
+        }
+      }
+
+      // Color for all
+      auto *firstSprite =
+          world.getComponent<Components::SpriteRenderer>(group.entities[0]);
+      if (firstSprite) {
+        glm::vec4 color = firstSprite->color;
+        if (ImGui::ColorEdit4("Color (all)", &color.r)) {
+          for (auto &ge : group.entities) {
+            auto *spr = world.getComponent<Components::SpriteRenderer>(ge);
+            if (spr)
+              spr->color = color;
+          }
+        }
+      }
+
+      // Add SpriteRenderer to all that don't have it
+      if (ImGui::Button("Add SpriteRenderer to All")) {
+        for (auto &ge : group.entities) {
+          if (!world.getComponent<Components::SpriteRenderer>(ge))
+            world.addComponent(ge, Components::SpriteRenderer{});
+        }
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Remove SpriteRenderer from All")) {
+        for (auto &ge : group.entities) {
+          if (world.getComponent<Components::SpriteRenderer>(ge))
+            world.removeComponent<Components::SpriteRenderer>(ge);
+        }
+      }
+    }
+
+    // Collider for all
+    if (ImGui::CollapsingHeader("Collider (Group)")) {
+      auto *firstCol =
+          world.getComponent<Components::Collider>(group.entities[0]);
+      if (firstCol) {
+        bool solid = firstCol->isSolid;
+        if (ImGui::Checkbox("Solid (all)", &solid)) {
+          for (auto &ge : group.entities) {
+            auto *col = world.getComponent<Components::Collider>(ge);
+            if (col)
+              col->isSolid = solid;
+          }
+        }
+        bool trigger = firstCol->isTrigger;
+        if (ImGui::Checkbox("Trigger (all)", &trigger)) {
+          for (auto &ge : group.entities) {
+            auto *col = world.getComponent<Components::Collider>(ge);
+            if (col)
+              col->isTrigger = trigger;
+          }
+        }
+      }
+
+      if (ImGui::Button("Add Collider to All")) {
+        for (auto &ge : group.entities) {
+          if (!world.getComponent<Components::Collider>(ge))
+            world.addComponent(ge, Components::Collider{});
+        }
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Remove Collider from All")) {
+        for (auto &ge : group.entities) {
+          if (world.getComponent<Components::Collider>(ge))
+            world.removeComponent<Components::Collider>(ge);
+        }
+      }
+    }
+
+    ImGui::Separator();
+    ImGui::TextDisabled("Click an entity in the group to edit individually");
+
+    ImGui::End();
+    return;
+  }
+
+  // --- Multi-select bulk editing ---
+  if (!m_editingGroup && m_selectedEntities.size() > 1) {
+    int selCount = static_cast<int>(m_selectedEntities.size());
+    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
+                       "%d entities selected", selCount);
+    ImGui::Separator();
+
+    // Collect valid selected entities
+    std::vector<ECS::Entity> selEntities;
+    for (int si : m_selectedEntities) {
+      if (si >= 0 && si < (int)m_testEntities.size())
+        selEntities.push_back(m_testEntities[si]);
+    }
+
+    if (!selEntities.empty()) {
+      // Layer slider
+      auto *firstSpr =
+          world.getComponent<Components::SpriteRenderer>(selEntities[0]);
+      int layer = firstSpr ? firstSpr->sortOrder : 0;
+      if (ImGui::SliderInt("Layer (all)", &layer, 0, m_numLayers - 1)) {
+        auto *targetGroup = getOrCreateLayerGroup(layer);
+        for (auto &se : selEntities) {
+          auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+          if (spr)
+            spr->sortOrder = layer;
+          for (auto &tile : m_tilemap) {
+            if (tile.entity.id == se.id &&
+                tile.entity.generation == se.generation) {
+              tile.layer = layer;
+              break;
+            }
+          }
+          // Move to the target layer group
+          removeEntityFromGroups(se);
+          targetGroup->entities.push_back(se);
+        }
+      }
+
+      ImGui::Separator();
+
+      // Visibility
+      if (ImGui::CollapsingHeader("SpriteRenderer (Selection)")) {
+        bool allVis = true;
+        for (auto &se : selEntities) {
+          auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+          if (spr && !spr->visible)
+            allVis = false;
+        }
+        if (ImGui::Checkbox("Visible (all)", &allVis)) {
+          for (auto &se : selEntities) {
+            auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+            if (spr)
+              spr->visible = allVis;
+          }
+        }
+
+        if (firstSpr) {
+          glm::vec4 color = firstSpr->color;
+          if (ImGui::ColorEdit4("Color (all)", &color.r)) {
+            for (auto &se : selEntities) {
+              auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+              if (spr)
+                spr->color = color;
+            }
+          }
+        }
+      }
+
+      // Collider
+      if (ImGui::CollapsingHeader("Collider (Selection)")) {
+        auto *firstCol =
+            world.getComponent<Components::Collider>(selEntities[0]);
+        if (firstCol) {
+          bool solid = firstCol->isSolid;
+          if (ImGui::Checkbox("Solid (all)", &solid)) {
+            for (auto &se : selEntities) {
+              auto *col = world.getComponent<Components::Collider>(se);
+              if (col)
+                col->isSolid = solid;
+            }
+          }
+        }
+      }
+
+      // Move selection to group
+      ImGui::Separator();
+      if (ImGui::BeginCombo("Move to Group", "Select...")) {
+        for (int g = 0; g < (int)m_entityGroups.size(); ++g) {
+          if (ImGui::Selectable(m_entityGroups[g].name.c_str())) {
+            for (auto &se : selEntities) {
+              removeEntityFromGroups(se);
+              m_entityGroups[g].entities.push_back(se);
+            }
+          }
+        }
+        ImGui::EndCombo();
+      }
+    }
+
+    ImGui::Separator();
+    ImGui::TextDisabled("Click a single entity to edit individually");
+    ImGui::End();
+    return;
+  }
+
+  // --- Individual entity editing (existing behavior) ---
 
   // Entity selector info
   if (m_selectedEntityIdx >= static_cast<int>(m_testEntities.size()))
@@ -1666,35 +2201,42 @@ void SandboxState::renderComponentWindow() {
 
   ImGui::Separator();
 
-  // Tilemap Layer
-  if (ImGui::CollapsingHeader("Tilemap Layer")) {
-    // Find matching tile data for this entity
-    TileData *tileData = nullptr;
-    for (auto &tile : m_tilemap) {
-      if (tile.entity.id == entity.id &&
-          tile.entity.generation == entity.generation) {
-        tileData = &tile;
-        break;
-      }
-    }
-
-    if (tileData) {
-      int layer = tileData->layer;
-      if (ImGui::InputInt("Layer", &layer)) {
-        if (layer >= 0 && layer < m_numLayers) {
-          auto *trans =
-              world.getComponent<Components::Transform>(entity);
-          vec2 pos = trans ? trans->position : vec2{0.f, 0.f};
-          if (!isCellOccupied(pos, layer)) {
-            tileData->layer = layer;
+  // Layer (render order: 0 = behind, higher = on top)
+  {
+    auto *sprite = world.getComponent<Components::SpriteRenderer>(entity);
+    if (sprite) {
+      int layer = sprite->sortOrder;
+      if (ImGui::SliderInt("Layer", &layer, 0, m_numLayers - 1)) {
+        sprite->sortOrder = layer;
+        // Sync tilemap tile data
+        for (auto &tile : m_tilemap) {
+          if (tile.entity.id == entity.id &&
+              tile.entity.generation == entity.generation) {
+            tile.layer = layer;
+            break;
           }
         }
+        // Move entity to the corresponding "Layer N" group
+        removeEntityFromGroups(entity);
+        auto *layerGroup = getOrCreateLayerGroup(layer);
+        layerGroup->entities.push_back(entity);
       }
-      ImGui::Text("Current: Layer %d", tileData->layer);
+      ImGui::Text("Layer %d of %d (0 = back, %d = front)", layer,
+                   m_numLayers - 1, m_numLayers - 1);
+
+      // Show current group membership
+      int groupIdx = findGroupForEntity(entity);
+      if (groupIdx >= 0) {
+        ImGui::TextDisabled("Group: %s", m_entityGroups[groupIdx].name.c_str());
+      } else {
+        ImGui::TextDisabled("Group: (ungrouped)");
+      }
     } else {
-      ImGui::TextDisabled("Not a tilemap entity");
+      ImGui::TextDisabled("Add SpriteRenderer to set layer");
     }
   }
+
+  ImGui::Separator();
 
   // Transform Component
   if (ImGui::CollapsingHeader("Transform")) {
@@ -2573,6 +3115,12 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   }
   m_tilemap.push_back({clonePrefab, clonePos, cloneLayer, newEntity});
 
+  // Inherit group membership from source entity
+  int srcGroupIdx = findGroupForEntity(sourceEntity);
+  if (srcGroupIdx >= 0) {
+    m_entityGroups[srcGroupIdx].entities.push_back(newEntity);
+  }
+
   // Track via undo system (adds to m_testEntities)
   auto cmd = std::make_unique<Sandbox::CreateEntityCommand>(m_scene,
                                                             m_testEntities, newEntity);
@@ -2580,6 +3128,7 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
 
   // Select the new one
   m_selectedEntityIdx = (int)m_testEntities.size() - 1;
+  m_editingGroup = false;
 }
 
 void Runtime::SandboxState::renderToolbar() {
@@ -2631,7 +3180,7 @@ void Runtime::SandboxState::renderToolbar() {
   ImGui::SameLine();
 
   ImGui::Checkbox("Show Grid", &m_showGrid);
-  ImGui::SameLine();
+  ImGui::SameLine(); 
   ImGui::DragFloat("Grid Size", &m_gridSize, 1.0f, 10.0f, 200.0f);
   ImGui::Separator();
   ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
@@ -2752,8 +3301,15 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
 
         // Record in tilemap with layer and entity reference
         ECS::Entity spawned = m_testEntities.back();
+        // Set sprite sortOrder to match layer for correct render order
+        auto *spr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(spawned);
+        if (spr)
+          spr->sortOrder = m_currentLayer;
         m_tilemap.push_back(
             {m_selectedTilePrefab, worldPos, m_currentLayer, spawned});
+        // Auto-group into layer group
+        auto *layerGroup = getOrCreateLayerGroup(m_currentLayer);
+        layerGroup->entities.push_back(spawned);
       }
     }
   }
@@ -2780,6 +3336,9 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
           if (entIt != m_testEntities.end()) {
             m_testEntities.erase(entIt);
           }
+
+          // Remove from groups
+          removeEntityFromGroups(it->entity);
 
           // Destroy entity from ECS
           world.destroyEntity(it->entity);
@@ -3802,9 +4361,16 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
 
       // Record in tilemap with layer and entity
       ECS::Entity spawned = m_testEntities.back();
+      // Set sprite sortOrder to match layer for correct render order
+      auto *spr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(spawned);
+      if (spr)
+        spr->sortOrder = layer;
       m_tilemap.push_back({prefabName, position, layer, spawned});
     }
   }
+
+  // Rebuild groups from loaded tilemap layer data
+  rebuildGroupsFromTilemap();
 
   std::cout << "[Tilemap] Loaded: " << filepath << " (" << m_tilemap.size()
             << " tiles)\n";
@@ -3833,10 +4399,59 @@ void Runtime::SandboxState::clearTilemap() {
 
   // Reset selection
   m_selectedEntityIdx = -1;
+  m_selectedGroupIdx = -1;
+  m_editingGroup = false;
+  m_selectedEntities.clear();
+  m_lastClickedEntityIdx = -1;
   m_gizmoActiveAxis = -1;
 
   m_tilemap.clear();
+  m_entityGroups.clear();
   std::cout << "[Tilemap] Cleared all entities and tile data\n";
+}
+
+int SandboxState::findGroupForEntity(ECS::Entity entity) const {
+  for (int g = 0; g < (int)m_entityGroups.size(); ++g) {
+    for (const auto &e : m_entityGroups[g].entities) {
+      if (e.id == entity.id && e.generation == entity.generation)
+        return g;
+    }
+  }
+  return -1;
+}
+
+SandboxState::EntityGroup *SandboxState::getOrCreateLayerGroup(int layer) {
+  std::string groupName = "Layer " + std::to_string(layer);
+  for (auto &group : m_entityGroups) {
+    if (group.name == groupName)
+      return &group;
+  }
+  m_entityGroups.push_back({groupName, {}, false});
+  return &m_entityGroups.back();
+}
+
+void SandboxState::removeEntityFromGroups(ECS::Entity entity) {
+  for (auto &group : m_entityGroups) {
+    auto it = std::find_if(
+        group.entities.begin(), group.entities.end(),
+        [&](const ECS::Entity &e) {
+          return e.id == entity.id && e.generation == entity.generation;
+        });
+    if (it != group.entities.end()) {
+      group.entities.erase(it);
+      return;
+    }
+  }
+}
+
+void SandboxState::rebuildGroupsFromTilemap() {
+  m_entityGroups.clear();
+  for (const auto &tile : m_tilemap) {
+    if (!tile.entity.isValid())
+      continue;
+    auto *group = getOrCreateLayerGroup(tile.layer);
+    group->entities.push_back(tile.entity);
+  }
 }
 
 } // namespace Runtime
