@@ -3140,12 +3140,12 @@ void LevelEditor::renderProperties() {
       }
     } else {
       if (ImGui::Button("Add Sprite Renderer Component")) {
-        auto *sr =
+        auto *sv =
             m_selectedObject->addComponent<Gameplay::SpriteRendererComponent>();
         // Set a default texture if available
         auto textureNames = Assets::TextureManager::GetLoadedTextureNames();
         if (!textureNames.empty()) {
-          sr->setTexture(textureNames[0]);
+          sv->setTexture(textureNames[0]);
           m_selectedObject->setTextureId(textureNames[0]);
         }
         markLevelDirty();
