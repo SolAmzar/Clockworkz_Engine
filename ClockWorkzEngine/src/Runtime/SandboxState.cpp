@@ -2,7 +2,7 @@
 /*!
 \file           SandboxState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon][Yusuf][Syafiq]
 \brief          Implementation of SandboxState for ECS testing.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -1562,6 +1562,7 @@ void SandboxState::renderEntityWindow() {
     m_scene.Clear();
     m_testEntities.clear();
     m_entityGroups.clear();
+    m_tilemap.clear();
     m_selectedGroupIdx = -1;
     m_editingGroup = false;
     m_selectedEntities.clear();
@@ -1583,11 +1584,11 @@ void SandboxState::renderEntityWindow() {
   // Scrollable entity list with groups
   ImGui::BeginChild("EntityList", ImVec2(0, 300), true);
 
-  // Lambda: build entity label
+  // Lambda: build entity label (include both id and generation for uniqueness)
   auto makeLabel = [&](ECS::Entity entity, char *buf, size_t bufSize) {
     auto *tag = world.getComponent<Components::Tag>(entity);
     if (tag && !tag->tag.empty())
-      snprintf(buf, bufSize, "%s (id %u)", tag->tag.c_str(), entity.id);
+      snprintf(buf, bufSize, "%s (id %u.%u)", tag->tag.c_str(), entity.id, entity.generation);
     else
       snprintf(buf, bufSize, "Entity %u (gen %u)", entity.id, entity.generation);
   };
@@ -1965,7 +1966,22 @@ void SandboxState::renderEntityWindow() {
     }
   }
 
-  // Clean up empty groups (remove stale entity references)
+  // Clean up stale entity references from all tracking lists
+  // This prevents duplicate IDs and ghost entries
+  m_testEntities.erase(
+      std::remove_if(m_testEntities.begin(), m_testEntities.end(),
+                     [&](const ECS::Entity &e) {
+                       return !world.isValid(e);
+                     }),
+      m_testEntities.end());
+
+  m_tilemap.erase(
+      std::remove_if(m_tilemap.begin(), m_tilemap.end(),
+                     [&](const TileData &tile) {
+                       return !world.isValid(tile.entity);
+                     }),
+      m_tilemap.end());
+
   for (auto &group : m_entityGroups) {
     group.entities.erase(
         std::remove_if(group.entities.begin(), group.entities.end(),
@@ -3350,6 +3366,9 @@ void Runtime::SandboxState::renderTilePalette() {
 }
 
 void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
+  // Reset paint flag each frame
+  m_paintedThisFrame = false;
+
   if (!m_tileMapMode || !m_viewportHovered)
     return;
 
@@ -3373,7 +3392,23 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
         ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 
-      if (!isCellOccupied(worldPos, m_currentLayer)) {
+      // Check if clicking on an existing entity - if so, skip painting to allow selection
+      auto &world = m_scene.GetWorld();
+      bool clickedOnEntity = false;
+      for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+        auto entity = m_testEntities[i];
+        auto *trans = world.getComponent<Components::Transform>(entity);
+        if (trans) {
+          float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
+          if (dist < m_gridSize * 0.5f) {
+            clickedOnEntity = true;
+            break;
+          }
+        }
+      }
+
+      // Only paint if not clicking on an entity and cell is not occupied
+      if (!clickedOnEntity && !isCellOccupied(worldPos, m_currentLayer)) {
         // Spawn the tile
         spawnPrefab(m_selectedTilePrefab, worldPos);
 
@@ -3385,9 +3420,19 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
           spr->sortOrder = m_currentLayer;
         m_tilemap.push_back(
             {m_selectedTilePrefab, worldPos, m_currentLayer, spawned});
-        // Auto-group into layer group
+        // Auto-group into layer group (check for duplicates)
         auto *layerGroup = getOrCreateLayerGroup(m_currentLayer);
-        layerGroup->entities.push_back(spawned);
+        bool alreadyInGroup = std::any_of(
+            layerGroup->entities.begin(), layerGroup->entities.end(),
+            [&](const ECS::Entity &e) {
+              return e.id == spawned.id && e.generation == spawned.generation;
+            });
+        if (!alreadyInGroup) {
+          layerGroup->entities.push_back(spawned);
+        }
+
+        // Mark that we painted this frame to block selection
+        m_paintedThisFrame = true;
       }
     }
   }
@@ -3423,6 +3468,9 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
 
           // Remove from tilemap
           m_tilemap.erase(it);
+
+          // Mark that we erased this frame to block selection
+          m_paintedThisFrame = true;
           break; // Only erase one per click
         }
       }
@@ -3593,7 +3641,10 @@ void SandboxState::renderSceneWindow() {
                {viewportPanelSize.x, viewportPanelSize.y}, viewportMin);
 
   // Handle Object Picking (Selection)
-  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
+  // Skip selection if we painted/erased this frame (clicked on blank space)
+  // Allow selection if we clicked on an entity (didn't paint) or in Select mode
+  bool allowSelection = !m_paintedThisFrame;
+  if (allowSelection && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
       m_gizmoActiveAxis == -1) {
     // Create a dummy gizmo check context or just assume no gizmo if axis is
     // -1 Convert mouse to world space
@@ -3677,6 +3728,11 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
                                 const vec2 &viewportMin) {
   (void)windowPos;
   (void)windowSize;
+
+  // Disable gizmo when we painted/erased this frame to prevent accidental transforms
+  if (m_paintedThisFrame)
+    return;
+
   if (m_selectedEntityIdx < 0 ||
       m_selectedEntityIdx >= (int)m_testEntities.size())
     return;
@@ -4523,7 +4579,15 @@ void SandboxState::rebuildGroupsFromTilemap() {
     if (!tile.entity.isValid())
       continue;
     auto *group = getOrCreateLayerGroup(tile.layer);
-    group->entities.push_back(tile.entity);
+    // Check for duplicates before adding
+    bool alreadyInGroup = std::any_of(
+        group->entities.begin(), group->entities.end(),
+        [&](const ECS::Entity &e) {
+          return e.id == tile.entity.id && e.generation == tile.entity.generation;
+        });
+    if (!alreadyInGroup) {
+      group->entities.push_back(tile.entity);
+    }
   }
 }
 
