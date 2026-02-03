@@ -1,4 +1,4 @@
-#if 1
+
 /******************************************************************************/
 /*!
 \file           PlayState.hpp
@@ -47,9 +47,8 @@ class RenderingManager;
 
 namespace Runtime {
 class GameStateManager;
-class GameStateManager;
 
-class PlayState : public GameState {
+class PlayState : public Runtime::GameState {
 public:
   explicit PlayState(std::string initialSceneId, Platform::InputManager &input,
                      GameStateManager &gsm);
@@ -154,5 +153,3 @@ private:
 };
 
 } // namespace Runtime
-
-#endif

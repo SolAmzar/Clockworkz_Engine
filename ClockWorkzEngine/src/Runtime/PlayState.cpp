@@ -206,7 +206,7 @@ void PlayState::onEnter() {
   // Initialize level editor
   Core::Engine &engine = Core::Engine::Get();
 
-  auto &audio = engine.audio();
+  //auto &audio = engine.audio(); 
 
   // play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
   m_bgmChannel = Assets::SoundManager::Play("level_bgm");

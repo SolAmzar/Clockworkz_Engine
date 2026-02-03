@@ -20,6 +20,9 @@ reserved.
 #include "Components/Door.hpp"
 #include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
+#include "Components/Health.hpp"
+#include "Components/LightExposure.hpp"
+#include "Components/TextRenderer.hpp"
 
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
@@ -249,6 +252,37 @@ void SceneSerializer::Serialize(ECS::World &world,
             {"worldSpace", sys.worldSpace},
             {"localOffset",
              {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
+      }
+
+      // Health
+      if (auto *h = world.getComponent<Components::Health>(entity)) {
+        obj["components"]["health"] = {{"hp", h->hp},
+                                       {"maxHp", h->maxHp},
+                                       {"regenRate", h->regenRate},
+                                       {"invulnerable", h->invulnerable},
+                                       {"isDead", h->isDead}};
+      }
+
+      // LightExposure
+      if (auto *le = world.getComponent<Components::LightExposure>(entity)) {
+        obj["components"]["lightExposure"] = {
+            {"exposureTime", le->exposureTime},
+            {"maxExposureTime", le->maxExposureTime},
+            {"inLight", le->inLight},
+            {"isDangerous", le->isDangerous}};
+      }
+
+      // TextRenderer
+      if (auto *tr = world.getComponent<Components::TextRenderer>(entity)) {
+        obj["components"]["textRenderer"] = {
+            {"text", tr->text},
+            {"fontId", tr->fontId},
+            {"fontSize", tr->fontSize},
+            {"color",
+             {{"r", tr->color.r}, {"g", tr->color.g}, {"b", tr->color.b}}},
+            {"visible", tr->visible},
+            {"boxSize", {{"x", tr->boxSize.x}, {"y", tr->boxSize.y}}},
+            {"alignment", (int)tr->alignment}};
       }
 
       root["objects"].push_back(obj);
@@ -567,6 +601,50 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         zone.oneShot = azc.value("oneShot", false);
         zone.triggered = azc.value("triggered", false);
         world.addComponent(entity, zone);
+      }
+
+      // Health
+      if (components.contains("health")) {
+        auto &hc = components["health"];
+        Components::Health health;
+        health.hp = hc.value("hp", 10.f);
+        health.maxHp = hc.value("maxHp", 10.f);
+        health.regenRate = hc.value("regenRate", 0.f);
+        health.invulnerable = hc.value("invulnerable", false);
+        health.isDead = hc.value("isDead", false);
+        world.addComponent(entity, health);
+      }
+
+      // LightExposure
+      if (components.contains("lightExposure")) {
+        auto &lec = components["lightExposure"];
+        Components::LightExposure le;
+        le.exposureTime = lec.value("exposureTime", 0.f);
+        le.maxExposureTime = lec.value("maxExposureTime", 10.f);
+        le.inLight = lec.value("inLight", false);
+        le.isDangerous = lec.value("isDangerous", false);
+        world.addComponent(entity, le);
+      }
+
+      // TextRenderer
+      if (components.contains("textRenderer")) {
+        auto &trc = components["textRenderer"];
+        Components::TextRenderer tr;
+        tr.text = trc.value("text", "");
+        tr.fontId = trc.value("fontId", "Debug");
+        tr.fontSize = trc.value("fontSize", 1.0f);
+        if (trc.contains("color")) {
+          tr.color.r = trc["color"].value("r", 1.0f);
+          tr.color.g = trc["color"].value("g", 1.0f);
+          tr.color.b = trc["color"].value("b", 1.0f);
+        }
+        tr.visible = trc.value("visible", true);
+        if (trc.contains("boxSize")) {
+          tr.boxSize.x = trc["boxSize"].value("x", 200.0f);
+          tr.boxSize.y = trc["boxSize"].value("y", 100.0f);
+        }
+        tr.alignment = (Components::TextAlignment)trc.value("alignment", 0);
+        world.addComponent(entity, tr);
       }
     }
   }
