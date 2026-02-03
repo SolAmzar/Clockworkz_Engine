@@ -41,6 +41,7 @@ enum class AIState {
 struct EnemyAI {
   // State
   AIState state{AIState::Patrol};
+  AIState previousState{AIState::Patrol};
 
   // State Data
   float stateTimer{0.f}; ///< General timer for states (Alert, Idle)

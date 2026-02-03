@@ -64,6 +64,26 @@ void AISystem::update(ECS::World &world, double dt) {
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
           Components::Velocity &vel) {
+        // Check for Revive (Transition from Death -> !Death)
+        if (ai.previousState == Components::AIState::Death &&
+            ai.state != Components::AIState::Death) {
+          // Restore Alpha
+          auto *sprite = world.getComponent<Components::SpriteRenderer>(e);
+          if (sprite) {
+            sprite->color.a = 1.0f;
+          }
+
+          // Restore Health
+          auto *health = world.getComponent<Components::Health>(e);
+          if (health) {
+            health->hp = health->maxHp;
+            health->isDead = false;
+          }
+        }
+
+        // Update previous state at the start/end of the loop
+        ai.previousState = ai.state;
+
         // Dead Check
         if (ai.state == Components::AIState::Death) {
           vel.velocity = {0.f, 0.f};
