@@ -11,7 +11,7 @@
                 - Providing utility functions like dot product, cross product, normalization, length, and angle calculations
                 - Including helper functions for linear interpolation, projection, rejection, reflection, and angle between vectors
 				- Serving as a lightweight, header-only math utility for 3D vector operations
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 
 
@@ -35,7 +35,7 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserve
         #ifdef CWZ_ENABLE_GLM_BRIDGE
         #include <glm/glm.hpp>
         explicit vec3(glm::vec3 v) : x{ v.x }, y{ v.y }, z{ v.z } {}
-        explicit operator glm::vec3() const { return glm::vec3{ x,y,Z }; }
+        explicit operator glm::vec3() const { return glm::vec3{ x,y,z }; }
         #endif
 
         // ctors

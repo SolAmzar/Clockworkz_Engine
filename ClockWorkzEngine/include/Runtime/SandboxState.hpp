@@ -32,6 +32,7 @@ reserved.
 #include "UndoableImGui.hpp"
 #include <filesystem>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -101,9 +102,9 @@ private:
   float m_spawnY{0.f};
 
   // Component management
-  // Component management
   int m_selectedEntityIdx{0};       // Primary selection for inspector
-  std::set<int> m_selectedEntities; // Multi-selection support
+  std::set<int> m_selectedEntities; // Multi-selection (Shift+Click range, Ctrl+Click toggle)
+  int m_lastClickedEntityIdx{-1};   // anchor for Shift+Click range
 
   // Drag and Drop State
   ECS::Entity m_draggedEntity{0, 0}; // Invalid entity by default
@@ -127,7 +128,7 @@ private:
 
   // Editor Features
   bool m_showGrid{true};
-  float m_gridSize{50.0f};
+  float m_gridSize{100.0f};
   bool m_isPaused{true};
   bool m_showAssetBrowser = true;
   bool m_showAudioBrowser = true;
@@ -175,6 +176,24 @@ private:
   int m_numLayers = 3;
   std::vector<bool> m_layerVisible;
   void refreshTilemapList();
+
+  // Entity grouping (Photoshop-style layer groups)
+  struct EntityGroup {
+    std::string name;
+    std::vector<ECS::Entity> entities;
+    bool collapsed = false;
+  };
+  std::vector<EntityGroup> m_entityGroups;
+  int m_selectedGroupIdx{-1};
+  bool m_editingGroup{false};
+  char m_groupRenameBuffer[256] = "";
+  int m_renamingGroupIdx{-1};
+
+  // Group helpers
+  int findGroupForEntity(ECS::Entity entity) const;
+  EntityGroup *getOrCreateLayerGroup(int layer);
+  void removeEntityFromGroups(ECS::Entity entity);
+  void rebuildGroupsFromTilemap();
 
   // Prefab editor features
   bool m_showPrefabEditor = false;
