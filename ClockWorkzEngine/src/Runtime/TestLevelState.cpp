@@ -63,7 +63,21 @@ void TestLevelState::onEnter() {
   std::cout << "[TestLevelState] Loading level: " << levelPath << "\n";
 
   if (std::filesystem::exists(levelPath)) {
-    SceneSerializer::Deserialize(m_scene.GetWorld(), levelPath);
+    SceneSerializer::Deserialize(m_scene, levelPath);
+
+    // Play BGM if defined
+    std::string bgm = m_scene.getBGM();
+    if (!bgm.empty()) {
+      std::cout << "[TestLevelState] Playing BGM: " << bgm << "\n";
+      Assets::SoundManager::Play(bgm);
+    }
+
+    // Apply spawn point to player (if any)
+    vec2 spawn = m_scene.getSpawnPoint();
+    m_scene.GetWorld().each<Components::PlayerController,
+                            Components::Transform>(
+        [&](ECS::Entity, Components::PlayerController &,
+            Components::Transform &t) { t.position = spawn; });
   } else {
     std::cerr << "[TestLevelState] Error: " << levelPath << " not found!\n";
   }

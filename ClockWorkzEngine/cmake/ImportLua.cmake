@@ -89,6 +89,14 @@ function(import_lua TARGET_NAME)
     
     # Make Lua headers available
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${LUA_SRC_DIR})
+
+    # Treat Sol2 headers as external to suppress their warnings only
+    if(MSVC)
+        target_compile_options(${TARGET_NAME} PRIVATE
+            /external:W0
+            "/external:I${sol2_SOURCE_DIR}/include"
+        )
+    endif()
     
     message(STATUS "Lua 5.4.8 and Sol2 successfully configured")
 endfunction()

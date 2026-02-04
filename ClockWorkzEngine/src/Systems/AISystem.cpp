@@ -12,6 +12,7 @@ reserved.
 
 #include "Systems/AISystem.hpp"
 #include "Components/EnemyAI.hpp"
+#include "Components/Collider.hpp"
 #include "Components/Health.hpp" // Added
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
@@ -60,6 +61,27 @@ void AISystem::update(ECS::World &world, double dt) {
         playerFound = true;
       });
 
+  auto disableColliderForDeath = [&](ECS::Entity e, Components::EnemyAI &ai) {
+    auto *col = world.getComponent<Components::Collider>(e);
+    if (!col)
+      return;
+    if (!ai.colliderCached) {
+      ai.colliderWasSolid = col->isSolid;
+      ai.colliderWasTrigger = col->isTrigger;
+      ai.colliderCached = true;
+    }
+    col->isSolid = false;
+    col->isTrigger = false;
+  };
+
+  auto restoreColliderFromDeath = [&](ECS::Entity e, Components::EnemyAI &ai) {
+    auto *col = world.getComponent<Components::Collider>(e);
+    if (!col || !ai.colliderCached)
+      return;
+    col->isSolid = ai.colliderWasSolid;
+    col->isTrigger = ai.colliderWasTrigger;
+  };
+
   // 2. Update AI Entities
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
@@ -79,6 +101,9 @@ void AISystem::update(ECS::World &world, double dt) {
             health->hp = health->maxHp;
             health->isDead = false;
           }
+
+          // Restore Collider
+          restoreColliderFromDeath(e, ai);
         }
 
         // Update previous state at the start/end of the loop
@@ -87,6 +112,7 @@ void AISystem::update(ECS::World &world, double dt) {
         // Dead Check
         if (ai.state == Components::AIState::Death) {
           vel.velocity = {0.f, 0.f};
+          disableColliderForDeath(e, ai);
 
           // 1. Sprite Fading
           auto *sprite = world.getComponent<Components::SpriteRenderer>(e);
@@ -157,6 +183,7 @@ void AISystem::update(ECS::World &world, double dt) {
         // Re-Check Death after damage
         if (ai.state == Components::AIState::Death) {
           vel.velocity = {0.f, 0.f};
+          disableColliderForDeath(e, ai);
           return;
         }
 

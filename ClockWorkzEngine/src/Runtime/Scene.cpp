@@ -24,12 +24,20 @@
 #include "Components/Portal.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
+#include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <cmath>
 #include <filesystem>
 #include <iostream>
 
+#include "Audio/AudioManager.hpp"
+
 namespace Runtime {
+
+void Scene::setSFXVolume(float volume) {
+  m_sfxVolume = volume;
+  Audio::AudioManager::get().setGroupVolume(Audio::Group::SFX, volume);
+}
 
 void Scene::Init() {
   // Register all component types
@@ -55,6 +63,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::TextRenderer>();
   m_world.registerComponent<Components::Tag>();
   m_world.registerComponent<Components::Portal>();
+  m_world.registerComponent<Gameplay::SurfaceComponent>();
 }
 
 void Scene::Clear() {
@@ -65,7 +74,7 @@ void Scene::Clear() {
 bool Scene::LoadFromFile(const std::string &path) {
   Clear();
   if (std::filesystem::exists(path)) {
-    if (SceneSerializer::Deserialize(m_world, path)) {
+    if (SceneSerializer::Deserialize(*this, path)) {
       return true;
     } else {
       std::cerr << "[Scene] Failed to load level: " << path << "\n";
@@ -144,7 +153,7 @@ void Scene::Update(double dt, Platform::InputManager &input) {
                    Components::SpriteAnimator>(
           [&](ECS::Entity entity, Components::PlayerController &,
               Components::Transform &t, Components::SpriteAnimator &anim) {
-            t.position = {0, 0}; // Reset to origin or spawn point
+            t.position = m_spawnPoint; // Reset to spawn point
             anim.play("idle");
             if (auto *col =
                     m_world.getComponent<Components::Collider>(entity)) {

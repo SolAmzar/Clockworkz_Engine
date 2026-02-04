@@ -65,6 +65,11 @@ struct EnemyAI {
   // Light Interaction
   float lightSensitivity{
       0.3f}; ///< Speed multiplier when in light (0.0 = stop, 1.0 = full speed)
+
+  // Collider state caching (used when enemy dies/reactivates)
+  bool colliderCached{false};
+  bool colliderWasSolid{true};
+  bool colliderWasTrigger{false};
 };
 
 } // namespace Components

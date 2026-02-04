@@ -16,16 +16,20 @@ reserved.
 #include "Components/Collider.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
+#include "Components/Tag.hpp"
 #include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Engine.hpp"
 #include "ECS/World.hpp"
+#include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Math/Vec2.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include <GLFW/glfw3.h>
+#include <cctype>
 #include <cmath>
+#include <cstdlib> // for rand()
 #include <iostream>
 #include <string>
 
@@ -40,6 +44,10 @@ struct PlayerController {
   // Speed multipliers
   float walkMultiplier{1.0f};   // Normal walking speed
   float sprintMultiplier{2.0f}; // Sprint speed multiplier
+
+  // Footsteps
+  float footstepTimer{0.0f};
+  float footstepInterval{0.4f};
 
   void OnEnter(ECS::Entity entity, ECS::World &world) {
     (void)entity;
@@ -163,9 +171,67 @@ struct PlayerController {
         } else {
           currentState = "walk";
         }
+
+        // Footstep Logic
+        footstepTimer -= static_cast<float>(dt);
+        if (footstepTimer <= 0.0f) {
+          float interval = footstepInterval;
+          if (isSprinting)
+            interval *= 0.6f; // Faster footsteps when running
+          footstepTimer = interval;
+
+          std::string surfaceInfo = "concrete"; // Default fallback
+
+          // Naive Surface Detection: Check overlap with SurfaceComponent
+          // entities
+          if (col) {
+            world.each<Transform, Collider, Gameplay::SurfaceComponent>(
+                [&](ECS::Entity e, Transform &tSurface, Collider &cSurface,
+                    Gameplay::SurfaceComponent &surfComp) {
+                  if (e.id == entity.id)
+                    return; // Skip self
+
+                  // Simple AABB Overlap Check
+                  vec2 posA = trans->position + col->offset;
+                  vec2 posB = tSurface.position + cSurface.offset;
+                  vec2 halfA = col->size * 0.5f;
+                  vec2 halfB = cSurface.size * 0.5f;
+
+                  bool overlap = (posA.x - halfA.x < posB.x + halfB.x &&
+                                  posA.x + halfA.x > posB.x - halfB.x &&
+                                  posA.y - halfA.y < posB.y + halfB.y &&
+                                  posA.y + halfA.y > posB.y - halfB.y);
+
+                  if (overlap) {
+                    switch (surfComp.type()) {
+                    case Gameplay::SurfaceType::Tile:
+                      surfaceInfo = "tile";
+                      break;
+                    case Gameplay::SurfaceType::Wood:
+                      surfaceInfo = "wood";
+                      break;
+                    case Gameplay::SurfaceType::Concrete:
+                      surfaceInfo = "concrete";
+                      break;
+                    default:
+                      surfaceInfo = "concrete";
+                      break;
+                    }
+                  }
+                });
+          }
+
+          // Randomize variation (1 to 4)
+          int variation = (std::rand() % 4) + 1;
+          std::string soundName =
+              "fs_" + surfaceInfo + "_" + std::to_string(variation);
+          Assets::SoundManager::Play(soundName);
+        }
+
       } else {
         vel->velocity = {0.f, 0.f};
         currentState = "idle";
+        footstepTimer = 0.05f; // Ready to step as soon as we move
       }
     }
 

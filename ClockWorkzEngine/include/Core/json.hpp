@@ -18,6 +18,11 @@
 #ifndef INCLUDE_NLOHMANN_JSON_HPP_
 #define INCLUDE_NLOHMANN_JSON_HPP_
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 26819) // fallthrough warning in vendor header
+#endif
+
 #include <algorithm> // all_of, find, for_each
 #include <cstddef> // nullptr_t, ptrdiff_t, size_t
 #include <functional> // hash, less
@@ -25521,6 +25526,8 @@ inline void swap(nlohmann::NLOHMANN_BASIC_JSON_TPL& j1, nlohmann::NLOHMANN_BASIC
 #undef JSON_HEDLEY_WARN_UNUSED_RESULT_MSG
 #undef JSON_HEDLEY_FALL_THROUGH
 
-
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #endif  // INCLUDE_NLOHMANN_JSON_HPP_

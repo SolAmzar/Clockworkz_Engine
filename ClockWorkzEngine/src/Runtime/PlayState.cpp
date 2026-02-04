@@ -257,7 +257,7 @@ void PlayState::onEnter() {
 
       if (std::filesystem::exists(path)) {
         std::cout << "[PlayState] Loading level file: " << path << "\n";
-        SceneSerializer::Deserialize(scene->GetWorld(), path);
+        SceneSerializer::Deserialize(*scene, path);
         scene->registerExistingObjectsToLayers();
       } else {
         std::cout << "[PlayState] Level file not found: " << path
@@ -304,8 +304,8 @@ void PlayState::onEnter() {
       for (auto &obj : scene->objects()) {
         if (obj && obj->type() == Gameplay::GameObjectType::Player) {
           m_player = obj.get();
-          m_spawnPoint =
-              m_player->transform().position; // Save starting position
+          m_spawnPoint = scene->getSpawnPoint();
+          m_player->transform().position = m_spawnPoint;
           break;
         }
       }

@@ -22,6 +22,7 @@ reserved.
 
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Components/ActivationZone.hpp"
@@ -1391,7 +1392,10 @@ void SandboxState::renderEntityWindow() {
   ImGui::Separator();
 
   // Serialization UI
+
   static char currentLevelName[256] = "Level_Save.json";
+
+  ImGui::InputText("Filename", currentLevelName, 256);
 
   // Dropdown for loading
   if (!m_availableTilemaps.empty()) {
@@ -1420,14 +1424,67 @@ void SandboxState::renderEntityWindow() {
   if (ImGui::IsItemHovered())
     ImGui::SetTooltip("Refresh file list");
 
+  // BGM Selector
+  ImGui::Separator();
+  ImGui::Text("Scene Settings");
+  static std::string currentBGM = m_scene.getBGM();
+  if (currentBGM.empty())
+    currentBGM = m_scene.getBGM(); // Refresh if empty (initial load)
+
+  std::vector<std::string> loadedSounds =
+      Assets::SoundManager::GetLoadedSoundNames();
+
+  if (ImGui::BeginCombo("Scene BGM", m_scene.getBGM().empty()
+                                         ? "None"
+                                         : m_scene.getBGM().c_str())) {
+    if (ImGui::Selectable("None", m_scene.getBGM().empty())) {
+      m_scene.setBGM("");
+      currentBGM = "";
+    }
+    for (const auto &soundName : loadedSounds) {
+      bool isSelected = (m_scene.getBGM() == soundName);
+      if (ImGui::Selectable(soundName.c_str(), isSelected)) {
+        m_scene.setBGM(soundName);
+        currentBGM = soundName;
+      }
+      if (isSelected)
+        ImGui::SetItemDefaultFocus();
+    }
+    ImGui::EndCombo();
+  }
+
+  // SFX Volume Slider
+  float currentSFX = m_scene.getSFXVolume();
+  if (ImGui::SliderFloat("SFX Volume", &currentSFX, 0.0f, 1.0f)) {
+    m_scene.setSFXVolume(currentSFX);
+  }
+
+  // Spawn Point
+  vec2 spawn = m_scene.getSpawnPoint();
+  if (ImGui::DragFloat2("Spawn Point", &spawn.x, 1.0f)) {
+    m_scene.setSpawnPoint(spawn);
+  }
+  bool hasSelected =
+      m_selectedEntityIdx >= 0 &&
+      m_selectedEntityIdx < static_cast<int>(m_testEntities.size());
+  if (hasSelected) {
+    if (ImGui::Button("Set Spawn = Selected")) {
+      auto entity = m_testEntities[m_selectedEntityIdx];
+      if (auto *transform =
+              m_scene.GetWorld().getComponent<Components::Transform>(entity)) {
+        m_scene.setSpawnPoint(transform->position);
+      }
+    }
+  } else {
+    ImGui::TextDisabled("Select an entity to set spawn point");
+  }
+  ImGui::Separator();
+
   ImGui::SameLine();
-
-  ImGui::InputText("Filename", currentLevelName, 256);
-
   if (ImGui::Button("Save Level")) {
     // 1. Save to current runtime directory (Build folder)
     std::string path = "assets/scenes/" + std::string(currentLevelName);
-    SceneSerializer::Serialize(world, path);
+    SceneSerializer::Serialize(m_scene, path);
 
     // 2. Save to Project Source directory (Persistence)
     // Attempt to save to source folder assuming standard build layout
@@ -1447,7 +1504,7 @@ void SandboxState::renderEntityWindow() {
       std::filesystem::path srcDir =
           std::filesystem::path(relPath).parent_path();
       if (std::filesystem::exists(srcDir)) {
-        SceneSerializer::Serialize(world, relPath);
+        SceneSerializer::Serialize(m_scene, relPath);
         foundSource = true;
         break;
       }
@@ -1483,11 +1540,11 @@ void SandboxState::renderEntityWindow() {
     m_selectedEntities.clear();
     m_lastClickedEntityIdx = -1;
 
-    std::string path = "assets/scenes/" + std::string(currentLevelName);
-    if (SceneSerializer::Deserialize(world, path)) {
-      // Success - populate m_testEntities with loaded entities
-      world.each<Components::Transform>(
-          [&](ECS::Entity entity, Components::Transform &trans) {
+      std::string path = "assets/scenes/" + std::string(currentLevelName);
+      if (SceneSerializer::Deserialize(m_scene, path)) {
+        // Success - populate m_testEntities with loaded entities
+        world.each<Components::Transform>(
+            [&](ECS::Entity entity, Components::Transform &trans) {
             m_testEntities.push_back(entity);
             // Use sprite sortOrder as layer if available
             int layer = 0;
@@ -2770,6 +2827,25 @@ void SandboxState::renderComponentWindow() {
     } else {
       if (ImGui::Button("Add Torch"))
         world.addComponent(entity, Components::TorchComponent{});
+    }
+  }
+
+  // Surface Component
+  if (ImGui::CollapsingHeader("Surface")) {
+    auto *surf = world.getComponent<Gameplay::SurfaceComponent>(entity);
+    if (surf) {
+      const char *items[] = {"Default", "Tile", "Wood", "Concrete"};
+      int current = (int)surf->type();
+      if (ImGui::Combo("Surface Type", &current, items, 4)) {
+        surf->setType((Gameplay::SurfaceType)current);
+      }
+      if (ImGui::Button("Remove Surface")) {
+        world.removeComponent<Gameplay::SurfaceComponent>(entity);
+      }
+    } else {
+      if (ImGui::Button("Add Surface")) {
+        world.addComponent(entity, Gameplay::SurfaceComponent{});
+      }
     }
   }
 
