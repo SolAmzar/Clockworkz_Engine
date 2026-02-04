@@ -239,19 +239,13 @@ bool CollisionSystem::checkAABBCircle(const Components::Transform &tBox,
                                       const Components::Transform &tCirc,
                                       const Components::Collider &cCirc,
                                       glm::vec2 &penetration) {
-  // Box center and half-extents
+  // 1. Get Box Center in World Space
   glm::vec2 effectiveOffsetBox =
       glm::vec2(cBox.offset.x - tBox.pivot.x, cBox.offset.y - tBox.pivot.y);
   glm::vec2 offsetBox = rotateVec(effectiveOffsetBox, tBox.rotation);
   glm::vec2 boxCenter = glm::vec2(tBox.position.x, tBox.position.y) + offsetBox;
 
-  glm::vec2 sizeBox(cBox.size.x * tBox.scale.x, cBox.size.y * tBox.scale.y);
-  glm::vec2 boxHalf = sizeBox * 0.5f;
-
-  glm::vec2 boxMin = boxCenter - boxHalf;
-  glm::vec2 boxMax = boxCenter + boxHalf;
-
-  // Circle center
+  // 2. Get Circle Center in World Space
   glm::vec2 effectiveOffsetCirc =
       glm::vec2(cCirc.offset.x - tCirc.pivot.x, cCirc.offset.y - tCirc.pivot.y);
   glm::vec2 offsetCirc = rotateVec(effectiveOffsetCirc, tCirc.rotation);
@@ -260,51 +254,116 @@ bool CollisionSystem::checkAABBCircle(const Components::Transform &tBox,
 
   float radCirc = cCirc.radius * std::max(tCirc.scale.x, tCirc.scale.y);
 
-  // Find closest point on AABB to Circle center
-  glm::vec2 closestPoint;
-  closestPoint.x = std::max(boxMin.x, std::min(circCenter.x, boxMax.x));
-  closestPoint.y = std::max(boxMin.y, std::min(circCenter.y, boxMax.y));
+  // 3. Transform Circle Center to Box Local Space
+  //    (Relative to Box Center, Un-rotated)
+  glm::vec2 relCirc = circCenter - boxCenter;
+  glm::vec2 localCirc = rotateVec(relCirc, -tBox.rotation);
 
-  // Determine distance from closest point to circle center
-  glm::vec2 diff = circCenter - closestPoint;
-  float distSq = glm::dot(diff, diff);
+  // 4. Define Box AABB in Local Space (Centered at 0,0)
+  glm::vec2 sizeBox(cBox.size.x * tBox.scale.x, cBox.size.y * tBox.scale.y);
+  glm::vec2 boxHalf = sizeBox * 0.5f;
+
+  glm::vec2 boxMin = -boxHalf;
+  glm::vec2 boxMax = boxHalf;
+
+  // 5. Find closest point on Local AABB to Local Circle
+  glm::vec2 closestLocal;
+  closestLocal.x = std::max(boxMin.x, std::min(localCirc.x, boxMax.x));
+  closestLocal.y = std::max(boxMin.y, std::min(localCirc.y, boxMax.y));
+
+  // 6. Calculate Distance in Local Space
+  glm::vec2 diffLocal = localCirc - closestLocal;
+  float distSq = glm::dot(diffLocal, diffLocal);
 
   if (distSq > radCirc * radCirc)
     return false;
 
-  // Overlap detected
   float dist = std::sqrt(distSq);
 
+  // 7. Calculate Penetration in Local Space
+  glm::vec2 penetrationLocal;
   if (dist < 1e-4f) {
-    // Circle center is inside AABB.
-    // Need to find nearest face to push out.
-    // Vector from box center to circle center
-    glm::vec2 d = circCenter - boxCenter;
-    glm::vec2 overlap = boxHalf + glm::vec2(radCirc) - glm::abs(d);
+    // Circle center is inside Box
+    // Push out towards nearest face
+    // Vector from center to center (here closest is center? No, closest is
+    // center if inside?) If inside, closest point IS the circle center? No,
+    // closest point on AABB boundary? Wait, the clamping above returns
+    // localCirc if inside. So diffLocal is (0,0). Logic for inside: Find
+    // distance to each edge
+    float dLeft = localCirc.x - boxMin.x;
+    float dRight = boxMax.x - localCirc.x;
+    float dBottom = localCirc.y - boxMin.y;
+    float dTop = boxMax.y - localCirc.y;
 
+    float minD = std::min({dLeft, dRight, dBottom, dTop});
+
+    if (minD == dLeft)
+      penetrationLocal = glm::vec2(-minD - radCirc, 0); // Push Left
+    else if (minD == dRight)
+      penetrationLocal = glm::vec2(minD + radCirc, 0); // Push Right
+    else if (minD == dBottom)
+      penetrationLocal = glm::vec2(0, -minD - radCirc); // Push Down
+    else
+      penetrationLocal = glm::vec2(0, minD + radCirc); // Push Up
+
+    // Wait, we want vector to move Box AWAY from Circle?
+    // Standard convention: Penetration vector pushes A out of B.
+    // Here A is Box, B is Circle.
+    // If we return vector to move Box...
+    // Let's stick to: Vector P such that BoxPos += P resolves collision.
+    // If Circle is to the Right, Box must move Left.
+    // If Circle is inside and slightly right, Box must move Left.
+
+    // Simpler approach for inside:
+    // Just find min separation overlap.
+    // Overlap = (Half + Radius) - abs(Rel).
+    // But that's Axis Aligned logic.
+    // Let's use the logic:
+    // We want to push the Box such that the Circle is outside.
+    // If Circle is at `localCirc`, we want to push the world `boxCenter` away.
+    // Actually, simpler: Calculate how to move CIRCLE out of BOX, then negate
+    // for Box. Move Circle:
+    if (minD == dLeft)
+      penetrationLocal = glm::vec2(-minD - radCirc, 0); // Move Circle Left
+    else if (minD == dRight)
+      penetrationLocal = glm::vec2(minD + radCirc, 0);
+    else if (minD == dBottom)
+      penetrationLocal = glm::vec2(0, -minD - radCirc);
+    else
+      penetrationLocal = glm::vec2(0, minD + radCirc);
+
+    // This moves Circle out.
+    // So Box movement = -penetrationLocal.
+    penetrationLocal = -penetrationLocal;
+
+    // Wait, previous code logic:
+    // penetration.x = (d.x < 0) ? -overlap.x : overlap.x;
+    // Let's restart Inside Logic to be sure.
+    // Overlap on X = (HalfX + Rad) - abs(localCirc.x)
+    // Overlap on Y = (HalfY + Rad) - abs(localCirc.y)
+    // Smallest overlap wins.
+    glm::vec2 overlap = boxHalf + glm::vec2(radCirc) - glm::abs(localCirc);
     if (overlap.x < overlap.y) {
-      penetration.x = (d.x < 0) ? -overlap.x : overlap.x;
-      penetration.y = 0.0f;
+      float sign = (localCirc.x < 0) ? -1.0f : 1.0f;
+      // Move Box opposite to Circle
+      penetrationLocal = glm::vec2(-sign * overlap.x, 0);
     } else {
-      penetration.x = 0.0f;
-      penetration.y = (d.y < 0) ? -overlap.y : overlap.y;
+      float sign = (localCirc.y < 0) ? -1.0f : 1.0f;
+      penetrationLocal = glm::vec2(0, -sign * overlap.y);
     }
-    // We want penetration vector to correct BOX position relative to CIRCLE?
-    // Wait, the convention in checkAABB is: Vector to push A away from B?
-    // Let's stick to: Vector that A should move to un-collide.
-    // If we call checkAABBCircle(box, circ), we return vector for BOX.
-    // So if circle is to the right, box should move left (-x).
-    penetration = -penetration;
+
   } else {
-    // Circle center is outside but close enough
+    // Circle Check (Outside)
     float penetrationDepth = radCirc - dist;
-    // Direction from closest point to center
-    glm::vec2 normal = diff / dist;
-    // We want to push Box AWAY from circle.
-    // diff is (Circ - Point). So normal points TO Circle.
-    // Box needs to move opposite to normal.
-    penetration = -normal * penetrationDepth;
+    glm::vec2 normalLocal =
+        diffLocal / dist; // From Closest to Center (points to Circle)
+    // Box needs to move AWAY from Circle.
+    // Normal points to Circle. So move -Normal.
+    penetrationLocal = -normalLocal * penetrationDepth;
   }
+
+  // 8. Transform Penetration to World Space
+  penetration = rotateVec(penetrationLocal, tBox.rotation);
 
   return true;
 }

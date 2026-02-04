@@ -41,6 +41,7 @@ public:
   void Clear();
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
+  const ECS::World &GetWorld() const { return m_world; }
 
   // Death / Respawn Logic
   bool IsPlayerDead() const { return m_playerDeathTimer > 0.0f; }

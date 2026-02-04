@@ -144,46 +144,48 @@ void Scene::Update(double dt, Platform::InputManager &input) {
     m_deathDuration += static_cast<float>(dt);
   } else {
     // 3. Check Collision (Player vs Enemy) only if alive
-    m_world.each<Components::PlayerController, Components::Transform,
-                 Components::Collider>(
-        [&](ECS::Entity playerEntity, Components::PlayerController &,
-            Components::Transform &pTrans, Components::Collider &pCol) {
-          // Skip if already dead
-          auto *pAnim =
-              m_world.getComponent<Components::SpriteAnimator>(playerEntity);
-          if (pAnim && pAnim->currentClip == "death")
-            return;
+    // 3. Check Collision (Player vs Enemy) via CollisionSystem
+    // Use the collisions detected by the physics engine to determine gameplay
+    // effects
+    auto &collisions = m_collisionSystem.getCollisions();
+    for (const auto &pair : collisions) {
+      if (m_playerDeathTimer > 0.0f)
+        break; // Already handling death
 
-          m_world.each<Components::EnemyAI, Components::Transform,
-                       Components::Collider>(
-              [&](ECS::Entity, Components::EnemyAI &,
-                  Components::Transform &eTrans, Components::Collider &eCol) {
-                // Calculate AABB
-                float pW = pCol.size.x * pTrans.scale.x;
-                float pH = pCol.size.y * pTrans.scale.y;
-                float eW = eCol.size.x * eTrans.scale.x;
-                float eH = eCol.size.y * eTrans.scale.y;
+      ECS::Entity eA = pair.first;
+      ECS::Entity eB = pair.second;
 
-                float dx = std::abs(pTrans.position.x - eTrans.position.x);
-                float dy = std::abs(pTrans.position.y - eTrans.position.y);
+      if (!m_world.isValid(eA) || !m_world.isValid(eB))
+        continue;
 
-                // Check overlap
-                float sumHalfW = (pW + eW) * 0.5f;
-                float sumHalfH = (pH + eH) * 0.5f;
+      // Identify if one is Player and one is Enemy
+      bool playerA = m_world.hasComponent<Components::PlayerController>(eA);
+      bool playerB = m_world.hasComponent<Components::PlayerController>(eB);
+      bool enemyA = m_world.hasComponent<Components::EnemyAI>(eA);
+      bool enemyB = m_world.hasComponent<Components::EnemyAI>(eB);
 
-                if (dx < sumHalfW && dy < sumHalfH) {
-                  // COLLISION!
-                  std::cout << "[Scene] Player died!\n";
-                  if (pAnim) {
-                    pAnim->play("death");
-                  }
-                  // Disable physics
-                  pCol.isSolid = false;
-                  m_playerDeathTimer = 1.0f; // Set > 0 to indicate dead state
-                  m_deathDuration = 0.0f;
-                }
-              });
-        });
+      if ((playerA && enemyB) || (playerB && enemyA)) {
+        ECS::Entity playerEntity = playerA ? eA : eB;
+        // Skip if already dead
+        auto *pAnim =
+            m_world.getComponent<Components::SpriteAnimator>(playerEntity);
+        if (pAnim && pAnim->currentClip == "death")
+          continue;
+
+        // COLLISION!
+        std::cout << "[Scene] Player hit by enemy (via CollisionSystem)!\n";
+        if (pAnim) {
+          pAnim->play("death");
+        }
+
+        // Disable physics
+        if (auto *pCol =
+                m_world.getComponent<Components::Collider>(playerEntity)) {
+          pCol->isSolid = false;
+        }
+        m_playerDeathTimer = 3.0f; // 3 seconds to respawn
+      }
+    }
   }
 
   // 4. Portal Logic
