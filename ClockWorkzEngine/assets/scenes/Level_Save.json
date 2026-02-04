@@ -6547,7 +6547,7 @@
                     },
                     "position": {
                         "x": -950.0,
-                        "y": 450.0
+                        "y": 452.3839111328125
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -14383,7 +14383,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -14480,7 +14480,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -14577,7 +14577,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -14674,7 +14674,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -14771,7 +14771,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -14868,7 +14868,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -14965,7 +14965,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15062,7 +15062,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15159,7 +15159,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15256,7 +15256,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15353,7 +15353,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15450,7 +15450,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15547,7 +15547,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15644,7 +15644,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15741,7 +15741,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15838,7 +15838,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -15935,7 +15935,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16032,7 +16032,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16129,7 +16129,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16226,7 +16226,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16323,7 +16323,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16420,7 +16420,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16517,7 +16517,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16614,7 +16614,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16711,7 +16711,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16808,7 +16808,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -16905,7 +16905,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17081,7 +17081,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17178,7 +17178,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17275,7 +17275,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17372,7 +17372,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17469,7 +17469,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17566,7 +17566,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17663,7 +17663,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17760,7 +17760,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17857,7 +17857,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -17954,7 +17954,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18051,7 +18051,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18148,7 +18148,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18245,7 +18245,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18341,48 +18341,46 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 30.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": true,
-                    "offset": {
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": -200.0
+                    },
+                    "active": false,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 0.0,
+                        "g": 0.0,
+                        "r": 0.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 255.0,
+                        "g": 255.0,
+                        "r": 255.0
+                    },
+                    "direction": {
+                        "x": 1.0,
+                        "y": 0.0
+                    },
+                    "lifeMax": 1.0,
+                    "lifeMin": 0.5,
+                    "localOffset": {
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 30.0
-                },
-                "enemyAI": {
-                    "chaseSpeed": 150.0,
-                    "detectionRadius": 300.0,
-                    "patrolSpeed": 50.0
-                },
-                "health": {
-                    "hp": 0.0,
-                    "invulnerable": false,
-                    "isDead": true,
-                    "maxHp": 50.0,
-                    "regenRate": 0.0
-                },
-                "lightExposure": {
-                    "exposureTime": 0.0,
-                    "inLight": false,
-                    "isDangerous": false,
-                    "maxExposureTime": 10.0
-                },
-                "spriteAnimator": {
-                    "filename": "enemy.json"
+                    "looping": true,
+                    "rate": 200.0,
+                    "sizeEnd": 1.0,
+                    "sizeStart": 5.0,
+                    "speedMax": 120.0,
+                    "speedMin": 20.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 0.0,
+                        "a": 1.0,
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
@@ -18391,13 +18389,13 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
-                    "textureId": "monster_texture",
+                    "sortOrder": 0,
+                    "textureId": "hse floor1",
                     "uv": [
-                        0.5,
                         0.0,
-                        0.25,
-                        0.25
+                        0.0,
+                        1.0,
+                        1.0
                     ],
                     "visible": true
                 },
@@ -18407,28 +18405,23 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2226.428955078125,
-                        "y": 675.3497924804688
+                        "x": 1150.0,
+                        "y": -350.0
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": -1.0,
+                        "x": 1.0,
                         "y": 1.0
                     }
-                },
-                "velocity": {
-                    "moveSpeed": 45.0,
-                    "x": 0.0,
-                    "y": 0.0
                 }
             },
-            "name": "Enemy"
+            "name": "marble"
         },
         {
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18525,7 +18518,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18622,7 +18615,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18719,7 +18712,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18895,7 +18888,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -18992,7 +18985,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19168,7 +19161,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19265,7 +19258,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19362,7 +19355,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19459,7 +19452,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19556,7 +19549,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19653,7 +19646,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19829,7 +19822,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -19926,7 +19919,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20102,7 +20095,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20199,7 +20192,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20296,7 +20289,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20393,7 +20386,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20490,7 +20483,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20587,7 +20580,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20684,7 +20677,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20781,7 +20774,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -20878,7 +20871,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21054,7 +21047,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21151,7 +21144,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21327,7 +21320,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21424,7 +21417,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21521,7 +21514,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21618,7 +21611,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21715,7 +21708,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21812,7 +21805,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -21909,7 +21902,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22006,7 +21999,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22103,7 +22096,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22200,7 +22193,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22297,7 +22290,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22394,7 +22387,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22491,7 +22484,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22588,7 +22581,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22685,7 +22678,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22782,7 +22775,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22879,7 +22872,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -22976,7 +22969,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23073,7 +23066,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23170,7 +23163,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23267,7 +23260,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23364,7 +23357,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23461,7 +23454,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23558,7 +23551,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23655,7 +23648,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23752,7 +23745,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23849,7 +23842,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -23946,7 +23939,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24043,7 +24036,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24140,7 +24133,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24237,7 +24230,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24334,7 +24327,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24431,7 +24424,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24528,7 +24521,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24625,7 +24618,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24722,7 +24715,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -24819,7 +24812,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -25474,7 +25467,7 @@
                     "maxCharge": 100.0
                 },
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 50.0,
@@ -25547,10 +25540,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2202.520751953125,
-                        "y": 789.8047485351563
+                        "x": -944.0914306640625,
+                        "y": 99.98108673095703
                     },
-                    "rotation": 2.763054847717285,
+                    "rotation": 2.29004168510437,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -25568,7 +25561,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -25665,7 +25658,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -25762,7 +25755,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -25859,7 +25852,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -25956,7 +25949,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26132,7 +26125,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26229,7 +26222,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26405,7 +26398,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26502,7 +26495,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26599,7 +26592,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26696,7 +26689,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26793,7 +26786,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26890,7 +26883,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -26987,7 +26980,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -27084,7 +27077,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -27181,7 +27174,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -27278,7 +27271,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -27375,7 +27368,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -27472,7 +27465,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -27569,7 +27562,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -28535,7 +28528,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -28632,7 +28625,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -28729,7 +28722,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -28826,7 +28819,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -28923,7 +28916,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29020,7 +29013,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29117,7 +29110,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29214,7 +29207,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29311,7 +29304,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29408,7 +29401,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29505,7 +29498,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29602,7 +29595,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29699,7 +29692,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29796,7 +29789,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29893,7 +29886,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -29990,7 +29983,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30087,7 +30080,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30184,7 +30177,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30281,7 +30274,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30378,7 +30371,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30475,7 +30468,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30572,7 +30565,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30748,7 +30741,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30845,7 +30838,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -30942,7 +30935,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31039,7 +31032,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31136,7 +31129,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31233,7 +31226,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31330,7 +31323,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31427,7 +31420,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31524,7 +31517,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31621,7 +31614,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31718,7 +31711,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31815,7 +31808,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31912,7 +31905,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32009,7 +32002,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32106,7 +32099,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32203,7 +32196,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32300,7 +32293,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32397,7 +32390,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32494,7 +32487,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32554,7 +32547,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32651,7 +32644,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32748,7 +32741,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32845,7 +32838,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -32942,7 +32935,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33039,7 +33032,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33136,7 +33129,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33233,7 +33226,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33330,7 +33323,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33427,7 +33420,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33524,7 +33517,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -33621,7 +33614,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -40274,42 +40267,44 @@
         {
             "active": true,
             "components": {
-                "particleEmitter": {
-                    "acceleration": {
-                        "x": 0.0,
-                        "y": -200.0
-                    },
-                    "active": false,
-                    "colorEnd": {
-                        "a": 0.0,
-                        "b": 0.0,
-                        "g": 0.0,
-                        "r": 0.0
-                    },
-                    "colorStart": {
-                        "a": 1.0,
-                        "b": 255.0,
-                        "g": 255.0,
-                        "r": 255.0
-                    },
-                    "direction": {
-                        "x": 1.0,
-                        "y": 0.0
-                    },
-                    "lifeMax": 1.0,
-                    "lifeMin": 0.5,
-                    "localOffset": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 30.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "looping": true,
-                    "rate": 200.0,
-                    "sizeEnd": 1.0,
-                    "sizeStart": 5.0,
-                    "speedMax": 120.0,
-                    "speedMin": 20.0,
-                    "spreadDeg": 45.0,
-                    "worldSpace": true
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 30.0
+                },
+                "enemyAI": {
+                    "chaseSpeed": 150.0,
+                    "detectionRadius": 300.0,
+                    "patrolSpeed": 50.0
+                },
+                "health": {
+                    "hp": 50.0,
+                    "invulnerable": false,
+                    "isDead": false,
+                    "maxHp": 50.0,
+                    "regenRate": 0.0
+                },
+                "lightExposure": {
+                    "exposureTime": 0.0,
+                    "inLight": false,
+                    "isDangerous": false,
+                    "maxExposureTime": 10.0
+                },
+                "spriteAnimator": {
+                    "filename": "enemy.json"
                 },
                 "spriteRenderer": {
                     "color": {
@@ -40322,8 +40317,1207 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
-                    "textureId": "hse floor1",
+                    "sortOrder": 2,
+                    "textureId": "monster_texture",
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 3202.312744140625,
+                        "y": 1947.9554443359375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": 0.9998997449874878,
+                    "y": -0.014162748120725155
+                }
+            },
+            "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "dumpster",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -931.7186279296875,
+                        "y": -62.90327072143555
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 472"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 30.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "trash",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1017.2728881835938,
+                        "y": -50.03557205200195
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 473"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "burner",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -919.7991333007813,
+                        "y": 466.32257080078125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 474"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "boxes",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -950.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 475"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "box8",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1162.791748046875,
+                        "y": 301.6861572265625
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 476"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "paperstack",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1453.92041015625,
+                        "y": 293.726318359375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 477"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "bottlerack",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -555.802001953125,
+                        "y": -4.089569091796875
+                    },
+                    "rotation": -1.5435700416564941,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 478"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "plant4",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -77.25898742675781,
+                        "y": -16.446311950683594
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 479"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "electrical box open",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 74.94149017333984,
+                        "y": -26.329269409179688
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 480"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "window",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 652.5730590820313,
+                        "y": -1167.988525390625
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 481"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "shoerack2",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 595.641845703125,
+                        "y": 9.364593505859375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 482"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "shoerack3",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1699.6771240234375,
+                        "y": 281.1027526855469
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 483"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "plant4",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1109.6656494140625,
+                        "y": 286.9300842285156
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 484"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 250.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "house gate open",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 442.3819885253906,
+                        "y": -1.714447021484375
+                    },
+                    "rotation": -6.323741912841797,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 485"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "bench",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 834.6031494140625,
+                        "y": -360.9382019042969
+                    },
+                    "rotation": -4.627326488494873,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 486"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "bench",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 845.8988037109375,
+                        "y": -462.59942626953125
+                    },
+                    "rotation": -4.655990123748779,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 486 (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "bench",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 847.1538696289063,
+                        "y": -575.5563354492188
+                    },
+                    "rotation": -4.74515438079834,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 486 (Clone) (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "cupboard1",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1265.0928955078125,
+                        "y": -226.32568359375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 489"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "TV table",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 463.8408508300781,
+                        "y": -458.84210205078125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 490"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "TV",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 465.7630920410156,
+                        "y": -451.1531066894531
+                    },
+                    "rotation": 1.5872985124588013,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 491"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "bed",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1543.56494140625,
+                        "y": -668.3433837890625
+                    },
+                    "rotation": -1.547206997871399,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 492"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "worktable",
                     "uv": [
                         0.0,
                         0.0,
@@ -40339,7 +41533,7 @@
                     },
                     "position": {
                         "x": 1150.0,
-                        "y": -350.0
+                        "y": -250.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -40348,7 +41542,889 @@
                     }
                 }
             },
-            "name": "marble"
+            "name": "Entity 493"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "Table",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1265.0928955078125,
+                        "y": -229.3025360107422
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 494"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "wallfan",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1006.6863403320313,
+                        "y": -637.2127685546875
+                    },
+                    "rotation": 1.4849427938461304,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 495"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "trashbin",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1050.0,
+                        "y": -250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 496"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "stoolold",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 572.2921142578125,
+                        "y": -888.0704345703125
+                    },
+                    "rotation": -3.149190902709961,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 497"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "doorframe",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 965.34130859375,
+                        "y": -847.2456665039063
+                    },
+                    "rotation": 1.5345851182937622,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 498"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "shelve1",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1648.6236572265625,
+                        "y": -291.83380126953125
+                    },
+                    "rotation": -4.709195137023926,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 499"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "Table",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 562.25146484375,
+                        "y": -949.5691528320313
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 500"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "Table",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 651.3619384765625,
+                        "y": -948.3140869140625
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 501"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "Table",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 740.4723510742188,
+                        "y": -950.82421875
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 502"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "tissue1",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 550.0,
+                        "y": -950.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 503"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "tissue2",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 750.0,
+                        "y": -950.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 504"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "workchair",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1145.39501953125,
+                        "y": -339.6018981933594
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 505"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "stoolold",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 662.1904296875,
+                        "y": -1039.9346923828125
+                    },
+                    "rotation": -6.205493450164795,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 506"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "stoolold",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 748.790771484375,
+                        "y": -873.0094604492188
+                    },
+                    "rotation": -9.308708190917969,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 506 (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "cabinet",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 417.45050048828125,
+                        "y": -652.115966796875
+                    },
+                    "rotation": -1.5404975414276123,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 508"
         }
     ],
     "sfxVolume": 1.0,

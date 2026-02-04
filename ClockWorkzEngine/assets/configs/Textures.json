@@ -737,6 +737,186 @@
             "flipY": true,
             "name": "bottlerack",
             "path": "assets/textures/imported/bottlerack.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "carpet",
+            "path": "assets/textures/imported/carpet.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "doorframe",
+            "path": "assets/textures/imported/doorframe.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "fanstanding",
+            "path": "assets/textures/imported/fanstanding.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "lamp",
+            "path": "assets/textures/imported/lamp.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "magazine",
+            "path": "assets/textures/imported/magazine.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "metalshelf",
+            "path": "assets/textures/imported/metalshelf.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "nightstand",
+            "path": "assets/textures/imported/nightstand.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "painting1",
+            "path": "assets/textures/imported/painting1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "shelve1",
+            "path": "assets/textures/imported/shelve1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "shelve2",
+            "path": "assets/textures/imported/shelve2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "shelve3",
+            "path": "assets/textures/imported/shelve3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "stool",
+            "path": "assets/textures/imported/stool.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "stoolold",
+            "path": "assets/textures/imported/stoolold.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "stoolold1",
+            "path": "assets/textures/imported/stoolold1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "studytable",
+            "path": "assets/textures/imported/studytable.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "Table",
+            "path": "assets/textures/imported/Table.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "table2",
+            "path": "assets/textures/imported/table2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "tissue1",
+            "path": "assets/textures/imported/tissue1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "tissue2",
+            "path": "assets/textures/imported/tissue2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "trashbin",
+            "path": "assets/textures/imported/trashbin.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "tray",
+            "path": "assets/textures/imported/tray.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "TV table",
+            "path": "assets/textures/imported/TV table.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "TV",
+            "path": "assets/textures/imported/TV.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wallfan",
+            "path": "assets/textures/imported/wallfan.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "workchair",
+            "path": "assets/textures/imported/workchair.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "worktable",
+            "path": "assets/textures/imported/worktable.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bed",
+            "path": "assets/textures/imported/bed.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "cabinet clothes",
+            "path": "assets/textures/imported/cabinet clothes.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "cabinet",
+            "path": "assets/textures/imported/cabinet.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "cabinet2",
+            "path": "assets/textures/imported/cabinet2.png"
         }
     ]
 }
