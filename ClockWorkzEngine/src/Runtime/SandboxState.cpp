@@ -841,11 +841,63 @@ void SandboxState::savePrefabFromEntity(ECS::Entity entity,
 
   // Save to file
   std::string filepath = "assets/prefabs/" + name + ".json";
+
+  // Ensure directory exists
+  {
+    namespace fs = std::filesystem;
+    fs::path parentDir = fs::path(filepath).parent_path();
+    if (!parentDir.empty() && !fs::exists(parentDir)) {
+      fs::create_directories(parentDir);
+    }
+  }
+
   std::ofstream file(filepath);
   if (file.is_open()) {
     file << prefabJson.dump(4);
     file.close();
-    std::cout << "[Prefab] Saved: " << filepath << "\n";
+    std::cout << "[Prefab] Saved (Build): "
+              << std::filesystem::absolute(filepath) << "\n";
+
+    // --- DUAL SAVE STRATEGY ---
+    // Also save to the source directory so changes are tracked by git
+    {
+      namespace fs = std::filesystem;
+      fs::path absPath = fs::absolute(fs::path(filepath));
+      std::string pathStr = absPath.generic_string();
+
+      // Support both "/out/build/" (CMake presets) and plain "/build/"
+      size_t buildPos = pathStr.find("/out/build/");
+      if (buildPos == std::string::npos) {
+        buildPos = pathStr.find("/build/");
+      }
+      if (buildPos != std::string::npos) {
+        size_t assetsPos = pathStr.find("/assets/", buildPos);
+        if (assetsPos != std::string::npos) {
+          std::string root = pathStr.substr(0, buildPos);
+          std::string relativeAssetPath = pathStr.substr(assetsPos);
+          std::string sourcePath =
+              fs::path(root + relativeAssetPath).make_preferred().string();
+
+          try {
+            fs::path srcParentDir = fs::path(sourcePath).parent_path();
+            if (!srcParentDir.empty() && !fs::exists(srcParentDir)) {
+              fs::create_directories(srcParentDir);
+            }
+
+            std::ofstream srcFile(sourcePath);
+            if (srcFile.is_open()) {
+              srcFile << prefabJson.dump(4);
+              srcFile.close();
+              std::cout << "[Prefab] DUAL SAVE: Also saved to Source: "
+                        << sourcePath << "\n";
+            }
+          } catch (const std::exception &e) {
+            std::cerr << "[Prefab] Dual Save Exception: " << e.what() << "\n";
+          }
+        }
+      }
+    }
+    // ---------------------------
 
     // Reload available prefabs
     loadAvailablePrefabs();

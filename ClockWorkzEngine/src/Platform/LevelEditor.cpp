@@ -1846,13 +1846,20 @@ bool LevelEditor::newLevel(const std::string &name) {
 
 // Helper to resolve the source asset path from the build path
 static std::string resolveSourcePath(const std::string &buildPath) {
-  fs::path path(buildPath);
+  // Convert to absolute path first so we can find /build/ in the path
+  fs::path path = fs::absolute(fs::path(buildPath));
   std::string pathStr =
       path.generic_string(); // Helper for consistent separators (/)
 
   // 1. Check if we are in a 'build' folder (common CMake pattern)
-  // We look for "/build/" to avoid partial matches
-  size_t buildPos = pathStr.find("/build/");
+  // Support both "/out/build/" (CMake presets) and plain "/build/"
+  size_t buildPos = pathStr.find("/out/build/");
+  if (buildPos != std::string::npos) {
+    // For "/out/build/" pattern, root is everything before "/out/"
+    // (the "/out" dir is part of the build output)
+  } else {
+    buildPos = pathStr.find("/build/");
+  }
   if (buildPos == std::string::npos)
     return "";
 
@@ -1862,21 +1869,11 @@ static std::string resolveSourcePath(const std::string &buildPath) {
     return "";
 
   // 3. Construct Source Path
-  // Root is everything before "/build/"
+  // Root is everything before the build directory
   std::string root = pathStr.substr(0, buildPos);
   // Relative asset path is everything from "/assets/" onwards
   std::string relativeAssetPath = pathStr.substr(assetsPos);
 
-  // Combine root + relative part
-  // Note: root usually lacks trailing slash because we split at /build/
-  // relativeAssetPath starts with /assets/
-  fs::path sourcePath =
-      fs::path(root) /
-      relativeAssetPath.substr(
-          1); // Remove leading slash to use path joining or just append
-
-  // Actually, simple string concatenation is safer if we trust the slash
-  // content
   std::string finalPath = root + relativeAssetPath;
 
   // Convert to OS preferred path
@@ -2144,20 +2141,63 @@ bool LevelEditor::savePrefab(const std::string &name) {
 
   std::string filepath = "assets/prefabs/" + name + ".json";
 
+  // Ensure directory exists
+  try {
+    fs::path parentDir = fs::path(filepath).parent_path();
+    if (!parentDir.empty() && !fs::exists(parentDir)) {
+      fs::create_directories(parentDir);
+      std::cout << "[LevelEditor] Created directory: " << parentDir << "\n";
+    }
+  } catch (const std::exception &e) {
+    std::cerr << "[LevelEditor] Error creating prefab directory: " << e.what()
+              << "\n";
+    return false;
+  }
+
   // Serialize selected object as prefab
   auto json =
       Gameplay::GameObjectSerializer::serializeGameObject(*m_selectedObject);
 
-  // Save to file
+  // Save to file (build directory)
   std::ofstream file(filepath);
   if (!file.is_open()) {
-    // TODO: Core::Engine::Get().logger().error("Failed to open file for
-    // writing: " + filepath);
+    std::cerr << "[LevelEditor] Failed to open file for writing: " << filepath
+              << "\n";
     return false;
   }
 
   file << json.dump(4);
   file.close();
+
+  std::cout << "[LevelEditor] Saved prefab (Build): "
+            << fs::absolute(filepath) << "\n";
+
+  // --- DUAL SAVE STRATEGY ---
+  // Also save to the source directory so changes are tracked by git
+  std::string sourcePath = resolveSourcePath(filepath);
+  if (!sourcePath.empty() && sourcePath != filepath) {
+    try {
+      fs::path srcParentDir = fs::path(sourcePath).parent_path();
+      if (!srcParentDir.empty() && !fs::exists(srcParentDir)) {
+        fs::create_directories(srcParentDir);
+      }
+
+      std::ofstream srcFile(sourcePath);
+      if (srcFile.is_open()) {
+        srcFile << json.dump(4);
+        srcFile.close();
+        std::cout << "[LevelEditor] DUAL SAVE: Also saved prefab to Source: "
+                  << sourcePath << "\n";
+      } else {
+        std::cerr << "[LevelEditor] DUAL SAVE FAILED for prefab: "
+                  << sourcePath << "\n";
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "[LevelEditor] Prefab Dual Save Exception: " << e.what()
+                << "\n";
+    }
+  }
+  // ---------------------------
 
   // Register in factory
   Gameplay::PrefabFactory::get().loadPrefabFromFile(filepath);
