@@ -51,7 +51,7 @@ public:
 
 private:
   ParticleSystem m_system;
-  bool m_active{true};
+  bool m_active{false};
   Graphics::RenderingManager *m_renderer{nullptr};
 };
 } // namespace Components
