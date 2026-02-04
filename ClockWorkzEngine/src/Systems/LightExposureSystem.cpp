@@ -93,8 +93,9 @@ void LightExposureSystem::update(ECS::World &world, double dt) {
 
         // Calculate Torch World Properties
         float torchAngleRad = tTrans.rotation;
-        // Convert local offset to world logic
-        vec2 localOffset = torch.offset;
+        // Initialize local offset scaled by transform scale
+        vec2 localOffset = {torch.offset.x * tTrans.scale.x,
+                            torch.offset.y * tTrans.scale.y};
 
         // Manual rotation of offset (since we don't have a full matrix lib used
         // here yet)

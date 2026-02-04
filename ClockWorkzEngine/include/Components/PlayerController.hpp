@@ -46,8 +46,15 @@ struct PlayerController {
   float sprintMultiplier{2.0f}; // Sprint speed multiplier
 
   // Footsteps
+  // Footsteps
   float footstepTimer{0.0f};
   float footstepInterval{0.4f};
+
+  // Torch Bobbing
+  vec2 m_baseTorchOffset{-9999.0f, -9999.0f}; // Sentinel value
+  float m_bobTimer{0.0f};
+  float m_bobSpeed{10.0f};
+  float m_bobAmount{2.0f};
 
   void OnEnter(ECS::Entity entity, ECS::World &world) {
     (void)entity;
@@ -292,16 +299,46 @@ struct PlayerController {
       }
     }
 
-    // Update torch offset based on animation state
+    // Dynamic Torch Sync
     if (torch) {
-      // Adjust offset based on animation state for better visual alignment
-      if (currentState.find("idle") != std::string::npos) {
-        torch->offset = vec2{35.0f, -20.0f}; // Default idle pose
-      } else if (currentState.find("walk") != std::string::npos) {
-        torch->offset = vec2{40.0f, -15.0f}; // Walking pose - slightly forward
-      } else if (currentState.find("run") != std::string::npos) {
-        torch->offset = vec2{45.0f, -10.0f}; // Running pose - more forward
+      // 1. Capture Base Offset (once, to respect editor settings)
+      if (m_baseTorchOffset.x < -9000.0f) {
+        m_baseTorchOffset = {torch->offset.x, torch->offset.y};
       }
+
+      // 2. Determine State Modifiers
+      float bobOffset = 0.0f;
+      vec2 stateOffset = {0.0f, 0.0f};
+      float currentBobSpeed = m_bobSpeed;
+
+      if (currentState.find("run") != std::string::npos) {
+        stateOffset = {10.0f, 0.0f};         // Shift forward when running
+        currentBobSpeed = m_bobSpeed * 1.5f; // Faster bob
+      } else if (currentState.find("walk") != std::string::npos) {
+        stateOffset = {5.0f, 0.0f}; // Slight shift forward
+      }
+
+      // 3. Update Bobbing Timer if moving
+      if (currentState != "idle" && currentState != "idle_torch") {
+        m_bobTimer += currentBobSpeed * static_cast<float>(dt);
+        // Sine wave bobbing (Vertical usually fits walking best)
+        // Adjust phase or axis as needed
+        bobOffset = std::sin(m_bobTimer) * m_bobAmount;
+      } else {
+        // Reset/Decay bobbing when idle? Or keep it?
+        // Let's reset phase for consistency on start move
+        m_bobTimer = 0.0f;
+        bobOffset = 0.0f;
+      }
+
+      // 4. Apply Final Offset
+      // Base + StateShift + (0, Bob)
+      // Note: This overrides torch->offset every frame relative to base.
+      // If user changes Torch Offset in editor *while playing*, it won't
+      // reflect unless we detect change or re-capture. But for now, this is
+      // safer than hardcoding.
+      torch->offset.x = m_baseTorchOffset.x + stateOffset.x;
+      torch->offset.y = m_baseTorchOffset.y + stateOffset.y + bobOffset;
     }
   }
 

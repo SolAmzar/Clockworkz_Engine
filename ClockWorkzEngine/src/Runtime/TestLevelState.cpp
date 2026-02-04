@@ -362,7 +362,8 @@ void TestLevelState::renderTorchPass(Graphics::RenderingManager &renderer) {
         // Calculate Torch World Position
         float angle = trans.rotation;
 
-        vec2 torchOffsetLocal(torch.offset.x, torch.offset.y);
+        vec2 torchOffsetLocal(torch.offset.x * trans.scale.x,
+                              torch.offset.y * trans.scale.y);
         vec2 torchOffsetWorld(torchOffsetLocal.x * std::cos(angle) -
                                   torchOffsetLocal.y * std::sin(angle),
                               torchOffsetLocal.x * std::sin(angle) +
@@ -405,8 +406,10 @@ void TestLevelState::renderTorchPass(Graphics::RenderingManager &renderer) {
 
             // Iterate all potential occluders
             world.each<Components::Transform, Components::Collider>(
-                [&](ECS::Entity, Components::Transform &obsTrans,
+                [&](ECS::Entity obsEntity, Components::Transform &obsTrans,
                     Components::Collider &obsCol) {
+                  if (obsEntity.id == entity.id)
+                    return; // Ignore self
                   if (!obsCol.isSolid || !obsCol.blocksLight)
                     return;
 

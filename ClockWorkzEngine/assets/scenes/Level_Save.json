@@ -25852,13 +25852,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -950.0,
-                        "y": 150.0
+                        "x": 285.019775390625,
+                        "y": 118.41349029541016
                     },
-                    "rotation": 2.1956522464752197,
+                    "rotation": 2.2121927738189697,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 },
                 "velocity": {
@@ -40803,7 +40803,7 @@
                     "textureId": "monster_texture",
                     "unlit": false,
                     "uv": [
-                        0.75,
+                        0.25,
                         0.25,
                         0.25,
                         0.25
@@ -40816,8 +40816,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2358.1728515625,
-                        "y": 3150.183837890625
+                        "x": 2586.98046875,
+                        "y": 3649.45263671875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -40827,8 +40827,8 @@
                 },
                 "velocity": {
                     "moveSpeed": 50.0,
-                    "x": 0.7293558716773987,
-                    "y": 0.6841344833374023
+                    "x": 0.9073347449302673,
+                    "y": -0.42040908336639404
                 }
             },
             "name": "Enemy"
@@ -40840,19 +40840,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 85.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 85.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -40882,8 +40882,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -931.7186279296875,
-                        "y": -62.90327072143555
+                        "x": -954.8947143554688,
+                        "y": -34.06465148925781
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -40908,10 +40908,10 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": -3.0,
+                        "y": -6.0
                     },
-                    "radius": 30.0,
+                    "radius": 25.0,
                     "shape": 1,
                     "width": 100.0
                 },
@@ -40943,8 +40943,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1017.2728881835938,
-                        "y": -50.03557205200195
+                        "x": -1020.3876342773438,
+                        "y": -72.78610229492188
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -40972,8 +40972,8 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
+                    "radius": 25.0,
+                    "shape": 1,
                     "width": 100.0
                 },
                 "spriteRenderer": {
@@ -41004,8 +41004,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -919.7991333007813,
-                        "y": 466.32257080078125
+                        "x": -634.789306640625,
+                        "y": 265.16436767578125
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -41065,8 +41065,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -950.0,
-                        "y": -150.0
+                        "x": -934.8536987304688,
+                        "y": -154.20785522460938
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -41166,6 +41166,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 9.0,
+                        "y": -8.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 40.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -41194,8 +41212,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -555.802001953125,
-                        "y": -4.089569091796875
+                        "x": -563.8125,
+                        "y": 15.936904907226563
                     },
                     "rotation": -1.5435700416564941,
                     "scale": {
@@ -41342,9 +41360,9 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 50.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -41354,7 +41372,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 90.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -41384,13 +41402,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 595.641845703125,
-                        "y": 9.364593505859375
+                        "x": 611.364990234375,
+                        "y": 25.975433349609375
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -41564,24 +41582,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -41594,7 +41594,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 2,
-                    "textureId": "bench",
+                    "textureId": "carpet",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -41610,42 +41610,92 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 834.6031494140625,
-                        "y": -360.9382019042969
+                        "x": 633.431396484375,
+                        "y": -494.616943359375
                     },
-                    "rotation": -4.627326488494873,
+                    "rotation": 1.570512056350708,
+                    "scale": {
+                        "x": 5.0,
+                        "y": 5.0
+                    }
+                }
+            },
+            "name": "Entity 511"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "portal": {
+                    "levelName": "Level1.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "house entrance",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2450.0,
+                        "y": -250.0
+                    },
+                    "rotation": -1.559890627861023,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     }
                 }
             },
-            "name": "Entity 486"
+            "name": "Entity 510"
         },
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
+                        "a": 0.0,
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
@@ -41654,9 +41704,9 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
-                    "textureId": "bench",
-                    "unlit": false,
+                    "sortOrder": 0,
+                    "textureId": "fragment_texture",
+                    "unlit": true,
                     "uv": [
                         0.0,
                         0.0,
@@ -41671,130 +41721,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 845.8988037109375,
-                        "y": -462.59942626953125
-                    },
-                    "rotation": -4.655990123748779,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    }
-                }
-            },
-            "name": "Entity 486 (Clone)"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "bench",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 847.1538696289063,
-                        "y": -575.5563354492188
-                    },
-                    "rotation": -4.74515438079834,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    }
-                }
-            },
-            "name": "Entity 486 (Clone) (Clone)"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "cupboard1",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 1265.0928955078125,
-                        "y": -226.32568359375
+                        "x": 420.17462158203125,
+                        "y": -1066.37158203125
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -41803,7 +41731,7 @@
                     }
                 }
             },
-            "name": "Entity 489"
+            "name": "Fragment 1"
         },
         {
             "active": true,
@@ -41812,9 +41740,70 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 59.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 59.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "stoolold1",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 739.1339111328125,
+                        "y": -580.0452270507813
+                    },
+                    "rotation": 1.0714421272277832,
+                    "scale": {
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
+                    }
+                }
+            },
+            "name": "Entity 487"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 90.0,
+                    "isHazard": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -41824,7 +41813,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 58.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -41854,13 +41843,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 463.8408508300781,
-                        "y": -458.84210205078125
+                        "x": 447.37213134765625,
+                        "y": -450.6689147949219
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 2.0,
+                        "y": 2.0
                     }
                 }
             },
@@ -41873,9 +41862,9 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 60.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -41885,7 +41874,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 83.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -41915,13 +41904,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 465.7630920410156,
-                        "y": -451.1531066894531
+                        "x": 445.63726806640625,
+                        "y": -450.6689147949219
                     },
                     "rotation": 1.5872985124588013,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 2.0,
+                        "y": 2.0
                     }
                 }
             },
@@ -41936,7 +41925,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -41946,7 +41935,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 55.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -41976,13 +41965,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1543.56494140625,
-                        "y": -668.3433837890625
+                        "x": 1569.431640625,
+                        "y": -627.232421875
                     },
                     "rotation": -1.547206997871399,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 3.0,
+                        "y": 3.0
                     }
                 }
             },
@@ -42037,13 +42026,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1150.0,
-                        "y": -250.0
+                        "x": 1219.2208251953125,
+                        "y": -282.5953369140625
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 2.0,
+                        "y": 2.0
                     }
                 }
             },
@@ -42141,13 +42130,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1006.6863403320313,
-                        "y": -637.2127685546875
+                        "x": 1027.3466796875,
+                        "y": -629.2039794921875
                     },
                     "rotation": 1.4849427938461304,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 2.0,
+                        "y": 2.0
                     }
                 }
             },
@@ -42162,7 +42151,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -42170,8 +42159,8 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
+                    "radius": 25.0,
+                    "shape": 1,
                     "width": 100.0
                 },
                 "spriteRenderer": {
@@ -42202,13 +42191,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1050.0,
-                        "y": -250.0
+                        "x": 1053.4100341796875,
+                        "y": -249.4331817626953
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 2.0,
+                        "y": 2.0
                     }
                 }
             },
@@ -42223,16 +42212,16 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
+                    "radius": 28.0,
+                    "shape": 1,
                     "width": 100.0
                 },
                 "spriteRenderer": {
@@ -42263,13 +42252,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 572.2921142578125,
-                        "y": -888.0704345703125
+                        "x": 580.64013671875,
+                        "y": -845.1146850585938
                     },
-                    "rotation": -3.149190902709961,
+                    "rotation": -3.593535900115967,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -42385,13 +42374,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1650.0,
-                        "y": -250.0
+                        "x": 1625.0,
+                        "y": -328.37310791015625
                     },
                     "rotation": -4.709195137023926,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 }
             },
@@ -42404,19 +42393,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 49.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -2.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 96.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -42446,13 +42435,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 562.25146484375,
-                        "y": -949.5691528320313
+                        "x": 564.49169921875,
+                        "y": -946.8856201171875
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -42465,19 +42454,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 59.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 59.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -42491,7 +42480,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 2,
-                    "textureId": "Table",
+                    "textureId": "stoolold1",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -42503,21 +42492,21 @@
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
+                        "x": 1.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": 651.3619384765625,
-                        "y": -948.3140869140625
+                        "x": 769.665771484375,
+                        "y": -365.0453186035156
                     },
-                    "rotation": 0.0,
+                    "rotation": 1.5362484455108643,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
-            "name": "Entity 501"
+            "name": "Entity 486"
         },
         {
             "active": true,
@@ -42526,19 +42515,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 49.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -2.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 96.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -42568,13 +42557,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 740.4723510742188,
-                        "y": -950.82421875
+                        "x": 731.4533081054688,
+                        "y": -956.887939453125
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -42584,7 +42573,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -42629,8 +42618,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 550.0,
-                        "y": -950.0
+                        "x": 535.8831787109375,
+                        "y": -983.4613037109375
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -42645,7 +42634,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -42690,10 +42679,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 750.0,
-                        "y": -950.0
+                        "x": 791.6529541015625,
+                        "y": -964.3908081054688
                     },
-                    "rotation": 0.0,
+                    "rotation": -0.4503965973854065,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -42709,19 +42698,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 75.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -2.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 80.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -42751,13 +42740,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1145.39501953125,
-                        "y": -339.6018981933594
+                        "x": 1211.720703125,
+                        "y": -458.8205871582031
                     },
-                    "rotation": 0.0,
+                    "rotation": -0.22990453243255615,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -42772,16 +42761,16 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
+                    "radius": 28.0,
+                    "shape": 1,
                     "width": 100.0
                 },
                 "spriteRenderer": {
@@ -42812,13 +42801,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 662.1904296875,
-                        "y": -1039.9346923828125
+                        "x": 664.6235961914063,
+                        "y": -1053.387939453125
                     },
                     "rotation": -6.205493450164795,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -42833,16 +42822,16 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
+                    "radius": 28.0,
+                    "shape": 1,
                     "width": 100.0
                 },
                 "spriteRenderer": {
@@ -42873,13 +42862,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 748.790771484375,
-                        "y": -873.0094604492188
+                        "x": 693.2894897460938,
+                        "y": -864.387939453125
                     },
                     "rotation": -9.308708190917969,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
                     }
                 }
             },
@@ -42894,7 +42883,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -42934,12 +42923,12 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 417.45050048828125,
-                        "y": -652.115966796875
+                        "x": 412.1341857910156,
+                        "y": -689.2489013671875
                     },
                     "rotation": -1.5404975414276123,
                     "scale": {
-                        "x": 1.0,
+                        "x": 2.0,
                         "y": 1.0
                     }
                 }
@@ -42964,7 +42953,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 2,
                     "textureId": "fragment_texture",
                     "unlit": true,
                     "uv": [
@@ -42981,8 +42970,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 420.17462158203125,
-                        "y": -1068.76708984375
+                        "x": 1255.8975830078125,
+                        "y": -651.4266357421875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -42991,35 +42980,18 @@
                     }
                 }
             },
-            "name": "Fragment 1"
+            "name": "Entity 509"
         },
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "portal": {
-                    "levelName": "Level1.json"
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
+                        "a": 0.0,
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
@@ -43029,8 +43001,8 @@
                         "y": 100.0
                     },
                     "sortOrder": 2,
-                    "textureId": "house entrance",
-                    "unlit": false,
+                    "textureId": "fragment_texture",
+                    "unlit": true,
                     "uv": [
                         0.0,
                         0.0,
@@ -43045,17 +43017,111 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2450.0,
-                        "y": -250.0
+                        "x": 2296.81982421875,
+                        "y": -232.00845336914063
                     },
-                    "rotation": -1.559890627861023,
+                    "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     }
                 }
             },
-            "name": "Entity 510"
+            "name": "Entity 509 (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "fragment_texture",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 445.5726318359375,
+                        "y": 107.05374145507813
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 509 (Clone) (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "fragment": {
+                    "collected": false,
+                    "fragmentId": 0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "fragment_texture",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1656.330078125,
+                        "y": -242.72427368164063
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 509 (Clone) (Clone) (Clone)"
         }
     ],
     "sfxVolume": 1.0,
