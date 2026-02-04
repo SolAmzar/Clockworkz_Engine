@@ -1,5 +1,5 @@
 {
-    "bgm": "",
+    "bgm": "level_bgm",
     "objects": [
         {
             "active": true,
