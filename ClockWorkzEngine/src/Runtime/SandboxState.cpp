@@ -78,9 +78,9 @@ reserved.
 namespace Runtime {
 
 vec2 snapToGrid(const vec2 &pos, float gridSize) {
-  float halfGrid = gridSize * 0.5f;
-  return vec2(std::round((pos.x - halfGrid) / gridSize) * gridSize + halfGrid,
-              std::round((pos.y - halfGrid) / gridSize) * gridSize + halfGrid);
+    float halfGrid = gridSize * 0.5f;
+    return vec2(std::round((pos.x - halfGrid) / gridSize) * gridSize + halfGrid,
+                std::round((pos.y - halfGrid) / gridSize) * gridSize + halfGrid);
 }
 // Helper struct for type identity (moved to namespace scope)
 template <typename T> struct Identity {
@@ -130,6 +130,18 @@ void SandboxState::onExit() {
   m_scene.Clear();
   m_testEntities.clear();
   m_framebuffer.destroy();
+
+  // Clear all selection and drag state
+  m_selectedEntities.clear();
+  m_selectedEntityIdx = -1;
+  m_tilemap.clear();
+  m_entityGroups.clear();
+  m_multiDragStartPositions.clear();
+  m_isMultiDragging = false;
+  m_isDirectDragging = false;
+  m_isBoxSelecting = false;
+  m_undoStack.clear();
+  m_redoStack.clear();
 
   // Reset viewport to full window size to prevent menu from being squashed
   auto &window = Core::Engine::Get().window();
@@ -3615,9 +3627,47 @@ void SandboxState::renderSceneWindow() {
   // Determine viewport bounds
   ImVec2 windowPos = ImGui::GetWindowPos();
   ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-  // Determine viewport bounds
 
   vec2 viewportMin = {windowPos.x + contentMin.x, windowPos.y + contentMin.y};
+
+  // Draw overlay showing current layer and selection info
+  {
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    float padding = 8.0f;
+    ImVec2 overlayPos = {viewportMin.x + padding, viewportMin.y + padding};
+
+    // Background for text
+    char layerText[64];
+    snprintf(layerText, sizeof(layerText), "Layer %d", m_currentLayer);
+
+    char selectionText[64] = "";
+    if (m_selectedEntities.size() > 1) {
+      snprintf(selectionText, sizeof(selectionText), " | %zu selected", m_selectedEntities.size());
+    } else if (m_selectedEntityIdx >= 0) {
+      snprintf(selectionText, sizeof(selectionText), " | 1 selected");
+    }
+
+    char fullText[128];
+    snprintf(fullText, sizeof(fullText), "%s%s", layerText, selectionText);
+
+    ImVec2 textSize = ImGui::CalcTextSize(fullText);
+    ImVec2 bgMin = {overlayPos.x - 4, overlayPos.y - 2};
+    ImVec2 bgMax = {overlayPos.x + textSize.x + 4, overlayPos.y + textSize.y + 2};
+
+    drawList->AddRectFilled(bgMin, bgMax, IM_COL32(0, 0, 0, 180), 4.0f);
+    drawList->AddText(overlayPos, IM_COL32(255, 255, 255, 255), fullText);
+
+    // Show box selection hint if selecting
+    if (m_isBoxSelecting) {
+      ImVec2 hintPos = {viewportMin.x + padding, viewportMin.y + textSize.y + padding + 6};
+      const char *hint = "Box selecting...";
+      ImVec2 hintSize = ImGui::CalcTextSize(hint);
+      ImVec2 hintBgMin = {hintPos.x - 4, hintPos.y - 2};
+      ImVec2 hintBgMax = {hintPos.x + hintSize.x + 4, hintPos.y + hintSize.y + 2};
+      drawList->AddRectFilled(hintBgMin, hintBgMax, IM_COL32(100, 150, 255, 180), 4.0f);
+      drawList->AddText(hintPos, IM_COL32(255, 255, 255, 255), hint);
+    }
+  }
 
   // Drag and Drop Target
   if (ImGui::BeginDragDropTarget()) {
@@ -3700,14 +3750,13 @@ void SandboxState::renderSceneWindow() {
   renderGizmos({windowPos.x, windowPos.y},
                {viewportPanelSize.x, viewportPanelSize.y}, viewportMin);
 
-  // Handle Object Picking (Selection)
+  // Handle Object Picking (Selection) and Box Selection
   // Skip selection if we painted/erased this frame (clicked on blank space)
   // Allow selection if we clicked on an entity (didn't paint) or in Select mode
   bool allowSelection = !m_paintedThisFrame;
   if (allowSelection && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
-      m_gizmoActiveAxis == -1) {
-    // Create a dummy gizmo check context or just assume no gizmo if axis is
-    // -1 Convert mouse to world space
+      m_gizmoActiveAxis == -1 && !m_isBoxSelecting) {
+    // Convert mouse to world space
     ImVec2 mousePos = ImGui::GetMousePos();
     vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
 
@@ -3725,13 +3774,18 @@ void SandboxState::renderSceneWindow() {
 
     vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
 
-    // Iterate m_testEntities
+    // Iterate m_testEntities - only consider entities on current layer
     auto &world = m_scene.GetWorld();
     float bestDist = FLT_MAX;
     int bestIdx = -1;
 
     for (int i = 0; i < (int)m_testEntities.size(); ++i) {
       auto entity = m_testEntities[i];
+      // Only select entities on current layer
+      int entityLayer = getEntityLayer(entity);
+      if (entityLayer != m_currentLayer && entityLayer != -1)
+        continue;
+
       auto *trans = world.getComponent<Components::Transform>(entity);
       if (trans) {
         // Simple distance check for selection (assume rad 50)
@@ -3745,13 +3799,189 @@ void SandboxState::renderSceneWindow() {
     }
 
     if (bestIdx != -1) {
-      m_selectedEntityIdx = bestIdx;
-      // Start direct dragging (entity body drag without gizmo)
-      auto selectedEntity = m_testEntities[m_selectedEntityIdx];
-      auto *trans = world.getComponent<Components::Transform>(selectedEntity);
+      // Check if clicked entity is already in multi-selection
+      bool clickedOnSelected = m_selectedEntities.count(bestIdx) > 0;
+
+      if (clickedOnSelected && m_selectedEntities.size() > 1) {
+        // Start multi-entity dragging
+        m_isMultiDragging = true;
+        m_isDirectDragging = false;
+        m_multiDragStartPositions.clear();
+
+        // Store original positions of all selected entities (only on current layer)
+        for (int idx : m_selectedEntities) {
+          if (idx >= 0 && idx < (int)m_testEntities.size()) {
+            auto entity = m_testEntities[idx];
+            int entLayer = getEntityLayer(entity);
+            if (entLayer == m_currentLayer || entLayer == -1) {
+              auto *trans = world.getComponent<Components::Transform>(entity);
+              if (trans) {
+                m_multiDragStartPositions.push_back({idx, trans->position});
+              }
+            }
+          }
+        }
+        // Store click offset from first entity
+        if (!m_multiDragStartPositions.empty()) {
+          m_directDragStartPos = worldPos;  // Use as reference point
+        }
+      } else {
+        // Single entity selection - clear multi-select unless Ctrl held
+        if (!ImGui::GetIO().KeyCtrl) {
+          m_selectedEntities.clear();
+        }
+        m_selectedEntityIdx = bestIdx;
+        m_selectedEntities.insert(bestIdx);
+
+        // Start direct dragging (entity body drag without gizmo)
+        auto selectedEntity = m_testEntities[m_selectedEntityIdx];
+        auto *trans = world.getComponent<Components::Transform>(selectedEntity);
+        if (trans) {
+          m_isDirectDragging = true;
+          m_isMultiDragging = false;
+          m_directDragStartPos = trans->position;
+        }
+      }
+    } else {
+      // Clicked on empty space - start box selection
+      if (!ImGui::GetIO().KeyCtrl) {
+        m_selectedEntities.clear();
+        m_selectedEntityIdx = -1;
+      }
+      m_isBoxSelecting = true;
+      m_boxSelectStart = worldPos;
+      m_boxSelectEnd = worldPos;
+    }
+  }
+
+  // Handle box selection dragging
+  if (m_isBoxSelecting && ImGui::IsMouseDown(ImGuiMouseButton_Left) && m_viewportHovered) {
+    ImVec2 mousePos = ImGui::GetMousePos();
+    vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
+
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    vec2 centeredMouse = {
+        localMouse.x - m_viewportSize.x * 0.5f,
+        -(localMouse.y - m_viewportSize.y * 0.5f)
+    };
+
+    m_boxSelectEnd = camPos + centeredMouse * (1.0f / zoom);
+  }
+
+  // Complete box selection on mouse release
+  if (m_isBoxSelecting && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    // Calculate selection rectangle bounds
+    float minX = std::min(m_boxSelectStart.x, m_boxSelectEnd.x);
+    float maxX = std::max(m_boxSelectStart.x, m_boxSelectEnd.x);
+    float minY = std::min(m_boxSelectStart.y, m_boxSelectEnd.y);
+    float maxY = std::max(m_boxSelectStart.y, m_boxSelectEnd.y);
+
+    // Add small tolerance to handle point clicks (no drag)
+    float tolerance = m_gridSize * 0.5f;
+    if (maxX - minX < tolerance) {
+      minX -= tolerance;
+      maxX += tolerance;
+    }
+    if (maxY - minY < tolerance) {
+      minY -= tolerance;
+      maxY += tolerance;
+    }
+
+    // Select all entities within bounds on current layer
+    auto &world = m_scene.GetWorld();
+    for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+      auto entity = m_testEntities[i];
+
+      // Only select entities on current layer
+      int entityLayer = getEntityLayer(entity);
+      if (entityLayer != m_currentLayer && entityLayer != -1)
+        continue;
+
+      auto *trans = world.getComponent<Components::Transform>(entity);
       if (trans) {
-        m_isDirectDragging = true;
-        m_directDragStartPos = trans->position;
+        float x = trans->position.x;
+        float y = trans->position.y;
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+          m_selectedEntities.insert(i);
+          if (m_selectedEntityIdx < 0) {
+            m_selectedEntityIdx = i;  // Set primary selection to first found
+          }
+        }
+      }
+    }
+
+    m_isBoxSelecting = false;
+  }
+
+  // Draw box selection rectangle
+  if (m_isBoxSelecting) {
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    // Convert world coords to screen coords
+    auto worldToScreen = [&](vec2 worldPt) -> ImVec2 {
+      vec2 relative = worldPt - camPos;
+      vec2 screen = {
+          relative.x * zoom + m_viewportSize.x * 0.5f + viewportMin.x,
+          -relative.y * zoom + m_viewportSize.y * 0.5f + viewportMin.y
+      };
+      return ImVec2(screen.x, screen.y);
+    };
+
+    ImVec2 p1 = worldToScreen(m_boxSelectStart);
+    ImVec2 p2 = worldToScreen(m_boxSelectEnd);
+
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    // Fill
+    drawList->AddRectFilled(p1, p2, IM_COL32(100, 150, 255, 50));
+    // Border
+    drawList->AddRect(p1, p2, IM_COL32(100, 150, 255, 200), 0.0f, 0, 2.0f);
+  }
+
+  // Draw selection highlights for all selected entities
+  if (!m_selectedEntities.empty()) {
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+    auto &world = m_scene.GetWorld();
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+
+    for (int idx : m_selectedEntities) {
+      if (idx >= 0 && idx < (int)m_testEntities.size()) {
+        auto entity = m_testEntities[idx];
+        auto *trans = world.getComponent<Components::Transform>(entity);
+        auto *sprite = world.getComponent<Components::SpriteRenderer>(entity);
+
+        if (trans) {
+          vec2 worldPt = trans->position;
+          vec2 relative = worldPt - camPos;
+          vec2 screenPos = {
+              relative.x * zoom + m_viewportSize.x * 0.5f + viewportMin.x,
+              -relative.y * zoom + m_viewportSize.y * 0.5f + viewportMin.y
+          };
+
+          // Get entity size from sprite or use default
+          float halfW = 25.0f * zoom;
+          float halfH = 25.0f * zoom;
+          if (sprite) {
+            halfW = sprite->size.x * 0.5f * zoom;
+            halfH = sprite->size.y * 0.5f * zoom;
+          }
+
+          ImVec2 rectMin = {screenPos.x - halfW, screenPos.y - halfH};
+          ImVec2 rectMax = {screenPos.x + halfW, screenPos.y + halfH};
+
+          // Primary selection (inspector target) gets a different color
+          ImU32 color = (idx == m_selectedEntityIdx)
+              ? IM_COL32(255, 200, 50, 200)   // Gold for primary
+              : IM_COL32(100, 200, 255, 150); // Light blue for multi-select
+
+          drawList->AddRect(rectMin, rectMax, color, 0.0f, 0, 2.0f);
+        }
       }
     }
   }
@@ -3816,6 +4046,87 @@ void SandboxState::renderSceneWindow() {
     m_isDirectDragging = false;
   }
 
+  // Handle multi-entity dragging (while mouse is held down)
+  if (m_isMultiDragging && ImGui::IsMouseDown(ImGuiMouseButton_Left) &&
+      m_viewportHovered && m_gizmoActiveAxis == -1) {
+    ImVec2 mousePos = ImGui::GetMousePos();
+    vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
+
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    vec2 centeredMouse = {
+        localMouse.x - m_viewportSize.x * 0.5f,
+        -(localMouse.y - m_viewportSize.y * 0.5f)
+    };
+
+    vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+    // Calculate delta from drag start
+    vec2 delta = worldPos - m_directDragStartPos;
+    if (m_snapToGrid) {
+      delta = snapToGrid(delta, m_gridSize);
+    }
+
+    // Move all selected entities by delta
+    auto &world = m_scene.GetWorld();
+    for (const auto &[idx, startPos] : m_multiDragStartPositions) {
+      if (idx >= 0 && idx < (int)m_testEntities.size()) {
+        auto entity = m_testEntities[idx];
+        auto *trans = world.getComponent<Components::Transform>(entity);
+        if (trans) {
+          if (m_snapToGrid) {
+            trans->position = snapToGrid(startPos + delta, m_gridSize);
+          } else {
+            trans->position = startPos + delta;
+          }
+        }
+      }
+    }
+  }
+
+  // Stop multi-entity dragging on mouse release
+  if (m_isMultiDragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    auto &world = m_scene.GetWorld();
+
+    // Create composite undo command for all moved entities
+    auto compositeCmd = std::make_unique<Sandbox::CompositeCommand>("Move Multiple Entities");
+    bool anyMoved = false;
+
+    for (const auto &[idx, startPos] : m_multiDragStartPositions) {
+      if (idx >= 0 && idx < (int)m_testEntities.size()) {
+        auto entity = m_testEntities[idx];
+        auto *trans = world.getComponent<Components::Transform>(entity);
+        if (trans) {
+          vec2 newPos = trans->position;
+          if (startPos.x != newPos.x || startPos.y != newPos.y) {
+            anyMoved = true;
+            auto cmd = Sandbox::makePropertyCommand(
+                world, entity, &Components::Transform::position,
+                startPos, newPos, "Move Entity");
+            compositeCmd->addCommand(std::move(cmd));
+
+            // Update tilemap position
+            for (auto &tile : m_tilemap) {
+              if (tile.entity.id == entity.id && tile.entity.generation == entity.generation) {
+                tile.position = newPos;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (anyMoved) {
+      executeCommand(std::move(compositeCmd));
+    }
+
+    m_isMultiDragging = false;
+    m_multiDragStartPositions.clear();
+  }
+
   // Right-click on empty space to deselect
   if (allowSelection && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && m_viewportHovered &&
       m_gizmoActiveAxis == -1) {
@@ -3860,7 +4171,6 @@ void SandboxState::renderSceneWindow() {
   }
 
   // Gizmo Mode Toggles Hotkeys
-  // Gizmo Mode Toggles Hotkeys
   if (m_viewportFocused) {
     if (ImGui::IsKeyPressed(ImGuiKey_W))
       m_gizmoMode = GizmoMode::Translation;
@@ -3868,6 +4178,46 @@ void SandboxState::renderSceneWindow() {
       m_gizmoMode = GizmoMode::Rotation;
     if (ImGui::IsKeyPressed(ImGuiKey_R))
       m_gizmoMode = GizmoMode::Scale;
+
+    // Escape - cancel box selection or clear selection
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+      if (m_isBoxSelecting) {
+        m_isBoxSelecting = false;
+      } else if (m_isMultiDragging) {
+        // Cancel multi-drag and restore original positions
+        auto &world = m_scene.GetWorld();
+        for (const auto &[idx, startPos] : m_multiDragStartPositions) {
+          if (idx >= 0 && idx < (int)m_testEntities.size()) {
+            auto entity = m_testEntities[idx];
+            auto *trans = world.getComponent<Components::Transform>(entity);
+            if (trans) {
+              trans->position = startPos;
+            }
+          }
+        }
+        m_isMultiDragging = false;
+        m_multiDragStartPositions.clear();
+      } else {
+        // Clear selection
+        m_selectedEntities.clear();
+        m_selectedEntityIdx = -1;
+      }
+    }
+
+    // Ctrl+A - Select all entities on current layer
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A)) {
+      m_selectedEntities.clear();
+      for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+        auto entity = m_testEntities[i];
+        int entityLayer = getEntityLayer(entity);
+        if (entityLayer == m_currentLayer || entityLayer == -1) {
+          m_selectedEntities.insert(i);
+          if (m_selectedEntityIdx < 0) {
+            m_selectedEntityIdx = i;
+          }
+        }
+      }
+    }
 
     // Cloning (Ctrl + D)
     if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D)) {
@@ -3877,34 +4227,78 @@ void SandboxState::renderSceneWindow() {
       }
     }
 
-    // Deleting (Delete or Backspace)
+    // Deleting (Delete or Backspace) - delete all selected entities on current layer
     if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
-      if (m_selectedEntityIdx >= 0 &&
-          m_selectedEntityIdx < (int)m_testEntities.size()) {
-        auto &world = m_scene.GetWorld();
+      auto &world = m_scene.GetWorld();
+
+      if (m_selectedEntities.size() > 1) {
+        // Multi-delete: delete all selected entities on current layer (highest index first)
+        std::vector<int> sorted(m_selectedEntities.begin(), m_selectedEntities.end());
+        std::sort(sorted.rbegin(), sorted.rend());
+
+        for (int idx : sorted) {
+          if (idx >= 0 && idx < (int)m_testEntities.size()) {
+            auto entity = m_testEntities[idx];
+
+            // Only delete entities on current layer
+            int entityLayer = getEntityLayer(entity);
+            if (entityLayer != m_currentLayer && entityLayer != -1)
+              continue;
+
+            // Remove from groups
+            removeEntityFromGroups(entity);
+
+            // Remove from tilemap
+            auto tilemapIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+                [&](const TileData &tile) {
+                  return tile.entity.id == entity.id &&
+                         tile.entity.generation == entity.generation;
+                });
+            if (tilemapIt != m_tilemap.end()) {
+              m_tilemap.erase(tilemapIt);
+            }
+
+            // Destroy from ECS
+            world.destroyEntity(entity);
+
+            // Remove from test entities
+            m_testEntities.erase(m_testEntities.begin() + idx);
+          }
+        }
+        m_selectedEntities.clear();
+        m_selectedEntityIdx = -1;
+        m_gizmoActiveAxis = -1;
+      } else if (m_selectedEntityIdx >= 0 &&
+                 m_selectedEntityIdx < (int)m_testEntities.size()) {
+        // Single delete
         auto entityToDelete = m_testEntities[m_selectedEntityIdx];
 
-        // Remove from groups first
-        removeEntityFromGroups(entityToDelete);
+        // Only delete if on current layer
+        int entityLayer = getEntityLayer(entityToDelete);
+        if (entityLayer == m_currentLayer || entityLayer == -1) {
+          // Remove from groups first
+          removeEntityFromGroups(entityToDelete);
 
-        // Remove from tilemap
-        auto tilemapIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
-            [&](const TileData &tile) {
-              return tile.entity.id == entityToDelete.id &&
-                     tile.entity.generation == entityToDelete.generation;
-            });
-        if (tilemapIt != m_tilemap.end()) {
-          m_tilemap.erase(tilemapIt);
+          // Remove from tilemap
+          auto tilemapIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+              [&](const TileData &tile) {
+                return tile.entity.id == entityToDelete.id &&
+                       tile.entity.generation == entityToDelete.generation;
+              });
+          if (tilemapIt != m_tilemap.end()) {
+            m_tilemap.erase(tilemapIt);
+          }
+
+          // Destroy entity from ECS
+          world.destroyEntity(entityToDelete);
+
+          // Remove from test entities
+          m_testEntities.erase(m_testEntities.begin() + m_selectedEntityIdx);
+
+          m_selectedEntities.erase(m_selectedEntityIdx);
+          m_selectedEntityIdx = -1;
+          m_gizmoActiveAxis = -1; // Reset gizmo
         }
-
-        // Destroy entity from ECS
-        world.destroyEntity(entityToDelete);
-
-        // Remove from test entities
-        m_testEntities.erase(m_testEntities.begin() + m_selectedEntityIdx);
-
-        m_selectedEntityIdx = -1;
-        m_gizmoActiveAxis = -1; // Reset gizmo
       }
     }
   }
@@ -4794,6 +5188,15 @@ void SandboxState::rebuildGroupsFromTilemap() {
       group->entities.push_back(tile.entity);
     }
   }
+}
+
+int SandboxState::getEntityLayer(ECS::Entity entity) const {
+  for (const auto &tile : m_tilemap) {
+    if (tile.entity.id == entity.id && tile.entity.generation == entity.generation) {
+      return tile.layer;
+    }
+  }
+  return -1;  // Not found in tilemap
 }
 
 } // namespace Runtime

@@ -4286,9 +4286,10 @@ vec2 LevelEditor::snapToGrid(vec2 position) const {
     return position;
   }
 
-  // Snap to nearest grid point
-  float snappedX = std::floor(position.x / m_gridSize) * m_gridSize;
-  float snappedY = std::floor(position.y / m_gridSize) * m_gridSize;
+  // Snap to grid with half-grid offset (-50, 50, 150, 250, etc.)
+  float offset = m_gridSize * 0.5f;
+  float snappedX = std::round((position.x + offset) / m_gridSize) * m_gridSize - offset;
+  float snappedY = std::round((position.y + offset) / m_gridSize) * m_gridSize - offset;
 
   return vec2(snappedX, snappedY);
 }

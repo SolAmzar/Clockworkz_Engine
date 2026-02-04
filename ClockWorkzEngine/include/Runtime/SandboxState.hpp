@@ -116,6 +116,15 @@ private:
   bool m_isDirectDragging{false};
   vec2 m_directDragStartPos{0.f, 0.f};  // For undo support
 
+  // Multi-entity dragging (for moving selected group)
+  bool m_isMultiDragging{false};
+  std::vector<std::pair<int, vec2>> m_multiDragStartPositions;  // (entity index, original position)
+
+  // Box/Marquee selection (Photoshop-style)
+  bool m_isBoxSelecting{false};
+  vec2 m_boxSelectStart{0.f, 0.f};   // World-space start position
+  vec2 m_boxSelectEnd{0.f, 0.f};     // World-space end position
+
   // Scene View & Gizmos
   Graphics::FrameBuffer m_framebuffer;
   vec2 m_viewportSize{0.f, 0.f};
@@ -201,6 +210,7 @@ private:
   EntityGroup *getOrCreateLayerGroup(int layer);
   void removeEntityFromGroups(ECS::Entity entity);
   void rebuildGroupsFromTilemap();
+  int getEntityLayer(ECS::Entity entity) const;  // Get layer from tilemap, -1 if not found
 
   // Prefab editor features
   bool m_showPrefabEditor = false;
