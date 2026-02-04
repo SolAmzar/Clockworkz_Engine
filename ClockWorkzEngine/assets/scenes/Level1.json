@@ -7,7 +7,7 @@
                     "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 30.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -16,9 +16,9 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 20.0,
+                    "radius": 15.0,
                     "shape": 1,
-                    "width": 100.0
+                    "width": 30.0
                 },
                 "playerController": {
                     "sprintMultiplier": 2.0,
@@ -120,7 +120,7 @@
                     "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 30.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -129,9 +129,9 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 0.0,
-                    "shape": 0,
-                    "width": 100.0
+                    "radius": 15.0,
+                    "shape": 1,
+                    "width": 30.0
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,
@@ -173,10 +173,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 50.0,
+                    "height": 30.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -185,9 +182,9 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 0.0,
-                    "shape": 0,
-                    "width": 50.0
+                    "radius": 15.0,
+                    "shape": 1,
+                    "width": 30.0
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,
@@ -352,10 +349,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 50.0,
+                    "height": 30.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -364,9 +358,9 @@
                         "x": 0.0,
                         "y": 0.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 50.0
+                    "radius": 15.0,
+                    "shape": 1,
+                    "width": 30.0
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,

@@ -1577,7 +1577,8 @@ void SandboxState::renderEntityWindow() {
   auto makeLabel = [&](ECS::Entity entity, char *buf, size_t bufSize) {
     auto *tag = world.getComponent<Components::Tag>(entity);
     if (tag && !tag->tag.empty())
-      snprintf(buf, bufSize, "%s (id %u.%u)", tag->tag.c_str(), entity.id, entity.generation);
+      snprintf(buf, bufSize, "%s (id %u.%u)", tag->tag.c_str(), entity.id,
+               entity.generation);
     else
       snprintf(buf, bufSize, "Entity %u (gen %u)", entity.id,
                entity.generation);
@@ -1961,17 +1962,14 @@ void SandboxState::renderEntityWindow() {
   // This prevents duplicate IDs and ghost entries
   m_testEntities.erase(
       std::remove_if(m_testEntities.begin(), m_testEntities.end(),
-                     [&](const ECS::Entity &e) {
-                       return !world.isValid(e);
-                     }),
+                     [&](const ECS::Entity &e) { return !world.isValid(e); }),
       m_testEntities.end());
 
-  m_tilemap.erase(
-      std::remove_if(m_tilemap.begin(), m_tilemap.end(),
-                     [&](const TileData &tile) {
-                       return !world.isValid(tile.entity);
-                     }),
-      m_tilemap.end());
+  m_tilemap.erase(std::remove_if(m_tilemap.begin(), m_tilemap.end(),
+                                 [&](const TileData &tile) {
+                                   return !world.isValid(tile.entity);
+                                 }),
+                  m_tilemap.end());
 
   for (auto &group : m_entityGroups) {
     group.entities.erase(
@@ -3114,7 +3112,7 @@ void SandboxState::spawnEnemy() {
   world.addComponent(entity, velocity);
 
   Components::Collider collider;
-  collider.size = {50.f, 50.f};
+  collider.size = {30.f, 30.f};
   collider.isSolid = true;
   collider.moveable = true;
   world.addComponent(entity, collider);
@@ -3401,14 +3399,16 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
         ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 
-      // Check if clicking on an existing entity - if so, skip painting to allow selection
+      // Check if clicking on an existing entity - if so, skip painting to allow
+      // selection
       auto &world = m_scene.GetWorld();
       bool clickedOnEntity = false;
       for (int i = 0; i < (int)m_testEntities.size(); ++i) {
         auto entity = m_testEntities[i];
         auto *trans = world.getComponent<Components::Transform>(entity);
         if (trans) {
-          float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
+          float dist =
+              magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
           if (dist < m_gridSize * 0.5f) {
             clickedOnEntity = true;
             break;
@@ -3654,8 +3654,8 @@ void SandboxState::renderSceneWindow() {
   // Skip selection if we painted/erased this frame (clicked on blank space)
   // Allow selection if we clicked on an entity (didn't paint) or in Select mode
   bool allowSelection = !m_paintedThisFrame;
-  if (allowSelection && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered &&
-      m_gizmoActiveAxis == -1) {
+  if (allowSelection && ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+      m_viewportHovered && m_gizmoActiveAxis == -1) {
     // Create a dummy gizmo check context or just assume no gizmo if axis is
     // -1 Convert mouse to world space
     ImVec2 mousePos = ImGui::GetMousePos();
@@ -3739,7 +3739,8 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
   (void)windowPos;
   (void)windowSize;
 
-  // Disable gizmo when we painted/erased this frame to prevent accidental transforms
+  // Disable gizmo when we painted/erased this frame to prevent accidental
+  // transforms
   if (m_paintedThisFrame)
     return;
 
@@ -4591,11 +4592,12 @@ void SandboxState::rebuildGroupsFromTilemap() {
       continue;
     auto *group = getOrCreateLayerGroup(tile.layer);
     // Check for duplicates before adding
-    bool alreadyInGroup = std::any_of(
-        group->entities.begin(), group->entities.end(),
-        [&](const ECS::Entity &e) {
-          return e.id == tile.entity.id && e.generation == tile.entity.generation;
-        });
+    bool alreadyInGroup =
+        std::any_of(group->entities.begin(), group->entities.end(),
+                    [&](const ECS::Entity &e) {
+                      return e.id == tile.entity.id &&
+                             e.generation == tile.entity.generation;
+                    });
     if (!alreadyInGroup) {
       group->entities.push_back(tile.entity);
     }
