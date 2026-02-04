@@ -165,6 +165,8 @@ private:
   void spawnPrefab(const std::string &prefabName, vec2 position);
   void deletePrefab(const std::string &prefabName);
 
+  void renderGameOverOverlay();
+
   // tilemap editing
   bool m_tileMapMode = false;
   std::string m_selectedTilePrefab = "";

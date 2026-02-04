@@ -13,6 +13,8 @@ reserved.
 /******************************************************************************/
 
 #include "Runtime/SceneSerializer.hpp"
+#include "Runtime/Scene.hpp"
+
 #include "Components/ActivationZone.hpp"
 #include "Components/AudioSource.hpp"
 #include "Components/Battery.hpp"
@@ -35,6 +37,7 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
+#include "Gameplay/Components/SurfaceComponent.hpp"
 
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -46,8 +49,8 @@ using json = nlohmann::json;
 
 namespace Runtime {
 
-void SceneSerializer::Serialize(ECS::World &world,
-                                const std::string &filepath) {
+// Helper to serialize world to JSON object
+static json SerializeWorld(ECS::World &world) {
   json root;
   root["objects"] = json::array();
 
@@ -61,240 +64,259 @@ void SceneSerializer::Serialize(ECS::World &world,
 
     if (auto *tag = world.getComponent<Components::Tag>(entity)) {
       name = tag->tag;
-      obj["name"] = name;
-      obj["components"] = json::object();
-
-      // Transform
-      obj["components"]["transform"] = {
-          {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
-          {"rotation", tc.rotation},
-          {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
-          {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
-
-      // Velocity
-      if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
-        obj["components"]["velocity"] = {{"x", vel->velocity.x},
-                                         {"y", vel->velocity.y},
-                                         {"moveSpeed", vel->moveSpeed}};
-      }
-
-      // SpriteRenderer
-      if (auto *sc = world.getComponent<Components::SpriteRenderer>(entity)) {
-        obj["components"]["spriteRenderer"] = {
-            {"textureId", sc->textureId},
-            {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}},
-            {"size", {{"x", sc->size.x}, {"y", sc->size.y}}},
-            {"color",
-             {{"r", sc->color.r},
-              {"g", sc->color.g},
-              {"b", sc->color.b},
-              {"a", sc->color.a}}},
-            {"visible", sc->visible},
-            {"sortOrder", sc->sortOrder}};
-      }
-
-      // SpriteAnimator
-      if (auto *sac = world.getComponent<Components::SpriteAnimator>(entity)) {
-        if (!sac->filename.empty()) {
-          std::string fname = sac->filename;
-          std::string prefix = "assets/animations/";
-          size_t pos = fname.find(prefix);
-          if (pos != std::string::npos) {
-            fname = fname.substr(pos + prefix.length());
-          }
-          obj["components"]["spriteAnimator"] = {{"filename", fname}};
-        }
-      }
-
-      // AudioSource
-      if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
-        obj["components"]["audioSource"] = {{"soundId", ac->soundId},
-                                            {"volume", ac->volume},
-                                            {"loop", ac->loop}};
-      }
-
-      // ActivationZone
-      if (auto *zone = world.getComponent<Components::ActivationZone>(entity)) {
-        obj["components"]["activationZone"] = {
-            {"active", zone->active},
-            {"actionType", (int)zone->actionType},
-            {"payload", zone->payload},
-            {"oneShot", zone->oneShot},
-            {"triggered", zone->triggered}};
-      }
-
-      // EnemyAI
-      if (auto *ai = world.getComponent<Components::EnemyAI>(entity)) {
-        obj["components"]["enemyAI"] = {
-            {"detectionRadius", ai->detectionRadius},
-            {"chaseSpeed", ai->chaseSpeed},
-            {"patrolSpeed", ai->patrolSpeed}};
-      }
-
-      // StateMachine
-      if (auto *sm = world.getComponent<Components::StateMachine>(entity)) {
-        obj["components"]["stateMachine"] = {
-            {"currentState", sm->currentState}};
-      }
-
-      // PlayerController
-      if (auto *pc = world.getComponent<Components::PlayerController>(entity)) {
-        obj["components"]["playerController"] = {
-            {"walkMultiplier", pc->walkMultiplier},
-            {"sprintMultiplier", pc->sprintMultiplier}};
-      }
-
-      // Collider
-      if (auto *cc = world.getComponent<Components::Collider>(entity)) {
-        obj["components"]["collider"] = {
-            {"width", cc->size.x},
-            {"height", cc->size.y},
-            {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}},
-            {"shape", (int)cc->shape},
-            {"radius", cc->radius},
-            {"isSolid", cc->isSolid},
-            {"blocksLight", cc->blocksLight},
-            {"isHazard", cc->isHazard},
-            {"isTrigger", cc->isTrigger},
-            {"moveable", cc->moveable},
-            {"collisionCategory", cc->collisionCategory},
-            {"collisionMask", cc->collisionMask},
-            {"mass", cc->mass}};
-      }
-
-      // Door
-      if (auto *door = world.getComponent<Components::Door>(entity)) {
-        obj["components"]["door"] = {
-            {"requiredFragments", door->requiredFragments},
-            {"isOpen", door->isOpen},
-            {"openTexture", door->openTexture},
-            {"closedTexture", door->closedTexture}};
-      }
-
-      // DoorSwing
-      if (auto *ds = world.getComponent<Components::DoorSwing>(entity)) {
-        obj["components"]["doorSwing"] = {
-            {"isOpen", ds->isOpen},
-            {"swingAngle", ds->swingAngle},
-            {"clockwise", ds->clockwise},
-            {"speed", ds->speed},
-            {"initialRotation", ds->initialRotation},
-            {"initialized", ds->initialized}};
-      }
-
-      // Battery
-      if (auto *bat = world.getComponent<Components::Battery>(entity)) {
-        obj["components"]["battery"] = {{"charge", bat->charge},
-                                        {"maxCharge", bat->maxCharge},
-                                        {"isCharging", bat->isCharging}};
-      }
-
-      // Fragment
-      if (auto *fc = world.getComponent<Components::Fragment>(entity)) {
-        obj["components"]["fragment"] = {
-            {"fragmentId",
-             fc->fragmentId}, // Note: JSON uses int, ensure type match
-            {"collected", fc->collected}
-            // bob info usually not serialized if purely visual/runtime
-        };
-      }
-
-      // FragmentCollector
-      if (auto *fcc =
-              world.getComponent<Components::FragmentCollector>(entity)) {
-        obj["components"]["fragmentCollector"] = {
-            {"requiredFragments", fcc->requiredFragments},
-            {"collectedCount", fcc->collectedCount},
-            {"pickupRadius", fcc->pickupRadius}};
-      }
-
-      // TorchComponent
-      if (auto *torch =
-              world.getComponent<Components::TorchComponent>(entity)) {
-        obj["components"]["torch"] = {
-            {"active", torch->active},
-            {"offset", {{"x", torch->offset.x}, {"y", torch->offset.y}}},
-            {"color",
-             {{"r", torch->color.r},
-              {"g", torch->color.g},
-              {"b", torch->color.b}}},
-            {"radius", torch->radius},
-            {"angle", torch->angle},
-            {"intensity", torch->intensity}};
-      }
-
-      // ParticleEmitter
-      if (auto *pe = world.getComponent<Components::ParticleEmitter>(entity)) {
-        auto &sys = pe->system();
-        obj["components"]["particleEmitter"] = {
-            {"active", pe->active()},
-            {"rate", sys.rate},
-            {"lifeMin", sys.lifeMin},
-            {"lifeMax", sys.lifeMax},
-            {"speedMin", sys.speedMin},
-            {"speedMax", sys.speedMax},
-            {"sizeStart", sys.sizeStart},
-            {"sizeEnd", sys.sizeEnd},
-            {"colorStart",
-             {{"r", sys.colorStart.r},
-              {"g", sys.colorStart.g},
-              {"b", sys.colorStart.b},
-              {"a", sys.colorStart.a}}},
-            {"colorEnd",
-             {{"r", sys.colorEnd.r},
-              {"g", sys.colorEnd.g},
-              {"b", sys.colorEnd.b},
-              {"a", sys.colorEnd.a}}},
-            {"spreadDeg", sys.spreadDeg},
-            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
-            {"acceleration",
-             {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
-            {"looping", sys.looping},
-            {"worldSpace", sys.worldSpace},
-            {"localOffset",
-             {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
-      }
-
-      // Health
-      if (auto *h = world.getComponent<Components::Health>(entity)) {
-        obj["components"]["health"] = {{"hp", h->hp},
-                                       {"maxHp", h->maxHp},
-                                       {"regenRate", h->regenRate},
-                                       {"invulnerable", h->invulnerable},
-                                       {"isDead", h->isDead}};
-      }
-
-      // LightExposure
-      if (auto *le = world.getComponent<Components::LightExposure>(entity)) {
-        obj["components"]["lightExposure"] = {
-            {"exposureTime", le->exposureTime},
-            {"maxExposureTime", le->maxExposureTime},
-            {"inLight", le->inLight},
-            {"isDangerous", le->isDangerous}};
-      }
-
-      // TextRenderer
-      if (auto *tr = world.getComponent<Components::TextRenderer>(entity)) {
-        obj["components"]["textRenderer"] = {
-            {"text", tr->text},
-            {"fontId", tr->fontId},
-            {"fontSize", tr->fontSize},
-            {"color",
-             {{"r", tr->color.r}, {"g", tr->color.g}, {"b", tr->color.b}}},
-            {"visible", tr->visible},
-            {"boxSize", {{"x", tr->boxSize.x}, {"y", tr->boxSize.y}}},
-            {"alignment", (int)tr->alignment}};
-      }
-
-      // Portal
-      if (auto *portal = world.getComponent<Components::Portal>(entity)) {
-        obj["components"]["portal"] = {{"levelName", portal->levelName}};
-      }
-
-      root["objects"].push_back(obj);
     }
-  });
+    obj["name"] = name;
+    obj["components"] = json::object();
 
+    // Transform
+    obj["components"]["transform"] = {
+        {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
+        {"rotation", tc.rotation},
+        {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
+        {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
+
+    // Velocity
+    if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
+      obj["components"]["velocity"] = {{"x", vel->velocity.x},
+                                       {"y", vel->velocity.y},
+                                       {"moveSpeed", vel->moveSpeed}};
+    }
+
+    // SpriteRenderer
+    if (auto *sc = world.getComponent<Components::SpriteRenderer>(entity)) {
+      obj["components"]["spriteRenderer"] = {
+          {"textureId", sc->textureId},
+          {"uv", {sc->uv.x, sc->uv.y, sc->uv.z, sc->uv.w}},
+          {"size", {{"x", sc->size.x}, {"y", sc->size.y}}},
+          {"color",
+           {{"r", sc->color.r},
+            {"g", sc->color.g},
+            {"b", sc->color.b},
+            {"a", sc->color.a}}},
+          {"visible", sc->visible},
+          {"sortOrder", sc->sortOrder}};
+    }
+
+    // SpriteAnimator
+    if (auto *sac = world.getComponent<Components::SpriteAnimator>(entity)) {
+      if (!sac->filename.empty()) {
+        std::string fname = sac->filename;
+        std::string prefix = "assets/animations/";
+        size_t pos = fname.find(prefix);
+        if (pos != std::string::npos) {
+          fname = fname.substr(pos + prefix.length());
+        }
+        obj["components"]["spriteAnimator"] = {{"filename", fname}};
+      }
+    }
+
+    // AudioSource
+    if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
+      obj["components"]["audioSource"] = {
+          {"soundId", ac->soundId}, {"volume", ac->volume}, {"loop", ac->loop}};
+    }
+
+    // SurfaceComponent (NEW)
+    if (auto *sc = world.getComponent<Gameplay::SurfaceComponent>(entity)) {
+      obj["components"]["surface"] = {{"type", static_cast<int>(sc->type())}};
+    }
+
+    // ActivationZone
+    if (auto *zone = world.getComponent<Components::ActivationZone>(entity)) {
+      obj["components"]["activationZone"] = {
+          {"active", zone->active},
+          {"actionType", (int)zone->actionType},
+          {"payload", zone->payload},
+          {"oneShot", zone->oneShot},
+          {"triggered", zone->triggered}};
+    }
+
+    // EnemyAI
+    if (auto *ai = world.getComponent<Components::EnemyAI>(entity)) {
+      obj["components"]["enemyAI"] = {{"detectionRadius", ai->detectionRadius},
+                                      {"chaseSpeed", ai->chaseSpeed},
+                                      {"patrolSpeed", ai->patrolSpeed}};
+    }
+
+    // StateMachine
+    if (auto *sm = world.getComponent<Components::StateMachine>(entity)) {
+      obj["components"]["stateMachine"] = {{"currentState", sm->currentState}};
+    }
+
+    // PlayerController
+    if (auto *pc = world.getComponent<Components::PlayerController>(entity)) {
+      obj["components"]["playerController"] = {
+          {"walkMultiplier", pc->walkMultiplier},
+          {"sprintMultiplier", pc->sprintMultiplier}};
+    }
+
+    // Collider
+    if (auto *cc = world.getComponent<Components::Collider>(entity)) {
+      obj["components"]["collider"] = {
+          {"width", cc->size.x},
+          {"height", cc->size.y},
+          {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}},
+          {"shape", (int)cc->shape},
+          {"radius", cc->radius},
+          {"isSolid", cc->isSolid},
+          {"blocksLight", cc->blocksLight},
+          {"isHazard", cc->isHazard},
+          {"isTrigger", cc->isTrigger},
+          {"moveable", cc->moveable},
+          {"collisionCategory", cc->collisionCategory},
+          {"collisionMask", cc->collisionMask},
+          {"mass", cc->mass}};
+    }
+
+    // Door
+    if (auto *door = world.getComponent<Components::Door>(entity)) {
+      obj["components"]["door"] = {
+          {"requiredFragments", door->requiredFragments},
+          {"isOpen", door->isOpen},
+          {"openTexture", door->openTexture},
+          {"closedTexture", door->closedTexture}};
+    }
+
+    // DoorSwing
+    if (auto *ds = world.getComponent<Components::DoorSwing>(entity)) {
+      obj["components"]["doorSwing"] = {
+          {"isOpen", ds->isOpen},
+          {"swingAngle", ds->swingAngle},
+          {"clockwise", ds->clockwise},
+          {"speed", ds->speed},
+          {"initialRotation", ds->initialRotation},
+          {"initialized", ds->initialized}};
+    }
+
+    // Battery
+    if (auto *bat = world.getComponent<Components::Battery>(entity)) {
+      obj["components"]["battery"] = {{"charge", bat->charge},
+                                      {"maxCharge", bat->maxCharge},
+                                      {"isCharging", bat->isCharging}};
+    }
+
+    // Fragment
+    if (auto *fc = world.getComponent<Components::Fragment>(entity)) {
+      obj["components"]["fragment"] = {
+          {"fragmentId",
+           fc->fragmentId}, // Note: JSON uses int, ensure type match
+          {"collected", fc->collected}
+          // bob info usually not serialized if purely visual/runtime
+      };
+    }
+
+    // FragmentCollector
+    if (auto *fcc = world.getComponent<Components::FragmentCollector>(entity)) {
+      obj["components"]["fragmentCollector"] = {
+          {"requiredFragments", fcc->requiredFragments},
+          {"collectedCount", fcc->collectedCount},
+          {"pickupRadius", fcc->pickupRadius}};
+    }
+
+    // TorchComponent
+    if (auto *torch = world.getComponent<Components::TorchComponent>(entity)) {
+      obj["components"]["torch"] = {
+          {"active", torch->active},
+          {"offset", {{"x", torch->offset.x}, {"y", torch->offset.y}}},
+          {"color",
+           {{"r", torch->color.r},
+            {"g", torch->color.g},
+            {"b", torch->color.b}}},
+          {"radius", torch->radius},
+          {"angle", torch->angle},
+          {"intensity", torch->intensity}};
+    }
+
+    // ParticleEmitter
+    if (auto *pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+      auto &sys = pe->system();
+      obj["components"]["particleEmitter"] = {
+          {"active", pe->active()},
+          {"rate", sys.rate},
+          {"lifeMin", sys.lifeMin},
+          {"lifeMax", sys.lifeMax},
+          {"speedMin", sys.speedMin},
+          {"speedMax", sys.speedMax},
+          {"sizeStart", sys.sizeStart},
+          {"sizeEnd", sys.sizeEnd},
+          {"colorStart",
+           {{"r", sys.colorStart.r},
+            {"g", sys.colorStart.g},
+            {"b", sys.colorStart.b},
+            {"a", sys.colorStart.a}}},
+          {"colorEnd",
+           {{"r", sys.colorEnd.r},
+            {"g", sys.colorEnd.g},
+            {"b", sys.colorEnd.b},
+            {"a", sys.colorEnd.a}}},
+          {"spreadDeg", sys.spreadDeg},
+          {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+          {"acceleration",
+           {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+          {"looping", sys.looping},
+          {"worldSpace", sys.worldSpace},
+          {"localOffset",
+           {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
+    }
+
+    // Health
+    if (auto *h = world.getComponent<Components::Health>(entity)) {
+      obj["components"]["health"] = {{"hp", h->hp},
+                                     {"maxHp", h->maxHp},
+                                     {"regenRate", h->regenRate},
+                                     {"invulnerable", h->invulnerable},
+                                     {"isDead", h->isDead}};
+    }
+
+    // LightExposure
+    if (auto *le = world.getComponent<Components::LightExposure>(entity)) {
+      obj["components"]["lightExposure"] = {
+          {"exposureTime", le->exposureTime},
+          {"maxExposureTime", le->maxExposureTime},
+          {"inLight", le->inLight},
+          {"isDangerous", le->isDangerous}};
+    }
+
+    // TextRenderer
+    if (auto *tr = world.getComponent<Components::TextRenderer>(entity)) {
+      obj["components"]["textRenderer"] = {
+          {"text", tr->text},
+          {"fontId", tr->fontId},
+          {"fontSize", tr->fontSize},
+          {"color",
+           {{"r", tr->color.r}, {"g", tr->color.g}, {"b", tr->color.b}}},
+          {"visible", tr->visible},
+          {"boxSize", {{"x", tr->boxSize.x}, {"y", tr->boxSize.y}}},
+          {"alignment", (int)tr->alignment}};
+    }
+
+    // Portal
+    if (auto *portal = world.getComponent<Components::Portal>(entity)) {
+      obj["components"]["portal"] = {{"levelName", portal->levelName}};
+    }
+
+    root["objects"].push_back(obj);
+  });
+  return root;
+}
+
+void SceneSerializer::Serialize(Scene &scene, const std::string &filepath) {
+  // Use helper to get world objects
+  json root = SerializeWorld(scene.GetWorld());
+
+  // Append Scene properties
+  root["bgm"] = scene.getBGM();
+  root["sfxVolume"] = scene.getSFXVolume();
+  root["spawnPoint"] = {{"x", scene.getSpawnPoint().x},
+                        {"y", scene.getSpawnPoint().y}};
+
+  std::ofstream o(filepath);
+  o << std::setw(4) << root << std::endl;
+}
+
+void SceneSerializer::Serialize(ECS::World &world,
+                                const std::string &filepath) {
+  json root = SerializeWorld(world);
   std::ofstream fout(filepath);
   fout << root.dump(4);
 }
@@ -394,6 +416,15 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         audio.volume = ac.value("volume", 1.0f);
         audio.loop = ac.value("loop", false);
         world.addComponent(entity, audio);
+      }
+
+      // SurfaceComponent (NEW)
+      if (components.contains("surface")) {
+        auto &surf = components["surface"];
+        Gameplay::SurfaceComponent sc;
+        int typeInt = surf.value("type", 0);
+        sc.setType(static_cast<Gameplay::SurfaceType>(typeInt));
+        world.addComponent(entity, sc);
       }
 
       // EnemyAI
@@ -663,6 +694,34 @@ bool SceneSerializer::Deserialize(ECS::World &world,
     }
   }
   return true;
+}
+
+bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
+  std::ifstream i(filepath);
+  if (!i.is_open())
+    return false;
+  json root;
+  i >> root;
+
+  if (root.contains("bgm")) {
+    scene.setBGM(root["bgm"]);
+  }
+  if (root.contains("sfxVolume")) {
+    scene.setSFXVolume(root["sfxVolume"]);
+  }
+  if (root.contains("spawnPoint") && root["spawnPoint"].is_object()) {
+    vec2 spawn;
+    spawn.x = root["spawnPoint"].value("x", 0.0f);
+    spawn.y = root["spawnPoint"].value("y", 0.0f);
+    std::cout << "[SceneSerializer] Read SpawnPoint from JSON: (" << spawn.x
+              << ", " << spawn.y << ")\n";
+    scene.setSpawnPoint(spawn);
+  } else {
+    std::cout << "[SceneSerializer] Warning: 'spawnPoint' not found in JSON.\n";
+  }
+
+  // Populate World as usual
+  return Deserialize(scene.GetWorld(), filepath);
 }
 
 } // namespace Runtime

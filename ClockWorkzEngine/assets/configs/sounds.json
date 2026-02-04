@@ -96,7 +96,7 @@
       "loop": false,
       "stream": false,
       "is3D": false,
-      "volume": 0.4,
+      "volume": 0.1,
       "group": "SFX"
     },
     {
@@ -105,7 +105,7 @@
       "loop": false,
       "stream": false,
       "is3D": false,
-      "volume": 0.4,
+      "volume": 0.1,
       "group": "SFX"
     },
     {
@@ -114,8 +114,53 @@
       "loop": false,
       "stream": false,
       "is3D": false,
-      "volume": 0.4,
+      "volume": 0.1,
       "group": "SFX"
-    }
+    },
+    {
+      "name": "fs_concrete_4",
+      "path": "assets/audio/fs/Concrete/fs_concrete_4.mp3",
+      "loop": false,
+      "stream": false,
+      "is3D": false,
+      "volume": 0.1,
+      "group": "SFX"
+    },
+      {
+        "name": "fs_tile_1",
+        "path": "assets/audio/fs/Tile/fs_tile_1.ogg",
+        "loop": false,
+        "stream": false,
+        "is3D": false,
+        "volume": 0.1,
+        "group": "SFX"
+      },
+      {
+        "name": "fs_tile_2",
+        "path": "assets/audio/fs/Tile/fs_tile_2.ogg",
+        "loop": false,
+        "stream": false,
+        "is3D": false,
+        "volume": 0.1,
+        "group": "SFX"
+      },
+      {
+        "name": "fs_tile_3",
+        "path": "assets/audio/fs/Tile/fs_tile_3.ogg",
+        "loop": false,
+        "stream": false,
+        "is3D": false,
+        "volume": 0.1,
+        "group": "SFX"
+      },
+      {
+        "name": "fs_tile_4",
+        "path": "assets/audio/fs/Tile/fs_tile_4.ogg",
+        "loop": false,
+        "stream": false,
+        "is3D": false,
+        "volume": 0.1,
+        "group": "SFX"
+      }
   ]
 }

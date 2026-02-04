@@ -7,7 +7,9 @@ namespace Runtime {
 class SceneSerializer {
 public:
   static void Serialize(ECS::World &world, const std::string &filepath);
+  static void Serialize(class Scene &scene, const std::string &filepath);
   static bool Deserialize(ECS::World &world, const std::string &filepath);
+  static bool Deserialize(class Scene &scene, const std::string &filepath);
 };
 
 } // namespace Runtime

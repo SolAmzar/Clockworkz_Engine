@@ -1,4 +1,5 @@
 {
+    "bgm": "level_bgm",
     "objects": [
         {
             "active": true,
@@ -48,8 +49,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 141.32647705078125,
-                        "y": -96.61587524414063
+                        "x": 150.5,
+                        "y": -106.5
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -205,7 +206,7 @@
                     },
                     "position": {
                         "x": -48.0,
-                        "y": -5.605249881744385
+                        "y": 46.28044891357422
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -375,8 +376,8 @@
                     "sortOrder": 2,
                     "textureId": "monster_texture",
                     "uv": [
-                        0.5,
-                        0.25,
+                        0.0,
+                        0.0,
                         0.25,
                         0.25
                     ],
@@ -388,19 +389,19 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1159.066650390625,
-                        "y": -2.764181137084961
+                        "x": 266.265380859375,
+                        "y": -344.94598388671875
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
+                        "x": -1.0,
                         "y": 1.0
                     }
                 },
                 "velocity": {
                     "moveSpeed": 50.0,
-                    "x": 0.6908736824989319,
-                    "y": -0.722975492477417
+                    "x": -0.5628277659416199,
+                    "y": 0.8265742659568787
                 }
             },
             "name": "Enemy Test"
@@ -408,23 +409,37 @@
         {
             "active": true,
             "components": {
-                "fragment": {
-                    "collected": false,
-                    "fragmentId": 0
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 0.0,
+                        "a": 1.0,
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 50.0,
+                        "y": 50.0
                     },
-                    "sortOrder": 2,
-                    "textureId": "fragment_texture",
+                    "sortOrder": 0,
+                    "textureId": "floor_texture",
                     "uv": [
                         0.0,
                         0.0,
@@ -433,23 +448,26 @@
                     ],
                     "visible": true
                 },
+                "surface": {
+                    "type": 1
+                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": 101.0,
-                        "y": 358.9187927246094
+                        "x": 50.0,
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 2.0,
+                        "y": 2.0
                     }
                 }
             },
-            "name": "Fragment 1"
+            "name": "Default_Floor"
         },
         {
             "active": true,
@@ -1259,7 +1277,7 @@
                     "sortOrder": 2,
                     "textureId": "player_texture",
                     "uv": [
-                        0.25,
+                        0.375,
                         0.875,
                         0.125,
                         0.125
@@ -1287,10 +1305,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -421.2506408691406,
-                        "y": 141.1156463623047
+                        "x": -750.0,
+                        "y": -50.0
                     },
-                    "rotation": 2.5007717609405518,
+                    "rotation": 2.199270248413086,
                     "scale": {
                         "x": 1.5,
                         "y": 1.5
@@ -1547,6 +1565,274 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "floor_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "surface": {
+                    "type": 1
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 2.0,
+                        "y": 2.0
+                    }
+                }
+            },
+            "name": "Default_Floor"
+        },
+        {
+            "active": true,
+            "components": {
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": -200.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 0.0,
+                        "g": 0.0,
+                        "r": 0.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 255.0,
+                        "g": 255.0,
+                        "r": 255.0
+                    },
+                    "direction": {
+                        "x": 1.0,
+                        "y": 0.0
+                    },
+                    "lifeMax": 1.0,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 200.0,
+                    "sizeEnd": 1.0,
+                    "sizeStart": 5.0,
+                    "speedMax": 120.0,
+                    "speedMin": 20.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "wall_texture_1",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -250.0,
+                        "y": 150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Default_Floor"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "floor_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "surface": {
+                    "type": 1
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -150.0,
+                        "y": 150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 2.0,
+                        "y": 2.0
+                    }
+                }
+            },
+            "name": "Default_Floor"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "floor_texture",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "surface": {
+                    "type": 1
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -50.0,
+                        "y": 150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 2.0,
+                        "y": 2.0
+                    }
+                }
+            },
+            "name": "Default_Floor"
+        },
+        {
+            "active": true,
+            "components": {
                 "fragment": {
                     "collected": false,
                     "fragmentId": 0
@@ -1578,8 +1864,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -193.0,
-                        "y": -5.605249881744385
+                        "x": -250.0,
+                        "y": 50.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -1588,7 +1874,72 @@
                     }
                 }
             },
-            "name": "Fragement 1"
+            "name": "Fragment 2 (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "boxes",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 350.0,
+                        "y": 450.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 36"
         }
-    ]
+    ],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": -743.9535522460938,
+        "y": -65.9259033203125
+    }
 }

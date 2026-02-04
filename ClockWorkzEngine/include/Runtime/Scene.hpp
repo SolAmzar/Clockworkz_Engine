@@ -7,6 +7,7 @@
 #include "ECS/World.hpp"
 #include "Gameplay/GameObject.hpp" // Legacy Support
 #include "Graphics/RenderingManager.hpp"
+#include "Math/Vec2.hpp"
 #include "Platform/InputManager.hpp"
 
 // System Includes
@@ -42,6 +43,11 @@ public:
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
   const ECS::World &GetWorld() const { return m_world; }
+
+  // Death / Respawn Logic
+  bool IsPlayerDead() const { return m_playerDeathTimer > 0.0f; }
+  void RespawnPlayer();
+  float GetDeathDuration() const { return m_deathDuration; }
 
   // Pending Level Accessors for Editor
   std::string GetPendingLevel() const { return m_pendingLevel; }
@@ -95,6 +101,8 @@ private:
   Systems::PhysicsSystem m_physicsSystem;
   // --- Game Logic State ---
   float m_playerDeathTimer = -1.0f;
+  float m_deathDuration =
+      0.0f; // Track how long player has been dead for fade-in
   std::string m_pendingLevel;
 
   // --- Systems ---
@@ -114,6 +122,19 @@ private:
   Systems::TextRenderSystem m_textRenderSystem;
 
   std::string m_name;
+  std::string m_bgm;       // Background music track name
+  float m_sfxVolume{1.0f}; // SFX Volume multiplier
+  vec2 m_spawnPoint{0.0f, 0.0f};
+
+public:
+  void setBGM(const std::string &bgm) { m_bgm = bgm; }
+  std::string getBGM() const { return m_bgm; }
+
+  void setSFXVolume(float volume);
+  float getSFXVolume() const { return m_sfxVolume; }
+
+  void setSpawnPoint(const vec2 &p) { m_spawnPoint = p; }
+  vec2 getSpawnPoint() const { return m_spawnPoint; }
 
   // Legacy GameObject Support
   std::vector<std::unique_ptr<Gameplay::GameObject>> m_gameObjects;
@@ -129,6 +150,9 @@ public:
     return m_gameObjects;
   }
   void registerExistingObjectsToLayers() {}
+
+private:
+  std::string m_currentLevelPath;
 };
 
 } // namespace Runtime

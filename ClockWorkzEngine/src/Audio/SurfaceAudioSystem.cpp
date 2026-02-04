@@ -56,19 +56,23 @@ namespace Audio {
 
         case Gameplay::SurfaceType::Wood:
         {
-            static const std::array<const char*, 2> woodIds = {
-                "Wood_1",
-                "Wood_2"
+            // No dedicated wood sounds yet; fall back to concrete
+            static const std::array<const char*, 3> concreteIds = {
+                "fs_concrete_1",
+                "fs_concrete_2",
+                "fs_concrete_3"
             };
-            id = pickRandom(woodIds);
+            id = pickRandom(concreteIds);
             break;
         }
 
         case Gameplay::SurfaceType::Tile:
         {
-            static const std::array<const char*, 2> tileIds = {
-                "Tile_1",
-                "Tile_2"
+            static const std::array<const char*, 4> tileIds = {
+                "fs_tile_1",
+                "fs_tile_2",
+                "fs_tile_3",
+                "fs_tile_4"
             };
             id = pickRandom(tileIds);
             break;
