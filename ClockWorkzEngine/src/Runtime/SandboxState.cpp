@@ -1129,7 +1129,6 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       world.addComponent(entity, sm);
     }
 
-    // Add ParticleEmitter for death effects
     Components::ParticleEmitter emitter;
     emitter.system().colorStart = {255.f, 255.f, 255.f, 1.f}; // Black particles
     emitter.system().colorEnd = {0.f, 0.f, 0.f, 0.f};         // Fade out
@@ -4927,7 +4926,7 @@ void SandboxState::renderSceneWindow() {
         }
         if (sprite) {
           sprite->textureId = textureName;
-          sprite->size = vec2(50, 50); // Default size
+          sprite->size = vec2(100, 100); // Default size
         }
       }
     }

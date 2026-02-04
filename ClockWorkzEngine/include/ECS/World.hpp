@@ -128,19 +128,26 @@ public:
    * Clears all entities from the world. Useful for scene transitions.
    */
   void destroyAll() {
-    // Collect all entity IDs first to avoid iterator invalidation
-    std::vector<uint32_t> entityIds;
-    for (uint32_t id = 1; id < m_nextId; ++id) {
-      Entity entity{id, m_generations[id]};
-      if (isValid(entity)) {
-        entityIds.push_back(id);
-      }
+    // Clear the recycling queue first — these IDs are already dead.
+    // Without this, destroyAll re-destroys dead entities (their current
+    // generation always passes isValid), pushing duplicate IDs into the
+    // queue. Later createEntity pops the same ID twice, giving two
+    // entities the same handle, so creating one overwrites the other.
+    while (!m_availableIds.empty()) {
+      m_availableIds.pop();
     }
 
-    // Destroy all collected entities
-    for (uint32_t id : entityIds) {
-      destroyEntity(Entity{id, m_generations[id]});
+    // Destroy all entities and recycle their IDs
+    for (uint32_t id = 1; id < m_nextId; ++id) {
+      Entity entity{id, m_generations[id]};
+      for (auto &[type, array] : m_componentArrays) {
+        array->entityDestroyed(entity);
+      }
+      m_generations[id]++;
+      m_availableIds.push(id);
     }
+
+    m_livingEntityCount = 0;
   }
 
   // ===== Component Management =====
