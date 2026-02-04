@@ -84,7 +84,9 @@ public:
    * @param entity The entity to destroy
    */
   void destroyEntity(Entity entity) {
-    if (!entity.isValid())
+    // Must check isValid() which verifies BOTH that ID is non-zero AND generation matches
+    // This prevents stale references from corrupting valid entities
+    if (!isValid(entity))
       return;
 
     // Notify all component arrays to remove this entity's components

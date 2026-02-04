@@ -68,6 +68,9 @@ private:
   std::unordered_map<size_t, uint32_t>
       m_indexToEntity; // array index -> Entity ID
 
+  // Track generation for each entity ID to detect stale references
+  std::unordered_map<uint32_t, uint32_t> m_entityGeneration;
+
   size_t m_size{0};
 
 public:
@@ -77,11 +80,36 @@ public:
    * @param component The component data
    */
   void insert(Entity entity, T component) {
-    // Check if component already exists
-    if (m_entityToIndex.find(entity.id) != m_entityToIndex.end()) {
-      size_t index = m_entityToIndex[entity.id];
-      m_components[index] = component;
-      return;
+    // Check if component already exists for this exact entity (same ID and generation)
+    auto it = m_entityToIndex.find(entity.id);
+    if (it != m_entityToIndex.end()) {
+      // Verify generation matches - if not, the old entity was destroyed
+      auto genIt = m_entityGeneration.find(entity.id);
+      if (genIt != m_entityGeneration.end()) {
+        if (genIt->second == entity.generation) {
+          // Same entity, update component
+          m_components[it->second] = component;
+          return;
+        }
+        // Different generation - old entity was destroyed, remove stale data first
+        remove(Entity{entity.id, genIt->second});
+      } else {
+        // No generation tracked but index exists - corrupted state, clean up
+        // This shouldn't happen, but handle it defensively
+        size_t removedIndex = it->second;
+        size_t lastIndex = m_size - 1;
+        if (removedIndex != lastIndex && m_size > 0) {
+          m_components[removedIndex] = m_components[lastIndex];
+          uint32_t lastEntityId = m_indexToEntity[lastIndex];
+          m_entityToIndex[lastEntityId] = removedIndex;
+          m_indexToEntity[removedIndex] = lastEntityId;
+        }
+        m_entityToIndex.erase(entity.id);
+        if (m_size > 0) {
+          m_indexToEntity.erase(lastIndex);
+          m_size--;
+        }
+      }
     }
 
     if (m_size >= MAX_ENTITIES) {
@@ -92,6 +120,7 @@ public:
     // Add to dense array
     m_entityToIndex[entity.id] = m_size;
     m_indexToEntity[m_size] = entity.id;
+    m_entityGeneration[entity.id] = entity.generation;
     m_components[m_size] = component;
     m_size++;
   }
@@ -104,6 +133,12 @@ public:
     auto it = m_entityToIndex.find(entity.id);
     if (it == m_entityToIndex.end())
       return;
+
+    // Verify generation matches to avoid removing wrong entity's component
+    auto genIt = m_entityGeneration.find(entity.id);
+    if (genIt != m_entityGeneration.end() && genIt->second != entity.generation) {
+      return; // Stale reference, don't remove current entity's component
+    }
 
     size_t removedIndex = it->second;
     size_t lastIndex = m_size - 1;
@@ -119,6 +154,7 @@ public:
     // Remove old mappings
     m_entityToIndex.erase(entity.id);
     m_indexToEntity.erase(lastIndex);
+    m_entityGeneration.erase(entity.id);
 
     m_size--;
   }
@@ -126,34 +162,52 @@ public:
   /**
    * @brief Get a component for an entity
    * @param entity The entity
-   * @return Pointer to component, or nullptr if not found
+   * @return Pointer to component, or nullptr if not found or stale reference
    */
   T *get(Entity entity) {
     auto it = m_entityToIndex.find(entity.id);
     if (it == m_entityToIndex.end())
       return nullptr;
+
+    // Verify generation to detect stale references
+    auto genIt = m_entityGeneration.find(entity.id);
+    if (genIt == m_entityGeneration.end() || genIt->second != entity.generation)
+      return nullptr;
+
     return &m_components[it->second];
   }
 
   /**
    * @brief Get a component for an entity (const version)
    * @param entity The entity
-   * @return Const pointer to component, or nullptr if not found
+   * @return Const pointer to component, or nullptr if not found or stale reference
    */
   const T *get(Entity entity) const {
     auto it = m_entityToIndex.find(entity.id);
     if (it == m_entityToIndex.end())
       return nullptr;
+
+    // Verify generation to detect stale references
+    auto genIt = m_entityGeneration.find(entity.id);
+    if (genIt == m_entityGeneration.end() || genIt->second != entity.generation)
+      return nullptr;
+
     return &m_components[it->second];
   }
 
   /**
    * @brief Check if entity has this component
    * @param entity The entity
-   * @return True if component exists
+   * @return True if component exists and generation matches
    */
   bool has(Entity entity) const {
-    return m_entityToIndex.find(entity.id) != m_entityToIndex.end();
+    auto it = m_entityToIndex.find(entity.id);
+    if (it == m_entityToIndex.end())
+      return false;
+
+    // Verify generation
+    auto genIt = m_entityGeneration.find(entity.id);
+    return genIt != m_entityGeneration.end() && genIt->second == entity.generation;
   }
 
   // IComponentArray interface
