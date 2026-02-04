@@ -3699,6 +3699,49 @@ void SandboxState::renderSceneWindow() {
     }
   }
 
+  // Right-click on empty space to deselect
+  if (allowSelection && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && m_viewportHovered &&
+      m_gizmoActiveAxis == -1) {
+    // Convert mouse to world space
+    ImVec2 mousePos = ImGui::GetMousePos();
+    vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
+
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    vec2 centeredMouse = {
+        localMouse.x - m_viewportSize.x * 0.5f,
+        -(localMouse.y - m_viewportSize.y * 0.5f)
+    };
+
+    vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+    // Check if we clicked on an entity
+    auto &world = m_scene.GetWorld();
+    bool clickedOnEntity = false;
+
+    for (int i = 0; i < (int)m_testEntities.size(); ++i) {
+      auto entity = m_testEntities[i];
+      auto *trans = world.getComponent<Components::Transform>(entity);
+      if (trans) {
+        float dist =
+            magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
+        if (dist < 50.0f) {
+          clickedOnEntity = true;
+          break;
+        }
+      }
+    }
+
+    // If right-clicked on empty space, deselect
+    if (!clickedOnEntity) {
+      m_selectedEntityIdx = -1;
+      m_selectedEntities.clear();
+      m_gizmoActiveAxis = -1;
+    }
+  }
+
   // Gizmo Mode Toggles Hotkeys
   // Gizmo Mode Toggles Hotkeys
   if (m_viewportFocused) {
@@ -3717,8 +3760,8 @@ void SandboxState::renderSceneWindow() {
       }
     }
 
-    // Deleting (Delete)
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+    // Deleting (Delete or Backspace)
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) {
       if (m_selectedEntityIdx >= 0 &&
           m_selectedEntityIdx < (int)m_testEntities.size()) {
         auto &world = m_scene.GetWorld();
