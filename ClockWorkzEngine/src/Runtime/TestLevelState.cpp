@@ -18,6 +18,7 @@ reserved.
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Components/Battery.hpp"
@@ -88,6 +89,13 @@ void TestLevelState::update(double dt) {
     m_gsm.switchTo(std::make_shared<MenuState>(m_gsm, m_input,
                                                Core::Engine::Get().window(),
                                                Core::Engine::Get().audio()));
+  }
+
+  // Handle Respawn (if dead)
+  if (m_scene.IsPlayerDead()) {
+    if (m_input.wasKeyTriggered(GLFW_KEY_R)) {
+      m_scene.RespawnPlayer();
+    }
   }
 
   // Update Scene
@@ -163,6 +171,76 @@ void TestLevelState::render(Core::Time *timer) {
         });
 
     renderer.endScenePass();
+  }
+
+  // Render Game Over Overlay
+  if (m_scene.IsPlayerDead() && m_viewportSize.x > 0 && m_viewportSize.y > 0) {
+    float duration = m_scene.GetDeathDuration();
+    float fadeStartTime = 2.5f; // Delay per user request
+
+    if (duration > fadeStartTime) {
+      float alpha = std::min((duration - fadeStartTime) / 0.5f, 1.0f);
+
+      glm::mat4 uiProj = glm::ortho(0.0f, m_viewportSize.x, 0.0f,
+                                    m_viewportSize.y, -1.0f, 1.0f);
+
+      renderer.beginScenePass(uiProj);
+
+      // Draw Background/Image
+      auto tex = Assets::TextureManager::Get("gameover");
+      if (!tex) {
+        if (!Assets::TextureManager::IsLoaded("gameover")) {
+          Assets::TextureManager::LoadTexture("gameover",
+                                              "assets/textures/gameover.png");
+          tex = Assets::TextureManager::Get("gameover");
+        }
+      }
+
+      if (tex) {
+        renderer.drawSprite(tex->id(), glm::vec2(0, 0),
+                            glm::vec2(m_viewportSize.x, m_viewportSize.y), 0.0f,
+                            glm::vec4(0, 0, 1, 1), glm::vec4(1, 1, 1, alpha),
+                            true);
+      } else {
+        // Fallback: Black overlay
+        renderer.drawSprite(0, glm::vec2(0, 0),
+                            glm::vec2(m_viewportSize.x, m_viewportSize.y), 0.0f,
+                            glm::vec4(0), glm::vec4(0, 0, 0, alpha), true);
+      }
+
+      renderer.endScenePass();
+
+      // Draw Helper Text
+      if (alpha >= 0.1f) {
+        renderer.beginFontPass(uiProj);
+        auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+        auto font = Assets::ResourceManager<Assets::FontManager>::Get("Debug");
+
+        if (shader && font) {
+          // "YOU DIED" Title - RED, TOP
+          std::string title = "YOU DIED";
+          float titleScale = 3.0f;
+          float titleWidth = font->MeasureTextWidth(title, titleScale);
+          float titleX = (m_viewportSize.x - titleWidth) * 0.5f;
+          float titleY = m_viewportSize.y * 0.7f;
+          font->RenderText(title, titleX, titleY, titleScale,
+                           glm::vec3(1, 0, 0), *shader);
+
+          // "Press 'R' to Restart" - WHITE, BOTTOM
+          std::string text = "Press 'R' to Restart";
+          float scale = 2.0f;
+          float textWidth = font->MeasureTextWidth(text, scale);
+          float x = (m_viewportSize.x - textWidth) * 0.5f;
+          float y = m_viewportSize.y * 0.25f;
+
+          // Blink effect
+          float blink = (sin(duration * 5.0f) + 1.0f) * 0.5f + 0.2f;
+          font->RenderText(text, x, y, scale, glm::vec3(1, 1, 1) * blink,
+                           *shader);
+        }
+        renderer.endFontPass();
+      }
+    }
   }
 }
 

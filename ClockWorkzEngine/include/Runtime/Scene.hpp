@@ -42,6 +42,11 @@ public:
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
 
+  // Death / Respawn Logic
+  bool IsPlayerDead() const { return m_playerDeathTimer > 0.0f; }
+  void RespawnPlayer();
+  float GetDeathDuration() const { return m_deathDuration; }
+
   // Pending Level Accessors for Editor
   std::string GetPendingLevel() const { return m_pendingLevel; }
   void ClearPendingLevel() { m_pendingLevel.clear(); }
@@ -94,6 +99,8 @@ private:
   Systems::PhysicsSystem m_physicsSystem;
   // --- Game Logic State ---
   float m_playerDeathTimer = -1.0f;
+  float m_deathDuration =
+      0.0f; // Track how long player has been dead for fade-in
   std::string m_pendingLevel;
 
   // --- Systems ---

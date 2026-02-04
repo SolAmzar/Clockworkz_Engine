@@ -136,24 +136,12 @@ void Scene::Update(double dt, Platform::InputManager &input) {
   }
 
   // 2. Handle Death Timer
+  // 2. Handle Death State
   if (m_playerDeathTimer > 0.0f) {
-    m_playerDeathTimer -= static_cast<float>(dt);
-    if (m_playerDeathTimer <= 0.0f) {
-      // Reset Player
-      m_world.each<Components::PlayerController, Components::Transform,
-                   Components::SpriteAnimator>(
-          [&](ECS::Entity entity, Components::PlayerController &,
-              Components::Transform &t, Components::SpriteAnimator &anim) {
-            t.position = {0, 0}; // Reset to origin or spawn point
-            anim.play("idle");
-            if (auto *col =
-                    m_world.getComponent<Components::Collider>(entity)) {
-              col->isSolid = true; // Re-enable physics
-            }
-          });
-      m_playerDeathTimer = -1.f;
-      std::cout << "[Scene] Player Respawned\n";
-    }
+    // Player is dead.
+    // Instead of auto-respawning, we just wait for manual respawn.
+    // Ensure physics stays disabled and animation is correct.
+    m_deathDuration += static_cast<float>(dt);
   } else {
     // 3. Check Collision (Player vs Enemy) only if alive
     m_world.each<Components::PlayerController, Components::Transform,
@@ -191,7 +179,8 @@ void Scene::Update(double dt, Platform::InputManager &input) {
                   }
                   // Disable physics
                   pCol.isSolid = false;
-                  m_playerDeathTimer = 3.0f; // 3 seconds to respawn
+                  m_playerDeathTimer = 1.0f; // Set > 0 to indicate dead state
+                  m_deathDuration = 0.0f;
                 }
               });
         });
@@ -260,6 +249,26 @@ void Scene::Render(Graphics::RenderingManager &renderer) {
           // Emitter, let's use the fact that it has the pointer. But we can
           // just use the system directly!
           pe.system().render(renderer);
+        }
+      });
+}
+
+void Scene::RespawnPlayer() {
+  m_playerDeathTimer = -1.0f;
+  m_deathDuration = 0.0f;
+
+  std::cout << "[Scene] Manual Respawn Triggered\n";
+
+  // Reset Player
+  m_world.each<Components::PlayerController, Components::Transform,
+               Components::SpriteAnimator>(
+      [&](ECS::Entity entity, Components::PlayerController &,
+          Components::Transform &t, Components::SpriteAnimator &anim) {
+        t.position = {0, 0}; // Reset to origin or spawn point... consider
+                             // saving spawn point?
+        anim.play("idle");
+        if (auto *col = m_world.getComponent<Components::Collider>(entity)) {
+          col->isSolid = true; // Re-enable physics
         }
       });
 }

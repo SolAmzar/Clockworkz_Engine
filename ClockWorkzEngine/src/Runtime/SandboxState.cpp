@@ -1348,6 +1348,7 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderStatsWindow();
   renderSceneWindow();
   renderToolbar();
+  // renderGameOverOverlay(); // Moved to after EndDockspace
   renderAssetBrowser();
   renderTextureReplaceDialog();
   renderAudioBrowser();
@@ -1358,6 +1359,18 @@ void SandboxState::renderImGui(Core::Time *timer) {
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
+
+  // Render Game Over Overlay AFTER Dockspace to ensure it's on top
+  renderGameOverOverlay();
+
+  // Temporary Debug Window
+  // if (ImGui::Begin("DebugDeathStatus")) {
+  //   ImGui::Text("IsPlayerDead: %d", m_scene.IsPlayerDead());
+  //   ImGui::Text("DeathDuration: %.2f", m_scene.GetDeathDuration());
+  //   ImGui::Text("Viewport Size: %.2f, %.2f",
+  //   ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y);
+  // }
+  // ImGui::End();
 
   (void)timer;
 }
@@ -4676,6 +4689,101 @@ void Runtime::SandboxState::renderUndoRedoPanel() {
   ImGui::End();
 }
 
+void Runtime::SandboxState::renderGameOverOverlay() {
+  // Debug print to check if this functions is called
+  // std::cout << "Rendering Overlay... Dead? " << m_scene.IsPlayerDead() <<
+  // "\n";
+  if (!m_scene.IsPlayerDead())
+    return;
+  // std::cout << "Player IS dead. Duration: " << m_scene.GetDeathDuration() <<
+  // "\n";
+
+  // Ensure texture is loaded
+  static bool textureLoaded = false;
+  const std::string texName = "gameover";
+  if (!textureLoaded) {
+    if (!Assets::TextureManager::IsLoaded(texName)) {
+      Assets::TextureManager::LoadTexture(texName,
+                                          "assets/textures/gameover.png");
+    }
+    textureLoaded = true;
+  }
+
+  // Calculate Alpha based on death duration
+  float duration = m_scene.GetDeathDuration();
+  float alpha = std::min(duration / 2.0f, 1.0f); // Fade in over 2 seconds
+
+  // Setup full screen window
+  ImGuiViewport *viewport = ImGui::GetMainViewport();
+  ImGui::SetNextWindowPos(viewport->Pos);
+  ImGui::SetNextWindowSize(viewport->Size);
+  ImGui::SetNextWindowViewport(viewport->ID);
+
+  ImGuiWindowFlags window_flags =
+      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
+      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+      ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
+      ImGuiWindowFlags_NoBackground; // We draw our own background image
+
+  // Make it distinct so it's on top
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+  if (ImGui::Begin("GameOverOverlay", nullptr, window_flags)) {
+    // Draw the Image
+    auto tex = Assets::TextureManager::Get(texName);
+    if (tex) {
+      ImGui::Image((ImTextureID)(intptr_t)tex->id(), viewport->Size);
+    } else {
+      // Fallback if image fails
+      ImGui::GetWindowDrawList()->AddRectFilled(
+          viewport->Pos,
+          ImVec2(viewport->Pos.x + viewport->Size.x,
+                 viewport->Pos.y + viewport->Size.y),
+          IM_COL32(0, 0, 0, (int)(alpha * 255)));
+
+      ImGui::SetCursorPos(
+          ImVec2(viewport->Size.x * 0.5f - 50, viewport->Size.y * 0.4f));
+      ImGui::SetWindowFontScale(3.0f);
+      ImGui::TextColored(ImVec4(1, 0, 0, alpha), "YOU DIED");
+      ImGui::SetWindowFontScale(1.0f);
+    }
+
+    // Draw Restart Button
+    if (duration > 1.0f) {
+      float buttonAlpha = std::min((duration - 1.0f), 1.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, buttonAlpha);
+
+      std::string text = "Restart";
+      float textWidth = ImGui::CalcTextSize(text.c_str()).x;
+      float padding = 20.0f; // extra width
+
+      ImGui::SetCursorPos(
+          ImVec2((viewport->Size.x - textWidth - padding) * 0.5f,
+                 viewport->Size.y * 0.8f));
+
+      // Style the button a bit
+      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 0.8f));
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                            ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                            ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
+      ImGui::SetWindowFontScale(2.0f); // Bigger button text
+
+      if (ImGui::Button(text.c_str(), ImVec2(textWidth + padding, 0))) {
+        m_scene.RespawnPlayer();
+      }
+
+      ImGui::SetWindowFontScale(1.0f);
+      ImGui::PopStyleColor(3);
+      ImGui::PopStyleVar();
+    }
+  }
+  ImGui::End();
+  ImGui::PopStyleVar(2);
+}
+
 // void Runtime::SandboxState::loadLevel(const std::string &levelName) {
 //   std::string path = "assets/scenes/" + levelName;
 //   std::cout << "[Sandbox] Loading level: " << path << "\n";
@@ -4696,8 +4804,8 @@ void Runtime::SandboxState::renderUndoRedoPanel() {
 //           m_testEntities.push_back(entity);
 //           // Restore tilemap data
 //           int layer = 0;
-//           auto *spr = world.getComponent<Components::SpriteRenderer>(entity);
-//           if (spr)
+//           auto *spr =
+//           world.getComponent<Components::SpriteRenderer>(entity); if (spr)
 //             layer = spr->sortOrder;
 //           m_tilemap.push_back({"", trans.position, layer, entity});
 //         });
@@ -4705,7 +4813,8 @@ void Runtime::SandboxState::renderUndoRedoPanel() {
 //   } else {
 //     // std::cerr << "[Sandbox] Failed to load level: " << path << "\n";
 //     ImGui::OpenPopup(
-//         "LoadError"); // Logic has to be handled where ImGui is active, this
+//         "LoadError"); // Logic has to be handled where ImGui is active,
+//         this
 //                       // might not work here if called from Update.
 //     // For Update call, we can't open popup easily.
 //     // We'll just log content.
