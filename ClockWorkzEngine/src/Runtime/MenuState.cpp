@@ -197,8 +197,8 @@ void MenuState::updateLayout(int w, int h) {
   m_positions[0] = {390.0f * scaleX, h - (340.0f * scaleY), scaleX * 1.f};
   m_positions[1] = {200.0f * scaleX, h - (480.0f * scaleY), scaleX * 1.f};
   m_positions[2] = {230.0f * scaleX, h - (660.0f * scaleY), scaleX * 1.f};
-  m_positions[3] = {520.0f * scaleX, h - (700.0f * scaleY), scaleX * 0.6f};
-  m_positions[4] = {270.0f * scaleX, h - (830.0f * scaleY), scaleX * 0.6f};
+  m_positions[3] = {460.0f * scaleX, h - (860.0f * scaleY), scaleX * 0.6f};
+  m_positions[4] = {220.0f * scaleX, h - (800.0f * scaleY), scaleX * 0.6f};
 
   // center it (optional)
   m_background.transform().position = {0.0f, 0.0f};

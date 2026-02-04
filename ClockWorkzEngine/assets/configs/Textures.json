@@ -1,172 +1,250 @@
 {
-	"textures": [
-		{
-			"name": "player_texture",
-			"path": "assets/textures/player.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "floor_texture_1",
-			"path": "assets/textures/floor1.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "floor_texture_2",
-			"path": "assets/textures/floor2.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "floor_texture_3",
-			"path": "assets/textures/floor3.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "floor_texture_4",
-			"path": "assets/textures/floor4.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture",
-			"path": "assets/textures/wall_atlas.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_1",
-			"path": "assets/textures/wall1.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_2",
-			"path": "assets/textures/wall2.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_3",
-			"path": "assets/textures/wall3.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_4",
-			"path": "assets/textures/wall4.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_6",
-			"path": "assets/textures/wall6.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_7",
-			"path": "assets/textures/wall7.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_8",
-			"path": "assets/textures/wall8.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "wall_texture_9",
-			"path": "assets/textures/wall9.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "menu_bg_texture",
-			"path": "assets/textures/background.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "monster_texture",
-			"path": "assets/textures/monster.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "pause_bg_texture",
-			"path": "assets/textures/pause.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "logo_texture",
-			"path": "assets/textures/logo.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "floor_texture",
-			"path": "assets/textures/corridorfloor.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "pot_texture",
-			"path": "assets/textures/pot.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "battery_full",
-			"path": "assets/textures/energy 4.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "battery_3/4",
-			"path": "assets/textures/energy 3.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "battery_2/4",
-			"path": "assets/textures/energy 2.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "battery_1/4",
-			"path": "assets/textures/energy 1.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "battery_empty",
-			"path": "assets/textures/energy flat.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "fragment_texture",
-			"path": "assets/textures/fragmentsample.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "door_open",
-			"path": "assets/textures/door_open.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		},
-		{
-			"name": "door_close",
-			"path": "assets/textures/door_close.png",
-			"flipY": true,
-			"alphaOnlyIsRed": false
-		}
-	]
+    "textures": [
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "player_texture",
+            "path": "assets/textures/player.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor_texture_1",
+            "path": "assets/textures/floor1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor_texture_2",
+            "path": "assets/textures/floor2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor_texture_3",
+            "path": "assets/textures/floor3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor_texture_4",
+            "path": "assets/textures/floor4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture",
+            "path": "assets/textures/wall_atlas.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_1",
+            "path": "assets/textures/wall1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_2",
+            "path": "assets/textures/wall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_3",
+            "path": "assets/textures/wall3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_4",
+            "path": "assets/textures/wall4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_6",
+            "path": "assets/textures/wall6.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_7",
+            "path": "assets/textures/wall7.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_8",
+            "path": "assets/textures/wall8.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_texture_9",
+            "path": "assets/textures/wall9.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "menu_bg_texture",
+            "path": "assets/textures/background.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "monster_texture",
+            "path": "assets/textures/monster.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pause_bg_texture",
+            "path": "assets/textures/pause.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "logo_texture",
+            "path": "assets/textures/logo.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor_texture",
+            "path": "assets/textures/corridorfloor.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pot_texture",
+            "path": "assets/textures/pot.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_full",
+            "path": "assets/textures/energy 4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_3/4",
+            "path": "assets/textures/energy 3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_2/4",
+            "path": "assets/textures/energy 2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_1/4",
+            "path": "assets/textures/energy 1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_empty",
+            "path": "assets/textures/energy flat.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "fragment_texture",
+            "path": "assets/textures/fragmentsample.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "door_open",
+            "path": "assets/textures/door_open.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "door_close",
+            "path": "assets/textures/door_close.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bench",
+            "path": "assets/textures/imported/bench.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "box1",
+            "path": "assets/textures/imported/box1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "cupboard",
+            "path": "assets/textures/imported/cupboard.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "door",
+            "path": "assets/textures/imported/door.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "electrical box",
+            "path": "assets/textures/imported/electrical box.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor tiles1",
+            "path": "assets/textures/imported/floor tiles1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor tiles2",
+            "path": "assets/textures/imported/floor tiles2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor tiles3",
+            "path": "assets/textures/imported/floor tiles3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor tiles4",
+            "path": "assets/textures/imported/floor tiles4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "outergate",
+            "path": "assets/textures/imported/outergate.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "potted plant rect",
+            "path": "assets/textures/imported/potted plant rect.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "potted plant round",
+            "path": "assets/textures/imported/potted plant round.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "shoerack",
+            "path": "assets/textures/imported/shoerack.png"
+        }
+    ]
 }
