@@ -1,4 +1,5 @@
 {
+    "bgm": "level_bgm",
     "objects": [
         {
             "active": true,
@@ -48,8 +49,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 141.32647705078125,
-                        "y": -96.61587524414063
+                        "x": 150.5,
+                        "y": -106.5
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -1304,8 +1305,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -743.9535522460938,
-                        "y": -65.9259033203125
+                        "x": -750.0,
+                        "y": -50.0
                     },
                     "rotation": 2.199270248413086,
                     "scale": {
@@ -1874,6 +1875,71 @@
                 }
             },
             "name": "Fragment 2 (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "boxes",
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 350.0,
+                        "y": 450.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Entity 36"
         }
-    ]
+    ],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": -743.9535522460938,
+        "y": -65.9259033203125
+    }
 }

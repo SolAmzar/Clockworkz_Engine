@@ -150,6 +150,9 @@ public:
     return m_gameObjects;
   }
   void registerExistingObjectsToLayers() {}
+
+private:
+  std::string m_currentLevelPath;
 };
 
 } // namespace Runtime

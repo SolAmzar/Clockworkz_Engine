@@ -713,7 +713,11 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
     vec2 spawn;
     spawn.x = root["spawnPoint"].value("x", 0.0f);
     spawn.y = root["spawnPoint"].value("y", 0.0f);
+    std::cout << "[SceneSerializer] Read SpawnPoint from JSON: (" << spawn.x
+              << ", " << spawn.y << ")\n";
     scene.setSpawnPoint(spawn);
+  } else {
+    std::cout << "[SceneSerializer] Warning: 'spawnPoint' not found in JSON.\n";
   }
 
   // Populate World as usual

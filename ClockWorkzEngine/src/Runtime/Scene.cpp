@@ -67,6 +67,9 @@ void Scene::Init() {
 }
 
 void Scene::Clear() {
+  // Stop BGM when clearing scene
+  Audio::AudioManager::get().stopGroup(Audio::Group::BGM);
+
   // Destroy all entities in the world
   m_world.destroyAll();
 }
@@ -75,6 +78,26 @@ bool Scene::LoadFromFile(const std::string &path) {
   Clear();
   if (std::filesystem::exists(path)) {
     if (SceneSerializer::Deserialize(*this, path)) {
+      m_currentLevelPath = path;
+
+      std::cout << "[Scene] Loaded Level: " << path << " SpawnPoint: ("
+                << m_spawnPoint.x << ", " << m_spawnPoint.y << ")\n";
+
+      // Force Player to Spawn Point
+      bool playerFound = false;
+      m_world.each<Components::PlayerController, Components::Transform>(
+          [&](ECS::Entity, Components::PlayerController &,
+              Components::Transform &t) {
+            std::cout << "[Scene] Resetting Player to SpawnPoint: ("
+                      << m_spawnPoint.x << ", " << m_spawnPoint.y << ")\n";
+            t.position = m_spawnPoint;
+            playerFound = true;
+          });
+
+      if (!playerFound) {
+        std::cout << "[Scene] Warning: No Player found to reset!\n";
+      }
+
       return true;
     } else {
       std::cerr << "[Scene] Failed to load level: " << path << "\n";
@@ -275,8 +298,7 @@ void Scene::RespawnPlayer() {
                Components::SpriteAnimator>(
       [&](ECS::Entity entity, Components::PlayerController &,
           Components::Transform &t, Components::SpriteAnimator &anim) {
-        t.position = {0, 0}; // Reset to origin or spawn point... consider
-                             // saving spawn point?
+        t.position = m_spawnPoint;
         anim.play("idle");
         if (auto *col = m_world.getComponent<Components::Collider>(entity)) {
           col->isSolid = true; // Re-enable physics
