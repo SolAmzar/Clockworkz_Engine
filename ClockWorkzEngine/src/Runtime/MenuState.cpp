@@ -30,6 +30,7 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/PlayState.hpp"
 #include <Core/Engine.hpp>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <Graphics/Camera2D.hpp>
 #include <Graphics/GraphicsManager.hpp>
@@ -74,6 +75,11 @@ void MenuState::onEnter() {
   Core::Engine &engine = Core::Engine::Get();
   m_renderer = &engine.rendering();
   m_cam = &engine.camera();
+  glViewport(0, 0, m_window.width(), m_window.height());
+  // Reset viewport/camera to full window on entry
+  m_cam->setViewport(m_window.width(), m_window.height());
+  m_cam->setPosition(glm::vec2(0.0f, 0.0f));
+  m_cam->setZoom(1.0f);
   if (m_items.empty()) {
     m_items = {"Start Game", "Load Game", "Option", "Credits", "Quit Game"};
   }
@@ -156,10 +162,12 @@ void MenuState::select() {
     //*** DO NOT REMOVE! Working on SwitchTo GSM*****
     // m_gsm.switchTo(std::make_shared<Level1State>(m_input, m_gsm));
     // m_gsm.push(std::make_shared<Level1State>(m_input, m_gsm));
-    m_gsm.push(std::make_shared<TestLevelState>(m_input, m_gsm));
+    m_gsm.switchTo(std::make_shared<TestLevelState>(m_input, m_gsm));
 
     // m_audio.stop(m_audio.findChannel("menu_bgm"));
-    m_audio.stop(m_bgmChannel);
+    if (m_bgmChannel > 0) {
+      m_audio.fadeOutChannel(m_bgmChannel, 0.5f);
+    }
     m_bgmChannel = 0;
     m_bgmPaused = true;
 
@@ -320,6 +328,7 @@ void MenuState::update(double /*dt*/) {
 
   if (m_input.wasKeyTriggered(GLFW_KEY_F1)) {
     std::cout << "[MenuState] F1 Pressed! Pushing SandboxState..." << std::endl;
+    m_audio.stopGroup(Audio::Group::BGM);
     m_gsm.push(std::make_shared<SandboxState>(m_input, m_gsm));
     return;
   }
@@ -328,6 +337,9 @@ void MenuState::update(double /*dt*/) {
 void MenuState::render(Core::Time *timer) {
   int w = m_window.width();
   int h = m_window.height();
+  glViewport(0, 0, w, h);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
   // glm::mat4 projection = glm::ortho(
   //     0.0f, (float)w,
   //     0.0f, (float)h);
@@ -430,16 +442,10 @@ void Runtime::MenuState::renderImGui(Core::Time *timer) {
 }
 
 void MenuState::onExit() {
-  /*if (m_loaded)
-  {
-      m_scenes.unloadCurrent();
+  if (m_bgmChannel > 0) {
+    m_audio.fadeOutChannel(m_bgmChannel, 0.5f);
   }
-  m_loaded = false;*/
-  if (m_bgmChannel != 0) {
-    m_audio.stop(m_bgmChannel);
-    m_bgmChannel = 0;
-  }
-  // m_audio.stopAll();
+  m_bgmChannel = 0;
 }
 
 } // namespace Runtime

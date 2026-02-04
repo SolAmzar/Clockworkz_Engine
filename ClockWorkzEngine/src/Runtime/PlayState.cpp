@@ -357,7 +357,7 @@ void PlayState::onExit() {
 
   if (m_bgmPlaying) {
     auto &audio = Core::Engine::Get().audio();
-    audio.stop(m_bgmChannel);
+    audio.fadeOutChannel(m_bgmChannel, 0.5f);
     m_bgmPlaying = false;
   }
 

@@ -85,6 +85,8 @@ bool InputManager::init(WindowManager &wm) {
   trackKey(GLFW_KEY_LEFT_SHIFT);
   trackKey(GLFW_KEY_RIGHT_SHIFT);
   trackKey(GLFW_KEY_LEFT_CONTROL);
+  trackKey(GLFW_KEY_LEFT_BRACKET);
+  trackKey(GLFW_KEY_RIGHT_BRACKET);
 
   trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
   trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);

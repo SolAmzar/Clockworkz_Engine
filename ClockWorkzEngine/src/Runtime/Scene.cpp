@@ -31,12 +31,31 @@
 #include <iostream>
 
 #include "Audio/AudioManager.hpp"
+#include "Core/Engine.hpp"
 
 namespace Runtime {
 
 void Scene::setSFXVolume(float volume) {
   m_sfxVolume = volume;
-  Audio::AudioManager::get().setGroupVolume(Audio::Group::SFX, volume);
+  Core::Engine::Get().audio().setGroupVolume(Audio::Group::SFX, volume);
+}
+
+void Scene::setSoundVolumeOverride(const std::string &name, float volume) {
+  m_soundVolumeOverrides[name] = volume;
+  Core::Engine::Get().audio().setSoundProfileVolume(name, volume);
+}
+
+void Scene::removeSoundVolumeOverride(const std::string &name) {
+  m_soundVolumeOverrides.erase(name);
+}
+
+float Scene::getSoundVolumeOverride(const std::string &name,
+                                    float fallback) const {
+  auto it = m_soundVolumeOverrides.find(name);
+  if (it != m_soundVolumeOverrides.end()) {
+    return it->second;
+  }
+  return fallback;
 }
 
 void Scene::Init() {
@@ -68,6 +87,7 @@ void Scene::Init() {
 
 void Scene::Clear() {
   // Stop BGM when clearing scene
+  std::cout << "[Scene] Clearing Scene... Stopping BGM Group.\n";
   Audio::AudioManager::get().stopGroup(Audio::Group::BGM);
 
   // Destroy all entities in the world

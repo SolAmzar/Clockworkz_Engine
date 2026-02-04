@@ -20,6 +20,7 @@ reserved.
 /******************************************************************************/
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/GameState.hpp"
+#include "Audio/AudioManager.hpp"
 #include <Core/Engine.hpp>
 #include <Core/Profiler.hpp>
 #include <Core/Time.hpp>
@@ -56,6 +57,7 @@ void GameStateManager::switchTo(std::shared_ptr<GameState> s) {
 
   m_pendingOp = Operation::Switch;
   m_pendingState = std::move(s);
+  m_clearStackOnSwitch = false;
   /*if (!m_states.empty())
   {
           m_states.top()->onExit();
@@ -63,6 +65,15 @@ void GameStateManager::switchTo(std::shared_ptr<GameState> s) {
   }
   m_states.push(std::move(s));
   m_states.top()->onEnter();*/
+}
+
+void GameStateManager::switchToAndClear(std::shared_ptr<GameState> s) {
+  if (!s)
+    return;
+
+  m_pendingOp = Operation::Switch;
+  m_pendingState = std::move(s);
+  m_clearStackOnSwitch = true;
 }
 
 void GameStateManager::processPendingOps() {
@@ -78,9 +89,18 @@ void GameStateManager::processPendingOps() {
     m_popCount = 0;
   } else if (m_pendingOp == Operation::Switch) {
     if (!m_states.empty()) {
-      std::cout << "[GSM] Switching from: " << m_states.top()->name() << "\n";
-      m_states.top()->onExit();
-      m_states.pop();
+      if (m_clearStackOnSwitch) {
+        while (!m_states.empty()) {
+          std::cout << "[GSM] Switching from: " << m_states.top()->name()
+                    << "\n";
+          m_states.top()->onExit();
+          m_states.pop();
+        }
+      } else {
+        std::cout << "[GSM] Switching from: " << m_states.top()->name() << "\n";
+        m_states.top()->onExit();
+        m_states.pop();
+      }
     }
 
     if (m_pendingState) {
@@ -89,6 +109,7 @@ void GameStateManager::processPendingOps() {
       m_states.top()->onEnter();
       m_pendingState.reset();
     }
+    m_clearStackOnSwitch = false;
   }
   m_pendingOp = Operation::None;
 }

@@ -36,6 +36,7 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/MenuState.hpp"
+#include "Runtime/PauseState.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <algorithm>
 #include <cmath>
@@ -67,18 +68,18 @@ void TestLevelState::onEnter() {
     SceneSerializer::Deserialize(m_scene, levelPath);
 
     // Play BGM if defined
-    std::string bgm = m_scene.getBGM();
-    if (!bgm.empty()) {
-      std::cout << "[TestLevelState] Playing BGM: " << bgm << "\n";
-      Assets::SoundManager::Play(bgm);
+    m_bgmName = m_scene.getBGM();
+    if (!m_bgmName.empty()) {
+      std::cout << "[TestLevelState] Playing BGM: " << m_bgmName << "\n";
+      m_bgmChannel = Assets::SoundManager::Play(m_bgmName);
     }
 
     // Apply spawn point to player (if any)
     vec2 spawn = m_scene.getSpawnPoint();
-    m_scene.GetWorld().each<Components::PlayerController,
-                            Components::Transform>(
-        [&](ECS::Entity, Components::PlayerController &,
-            Components::Transform &t) { t.position = spawn; });
+    m_scene.GetWorld()
+        .each<Components::PlayerController, Components::Transform>(
+            [&](ECS::Entity, Components::PlayerController &,
+                Components::Transform &t) { t.position = spawn; });
   } else {
     std::cerr << "[TestLevelState] Error: " << levelPath << " not found!\n";
   }
@@ -93,16 +94,21 @@ void TestLevelState::onEnter() {
   // Force camera to 0,0 or find player? Update will handle it.
 }
 
-void TestLevelState::onExit() { m_scene.Clear(); }
+void TestLevelState::onExit() {
+  if (m_bgmChannel > 0) {
+    Core::Engine::Get().audio().fadeOutChannel(m_bgmChannel, 0.5f);
+    m_bgmChannel = 0;
+  }
+  m_bgmName.clear();
+  m_scene.Clear();
+}
 
 void TestLevelState::update(double dt) {
   // Check pending level load
 
-  // ESC -> MenuState
+  // ESC -> PauseState
   if (m_input.wasKeyTriggered(GLFW_KEY_ESCAPE)) {
-    m_gsm.switchTo(std::make_shared<MenuState>(m_gsm, m_input,
-                                               Core::Engine::Get().window(),
-                                               Core::Engine::Get().audio()));
+    m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
   }
 
   // Handle Respawn (if dead)

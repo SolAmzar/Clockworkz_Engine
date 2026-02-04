@@ -21,6 +21,7 @@ namespace Systems {
 void AudioSystem::update(ECS::World &world) {
   world.each<Components::AudioSource>(
       [&](ECS::Entity entity, Components::AudioSource &audio) {
+        (void)entity;
         // Logic for auto-play or management could go here.
         // For now, we purely rely on the UI or other systems to set state,
         // or we handle playOnStart.

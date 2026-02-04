@@ -309,6 +309,13 @@ void SceneSerializer::Serialize(Scene &scene, const std::string &filepath) {
   root["sfxVolume"] = scene.getSFXVolume();
   root["spawnPoint"] = {{"x", scene.getSpawnPoint().x},
                         {"y", scene.getSpawnPoint().y}};
+  if (!scene.soundVolumeOverrides().empty()) {
+    json vols = json::object();
+    for (const auto &kv : scene.soundVolumeOverrides()) {
+      vols[kv.first] = kv.second;
+    }
+    root["soundVolumes"] = vols;
+  }
 
   std::ofstream o(filepath);
   o << std::setw(4) << root << std::endl;
@@ -718,6 +725,12 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
     scene.setSpawnPoint(spawn);
   } else {
     std::cout << "[SceneSerializer] Warning: 'spawnPoint' not found in JSON.\n";
+  }
+  if (root.contains("soundVolumes") && root["soundVolumes"].is_object()) {
+    for (auto it = root["soundVolumes"].begin();
+         it != root["soundVolumes"].end(); ++it) {
+      scene.setSoundVolumeOverride(it.key(), it.value().get<float>());
+    }
   }
 
   // Populate World as usual

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "ECS/World.hpp"
@@ -125,6 +126,7 @@ private:
   std::string m_bgm;       // Background music track name
   float m_sfxVolume{1.0f}; // SFX Volume multiplier
   vec2 m_spawnPoint{0.0f, 0.0f};
+  std::unordered_map<std::string, float> m_soundVolumeOverrides;
 
 public:
   void setBGM(const std::string &bgm) { m_bgm = bgm; }
@@ -132,6 +134,12 @@ public:
 
   void setSFXVolume(float volume);
   float getSFXVolume() const { return m_sfxVolume; }
+  void setSoundVolumeOverride(const std::string &name, float volume);
+  void removeSoundVolumeOverride(const std::string &name);
+  float getSoundVolumeOverride(const std::string &name, float fallback = 1.0f) const;
+  const std::unordered_map<std::string, float> &soundVolumeOverrides() const {
+    return m_soundVolumeOverrides;
+  }
 
   void setSpawnPoint(const vec2 &p) { m_spawnPoint = p; }
   vec2 getSpawnPoint() const { return m_spawnPoint; }

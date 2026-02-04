@@ -63,6 +63,9 @@ public:
   // Helpers similar to TextureManager
   static std::vector<std::string> GetLoadedSoundNames();
   static bool IsLoaded(const std::string &name);
+  static bool RemoveFromConfig(const std::string &name,
+                               const std::string &configPath =
+                                   "assets/configs/sounds.json");
 
 private:
   static std::vector<SoundConfig> ParseConfig(const std::string &configPath);

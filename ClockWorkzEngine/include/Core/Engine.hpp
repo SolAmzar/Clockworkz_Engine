@@ -112,5 +112,7 @@ namespace Core {
 		static Engine* s_instance;
 		double m_accuml;
 		bool m_pausedByFocus;
+		bool m_quitRequested{ false };
+		float m_quitFadeTimer{ 0.0f };
 	};
 }

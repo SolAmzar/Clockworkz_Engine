@@ -51,7 +51,7 @@ public:
 
   bool init(int maxChannels = 64);
   void shutdown();
-  void update();
+  void update(double dt);
 
   // Resources
   bool load(const SoundDesc &desc);
@@ -67,6 +67,8 @@ public:
   void stop(std::string const &name); // stop a specific playing sound by key
   void stopGroup(Group g);            // stop everything in a group
   void stopAll();                     // panic-stop everything
+  void fadeOutChannel(int channel, float duration);
+  void fadeOutActive(float duration);
 
   // Channel control
   void stop(int channel);
@@ -97,6 +99,9 @@ public:
   };
   void registerSoundProfile(const std::string &name,
                             const SoundProfile &profile);
+  void unregisterSoundProfile(const std::string &name);
+  float getSoundProfileVolume(const std::string &name) const;
+  void setSoundProfileVolume(const std::string &name, float volume);
   int play(const std::string &name); // Overload for playing by profile name
                                      // containing defaults
   int play(const std::string &name, float volume,
@@ -108,6 +113,12 @@ private:
     std::string soundId{};
     Group group = Group::SFX;
   };
+  struct FadeOut {
+    int channel = 0;
+    float startVolume = 1.0f;
+    float duration = 0.0f;
+    float elapsed = 0.0f;
+  };
 
   FMOD::System *m_system = nullptr;
   FMOD::ChannelGroup *m_masterGroup = nullptr;
@@ -117,6 +128,7 @@ private:
   std::unordered_map<std::string, SoundProfile> m_soundProfiles;
   std::unordered_map<std::string, FMOD::Sound *> m_sounds;
   std::unordered_map<int, ChannelHandle> m_channels;
+  std::unordered_map<int, FadeOut> m_fadeOuts;
   int m_nextChannelId = 1;
 
   FMOD::ChannelGroup *groupHandle(Group g) const;

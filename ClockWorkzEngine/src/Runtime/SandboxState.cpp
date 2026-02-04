@@ -5959,25 +5959,50 @@ void Runtime::SandboxState::renderAudioBrowser() {
     static ImGuiTextFilter filter;
     filter.Draw("Search");
 
-    ImGui::BeginChild("SoundList");
-    for (const auto &name : soundNames) {
-      if (!filter.PassFilter(name.c_str()))
-        continue;
+      ImGui::BeginChild("SoundList");
+        for (const auto &name : soundNames) {
+          if (!filter.PassFilter(name.c_str()))
+            continue;
 
-      ImGui::PushID(name.c_str());
+          ImGui::PushID(name.c_str());
 
-      if (ImGui::Button("Play")) {
-        Assets::SoundManager::Play(name);
+          if (ImGui::Button("Play")) {
+            Assets::SoundManager::Play(name);
+          }
+          ImGui::SameLine();
+          if (ImGui::Button("Stop")) {
+            Core::Engine::Get().audio().stop(name);
+          }
+          ImGui::SameLine();
+          if (ImGui::Button("Remove")) {
+            Assets::SoundManager::Unload(name);
+            m_scene.removeSoundVolumeOverride(name);
+            if (m_scene.getBGM() == name) {
+              m_scene.setBGM("");
+            }
+            Assets::SoundManager::RemoveFromConfig(name);
+            std::string srcRoot = getSourceRoot();
+            if (!srcRoot.empty()) {
+              std::string srcConfig =
+                  (std::filesystem::path(srcRoot) / "assets" / "configs" /
+                   "sounds.json")
+                      .generic_string();
+              if (srcConfig != "assets/configs/sounds.json") {
+                Assets::SoundManager::RemoveFromConfig(name, srcConfig);
+              }
+            }
+          }
+          ImGui::SameLine();
+          ImGui::Text("%s", name.c_str());
+
+        float vol = m_scene.getSoundVolumeOverride(
+            name, Core::Engine::Get().audio().getSoundProfileVolume(name));
+        if (ImGui::SliderFloat("Vol", &vol, 0.0f, 1.0f)) {
+          m_scene.setSoundVolumeOverride(name, vol);
+        }
+
+        ImGui::PopID();
       }
-      ImGui::SameLine();
-      if (ImGui::Button("Stop")) {
-        Core::Engine::Get().audio().stop(name);
-      }
-      ImGui::SameLine();
-      ImGui::Text("%s", name.c_str());
-
-      ImGui::PopID();
-    }
     ImGui::EndChild();
   }
 

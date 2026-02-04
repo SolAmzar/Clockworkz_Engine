@@ -14,6 +14,7 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
+#include <string>
 
 namespace Platform {
 class InputManager;
@@ -56,6 +57,8 @@ private:
   bool m_showHUD{true};
   bool m_enableShadows{true};
   vec2 m_viewportSize{0.f, 0.f};
+  std::string m_bgmName;
+  int m_bgmChannel{0};
 
   // Portal / Level Loading
   // std::string m_pendingLevel;

@@ -173,8 +173,9 @@ bool Engine::init() {
           */
   m_running = true;
   events().subscribe<QuitGameEvent>(this, [this](const QuitGameEvent &) {
-    this->m_running = false;
-    this->m_window->requestClose();
+    this->m_quitRequested = true;
+    this->m_quitFadeTimer = 0.5f;
+    this->audio().fadeOutActive(0.5f);
   });
 
   events().subscribe<WindowFocusLostEvent>(
@@ -276,6 +277,13 @@ void Engine::shutdown() {
  * @return XXX
  */
 void Engine::update(double dt) {
+  if (m_quitRequested) {
+    m_quitFadeTimer -= static_cast<float>(dt);
+    if (m_quitFadeTimer <= 0.0f) {
+      m_running = false;
+      m_window->requestClose();
+    }
+  }
   // Check if Fixed Delta time (Uncomment if you want to check)
   /*std::cout << m_time->fixedDelta() << std::endl;*/
 
@@ -291,7 +299,7 @@ void Engine::update(double dt) {
 
     m_booted = true;
   }
-  m_audio->update(); // Update the audio manager class
+  m_audio->update(dt); // Update the audio manager class
   m_input->update(); // Update the input manager class
   if (m_input->wasKeyPressed(GLFW_KEY_F11)) {
     m_window->toggleFullscreen();

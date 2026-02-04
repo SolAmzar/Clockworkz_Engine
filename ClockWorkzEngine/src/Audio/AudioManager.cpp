@@ -128,9 +128,35 @@ void AudioManager::shutdown() {
   m_nextChannelId = 1;
 }
 
-void AudioManager::update() {
+void AudioManager::update(double dt) {
   if (m_system)
     m_system->update();
+  // Process fade-outs
+  for (auto it = m_fadeOuts.begin(); it != m_fadeOuts.end();) {
+    auto chIt = m_channels.find(it->first);
+    if (chIt == m_channels.end() || !isChannelAlive(chIt->second.ch)) {
+      it = m_fadeOuts.erase(it);
+      continue;
+    }
+
+    FadeOut &fade = it->second;
+    fade.elapsed += static_cast<float>(dt);
+    float t = (fade.duration <= 0.0f) ? 1.0f : (fade.elapsed / fade.duration);
+    if (t > 1.0f)
+      t = 1.0f;
+    float newVol = fade.startVolume * (1.0f - t);
+    chIt->second.ch->setVolume(newVol);
+
+    if (t >= 1.0f) {
+      chIt->second.ch->stop();
+      m_channels.erase(chIt);
+      it = m_fadeOuts.erase(it);
+      continue;
+    }
+
+    ++it;
+  }
+
   for (auto it = m_channels.begin(); it != m_channels.end();) {
     FMOD::Channel *ch = it->second.ch;
     if (!isChannelAlive(ch))
@@ -237,6 +263,32 @@ void AudioManager::registerSoundProfile(const std::string &name,
   m_soundProfiles[name] = profile;
 }
 
+void AudioManager::unregisterSoundProfile(const std::string &name) {
+  m_soundProfiles.erase(name);
+}
+
+float AudioManager::getSoundProfileVolume(const std::string &name) const {
+  auto it = m_soundProfiles.find(name);
+  if (it != m_soundProfiles.end()) {
+    return it->second.volume;
+  }
+  return 1.0f;
+}
+
+void AudioManager::setSoundProfileVolume(const std::string &name,
+                                         float volume) {
+  auto it = m_soundProfiles.find(name);
+  if (it == m_soundProfiles.end()) {
+    SoundProfile profile;
+    profile.volume = volume;
+    profile.pitch = 1.0f;
+    profile.group = Group::SFX;
+    m_soundProfiles[name] = profile;
+    return;
+  }
+  it->second.volume = volume;
+}
+
 int AudioManager::play(const std::string &name) {
   auto it = m_soundProfiles.find(name);
   if (it != m_soundProfiles.end()) {
@@ -329,6 +381,30 @@ void AudioManager::stopAll() {
   if (m_masterGroup)
     m_masterGroup->stop(); // nukes everything
   m_channels.clear();
+  m_fadeOuts.clear();
+}
+
+void AudioManager::fadeOutChannel(int channel, float duration) {
+  auto it = m_channels.find(channel);
+  if (it == m_channels.end() || !isChannelAlive(it->second.ch))
+    return;
+  if (m_fadeOuts.find(channel) != m_fadeOuts.end())
+    return;
+
+  float currentVolume = 1.0f;
+  it->second.ch->getVolume(&currentVolume);
+  FadeOut fade;
+  fade.channel = channel;
+  fade.startVolume = currentVolume;
+  fade.duration = duration;
+  fade.elapsed = 0.0f;
+  m_fadeOuts[channel] = fade;
+}
+
+void AudioManager::fadeOutActive(float duration) {
+  for (const auto &kv : m_channels) {
+    fadeOutChannel(kv.first, duration);
+  }
 }
 
 void AudioManager::setPaused(int h, bool paused) {

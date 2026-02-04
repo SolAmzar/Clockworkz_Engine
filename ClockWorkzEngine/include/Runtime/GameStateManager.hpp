@@ -38,6 +38,7 @@ public:
   void push(std::shared_ptr<GameState> s);
   void pop();
   void switchTo(std::shared_ptr<GameState> s);
+  void switchToAndClear(std::shared_ptr<GameState> s);
 
   void update(double dt);
   void render(Core::Time *timer);
@@ -59,6 +60,7 @@ private:
   Operation m_pendingOp{Operation::None};
   std::shared_ptr<GameState> m_pendingState{nullptr};
   int m_popCount{0};
+  bool m_clearStackOnSwitch{false};
 };
 
 } // namespace Runtime

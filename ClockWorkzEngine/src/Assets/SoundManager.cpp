@@ -18,6 +18,7 @@ reserved.
 #include "Core/json.hpp" // nlohmann::json
 #pragma warning(pop)
 #include <fstream>
+#include <iomanip>
 
 namespace Assets {
 Audio::AudioManager *SoundManager::s_audio = nullptr;
@@ -82,6 +83,12 @@ int SoundManager::Play(const std::string &name, float volume, float pitch) {
 }
 
 void SoundManager::Unload(const std::string &name) {
+  if (s_audio) {
+    s_audio->stop(name);
+    s_audio->unload(name);
+    s_audio->unregisterSoundProfile(name);
+  }
+  ResourceManager<Audio::AudioClip>::Unload(name);
   s_loadedNames.erase(name);
   // s_configs is now local to LoadFromConfig or we can keep it if needed,
   // but AudioManager has the profiles now.
@@ -103,6 +110,41 @@ bool SoundManager::IsLoaded(const std::string &name) {
 
 std::vector<std::string> SoundManager::GetLoadedSoundNames() {
   return {s_loadedNames.begin(), s_loadedNames.end()};
+}
+
+bool SoundManager::RemoveFromConfig(const std::string &name,
+                                    const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return false;
+
+  nlohmann::json j;
+  file >> j;
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return false;
+
+  auto &arr = j["sounds"];
+  bool removed = false;
+  for (auto it = arr.begin(); it != arr.end();) {
+    const std::string entryName = it->value("name", "");
+    if (entryName == name) {
+      it = arr.erase(it);
+      removed = true;
+    } else {
+      ++it;
+    }
+  }
+
+  if (!removed)
+    return false;
+
+  std::ofstream out(configPath);
+  if (!out)
+    return false;
+
+  out << std::setw(4) << j << "\n";
+  return true;
 }
 
 bool SoundManager::LoadFromConfig(const std::string &configPath) {
