@@ -12,7 +12,9 @@
           "moveable": false,
           "width": 100.0
         },
-        "spriteAnimator": { "filename": "player.json" },
+        "spriteAnimator": {
+          "filename": "player.json"
+        },
         "spriteRenderer": {
           "textureId": "player_texture",
           "uv": [
@@ -83,11 +85,11 @@
         "collider": {
           "collisionCategory": 4,
           "collisionMask": 7,
-          "height": 100.0,
+          "height": 30.0,
           "isSolid": true,
           "layer": 4,
           "moveable": false,
-          "width": 100.0
+          "width": 30.0
         },
         "spriteRenderer": {
           "textureId": "monster_texture",
@@ -119,11 +121,11 @@
         "collider": {
           "collisionCategory": 4,
           "collisionMask": 7,
-          "height": 100.0,
+          "height": 30.0,
           "isSolid": true,
           "layer": 2,
           "moveable": false,
-          "width": 100.0
+          "width": 30.0
         },
         "spriteRenderer": {
           "textureId": "monster_texture",
