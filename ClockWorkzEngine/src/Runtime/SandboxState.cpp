@@ -613,7 +613,18 @@ void SandboxState::render(Core::Time *timer) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   // Start Scene Pass (sets up shader and view-projection)
-  renderer.beginScenePass(camera.viewProj());
+  // Start Scene Pass (sets up shader and view-projection)
+  // Determine current darkness settings from scene
+  bool enableDarkness = m_scene.isDarknessEnabled();
+  float darknessIntensity = m_scene.getDarknessIntensity();
+  glm::vec3 darknessColor = m_scene.getDarknessColor();
+
+  glm::vec4 tint = glm::vec4(1.0f);
+  if (enableDarkness) {
+    tint = glm::vec4(darknessColor * darknessIntensity, 1.0f);
+  }
+
+  renderer.beginScenePass(camera.viewProj(), tint);
 
   // Run Scene Render
   m_scene.Render(renderer);
@@ -1922,16 +1933,16 @@ void SandboxState::renderEntityWindow() {
     m_lastClickedEntityIdx = -1;
   }
 
-    ImGui::Separator();
-    ImGui::Text("Selection Layer");
-    ImGui::TextDisabled("Hotkeys: [ / ] (when viewport focused)");
-    if (ImGui::SliderInt("Current Layer##selection", &m_currentLayer, 0,
-                         m_numLayers - 1)) {
-      // Keep selection intact; this only changes pick layer filter
-    }
+  ImGui::Separator();
+  ImGui::Text("Selection Layer");
+  ImGui::TextDisabled("Hotkeys: [ / ] (when viewport focused)");
+  if (ImGui::SliderInt("Current Layer##selection", &m_currentLayer, 0,
+                       m_numLayers - 1)) {
+    // Keep selection intact; this only changes pick layer filter
+  }
 
-    ImGui::Separator();
-    ImGui::Text("Entity List:");
+  ImGui::Separator();
+  ImGui::Text("Entity List:");
   ImGui::Text("%zu entities, %zu groups", m_testEntities.size(),
               m_entityGroups.size());
 
@@ -3642,6 +3653,7 @@ void SandboxState::renderComponentWindow() {
 
       ImGui::InputFloat2("Size", &sprite->size.x);
       ImGui::Checkbox("Visible", &sprite->visible);
+      ImGui::Checkbox("Unlit (Ignore Darkness)", &sprite->unlit);
       ImGui::ColorEdit4("Color", &sprite->color.r);
 
       if (ImGui::Button("Remove SpriteRenderer")) {
@@ -4528,6 +4540,33 @@ void Runtime::SandboxState::renderToolbar() {
   ImGui::Checkbox("Prefab Editor", &m_showPrefabEditor);
   ImGui::SameLine();
   ImGui::Checkbox("Camera Follow", &m_cameraFollowPlayer);
+  ImGui::SameLine();
+  // Darkness Toggle
+  bool enableDarkness = m_scene.isDarknessEnabled();
+  if (ImGui::Checkbox("Darkness", &enableDarkness)) {
+    m_scene.setDarknessEnabled(enableDarkness);
+  }
+
+  if (enableDarkness) {
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(100.0f);
+    float intensity = m_scene.getDarknessIntensity();
+    if (ImGui::DragFloat("##DarknessIntensity", &intensity, 0.01f, 0.0f, 1.0f,
+                         "%.2f")) {
+      m_scene.setDarknessIntensity(intensity);
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Darkness Intensity (Lower is darker)");
+
+    ImGui::SameLine();
+    glm::vec3 color = m_scene.getDarknessColor();
+    if (ImGui::ColorEdit3("##DarknessColor", &color.r,
+                          ImGuiColorEditFlags_NoInputs)) {
+      m_scene.setDarknessColor(color);
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Darkness Tint Color");
+  }
 
   // TILEMAP CONTROLS
   if (m_tileMapMode) {

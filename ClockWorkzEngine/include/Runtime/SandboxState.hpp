@@ -114,18 +114,21 @@ private:
 
   // Direct entity body dragging (click and drag without gizmo)
   bool m_isDirectDragging{false};
-  vec2 m_directDragStartPos{0.f, 0.f};  // For undo support
+  vec2 m_directDragStartPos{0.f, 0.f}; // For undo support
 
   // Multi-entity dragging (for moving selected group)
   bool m_isMultiDragging{false};
-  std::vector<std::pair<int, vec2>> m_multiDragStartPositions;  // (entity index, original position)
-  std::vector<std::pair<int, float>> m_multiRotationStartValues;  // (entity index, original rotation)
-  std::vector<std::pair<int, vec2>> m_multiScaleStartValues;  // (entity index, original scale)
+  std::vector<std::pair<int, vec2>>
+      m_multiDragStartPositions; // (entity index, original position)
+  std::vector<std::pair<int, float>>
+      m_multiRotationStartValues; // (entity index, original rotation)
+  std::vector<std::pair<int, vec2>>
+      m_multiScaleStartValues; // (entity index, original scale)
 
   // Box/Marquee selection (Photoshop-style)
   bool m_isBoxSelecting{false};
-  vec2 m_boxSelectStart{0.f, 0.f};   // World-space start position
-  vec2 m_boxSelectEnd{0.f, 0.f};     // World-space end position
+  vec2 m_boxSelectStart{0.f, 0.f}; // World-space start position
+  vec2 m_boxSelectEnd{0.f, 0.f};   // World-space end position
 
   // Scene View & Gizmos
   Graphics::FrameBuffer m_framebuffer;
@@ -145,7 +148,7 @@ private:
   // Editor Features
   bool m_showGrid{true};
   float m_gridSize{100.0f};
-  bool m_snapToGrid{true};  // Toggle for snapping entities to grid
+  bool m_snapToGrid{true}; // Toggle for snapping entities to grid
   bool m_isPaused{true};
   bool m_showAssetBrowser = true;
   bool m_showAudioBrowser = true;
@@ -175,7 +178,8 @@ private:
   // Tilemap painting
   enum class PaintMode { Paint, Erase, Select };
   PaintMode m_paintMode = PaintMode::Paint;
-  bool m_paintedThisFrame = false; // Track if we painted/erased this frame to block selection
+  bool m_paintedThisFrame =
+      false; // Track if we painted/erased this frame to block selection
 
   // Game Logic State
   // float m_playerDeathTimer{-1.f}; // Moved to Scene
@@ -214,7 +218,8 @@ private:
   EntityGroup *getOrCreateLayerGroup(int layer);
   void removeEntityFromGroups(ECS::Entity entity);
   void rebuildGroupsFromTilemap();
-  int getEntityLayer(ECS::Entity entity) const;  // Get layer from tilemap, -1 if not found
+  int getEntityLayer(
+      ECS::Entity entity) const; // Get layer from tilemap, -1 if not found
 
   // Prefab editor features
   bool m_showPrefabEditor = false;
