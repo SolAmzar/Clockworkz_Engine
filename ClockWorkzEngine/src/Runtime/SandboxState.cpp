@@ -90,6 +90,217 @@ template <typename T> struct Identity {
   using type = T;
 };
 
+// Returns the source project root using __FILE__ (resolved at compile time).
+// Walks up from this source file's directory until it finds a directory
+// containing both CMakeLists.txt and assets/.
+static std::string getSourceRoot() {
+  namespace fs = std::filesystem;
+  fs::path dir = fs::path(__FILE__).parent_path();
+  for (int i = 0; i < 10 && !dir.empty(); ++i) {
+    if (fs::exists(dir / "CMakeLists.txt") && fs::exists(dir / "assets")) {
+      return dir.generic_string();
+    }
+    dir = dir.parent_path();
+  }
+  return "";
+}
+
+// Helper: copy a file to a destination directory, creating dirs as needed.
+// Returns true on success. Skips copy if source == destination.
+static bool copyAssetFile(const std::filesystem::path &src,
+                          const std::filesystem::path &dstDir) {
+  namespace fs = std::filesystem;
+  fs::create_directories(dstDir);
+  fs::path dstPath = dstDir / src.filename();
+
+  std::error_code ec;
+  fs::path srcCanonical = fs::weakly_canonical(src, ec);
+  fs::path dstCanonical = fs::weakly_canonical(dstPath, ec);
+  if (srcCanonical == dstCanonical)
+    return true; // already in place
+
+  fs::copy_file(src, dstPath, fs::copy_options::overwrite_existing, ec);
+  if (ec) {
+    std::cerr << "[Sandbox] Failed to copy: " << src << " -> " << dstPath
+              << " (" << ec.message() << ")\n";
+    return false;
+  }
+  return true;
+}
+
+// Helper: write a JSON object to a file path, creating parent dirs as needed.
+static void writeJsonFile(const std::string &path, const nlohmann::json &j) {
+  namespace fs = std::filesystem;
+  fs::path p(path);
+  if (p.has_parent_path())
+    fs::create_directories(p.parent_path());
+  std::ofstream out(path);
+  if (out) {
+    out << j.dump(4);
+  } else {
+    std::cerr << "[Sandbox] Failed to write: " << path << "\n";
+  }
+}
+
+// Helper: copy a texture file into the project and persist to textures.json.
+// Writes to both the build (working) directory and the source directory.
+// Returns the engine-relative path on success, or empty string on failure.
+static std::string importTextureAsset(const std::string &name,
+                                      const std::string &sourcePath) {
+  namespace fs = std::filesystem;
+  using nlohmann::json;
+
+  fs::path filePath(sourcePath);
+  std::string enginePath = (fs::path("assets") / "textures" / "imported" /
+                             filePath.filename()).generic_string();
+
+  // Copy into build directory (working dir) for immediate runtime use
+  fs::path buildDstDir = fs::path("assets") / "textures" / "imported";
+  if (!copyAssetFile(filePath, buildDstDir))
+    return {};
+
+  // Copy into source directory so it persists across rebuilds
+  std::string srcRoot = getSourceRoot();
+  if (!srcRoot.empty()) {
+    fs::path srcDstDir = fs::path(srcRoot) / "assets" / "textures" / "imported";
+    copyAssetFile(filePath, srcDstDir);
+  }
+
+  // Build the JSON config update
+  auto updateConfig = [&](const std::string &configPath) {
+    json j;
+    {
+      std::ifstream in(configPath);
+      if (in) {
+        try { in >> j; } catch (...) { j = json::object(); }
+      } else {
+        j = json::object();
+      }
+    }
+
+    if (!j.contains("textures") || !j["textures"].is_array()) {
+      j["textures"] = json::array();
+    }
+
+    // Update existing entry or add new one
+    bool found = false;
+    for (auto &entry : j["textures"]) {
+      if (entry.contains("name") && entry["name"].get<std::string>() == name) {
+        entry["path"] = enginePath;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      json entry;
+      entry["name"] = name;
+      entry["path"] = enginePath;
+      entry["flipY"] = true;
+      entry["alphaOnlyIsRed"] = false;
+      j["textures"].push_back(entry);
+    }
+
+    writeJsonFile(configPath, j);
+  };
+
+  // Update build directory config (for current session)
+  updateConfig("assets/configs/textures.json");
+
+  // Update source directory config (persists across rebuilds)
+  if (!srcRoot.empty()) {
+    std::string srcConfigPath =
+        (fs::path(srcRoot) / "assets" / "configs" / "textures.json").string();
+    updateConfig(srcConfigPath);
+    std::cout << "[Sandbox] Persisted texture '" << name
+              << "' to source textures.json\n";
+  }
+
+  return enginePath;
+}
+
+// Helper: copy an audio file into the project and persist to sounds.json.
+// Writes to both the build (working) directory and the source directory.
+// Returns the engine-relative path on success, or empty string on failure.
+static std::string importSoundAsset(const std::string &name,
+                                    const std::string &sourcePath) {
+  namespace fs = std::filesystem;
+  using nlohmann::json;
+
+  fs::path filePath(sourcePath);
+  std::string enginePath = (fs::path("assets") / "audio" / "imported" /
+                             filePath.filename()).generic_string();
+
+  // Copy into build directory for immediate runtime use
+  fs::path buildDstDir = fs::path("assets") / "audio" / "imported";
+  if (!copyAssetFile(filePath, buildDstDir))
+    return {};
+
+  // Copy into source directory so it persists across rebuilds
+  std::string srcRoot = getSourceRoot();
+  if (!srcRoot.empty()) {
+    fs::path srcDstDir = fs::path(srcRoot) / "assets" / "audio" / "imported";
+    copyAssetFile(filePath, srcDstDir);
+  }
+
+  // Determine streaming heuristic
+  std::string ext = filePath.extension().string();
+  std::transform(ext.begin(), ext.end(), ext.begin(),
+                 [](unsigned char c) { return (char)std::tolower(c); });
+  bool stream = (ext == ".mp3" || ext == ".ogg");
+
+  auto updateConfig = [&](const std::string &configPath) {
+    json j;
+    {
+      std::ifstream in(configPath);
+      if (in) {
+        try { in >> j; } catch (...) { j = json::object(); }
+      } else {
+        j = json::object();
+      }
+    }
+
+    if (!j.contains("sounds") || !j["sounds"].is_array()) {
+      j["sounds"] = json::array();
+    }
+
+    bool found = false;
+    for (auto &entry : j["sounds"]) {
+      if (entry.contains("name") && entry["name"].get<std::string>() == name) {
+        entry["path"] = enginePath;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      json entry;
+      entry["name"] = name;
+      entry["path"] = enginePath;
+      entry["loop"] = false;
+      entry["stream"] = stream;
+      entry["is3D"] = false;
+      j["sounds"].push_back(entry);
+    }
+
+    writeJsonFile(configPath, j);
+  };
+
+  // Update build directory config
+  updateConfig("assets/configs/sounds.json");
+
+  // Update source directory config
+  if (!srcRoot.empty()) {
+    std::string srcConfigPath =
+        (fs::path(srcRoot) / "assets" / "configs" / "sounds.json").string();
+    updateConfig(srcConfigPath);
+    std::cout << "[Sandbox] Persisted sound '" << name
+              << "' to source sounds.json\n";
+  }
+
+  return enginePath;
+}
+
 SandboxState::SandboxState(Platform::InputManager &input, GameStateManager &gsm)
     : m_input(input), m_gsm(gsm) {}
 
@@ -212,11 +423,14 @@ void SandboxState::update(double dt) {
           return Assets::TextureManager::IsLoaded(n);
         });
 
-        auto loaded = Assets::TextureManager::LoadTexture(name, path);
+        std::string enginePath = importTextureAsset(name, path);
+        if (enginePath.empty()) continue;
+
+        auto loaded = Assets::TextureManager::LoadTexture(name, enginePath);
         if (loaded) {
-          m_textureFilePaths[name] = path;
-          if (fs::exists(path)) {
-            m_assetFileTimestamps[name] = fs::last_write_time(path);
+          m_textureFilePaths[name] = enginePath;
+          if (fs::exists(enginePath)) {
+            m_assetFileTimestamps[name] = fs::last_write_time(enginePath);
           }
           std::cout << "[Sandbox] Loaded dropped texture: " << name << " from "
                     << path << std::endl;
@@ -227,7 +441,10 @@ void SandboxState::update(double dt) {
           return Assets::SoundManager::IsLoaded(n);
         });
 
-        auto clip = Assets::SoundManager::LoadSound(name, path);
+        std::string enginePath = importSoundAsset(name, path);
+        if (enginePath.empty()) continue;
+
+        auto clip = Assets::SoundManager::LoadSound(name, enginePath);
         if (clip) {
           std::cout << "[Sandbox] Loaded dropped sound: " << name << " from "
                     << path << std::endl;
@@ -4840,21 +5057,24 @@ void Runtime::SandboxState::renderAssetBrowser() {
     if (ImGui::Button("Load")) {
       if (strlen(m_newAssetNameBuffer) > 0 &&
           strlen(m_newAssetPathBuffer) > 0) {
-        auto loaded = Assets::TextureManager::LoadTexture(m_newAssetNameBuffer,
-                                                          m_newAssetPathBuffer);
-        if (loaded) {
-          // Update hot-reload tracking
-          m_textureFilePaths[m_newAssetNameBuffer] = m_newAssetPathBuffer;
-          namespace fs = std::filesystem;
-          if (fs::exists(m_newAssetPathBuffer)) {
-            m_assetFileTimestamps[m_newAssetNameBuffer] =
-                fs::last_write_time(m_newAssetPathBuffer);
+        std::string assetName = m_newAssetNameBuffer;
+        std::string enginePath = importTextureAsset(assetName, m_newAssetPathBuffer);
+        if (!enginePath.empty()) {
+          auto loaded = Assets::TextureManager::LoadTexture(assetName, enginePath);
+          if (loaded) {
+            // Update hot-reload tracking
+            m_textureFilePaths[assetName] = enginePath;
+            namespace fs = std::filesystem;
+            if (fs::exists(enginePath)) {
+              m_assetFileTimestamps[assetName] =
+                  fs::last_write_time(enginePath);
+            }
+            std::cout << "[Sandbox] Loaded new asset: " << assetName
+                      << " from " << m_newAssetPathBuffer << std::endl;
+          } else {
+            std::cerr << "[Sandbox] Failed to load: " << m_newAssetPathBuffer
+                      << std::endl;
           }
-          std::cout << "[Sandbox] Loaded new asset: " << m_newAssetNameBuffer
-                    << " from " << m_newAssetPathBuffer << std::endl;
-        } else {
-          std::cerr << "[Sandbox] Failed to load: " << m_newAssetPathBuffer
-                    << std::endl;
         }
         ImGui::CloseCurrentPopup();
       }
@@ -4974,14 +5194,17 @@ void Runtime::SandboxState::renderAssetBrowser() {
           namespace fs = std::filesystem;
           fs::path filePath(droppedPath);
           std::string name = filePath.stem().string();
-          auto loaded = Assets::TextureManager::LoadTexture(name, droppedPath);
-          if (loaded) {
-            m_textureFilePaths[name] = droppedPath;
-            if (fs::exists(droppedPath)) {
-              m_assetFileTimestamps[name] = fs::last_write_time(droppedPath);
+          std::string enginePath = importTextureAsset(name, droppedPath);
+          if (!enginePath.empty()) {
+            auto loaded = Assets::TextureManager::LoadTexture(name, enginePath);
+            if (loaded) {
+              m_textureFilePaths[name] = enginePath;
+              if (fs::exists(enginePath)) {
+                m_assetFileTimestamps[name] = fs::last_write_time(enginePath);
+              }
+              std::cout << "[Sandbox] Loaded asset from drop: " << name
+                        << std::endl;
             }
-            std::cout << "[Sandbox] Loaded asset from drop: " << name
-                      << std::endl;
           }
         }
         ImGui::EndDragDropTarget();
@@ -5007,16 +5230,18 @@ void Runtime::SandboxState::renderTextureReplaceDialog() {
                      sizeof(m_replacePathBuffer));
     if (ImGui::Button("OK")) {
       Assets::TextureManager::Unload(m_replacingTexture);
-      Assets::TextureManager::LoadTexture(m_replacingTexture,
-                                          m_replacePathBuffer);
-      // Update file path mapping for hot-reload
-      m_textureFilePaths[m_replacingTexture] = m_replacePathBuffer;
-      if (std::filesystem::exists(m_replacePathBuffer)) {
-        m_assetFileTimestamps[m_replacingTexture] =
-            std::filesystem::last_write_time(m_replacePathBuffer);
+      std::string enginePath = importTextureAsset(m_replacingTexture, m_replacePathBuffer);
+      if (!enginePath.empty()) {
+        Assets::TextureManager::LoadTexture(m_replacingTexture, enginePath);
+        // Update file path mapping for hot-reload
+        m_textureFilePaths[m_replacingTexture] = enginePath;
+        if (std::filesystem::exists(enginePath)) {
+          m_assetFileTimestamps[m_replacingTexture] =
+              std::filesystem::last_write_time(enginePath);
+        }
+        std::cout << "[Sandbox] Replaced texture: " << m_replacingTexture
+                  << " -> " << m_replacePathBuffer << std::endl;
       }
-      std::cout << "[Sandbox] Replaced texture: " << m_replacingTexture
-                << " -> " << m_replacePathBuffer << std::endl;
       m_showReplaceDialog = false;
       ImGui::CloseCurrentPopup();
     }
