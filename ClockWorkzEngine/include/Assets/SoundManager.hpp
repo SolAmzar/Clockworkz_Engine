@@ -66,6 +66,9 @@ public:
   static bool RemoveFromConfig(const std::string &name,
                                const std::string &configPath =
                                    "assets/configs/sounds.json");
+  static bool UpdateVolumesInConfig(
+      const std::unordered_map<std::string, float> &volumes,
+      const std::string &configPath = "assets/configs/sounds.json");
 
 private:
   static std::vector<SoundConfig> ParseConfig(const std::string &configPath);

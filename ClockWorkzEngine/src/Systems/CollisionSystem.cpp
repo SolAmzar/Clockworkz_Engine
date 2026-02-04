@@ -15,6 +15,9 @@ reserved.
 #include "Components/Transform.hpp"
 #include <algorithm> // For std::min/max
 #include <cmath>     // For std::abs
+#include <cstdint>
+#include <unordered_map>
+#include <unordered_set>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
@@ -26,6 +29,35 @@ static glm::vec2 rotateVec(glm::vec2 v, float angle) {
   float s = std::sin(angle);
   float c = std::cos(angle);
   return glm::vec2(v.x * c - v.y * s, v.x * s + v.y * c);
+}
+
+static void getWorldAABB(const Components::Transform &t,
+                         const Components::Collider &c, glm::vec2 &outMin,
+                         glm::vec2 &outMax) {
+  glm::vec2 effectiveOffset(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y);
+  glm::vec2 rotatedOffset = rotateVec(effectiveOffset, t.rotation);
+  glm::vec2 center =
+      glm::vec2(t.position.x, t.position.y) + rotatedOffset;
+
+  if (c.shape == Components::Collider::Shape::Circle) {
+    float radius = c.radius * std::max(t.scale.x, t.scale.y);
+    outMin = center - glm::vec2(radius);
+    outMax = center + glm::vec2(radius);
+    return;
+  }
+
+  glm::vec2 size(c.size.x * t.scale.x, c.size.y * t.scale.y);
+  glm::vec2 half = size * 0.5f;
+
+  float s = std::sin(t.rotation);
+  float ccos = std::cos(t.rotation);
+  float absC = std::abs(ccos);
+  float absS = std::abs(s);
+  glm::vec2 extents(absC * half.x + absS * half.y,
+                    absS * half.x + absC * half.y);
+
+  outMin = center - extents;
+  outMax = center + extents;
 }
 
 void CollisionSystem::update(ECS::World &world) {
@@ -40,85 +72,160 @@ void CollisionSystem::update(ECS::World &world) {
         entities.push_back(e);
       });
 
-  // Simple O(N^2) broad phase for now
-  // Optimization (spatial partitioning) comes in later phases
-  for (size_t i = 0; i < entities.size(); ++i) {
-    for (size_t j = i + 1; j < entities.size(); ++j) {
-      auto eA = entities[i];
-      auto eB = entities[j];
+  struct CellKey {
+    int x;
+    int y;
+    bool operator==(const CellKey &other) const {
+      return x == other.x && y == other.y;
+    }
+  };
+  struct CellKeyHash {
+    std::size_t operator()(const CellKey &k) const {
+      std::size_t hx = std::hash<int>{}(k.x);
+      std::size_t hy = std::hash<int>{}(k.y);
+      return hx ^ (hy + 0x9e3779b9 + (hx << 6) + (hx >> 2));
+    }
+  };
+  struct PairKey {
+    std::uint64_t a;
+    std::uint64_t b;
+    bool operator==(const PairKey &other) const {
+      return a == other.a && b == other.b;
+    }
+  };
+  struct PairKeyHash {
+    std::size_t operator()(const PairKey &k) const {
+      std::size_t ha = std::hash<std::uint64_t>{}(k.a);
+      std::size_t hb = std::hash<std::uint64_t>{}(k.b);
+      return ha ^ (hb + 0x9e3779b97f4a7c15ULL + (ha << 6) + (ha >> 2));
+    }
+  };
 
-      // Retrieve components directly
-      auto *tA = world.getComponent<Components::Transform>(eA);
-      auto *cA = world.getComponent<Components::Collider>(eA);
-      auto *tB = world.getComponent<Components::Transform>(eB);
-      auto *cB = world.getComponent<Components::Collider>(eB);
+  std::unordered_map<CellKey, std::vector<ECS::Entity>, CellKeyHash> grid;
+  grid.reserve(entities.size() * 2);
 
-      // Check for valid pointers (should be valid given the query above)
-      if (tA && cA && tB && cB) {
-        // Check collision if both are solid OR if one is a trigger
-        bool isSolidCollision = cA->isSolid && cB->isSolid;
-        bool isTriggerCollision = cA->isTrigger || cB->isTrigger;
+  auto entityKey = [](ECS::Entity e) -> std::uint64_t {
+    return (static_cast<std::uint64_t>(e.id) << 32) |
+           static_cast<std::uint64_t>(e.generation);
+  };
 
-        if (isSolidCollision || isTriggerCollision) {
-          glm::vec2 penetration{0.0f, 0.0f};
-          bool collided = false;
+  for (auto e : entities) {
+    auto *t = world.getComponent<Components::Transform>(e);
+    auto *c = world.getComponent<Components::Collider>(e);
+    if (!t || !c)
+      continue;
 
-          if (cA->shape == Components::Collider::Shape::Box &&
-              cB->shape == Components::Collider::Shape::Box) {
-            if (checkAABB(*tA, *cA, *tB, *cB, penetration)) {
-              collided = true;
-            }
-          } else if (cA->shape == Components::Collider::Shape::Circle &&
-                     cB->shape == Components::Collider::Shape::Circle) {
-            if (checkCircleCircle(*tA, *cA, *tB, *cB, penetration)) {
-              collided = true;
-            }
-          } else {
-            // Mixed Shape
-            if (cA->shape == Components::Collider::Shape::Box) {
-              // A is Box, B is Circle
-              if (checkAABBCircle(*tA, *cA, *tB, *cB, penetration)) {
+    glm::vec2 aabbMin(0.0f);
+    glm::vec2 aabbMax(0.0f);
+    getWorldAABB(*t, *c, aabbMin, aabbMax);
+
+    int minX = static_cast<int>(std::floor(aabbMin.x / m_cellSize));
+    int maxX = static_cast<int>(std::floor(aabbMax.x / m_cellSize));
+    int minY = static_cast<int>(std::floor(aabbMin.y / m_cellSize));
+    int maxY = static_cast<int>(std::floor(aabbMax.y / m_cellSize));
+
+    for (int x = minX; x <= maxX; ++x) {
+      for (int y = minY; y <= maxY; ++y) {
+        grid[{x, y}].push_back(e);
+      }
+    }
+  }
+
+  std::unordered_set<PairKey, PairKeyHash> tested;
+  tested.reserve(entities.size() * 4);
+
+  for (const auto &cell : grid) {
+    const auto &cellEntities = cell.second;
+    if (cellEntities.size() < 2)
+      continue;
+
+    for (size_t i = 0; i < cellEntities.size(); ++i) {
+      for (size_t j = i + 1; j < cellEntities.size(); ++j) {
+        auto eA = cellEntities[i];
+        auto eB = cellEntities[j];
+
+        std::uint64_t keyA = entityKey(eA);
+        std::uint64_t keyB = entityKey(eB);
+        if (keyA > keyB)
+          std::swap(keyA, keyB);
+        PairKey pairKey{keyA, keyB};
+        if (tested.find(pairKey) != tested.end())
+          continue;
+        tested.insert(pairKey);
+
+        // Retrieve components directly
+        auto *tA = world.getComponent<Components::Transform>(eA);
+        auto *cA = world.getComponent<Components::Collider>(eA);
+        auto *tB = world.getComponent<Components::Transform>(eB);
+        auto *cB = world.getComponent<Components::Collider>(eB);
+
+        // Check for valid pointers (should be valid given the query above)
+        if (tA && cA && tB && cB) {
+          // Check collision if both are solid OR if one is a trigger
+          bool isSolidCollision = cA->isSolid && cB->isSolid;
+          bool isTriggerCollision = cA->isTrigger || cB->isTrigger;
+
+          if (isSolidCollision || isTriggerCollision) {
+            glm::vec2 penetration{0.0f, 0.0f};
+            bool collided = false;
+
+            if (cA->shape == Components::Collider::Shape::Box &&
+                cB->shape == Components::Collider::Shape::Box) {
+              if (checkAABB(*tA, *cA, *tB, *cB, penetration)) {
+                collided = true;
+              }
+            } else if (cA->shape == Components::Collider::Shape::Circle &&
+                       cB->shape == Components::Collider::Shape::Circle) {
+              if (checkCircleCircle(*tA, *cA, *tB, *cB, penetration)) {
                 collided = true;
               }
             } else {
-              // A is Circle, B is Box
-              glm::vec2 p;
-              if (checkAABBCircle(*tB, *cB, *tA, *cA, p)) {
-                // p is correction for B (Box). So for A (Circle), it is -p.
-                penetration = -p;
-                collided = true;
+              // Mixed Shape
+              if (cA->shape == Components::Collider::Shape::Box) {
+                // A is Box, B is Circle
+                if (checkAABBCircle(*tA, *cA, *tB, *cB, penetration)) {
+                  collided = true;
+                }
+              } else {
+                // A is Circle, B is Box
+                glm::vec2 p;
+                if (checkAABBCircle(*tB, *cB, *tA, *cA, p)) {
+                  // p is correction for B (Box). So for A (Circle), it is -p.
+                  penetration = -p;
+                  collided = true;
+                }
               }
             }
-          }
 
-          if (collided) {
-            m_collisions.push_back({eA, eB});
+            if (collided) {
+              m_collisions.push_back({eA, eB});
 
-            // Only resolve if physically solid AND neither is a trigger
-            if (isSolidCollision && !isTriggerCollision) {
-              // Resolution Logic
-              // 1. Determine who moves
-              bool aMoves = cA->moveable;
-              bool bMoves = cB->moveable;
+              // Only resolve if physically solid AND neither is a trigger
+              if (isSolidCollision && !isTriggerCollision) {
+                // Resolution Logic
+                // 1. Determine who moves
+                bool aMoves = cA->moveable;
+                bool bMoves = cB->moveable;
 
-              if (aMoves && !bMoves) {
-                // A moves full amount
-                tA->position.x += penetration.x;
-                tA->position.y += penetration.y;
-              } else if (!aMoves && bMoves) {
-                // B moves full amount (correction for B is -penetration)
-                tB->position.x -= penetration.x;
-                tB->position.y -= penetration.y;
-              } else if (aMoves && bMoves) {
-                // Both move based on Mass Ratio
-                float totalMass = cA->mass + cB->mass;
-                float ratioA = cB->mass / totalMass; // Inverse mass ratio
-                float ratioB = cA->mass / totalMass;
+                if (aMoves && !bMoves) {
+                  // A moves full amount
+                  tA->position.x += penetration.x;
+                  tA->position.y += penetration.y;
+                } else if (!aMoves && bMoves) {
+                  // B moves full amount (correction for B is -penetration)
+                  tB->position.x -= penetration.x;
+                  tB->position.y -= penetration.y;
+                } else if (aMoves && bMoves) {
+                  // Both move based on Mass Ratio
+                  float totalMass = cA->mass + cB->mass;
+                  float ratioA = cB->mass / totalMass; // Inverse mass ratio
+                  float ratioB = cA->mass / totalMass;
 
-                tA->position.x += penetration.x * ratioA;
-                tA->position.y += penetration.y * ratioA;
-                tB->position.x -= penetration.x * ratioB;
-                tB->position.y -= penetration.y * ratioB;
+                  tA->position.x += penetration.x * ratioA;
+                  tA->position.y += penetration.y * ratioA;
+                  tB->position.x -= penetration.x * ratioB;
+                  tB->position.y -= penetration.y * ratioB;
+                }
               }
             }
           }

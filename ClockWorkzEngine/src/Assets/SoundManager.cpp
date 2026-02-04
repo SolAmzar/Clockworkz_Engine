@@ -147,6 +147,40 @@ bool SoundManager::RemoveFromConfig(const std::string &name,
   return true;
 }
 
+bool SoundManager::UpdateVolumesInConfig(
+    const std::unordered_map<std::string, float> &volumes,
+    const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return false;
+
+  nlohmann::json j;
+  file >> j;
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return false;
+
+  bool changed = false;
+  for (auto &entry : j["sounds"]) {
+    const std::string entryName = entry.value("name", "");
+    auto it = volumes.find(entryName);
+    if (it != volumes.end()) {
+      entry["volume"] = it->second;
+      changed = true;
+    }
+  }
+
+  if (!changed)
+    return false;
+
+  std::ofstream out(configPath);
+  if (!out)
+    return false;
+
+  out << std::setw(4) << j << "\n";
+  return true;
+}
+
 bool SoundManager::LoadFromConfig(const std::string &configPath) {
   auto configs = ParseConfig(configPath);
   bool ok = true;
