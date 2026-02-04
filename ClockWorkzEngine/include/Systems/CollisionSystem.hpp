@@ -40,6 +40,7 @@ public:
    * @param world ECS world containing entities
    */
   void update(ECS::World &world);
+  void setGridCellSize(float size) { m_cellSize = size; }
 
   /**
    * @brief Get list of current collisions
@@ -52,6 +53,7 @@ public:
 
 private:
   std::vector<std::pair<ECS::Entity, ECS::Entity>> m_collisions;
+  float m_cellSize{64.0f};
 
   // Helper for AABB intersection
   bool checkAABB(const Components::Transform &tA,

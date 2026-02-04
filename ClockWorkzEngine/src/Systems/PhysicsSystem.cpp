@@ -23,6 +23,7 @@ void PhysicsSystem::update(ECS::World &world, double dt) {
   world.each<Components::Transform, Components::Velocity>(
       [&](ECS::Entity entity, Components::Transform &transform,
           Components::Velocity &velocity) {
+        (void)entity;
         // Apply velocity to position
         // pos += vel * speed * dt
         transform.position.x += velocity.velocity.x * velocity.moveSpeed * fdt;

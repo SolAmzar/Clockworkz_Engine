@@ -442,6 +442,15 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         int typeInt = surf.value("type", 0);
         sc.setType(static_cast<Gameplay::SurfaceType>(typeInt));
         world.addComponent(entity, sc);
+        if (!world.getComponent<Components::Collider>(entity)) {
+          Components::Collider col;
+          if (auto *spr = world.getComponent<Components::SpriteRenderer>(entity)) {
+            col.size = spr->size;
+          }
+          col.isSolid = false;
+          col.isTrigger = true;
+          world.addComponent(entity, col);
+        }
       }
 
       // EnemyAI

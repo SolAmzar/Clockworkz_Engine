@@ -35,6 +35,7 @@ void RenderSystem::update(ECS::World &world,
   world.each<Components::Transform, Components::SpriteRenderer>(
       [&](ECS::Entity entity, Components::Transform &transform,
           Components::SpriteRenderer &sprite) {
+        (void)entity;
         if (!sprite.visible)
           return;
         entries.push_back({&transform, &sprite});

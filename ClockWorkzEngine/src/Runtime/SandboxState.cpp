@@ -2666,10 +2666,10 @@ void SandboxState::renderComponentWindow() {
         }
       }
 
-      // ==================== SpriteRenderer ====================
-      int spriteCount = countWithComponent([&](ECS::Entity e) {
-        return world.getComponent<Components::SpriteRenderer>(e);
-      });
+        // ==================== SpriteRenderer ====================
+        int spriteCount = countWithComponent([&](ECS::Entity e) {
+          return world.getComponent<Components::SpriteRenderer>(e);
+        });
       if (spriteCount > 0) {
         if (ImGui::CollapsingHeader(
                 ("SpriteRenderer (" + std::to_string(spriteCount) + ")")
@@ -2757,6 +2757,46 @@ void SandboxState::renderComponentWindow() {
                 if (spr)
                   spr->color = color;
               }
+            }
+          }
+        }
+
+        // ==================== Surface ====================
+        int surfaceCount = countWithComponent([&](ECS::Entity e) {
+          return world.getComponent<Gameplay::SurfaceComponent>(e);
+        });
+        if (ImGui::CollapsingHeader(
+                ("Surface (" + std::to_string(surfaceCount) + ")").c_str())) {
+          const char *items[] = {"Default", "Tile", "Wood", "Concrete"};
+          int current = 0;
+          if (surfaceCount > 0) {
+            auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+              return world.getComponent<Gameplay::SurfaceComponent>(e);
+            });
+            if (auto *firstSurf =
+                    world.getComponent<Gameplay::SurfaceComponent>(firstEntity)) {
+              current = static_cast<int>(firstSurf->type());
+            }
+          }
+          if (ImGui::Combo("Surface Type##multi", &current, items, 4)) {
+            for (auto &se : selEntities) {
+              auto *surf = world.getComponent<Gameplay::SurfaceComponent>(se);
+              if (!surf) {
+                world.addComponent(se, Gameplay::SurfaceComponent{});
+                surf = world.getComponent<Gameplay::SurfaceComponent>(se);
+                if (!world.getComponent<Components::Collider>(se)) {
+                  Components::Collider col;
+                  if (auto *spr =
+                          world.getComponent<Components::SpriteRenderer>(se)) {
+                    col.size = spr->size;
+                  }
+                  col.isSolid = false;
+                  col.isTrigger = true;
+                  world.addComponent(se, col);
+                }
+              }
+              if (surf)
+                surf->setType((Gameplay::SurfaceType)current);
             }
           }
         }
@@ -4010,24 +4050,34 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
-  // Surface Component
-  if (ImGui::CollapsingHeader("Surface")) {
-    auto *surf = world.getComponent<Gameplay::SurfaceComponent>(entity);
-    if (surf) {
-      const char *items[] = {"Default", "Tile", "Wood", "Concrete"};
-      int current = (int)surf->type();
-      if (ImGui::Combo("Surface Type", &current, items, 4)) {
-        surf->setType((Gameplay::SurfaceType)current);
-      }
-      if (ImGui::Button("Remove Surface")) {
-        world.removeComponent<Gameplay::SurfaceComponent>(entity);
-      }
-    } else {
-      if (ImGui::Button("Add Surface")) {
-        world.addComponent(entity, Gameplay::SurfaceComponent{});
+    // Surface Component
+    if (ImGui::CollapsingHeader("Surface")) {
+      auto *surf = world.getComponent<Gameplay::SurfaceComponent>(entity);
+      if (surf) {
+        const char *items[] = {"Default", "Tile", "Wood", "Concrete"};
+        int current = (int)surf->type();
+        if (ImGui::Combo("Surface Type", &current, items, 4)) {
+          surf->setType((Gameplay::SurfaceType)current);
+        }
+        if (ImGui::Button("Remove Surface")) {
+          world.removeComponent<Gameplay::SurfaceComponent>(entity);
+        }
+      } else {
+        if (ImGui::Button("Add Surface")) {
+          world.addComponent(entity, Gameplay::SurfaceComponent{});
+          if (!world.getComponent<Components::Collider>(entity)) {
+            Components::Collider col;
+            if (auto *spr =
+                    world.getComponent<Components::SpriteRenderer>(entity)) {
+              col.size = spr->size;
+            }
+            col.isSolid = false;
+            col.isTrigger = true;
+            world.addComponent(entity, col);
+          }
+        }
       }
     }
-  }
 
   // StateMachine
   if (ImGui::CollapsingHeader("StateMachine")) {
@@ -5984,12 +6034,35 @@ void Runtime::SandboxState::renderAudioBrowser() {
 
   ImGui::Begin("Audio Browser", &m_showAudioBrowser);
 
-  // Stop All Button
-  if (ImGui::Button("Stop All Sounds")) {
-    Core::Engine::Get().audio().stopAll();
-  }
+    // Stop All Button
+    if (ImGui::Button("Stop All Sounds")) {
+      Core::Engine::Get().audio().stopAll();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Save Volumes")) {
+      std::unordered_map<std::string, float> volumes;
+      auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
+      volumes.reserve(soundNames.size());
+      for (const auto &name : soundNames) {
+        float vol = m_scene.getSoundVolumeOverride(
+            name, Core::Engine::Get().audio().getSoundProfileVolume(name));
+        volumes[name] = vol;
+      }
 
-  ImGui::Separator();
+      Assets::SoundManager::UpdateVolumesInConfig(volumes);
+      std::string srcRoot = getSourceRoot();
+      if (!srcRoot.empty()) {
+        std::string srcConfig =
+            (std::filesystem::path(srcRoot) / "assets" / "configs" /
+             "sounds.json")
+                .generic_string();
+        if (srcConfig != "assets/configs/sounds.json") {
+          Assets::SoundManager::UpdateVolumesInConfig(volumes, srcConfig);
+        }
+      }
+    }
+  
+    ImGui::Separator();
 
   // List all loaded sounds
   auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
