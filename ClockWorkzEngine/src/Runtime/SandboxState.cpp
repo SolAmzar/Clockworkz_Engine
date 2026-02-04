@@ -79,8 +79,11 @@ namespace Runtime {
 
 vec2 snapToGrid(const vec2 &pos, float gridSize) {
     float halfGrid = gridSize * 0.5f;
-    return vec2(std::round((pos.x - halfGrid) / gridSize) * gridSize + halfGrid,
-                std::round((pos.y - halfGrid) / gridSize) * gridSize + halfGrid);
+    // Use floor(x + 0.5) for consistent "round half up" behavior
+    // This ensures symmetric grid cell ranges: [-100,0) -> -50, [0,100) -> 50, etc.
+    float nx = std::floor((pos.x - halfGrid) / gridSize + 0.5f);
+    float ny = std::floor((pos.y - halfGrid) / gridSize + 0.5f);
+    return vec2(nx * gridSize + halfGrid, ny * gridSize + halfGrid);
 }
 // Helper struct for type identity (moved to namespace scope)
 template <typename T> struct Identity {
@@ -137,6 +140,8 @@ void SandboxState::onExit() {
   m_tilemap.clear();
   m_entityGroups.clear();
   m_multiDragStartPositions.clear();
+  m_multiRotationStartValues.clear();
+  m_multiScaleStartValues.clear();
   m_isMultiDragging = false;
   m_isDirectDragging = false;
   m_isBoxSelecting = false;
@@ -4440,6 +4445,21 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       m_gizmoOriginalPos = vec2(trans->position.x, trans->position.y);
       m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
       m_isDirectDragging = false;  // Cancel direct drag when gizmo is used
+
+      // Store original positions of ALL selected entities for multi-selection gizmo movement
+      m_multiDragStartPositions.clear();
+      for (int idx : m_selectedEntities) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto selectedEntity = m_testEntities[idx];
+          if (auto *selectedTrans = world.getComponent<Components::Transform>(selectedEntity)) {
+            m_multiDragStartPositions.push_back({idx, selectedTrans->position});
+          }
+        }
+      }
+      // Also add primary selection if not in m_selectedEntities
+      if (m_selectedEntities.find(m_selectedEntityIdx) == m_selectedEntities.end()) {
+        m_multiDragStartPositions.push_back({m_selectedEntityIdx, trans->position});
+      }
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
@@ -4466,8 +4486,20 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
 
       vec2 worldDir = (m_gizmoActiveAxis == 0) ? vec2(c, s) : vec2(-s, c);
 
-      trans->position.x = m_gizmoOriginalPos.x + worldDir.x * worldMove;
-      trans->position.y = m_gizmoOriginalPos.y + worldDir.y * worldMove;
+      // Move ALL selected entities by the same delta
+      for (const auto &[idx, originalPos] : m_multiDragStartPositions) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto selectedEntity = m_testEntities[idx];
+          if (auto *selectedTrans = world.getComponent<Components::Transform>(selectedEntity)) {
+            vec2 newPos = originalPos + worldDir * worldMove;
+            // Apply snap-to-grid if enabled
+            if (m_snapToGrid) {
+              newPos = snapToGrid(newPos, m_gridSize);
+            }
+            selectedTrans->position = newPos;
+          }
+        }
+      }
     }
   } else if (m_gizmoMode == GizmoMode::Rotation) {
     float radius = handleLength * 0.8f;
@@ -4489,6 +4521,21 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       m_gizmoClickOffset.x =
           atan2(mousePos.y - origin.y, mousePos.x - origin.x);
       m_isDirectDragging = false;  // Cancel direct drag when gizmo is used
+
+      // Store original rotations of ALL selected entities for multi-selection gizmo
+      m_multiRotationStartValues.clear();
+      for (int idx : m_selectedEntities) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto selectedEntity = m_testEntities[idx];
+          if (auto *selectedTrans = world.getComponent<Components::Transform>(selectedEntity)) {
+            m_multiRotationStartValues.push_back({idx, selectedTrans->rotation});
+          }
+        }
+      }
+      // Also add primary selection if not in m_selectedEntities
+      if (m_selectedEntities.find(m_selectedEntityIdx) == m_selectedEntities.end()) {
+        m_multiRotationStartValues.push_back({m_selectedEntityIdx, trans->rotation});
+      }
     }
 
     if (mouseDown && m_gizmoActiveAxis == 2) {
@@ -4498,7 +4545,16 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       // So delta screen angle needs to be subtracted?
       // If I move mouse CW (angle increases), I intend to rotate CW (angle
       // decreases in standard math). So newRotation = old - delta.
-      trans->rotation = m_gizmoOriginalRotation - delta;
+
+      // Rotate ALL selected entities by the same delta
+      for (const auto &[idx, originalRot] : m_multiRotationStartValues) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto selectedEntity = m_testEntities[idx];
+          if (auto *selectedTrans = world.getComponent<Components::Transform>(selectedEntity)) {
+            selectedTrans->rotation = originalRot - delta;
+          }
+        }
+      }
     }
   } else if (m_gizmoMode == GizmoMode::Scale) {
     ImVec2 xEnd = {origin.x + xHandleVec.x, origin.y + xHandleVec.y};
@@ -4530,6 +4586,21 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       m_gizmoOriginalScale = vec2(trans->scale.x, trans->scale.y);
       m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
       m_isDirectDragging = false;  // Cancel direct drag when gizmo is used
+
+      // Store original scales of ALL selected entities for multi-selection gizmo
+      m_multiScaleStartValues.clear();
+      for (int idx : m_selectedEntities) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto selectedEntity = m_testEntities[idx];
+          if (auto *selectedTrans = world.getComponent<Components::Transform>(selectedEntity)) {
+            m_multiScaleStartValues.push_back({idx, selectedTrans->scale});
+          }
+        }
+      }
+      // Also add primary selection if not in m_selectedEntities
+      if (m_selectedEntities.find(m_selectedEntityIdx) == m_selectedEntities.end()) {
+        m_multiScaleStartValues.push_back({m_selectedEntityIdx, trans->scale});
+      }
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
@@ -4544,49 +4615,82 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       // Scale sensitivity
       float scaleDelta = proj * 0.01f;
 
-      if (m_gizmoActiveAxis == 0)
-        trans->scale.x = m_gizmoOriginalScale.x + scaleDelta;
-      if (m_gizmoActiveAxis == 1)
-        trans->scale.y = m_gizmoOriginalScale.y + scaleDelta;
+      // Scale ALL selected entities by the same delta
+      for (const auto &[idx, originalScale] : m_multiScaleStartValues) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto selectedEntity = m_testEntities[idx];
+          if (auto *selectedTrans = world.getComponent<Components::Transform>(selectedEntity)) {
+            if (m_gizmoActiveAxis == 0)
+              selectedTrans->scale.x = originalScale.x + scaleDelta;
+            if (m_gizmoActiveAxis == 1)
+              selectedTrans->scale.y = originalScale.y + scaleDelta;
+          }
+        }
+      }
     }
   }
 
   // Create undo command when gizmo drag finishes
   if (releasedAxis != -1) {
     if (m_gizmoMode == GizmoMode::Translation) {
-      vec2 newPos = trans->position;
-      if (m_gizmoOriginalPos.x != newPos.x ||
-          m_gizmoOriginalPos.y != newPos.y) {
-        auto cmd = Sandbox::makePropertyCommand(
-            world, entity, &Components::Transform::position, m_gizmoOriginalPos,
-            newPos, "Move Entity");
-        executeCommand(std::move(cmd));
+      // Create undo commands for ALL moved entities
+      for (const auto &[idx, originalPos] : m_multiDragStartPositions) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto movedEntity = m_testEntities[idx];
+          if (auto *movedTrans = world.getComponent<Components::Transform>(movedEntity)) {
+            vec2 newPos = movedTrans->position;
+            if (originalPos.x != newPos.x || originalPos.y != newPos.y) {
+              auto cmd = Sandbox::makePropertyCommand(
+                  world, movedEntity, &Components::Transform::position, originalPos,
+                  newPos, "Move Entity");
+              executeCommand(std::move(cmd));
 
-        // Update tilemap position for this entity so the old cell becomes free
-        for (auto &tile : m_tilemap) {
-          if (tile.entity.id == entity.id && tile.entity.generation == entity.generation) {
-            tile.position = newPos;
-            break;
+              // Update tilemap position for this entity so the old cell becomes free
+              for (auto &tile : m_tilemap) {
+                if (tile.entity.id == movedEntity.id && tile.entity.generation == movedEntity.generation) {
+                  tile.position = newPos;
+                  break;
+                }
+              }
+            }
           }
         }
       }
+      m_multiDragStartPositions.clear();
     } else if (m_gizmoMode == GizmoMode::Rotation) {
-      float newRot = trans->rotation;
-      if (m_gizmoOriginalRotation != newRot) {
-        auto cmd = Sandbox::makePropertyCommand(
-            world, entity, &Components::Transform::rotation,
-            m_gizmoOriginalRotation, newRot, "Rotate Entity");
-        executeCommand(std::move(cmd));
+      // Create undo commands for ALL rotated entities
+      for (const auto &[idx, originalRot] : m_multiRotationStartValues) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto rotatedEntity = m_testEntities[idx];
+          if (auto *rotatedTrans = world.getComponent<Components::Transform>(rotatedEntity)) {
+            float newRot = rotatedTrans->rotation;
+            if (originalRot != newRot) {
+              auto cmd = Sandbox::makePropertyCommand(
+                  world, rotatedEntity, &Components::Transform::rotation,
+                  originalRot, newRot, "Rotate Entity");
+              executeCommand(std::move(cmd));
+            }
+          }
+        }
       }
+      m_multiRotationStartValues.clear();
     } else if (m_gizmoMode == GizmoMode::Scale) {
-      vec2 newScale = trans->scale;
-      if (m_gizmoOriginalScale.x != newScale.x ||
-          m_gizmoOriginalScale.y != newScale.y) {
-        auto cmd = Sandbox::makePropertyCommand(
-            world, entity, &Components::Transform::scale, m_gizmoOriginalScale,
-            newScale, "Scale Entity");
-        executeCommand(std::move(cmd));
+      // Create undo commands for ALL scaled entities
+      for (const auto &[idx, originalScale] : m_multiScaleStartValues) {
+        if (idx >= 0 && idx < (int)m_testEntities.size()) {
+          auto scaledEntity = m_testEntities[idx];
+          if (auto *scaledTrans = world.getComponent<Components::Transform>(scaledEntity)) {
+            vec2 newScale = scaledTrans->scale;
+            if (originalScale.x != newScale.x || originalScale.y != newScale.y) {
+              auto cmd = Sandbox::makePropertyCommand(
+                  world, scaledEntity, &Components::Transform::scale, originalScale,
+                  newScale, "Scale Entity");
+              executeCommand(std::move(cmd));
+            }
+          }
+        }
       }
+      m_multiScaleStartValues.clear();
     }
   }
 }
@@ -5130,6 +5234,11 @@ void Runtime::SandboxState::clearTilemap() {
   m_selectedEntities.clear();
   m_lastClickedEntityIdx = -1;
   m_gizmoActiveAxis = -1;
+
+  // Clear gizmo multi-selection data
+  m_multiDragStartPositions.clear();
+  m_multiRotationStartValues.clear();
+  m_multiScaleStartValues.clear();
 
   m_tilemap.clear();
   m_entityGroups.clear();

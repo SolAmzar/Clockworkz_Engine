@@ -119,6 +119,8 @@ private:
   // Multi-entity dragging (for moving selected group)
   bool m_isMultiDragging{false};
   std::vector<std::pair<int, vec2>> m_multiDragStartPositions;  // (entity index, original position)
+  std::vector<std::pair<int, float>> m_multiRotationStartValues;  // (entity index, original rotation)
+  std::vector<std::pair<int, vec2>> m_multiScaleStartValues;  // (entity index, original scale)
 
   // Box/Marquee selection (Photoshop-style)
   bool m_isBoxSelecting{false};

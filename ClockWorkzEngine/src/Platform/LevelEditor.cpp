@@ -4287,11 +4287,13 @@ vec2 LevelEditor::snapToGrid(vec2 position) const {
   }
 
   // Snap to grid with half-grid offset (-50, 50, 150, 250, etc.)
-  float offset = m_gridSize * 0.5f;
-  float snappedX = std::round((position.x + offset) / m_gridSize) * m_gridSize - offset;
-  float snappedY = std::round((position.y + offset) / m_gridSize) * m_gridSize - offset;
+  // Use floor(x + 0.5) for consistent "round half up" behavior
+  // This ensures symmetric grid cell ranges: [-100,0) -> -50, [0,100) -> 50, etc.
+  float halfGrid = m_gridSize * 0.5f;
+  float nx = std::floor((position.x - halfGrid) / m_gridSize + 0.5f);
+  float ny = std::floor((position.y - halfGrid) / m_gridSize + 0.5f);
 
-  return vec2(snappedX, snappedY);
+  return vec2(nx * m_gridSize + halfGrid, ny * m_gridSize + halfGrid);
 }
 
 void LevelEditor::setActive(bool active) {
