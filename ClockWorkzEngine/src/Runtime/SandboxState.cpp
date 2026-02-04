@@ -339,7 +339,7 @@ void SandboxState::update(double dt) {
 
     // WASD Logic (Keep as backup or modifier)
     // User requested Ctrl + WASD to avoid conflict with Player controls
-    if (m_input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+    if (m_input.isKeyDown(GLFW_KEY_SPACE)) {
       float camSpeed = 500.0f / camera.zoom() * static_cast<float>(dt);
       if (m_input.isKeyDown(GLFW_KEY_W))
         m_editorCameraPos.y += camSpeed;
@@ -2183,6 +2183,7 @@ void SandboxState::renderComponentWindow() {
     int selCount = static_cast<int>(m_selectedEntities.size());
     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%d entities selected",
                        selCount);
+    ImGui::TextDisabled("Changes apply to all selected entities with that component");
     ImGui::Separator();
 
     // Collect valid selected entities
@@ -2193,70 +2194,779 @@ void SandboxState::renderComponentWindow() {
     }
 
     if (!selEntities.empty()) {
-      // Layer slider
-      auto *firstSpr =
-          world.getComponent<Components::SpriteRenderer>(selEntities[0]);
-      int layer = firstSpr ? firstSpr->sortOrder : 0;
-      if (ImGui::SliderInt("Layer (all)", &layer, 0, m_numLayers - 1)) {
-        auto *targetGroup = getOrCreateLayerGroup(layer);
-        for (auto &se : selEntities) {
-          auto *spr = world.getComponent<Components::SpriteRenderer>(se);
-          if (spr)
-            spr->sortOrder = layer;
-          for (auto &tile : m_tilemap) {
-            if (tile.entity.id == se.id &&
-                tile.entity.generation == se.generation) {
-              tile.layer = layer;
-              break;
+      // Helper lambdas to find first entity with component and count
+      auto findFirstWithComponent = [&](auto getCompFunc) -> ECS::Entity {
+        for (auto &e : selEntities) {
+          if (getCompFunc(e)) return e;
+        }
+        return ECS::Entity{0, 0};
+      };
+
+      auto countWithComponent = [&](auto getCompFunc) -> int {
+        int count = 0;
+        for (auto &e : selEntities) {
+          if (getCompFunc(e)) count++;
+        }
+        return count;
+      };
+
+      // ==================== Transform ====================
+      int transformCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Transform>(e);
+      });
+      if (transformCount > 0) {
+        if (ImGui::CollapsingHeader(("Transform (" + std::to_string(transformCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Transform>(e);
+          });
+          auto *firstTransform = world.getComponent<Components::Transform>(firstEntity);
+          if (firstTransform) {
+            // Position
+            float pos[2] = {firstTransform->position.x, firstTransform->position.y};
+            if (ImGui::DragFloat2("Position##multi", pos, 1.0f)) {
+              vec2 delta = vec2{pos[0], pos[1]} - firstTransform->position;
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::Transform>(se);
+                if (t) t->position += delta;
+              }
+            }
+
+            // Rotation
+            float deg = glm::degrees(firstTransform->rotation);
+            if (ImGui::DragFloat("Rotation (Deg)##multi", &deg, 1.0f)) {
+              float newRad = glm::radians(deg);
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::Transform>(se);
+                if (t) t->rotation = newRad;
+              }
+            }
+
+            // Scale
+            float scale[2] = {firstTransform->scale.x, firstTransform->scale.y};
+            if (ImGui::DragFloat2("Scale##multi", scale, 0.1f)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::Transform>(se);
+                if (t) t->scale = vec2{scale[0], scale[1]};
+              }
             }
           }
-          // Move to the target layer group
-          removeEntityFromGroups(se);
-          targetGroup->entities.push_back(se);
         }
       }
 
-      ImGui::Separator();
+      // ==================== Velocity ====================
+      int velocityCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Velocity>(e);
+      });
+      if (velocityCount > 0) {
+        if (ImGui::CollapsingHeader(("Velocity (" + std::to_string(velocityCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Velocity>(e);
+          });
+          auto *firstVel = world.getComponent<Components::Velocity>(firstEntity);
+          if (firstVel) {
+            float vel[2] = {firstVel->velocity.x, firstVel->velocity.y};
+            if (ImGui::DragFloat2("Velocity##multi", vel, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *v = world.getComponent<Components::Velocity>(se);
+                if (v) v->velocity = vec2{vel[0], vel[1]};
+              }
+            }
 
-      // Visibility
-      if (ImGui::CollapsingHeader("SpriteRenderer (Selection)")) {
-        bool allVis = true;
-        for (auto &se : selEntities) {
-          auto *spr = world.getComponent<Components::SpriteRenderer>(se);
-          if (spr && !spr->visible)
-            allVis = false;
-        }
-        if (ImGui::Checkbox("Visible (all)", &allVis)) {
-          for (auto &se : selEntities) {
-            auto *spr = world.getComponent<Components::SpriteRenderer>(se);
-            if (spr)
-              spr->visible = allVis;
-          }
-        }
-
-        if (firstSpr) {
-          glm::vec4 color = firstSpr->color;
-          if (ImGui::ColorEdit4("Color (all)", &color.r)) {
-            for (auto &se : selEntities) {
-              auto *spr = world.getComponent<Components::SpriteRenderer>(se);
-              if (spr)
-                spr->color = color;
+            float speed = firstVel->moveSpeed;
+            if (ImGui::DragFloat("Move Speed##multi", &speed, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *v = world.getComponent<Components::Velocity>(se);
+                if (v) v->moveSpeed = speed;
+              }
             }
           }
         }
       }
 
-      // Collider
-      if (ImGui::CollapsingHeader("Collider (Selection)")) {
-        auto *firstCol =
-            world.getComponent<Components::Collider>(selEntities[0]);
-        if (firstCol) {
-          bool solid = firstCol->isSolid;
-          if (ImGui::Checkbox("Solid (all)", &solid)) {
-            for (auto &se : selEntities) {
-              auto *col = world.getComponent<Components::Collider>(se);
-              if (col)
-                col->isSolid = solid;
+      // ==================== SpriteRenderer ====================
+      int spriteCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::SpriteRenderer>(e);
+      });
+      if (spriteCount > 0) {
+        if (ImGui::CollapsingHeader(("SpriteRenderer (" + std::to_string(spriteCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::SpriteRenderer>(e);
+          });
+          auto *firstSpr = world.getComponent<Components::SpriteRenderer>(firstEntity);
+          if (firstSpr) {
+            // Layer slider
+            int layer = firstSpr->sortOrder;
+            if (ImGui::SliderInt("Layer##multi", &layer, 0, m_numLayers - 1)) {
+              auto *targetGroup = getOrCreateLayerGroup(layer);
+              for (auto &se : selEntities) {
+                auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+                if (spr) {
+                  spr->sortOrder = layer;
+                  for (auto &tile : m_tilemap) {
+                    if (tile.entity.id == se.id && tile.entity.generation == se.generation) {
+                      tile.layer = layer;
+                      break;
+                    }
+                  }
+                  removeEntityFromGroups(se);
+                  targetGroup->entities.push_back(se);
+                }
+              }
+            }
+
+            // Texture dropdown
+            auto textureNames = Assets::TextureManager::GetLoadedTextureNames();
+            if (!textureNames.empty()) {
+              if (ImGui::BeginCombo("Texture##multi", firstSpr->textureId.c_str())) {
+                for (size_t i = 0; i < textureNames.size(); i++) {
+                  ImGui::PushID(static_cast<int>(i));
+                  bool isSelected = (firstSpr->textureId == textureNames[i]);
+                  auto tex = Assets::TextureManager::Get(textureNames[i]);
+                  if (tex) {
+                    ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+                    ImGui::SameLine();
+                  }
+                  if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
+                    for (auto &se : selEntities) {
+                      auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+                      if (spr) spr->textureId = textureNames[i];
+                    }
+                  }
+                  ImGui::PopID();
+                }
+                ImGui::EndCombo();
+              }
+            }
+
+            // Size
+            float size[2] = {firstSpr->size.x, firstSpr->size.y};
+            if (ImGui::DragFloat2("Size##multi", size, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+                if (spr) spr->size = vec2{size[0], size[1]};
+              }
+            }
+
+            // Visible
+            bool visible = firstSpr->visible;
+            if (ImGui::Checkbox("Visible##multi", &visible)) {
+              for (auto &se : selEntities) {
+                auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+                if (spr) spr->visible = visible;
+              }
+            }
+
+            // Color
+            glm::vec4 color = firstSpr->color;
+            if (ImGui::ColorEdit4("Color##multi", &color.r)) {
+              for (auto &se : selEntities) {
+                auto *spr = world.getComponent<Components::SpriteRenderer>(se);
+                if (spr) spr->color = color;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== Collider ====================
+      int colliderCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Collider>(e);
+      });
+      if (colliderCount > 0) {
+        if (ImGui::CollapsingHeader(("Collider (" + std::to_string(colliderCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Collider>(e);
+          });
+          auto *firstCol = world.getComponent<Components::Collider>(firstEntity);
+          if (firstCol) {
+            // Shape
+            const char *shapeNames[] = {"Box", "Circle"};
+            int currentShape = (int)firstCol->shape;
+            if (ImGui::Combo("Shape##multi", &currentShape, shapeNames, 2)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->shape = (Components::Collider::Shape)currentShape;
+              }
+            }
+
+            if (firstCol->shape == Components::Collider::Shape::Box) {
+              float size[2] = {firstCol->size.x, firstCol->size.y};
+              if (ImGui::DragFloat2("Size##collidermulti", size, 1.0f)) {
+                for (auto &se : selEntities) {
+                  auto *c = world.getComponent<Components::Collider>(se);
+                  if (c) c->size = vec2{size[0], size[1]};
+                }
+              }
+            } else {
+              float radius = firstCol->radius;
+              if (ImGui::DragFloat("Radius##multi", &radius, 1.0f)) {
+                for (auto &se : selEntities) {
+                  auto *c = world.getComponent<Components::Collider>(se);
+                  if (c) c->radius = radius;
+                }
+              }
+            }
+
+            float offset[2] = {firstCol->offset.x, firstCol->offset.y};
+            if (ImGui::DragFloat2("Offset##multi", offset, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->offset = vec2{offset[0], offset[1]};
+              }
+            }
+
+            bool solid = firstCol->isSolid;
+            if (ImGui::Checkbox("Solid##multi", &solid)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->isSolid = solid;
+              }
+            }
+
+            bool trigger = firstCol->isTrigger;
+            if (ImGui::Checkbox("Trigger##multi", &trigger)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->isTrigger = trigger;
+              }
+            }
+
+            bool blocksLight = firstCol->blocksLight;
+            if (ImGui::Checkbox("Blocks Light##multi", &blocksLight)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->blocksLight = blocksLight;
+              }
+            }
+
+            bool moveable = firstCol->moveable;
+            if (ImGui::Checkbox("Moveable##multi", &moveable)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->moveable = moveable;
+              }
+            }
+
+            float mass = firstCol->mass;
+            if (ImGui::DragFloat("Mass##multi", &mass, 0.1f)) {
+              for (auto &se : selEntities) {
+                auto *c = world.getComponent<Components::Collider>(se);
+                if (c) c->mass = mass;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== Health ====================
+      int healthCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Health>(e);
+      });
+      if (healthCount > 0) {
+        if (ImGui::CollapsingHeader(("Health (" + std::to_string(healthCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Health>(e);
+          });
+          auto *firstHealth = world.getComponent<Components::Health>(firstEntity);
+          if (firstHealth) {
+            float maxHp = firstHealth->maxHp;
+            if (ImGui::DragFloat("Max HP##multi", &maxHp, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *h = world.getComponent<Components::Health>(se);
+                if (h) h->maxHp = maxHp;
+              }
+            }
+
+            float hp = firstHealth->hp;
+            if (ImGui::SliderFloat("HP##multi", &hp, 0, maxHp)) {
+              for (auto &se : selEntities) {
+                auto *h = world.getComponent<Components::Health>(se);
+                if (h) h->hp = hp;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== Door ====================
+      int doorCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Door>(e);
+      });
+      if (doorCount > 0) {
+        if (ImGui::CollapsingHeader(("Door (" + std::to_string(doorCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Door>(e);
+          });
+          auto *firstDoor = world.getComponent<Components::Door>(firstEntity);
+          if (firstDoor) {
+            int reqFrags = firstDoor->requiredFragments;
+            if (ImGui::InputInt("Required Fragments##multi", &reqFrags)) {
+              for (auto &se : selEntities) {
+                auto *d = world.getComponent<Components::Door>(se);
+                if (d) d->requiredFragments = reqFrags;
+              }
+            }
+
+            bool isOpen = firstDoor->isOpen;
+            if (ImGui::Checkbox("Is Open##multi", &isOpen)) {
+              for (auto &se : selEntities) {
+                auto *d = world.getComponent<Components::Door>(se);
+                if (d) d->isOpen = isOpen;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== Portal ====================
+      int portalCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Portal>(e);
+      });
+      if (portalCount > 0) {
+        if (ImGui::CollapsingHeader(("Portal (" + std::to_string(portalCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Portal>(e);
+          });
+          auto *firstPortal = world.getComponent<Components::Portal>(firstEntity);
+          if (firstPortal) {
+            char buf[256];
+            strncpy(buf, firstPortal->levelName.c_str(), sizeof(buf));
+            buf[sizeof(buf) - 1] = 0;
+            if (ImGui::InputText("Level Name##multi", buf, sizeof(buf))) {
+              for (auto &se : selEntities) {
+                auto *p = world.getComponent<Components::Portal>(se);
+                if (p) p->levelName = buf;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== Battery ====================
+      int batteryCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Battery>(e);
+      });
+      if (batteryCount > 0) {
+        if (ImGui::CollapsingHeader(("Battery (" + std::to_string(batteryCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Battery>(e);
+          });
+          auto *firstBattery = world.getComponent<Components::Battery>(firstEntity);
+          if (firstBattery) {
+            float charge = firstBattery->charge;
+            if (ImGui::SliderFloat("Charge##multi", &charge, 0, firstBattery->maxCharge)) {
+              for (auto &se : selEntities) {
+                auto *b = world.getComponent<Components::Battery>(se);
+                if (b) b->charge = charge;
+              }
+            }
+
+            bool isCharging = firstBattery->isCharging;
+            if (ImGui::Checkbox("Is Charging##multi", &isCharging)) {
+              for (auto &se : selEntities) {
+                auto *b = world.getComponent<Components::Battery>(se);
+                if (b) b->isCharging = isCharging;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== LightExposure ====================
+      int lightExpCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::LightExposure>(e);
+      });
+      if (lightExpCount > 0) {
+        if (ImGui::CollapsingHeader(("LightExposure (" + std::to_string(lightExpCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::LightExposure>(e);
+          });
+          auto *firstLE = world.getComponent<Components::LightExposure>(firstEntity);
+          if (firstLE) {
+            ImGui::Text("Exposure: %.2f / %.2f", firstLE->exposureTime, firstLE->maxExposureTime);
+
+            bool inLight = firstLE->inLight;
+            if (ImGui::Checkbox("In Light##multi", &inLight)) {
+              for (auto &se : selEntities) {
+                auto *l = world.getComponent<Components::LightExposure>(se);
+                if (l) l->inLight = inLight;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== Fragment ====================
+      int fragmentCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::Fragment>(e);
+      });
+      if (fragmentCount > 0) {
+        if (ImGui::CollapsingHeader(("Fragment (" + std::to_string(fragmentCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::Fragment>(e);
+          });
+          auto *firstFrag = world.getComponent<Components::Fragment>(firstEntity);
+          if (firstFrag) {
+            bool collected = firstFrag->collected;
+            if (ImGui::Checkbox("Collected##multi", &collected)) {
+              for (auto &se : selEntities) {
+                auto *f = world.getComponent<Components::Fragment>(se);
+                if (f) f->collected = collected;
+              }
+            }
+
+            bool requiresLight = firstFrag->requiresLight;
+            if (ImGui::Checkbox("Requires Light##multi", &requiresLight)) {
+              for (auto &se : selEntities) {
+                auto *f = world.getComponent<Components::Fragment>(se);
+                if (f) f->requiresLight = requiresLight;
+              }
+            }
+
+            float fadeSpeed = firstFrag->fadeSpeed;
+            if (ImGui::DragFloat("Fade Speed##multi", &fadeSpeed, 0.1f, 0.1f, 20.0f)) {
+              for (auto &se : selEntities) {
+                auto *f = world.getComponent<Components::Fragment>(se);
+                if (f) f->fadeSpeed = fadeSpeed;
+              }
+            }
+
+            float bobSpeed = firstFrag->bobSpeed;
+            if (ImGui::DragFloat("Bob Speed##multi", &bobSpeed, 0.1f)) {
+              for (auto &se : selEntities) {
+                auto *f = world.getComponent<Components::Fragment>(se);
+                if (f) f->bobSpeed = bobSpeed;
+              }
+            }
+
+            float bobAmount = firstFrag->bobAmount;
+            if (ImGui::DragFloat("Bob Amount##multi", &bobAmount, 0.1f)) {
+              for (auto &se : selEntities) {
+                auto *f = world.getComponent<Components::Fragment>(se);
+                if (f) f->bobAmount = bobAmount;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== EnemyAI ====================
+      int enemyAICount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::EnemyAI>(e);
+      });
+      if (enemyAICount > 0) {
+        if (ImGui::CollapsingHeader(("EnemyAI (" + std::to_string(enemyAICount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::EnemyAI>(e);
+          });
+          auto *firstAI = world.getComponent<Components::EnemyAI>(firstEntity);
+          if (firstAI) {
+            const char *states[] = {"Patrol", "Chase", "Alert", "Death"};
+            int s = (int)firstAI->state;
+            if (ImGui::Combo("State##multi", &s, states, 4)) {
+              for (auto &se : selEntities) {
+                auto *ai = world.getComponent<Components::EnemyAI>(se);
+                if (ai) ai->state = (Components::AIState)s;
+              }
+            }
+
+            float detectRadius = firstAI->detectionRadius;
+            if (ImGui::DragFloat("Detect Radius##multi", &detectRadius, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *ai = world.getComponent<Components::EnemyAI>(se);
+                if (ai) ai->detectionRadius = detectRadius;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== AudioSource ====================
+      int audioCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::AudioSource>(e);
+      });
+      if (audioCount > 0) {
+        if (ImGui::CollapsingHeader(("AudioSource (" + std::to_string(audioCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::AudioSource>(e);
+          });
+          auto *firstAudio = world.getComponent<Components::AudioSource>(firstEntity);
+          if (firstAudio) {
+            auto loadedSounds = Assets::SoundManager::GetLoadedSoundNames();
+            if (ImGui::BeginCombo("Sound ID##multi", firstAudio->soundId.c_str())) {
+              for (const auto &soundName : loadedSounds) {
+                bool isSelected = (firstAudio->soundId == soundName);
+                if (ImGui::Selectable(soundName.c_str(), isSelected)) {
+                  for (auto &se : selEntities) {
+                    auto *a = world.getComponent<Components::AudioSource>(se);
+                    if (a) a->soundId = soundName;
+                  }
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+              }
+              ImGui::EndCombo();
+            }
+
+            float volume = firstAudio->volume;
+            if (ImGui::SliderFloat("Volume##multi", &volume, 0.0f, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *a = world.getComponent<Components::AudioSource>(se);
+                if (a) a->volume = volume;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== TorchComponent ====================
+      int torchCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::TorchComponent>(e);
+      });
+      if (torchCount > 0) {
+        if (ImGui::CollapsingHeader(("Torch (" + std::to_string(torchCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::TorchComponent>(e);
+          });
+          auto *firstTorch = world.getComponent<Components::TorchComponent>(firstEntity);
+          if (firstTorch) {
+            bool active = firstTorch->active;
+            if (ImGui::Checkbox("Active##torchmulti", &active)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::TorchComponent>(se);
+                if (t) t->active = active;
+              }
+            }
+
+            float offset[2] = {firstTorch->offset.x, firstTorch->offset.y};
+            if (ImGui::DragFloat2("Offset##torchmulti", offset, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::TorchComponent>(se);
+                if (t) t->offset = vec2{offset[0], offset[1]};
+              }
+            }
+
+            glm::vec3 color = firstTorch->color;
+            if (ImGui::ColorEdit3("Color##torchmulti", &color.r)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::TorchComponent>(se);
+                if (t) t->color = color;
+              }
+            }
+
+            float radius = firstTorch->radius;
+            if (ImGui::DragFloat("Radius##torchmulti", &radius, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::TorchComponent>(se);
+                if (t) t->radius = radius;
+              }
+            }
+
+            float angle = firstTorch->angle;
+            if (ImGui::DragFloat("Angle##torchmulti", &angle, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::TorchComponent>(se);
+                if (t) t->angle = angle;
+              }
+            }
+
+            float intensity = firstTorch->intensity;
+            if (ImGui::SliderFloat("Intensity##torchmulti", &intensity, 0.0f, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *t = world.getComponent<Components::TorchComponent>(se);
+                if (t) t->intensity = intensity;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== DoorSwing ====================
+      int doorSwingCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::DoorSwing>(e);
+      });
+      if (doorSwingCount > 0) {
+        if (ImGui::CollapsingHeader(("DoorSwing (" + std::to_string(doorSwingCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::DoorSwing>(e);
+          });
+          auto *firstDS = world.getComponent<Components::DoorSwing>(firstEntity);
+          if (firstDS) {
+            bool isOpen = firstDS->isOpen;
+            if (ImGui::Checkbox("Is Open##doorswingmulti", &isOpen)) {
+              for (auto &se : selEntities) {
+                auto *ds = world.getComponent<Components::DoorSwing>(se);
+                if (ds) ds->isOpen = isOpen;
+              }
+            }
+
+            float swingAngle = firstDS->swingAngle;
+            if (ImGui::DragFloat("Swing Angle##multi", &swingAngle, 1.0f, 0.0f, 360.0f)) {
+              for (auto &se : selEntities) {
+                auto *ds = world.getComponent<Components::DoorSwing>(se);
+                if (ds) ds->swingAngle = swingAngle;
+              }
+            }
+
+            bool clockwise = firstDS->clockwise;
+            if (ImGui::Checkbox("Clockwise##multi", &clockwise)) {
+              for (auto &se : selEntities) {
+                auto *ds = world.getComponent<Components::DoorSwing>(se);
+                if (ds) ds->clockwise = clockwise;
+              }
+            }
+
+            float speed = firstDS->speed;
+            if (ImGui::DragFloat("Speed##doorswingmulti", &speed, 1.0f, 0.0f, 720.0f)) {
+              for (auto &se : selEntities) {
+                auto *ds = world.getComponent<Components::DoorSwing>(se);
+                if (ds) ds->speed = speed;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== ActivationZone ====================
+      int zoneCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::ActivationZone>(e);
+      });
+      if (zoneCount > 0) {
+        if (ImGui::CollapsingHeader(("ActivationZone (" + std::to_string(zoneCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::ActivationZone>(e);
+          });
+          auto *firstZone = world.getComponent<Components::ActivationZone>(firstEntity);
+          if (firstZone) {
+            bool active = firstZone->active;
+            if (ImGui::Checkbox("Active##zonemulti", &active)) {
+              for (auto &se : selEntities) {
+                auto *z = world.getComponent<Components::ActivationZone>(se);
+                if (z) z->active = active;
+              }
+            }
+
+            bool loop = !firstZone->oneShot;
+            if (ImGui::Checkbox("Loop (Not OneShot)##multi", &loop)) {
+              for (auto &se : selEntities) {
+                auto *z = world.getComponent<Components::ActivationZone>(se);
+                if (z) z->oneShot = !loop;
+              }
+            }
+
+            const char *actionItems[] = {"None", "PlayAudio", "SpawnEnemy", "ChangeVariable"};
+            int currentAction = (int)firstZone->actionType;
+            if (ImGui::Combo("Action##multi", &currentAction, actionItems, 4)) {
+              for (auto &se : selEntities) {
+                auto *z = world.getComponent<Components::ActivationZone>(se);
+                if (z) z->actionType = (Components::ActivationZone::ActionType)currentAction;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== PlayerController ====================
+      int pcCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::PlayerController>(e);
+      });
+      if (pcCount > 0) {
+        if (ImGui::CollapsingHeader(("PlayerController (" + std::to_string(pcCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::PlayerController>(e);
+          });
+          auto *firstPC = world.getComponent<Components::PlayerController>(firstEntity);
+          if (firstPC) {
+            float walkMult = firstPC->walkMultiplier;
+            if (ImGui::DragFloat("Walk Multiplier##multi", &walkMult, 0.1f)) {
+              for (auto &se : selEntities) {
+                auto *pc = world.getComponent<Components::PlayerController>(se);
+                if (pc) pc->walkMultiplier = walkMult;
+              }
+            }
+
+            float sprintMult = firstPC->sprintMultiplier;
+            if (ImGui::DragFloat("Sprint Multiplier##multi", &sprintMult, 0.1f)) {
+              for (auto &se : selEntities) {
+                auto *pc = world.getComponent<Components::PlayerController>(se);
+                if (pc) pc->sprintMultiplier = sprintMult;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== FragmentCollector ====================
+      int fcCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::FragmentCollector>(e);
+      });
+      if (fcCount > 0) {
+        if (ImGui::CollapsingHeader(("FragmentCollector (" + std::to_string(fcCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::FragmentCollector>(e);
+          });
+          auto *firstFC = world.getComponent<Components::FragmentCollector>(firstEntity);
+          if (firstFC) {
+            int reqFrags = firstFC->requiredFragments;
+            if (ImGui::InputInt("Required Fragments##fcmulti", &reqFrags)) {
+              for (auto &se : selEntities) {
+                auto *fc = world.getComponent<Components::FragmentCollector>(se);
+                if (fc) fc->requiredFragments = reqFrags;
+              }
+            }
+
+            float pickupRadius = firstFC->pickupRadius;
+            if (ImGui::DragFloat("Pickup Radius##multi", &pickupRadius, 1.0f)) {
+              for (auto &se : selEntities) {
+                auto *fc = world.getComponent<Components::FragmentCollector>(se);
+                if (fc) fc->pickupRadius = pickupRadius;
+              }
+            }
+          }
+        }
+      }
+
+      // ==================== TextRenderer ====================
+      int textCount = countWithComponent([&](ECS::Entity e) {
+        return world.getComponent<Components::TextRenderer>(e);
+      });
+      if (textCount > 0) {
+        if (ImGui::CollapsingHeader(("TextRenderer (" + std::to_string(textCount) + ")").c_str())) {
+          auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
+            return world.getComponent<Components::TextRenderer>(e);
+          });
+          auto *firstTR = world.getComponent<Components::TextRenderer>(firstEntity);
+          if (firstTR) {
+            float fontSize = firstTR->fontSize;
+            if (ImGui::DragFloat("Font Size##multi", &fontSize, 0.05f, 0.1f, 10.0f)) {
+              for (auto &se : selEntities) {
+                auto *tr = world.getComponent<Components::TextRenderer>(se);
+                if (tr) tr->fontSize = fontSize;
+              }
+            }
+
+            glm::vec3 color = firstTR->color;
+            if (ImGui::ColorEdit3("Text Color##multi", &color.x)) {
+              for (auto &se : selEntities) {
+                auto *tr = world.getComponent<Components::TextRenderer>(se);
+                if (tr) tr->color = color;
+              }
+            }
+
+            bool visible = firstTR->visible;
+            if (ImGui::Checkbox("Text Visible##multi", &visible)) {
+              for (auto &se : selEntities) {
+                auto *tr = world.getComponent<Components::TextRenderer>(se);
+                if (tr) tr->visible = visible;
+              }
+            }
+
+            static const char *alignOptions[] = {"Left", "Center", "Right"};
+            int alignIdx = static_cast<int>(firstTR->alignment);
+            if (ImGui::Combo("Alignment##multi", &alignIdx, alignOptions, IM_ARRAYSIZE(alignOptions))) {
+              for (auto &se : selEntities) {
+                auto *tr = world.getComponent<Components::TextRenderer>(se);
+                if (tr) tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
+              }
             }
           }
         }
@@ -2277,8 +2987,6 @@ void SandboxState::renderComponentWindow() {
       }
     }
 
-    ImGui::Separator();
-    ImGui::TextDisabled("Click a single entity to edit individually");
     ImGui::End();
     return;
   }
