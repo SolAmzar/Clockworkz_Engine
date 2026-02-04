@@ -1664,33 +1664,17 @@ void SandboxState::renderEntityWindow() {
     SceneSerializer::Serialize(world, path);
 
     // 2. Save to Project Source directory (Persistence)
-    // Attempt to save to source folder assuming standard build layout
-    // (bin/Debug -> root)
-    // 2. Save to Project Source directory (Persistence)
-    // We try multiple relative paths because the CWD can vary (e.g. 'build'
-    // vs 'build/bin/Debug')
-    std::string candidatePaths[] = {
-        "../assets/scenes/" +
-            std::string(currentLevelName), // If running from 'build'
-        "../../../assets/scenes/" +
-            std::string(currentLevelName) // If running from 'build/bin/Debug'
-    };
-
-    bool foundSource = false;
-    for (const auto &relPath : candidatePaths) {
-      std::filesystem::path srcDir =
-          std::filesystem::path(relPath).parent_path();
-      if (std::filesystem::exists(srcDir)) {
-        SceneSerializer::Serialize(world, relPath);
-        foundSource = true;
-        break;
-      }
-    }
-
-    if (!foundSource) {
-      std::cout << "[Sandbox] Error: Could not find source 'assets/scenes' via "
-                   "relative paths.\n";
-      std::cout << "  CWD: " << std::filesystem::current_path() << "\n";
+    std::string srcRoot = getSourceRoot();
+    if (!srcRoot.empty()) {
+      std::filesystem::path srcPath =
+          std::filesystem::path(srcRoot) / "assets" / "scenes" /
+          std::string(currentLevelName);
+      std::filesystem::create_directories(srcPath.parent_path());
+      SceneSerializer::Serialize(world, srcPath.string());
+      std::cout << "[Sandbox] Saved level to source: " << srcPath << "\n";
+    } else {
+      std::cout << "[Sandbox] Warning: Could not resolve source root to save "
+                   "level persistently.\n";
     }
 
     refreshTilemapList(); // Refresh list after saving
