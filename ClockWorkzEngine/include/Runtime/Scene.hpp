@@ -41,6 +41,7 @@ public:
   void Clear();
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
+  const ECS::World &GetWorld() const { return m_world; }
 
   // Pending Level Accessors for Editor
   std::string GetPendingLevel() const { return m_pendingLevel; }

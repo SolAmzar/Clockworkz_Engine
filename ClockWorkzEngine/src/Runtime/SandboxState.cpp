@@ -1921,6 +1921,15 @@ void SandboxState::renderEntityWindow() {
         if (si >= 0 && si < (int)m_testEntities.size()) {
           ECS::Entity toRemove = m_testEntities[si];
           removeEntityFromGroups(toRemove);
+          // Remove from tilemap
+          auto tilemapIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+              [&](const TileData &tile) {
+                return tile.entity.id == toRemove.id &&
+                       tile.entity.generation == toRemove.generation;
+              });
+          if (tilemapIt != m_tilemap.end()) {
+            m_tilemap.erase(tilemapIt);
+          }
           auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
               m_scene, m_testEntities, toRemove, static_cast<size_t>(si));
           executeCommand(std::move(cmd));
@@ -1932,6 +1941,15 @@ void SandboxState::renderEntityWindow() {
                entityToDelete < (int)m_testEntities.size()) {
       ECS::Entity toRemove = m_testEntities[entityToDelete];
       removeEntityFromGroups(toRemove);
+      // Remove from tilemap
+      auto tilemapIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+          [&](const TileData &tile) {
+            return tile.entity.id == toRemove.id &&
+                   tile.entity.generation == toRemove.generation;
+          });
+      if (tilemapIt != m_tilemap.end()) {
+        m_tilemap.erase(tilemapIt);
+      }
 
       auto cmd = std::make_unique<Sandbox::DeleteEntityCommand>(
           m_scene, m_testEntities, toRemove,
@@ -2326,6 +2344,9 @@ void SandboxState::renderComponentWindow() {
     auto *transform = world.getComponent<Components::Transform>(entity);
 
     if (transform) {
+      // Snap to Grid toggle
+      ImGui::Checkbox("Snap to Grid", &m_snapToGrid);
+
       ImGui::InputFloat2("Position", &transform->position.x);
 
       // Rotation (Radians -> Degrees for Editor)
@@ -2490,7 +2511,7 @@ void SandboxState::renderComponentWindow() {
       }
 
       if (c->shape == Components::Collider::Shape::Box) {
-        ImGui::InputFloat2("Size", &c->size.x);
+        ImGui::InputFloat2("Size Collider", &c->size.x);
       } else {
         ImGui::InputFloat("Radius", &c->radius);
       }
@@ -3396,27 +3417,54 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
   // Always snap to grid in tilemap mode
   worldPos = snapToGrid(worldPos, m_gridSize);
 
-  // Paint Mode
-  if (m_paintMode == PaintMode::Paint && !m_selectedTilePrefab.empty()) {
+  // Paint Mode - skip painting while dragging an entity or using gizmo
+  if (m_paintMode == PaintMode::Paint && !m_selectedTilePrefab.empty() &&
+      !m_isDirectDragging && m_gizmoActiveAxis == -1) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
         ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 
-      // Check if clicking on an existing entity - if so, skip painting to allow selection
+      // Check if clicking on an existing entity ON THE CURRENT LAYER - if so, skip painting to allow selection/dragging
       auto &world = m_scene.GetWorld();
       bool clickedOnEntity = false;
+      int clickedEntityIdx = -1;
       for (int i = 0; i < (int)m_testEntities.size(); ++i) {
         auto entity = m_testEntities[i];
         auto *trans = world.getComponent<Components::Transform>(entity);
         if (trans) {
           float dist = magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
           if (dist < m_gridSize * 0.5f) {
-            clickedOnEntity = true;
-            break;
+            // Check if this entity is on the current layer
+            bool isOnCurrentLayer = false;
+            for (const auto &tile : m_tilemap) {
+              if (tile.entity.id == entity.id && tile.entity.generation == entity.generation) {
+                if (tile.layer == m_currentLayer) {
+                  isOnCurrentLayer = true;
+                }
+                break;
+              }
+            }
+            // Only block painting if entity is on the current layer
+            if (isOnCurrentLayer) {
+              clickedOnEntity = true;
+              clickedEntityIdx = i;
+              break;
+            }
           }
         }
       }
 
-      // Only paint if not clicking on an entity and cell is not occupied
+      // If clicking on an entity on current layer, select it and start dragging (stay in tilemap mode)
+      if (clickedOnEntity && clickedEntityIdx != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        m_selectedEntityIdx = clickedEntityIdx;
+        auto selectedEntity = m_testEntities[m_selectedEntityIdx];
+        auto *trans = world.getComponent<Components::Transform>(selectedEntity);
+        if (trans) {
+          m_isDirectDragging = true;
+          m_directDragStartPos = trans->position;
+        }
+      }
+
+      // Only paint if not clicking on an entity on current layer and cell is not occupied on current layer
       if (!clickedOnEntity && !isCellOccupied(worldPos, m_currentLayer)) {
         // Spawn the tile
         spawnPrefab(m_selectedTilePrefab, worldPos);
@@ -3446,8 +3494,8 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
       }
     }
   }
-  // Erase Mode
-  else if (m_paintMode == PaintMode::Erase) {
+  // Erase Mode - skip erasing while dragging an entity or using gizmo
+  else if (m_paintMode == PaintMode::Erase && !m_isDirectDragging && m_gizmoActiveAxis == -1) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
         ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 
@@ -3486,8 +3534,8 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
       }
     }
   }
-  // Select Mode
-  else if (m_paintMode == PaintMode::Select) {
+  // Select Mode - allows selecting and dragging entities while staying in tilemap mode
+  else if (m_paintMode == PaintMode::Select && !m_isDirectDragging && m_gizmoActiveAxis == -1) {
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       auto &world = m_scene.GetWorld();
 
@@ -3501,7 +3549,9 @@ void Runtime::SandboxState::handleTileMapInput(const vec2 &viewportMin) {
               magnitude(vec2(trans->position.x, trans->position.y) - worldPos);
           if (dist < m_gridSize * 0.5f) {
             m_selectedEntityIdx = i;
-            m_tileMapMode = false; // Exit tilemap mode to edit
+            // Start direct dragging (stay in tilemap mode)
+            m_isDirectDragging = true;
+            m_directDragStartPos = trans->position;
             return;
           }
         }
@@ -3696,7 +3746,74 @@ void SandboxState::renderSceneWindow() {
 
     if (bestIdx != -1) {
       m_selectedEntityIdx = bestIdx;
+      // Start direct dragging (entity body drag without gizmo)
+      auto selectedEntity = m_testEntities[m_selectedEntityIdx];
+      auto *trans = world.getComponent<Components::Transform>(selectedEntity);
+      if (trans) {
+        m_isDirectDragging = true;
+        m_directDragStartPos = trans->position;
+      }
     }
+  }
+
+  // Handle direct entity dragging (while mouse is held down)
+  if (m_isDirectDragging && ImGui::IsMouseDown(ImGuiMouseButton_Left) &&
+      m_viewportHovered && m_gizmoActiveAxis == -1 &&
+      m_selectedEntityIdx >= 0 && m_selectedEntityIdx < (int)m_testEntities.size()) {
+    ImVec2 mousePos = ImGui::GetMousePos();
+    vec2 localMouse = {mousePos.x - viewportMin.x, mousePos.y - viewportMin.y};
+
+    Graphics::Camera2D &cam = Core::Engine::Get().camera();
+    float zoom = cam.zoom();
+    vec2 camPos = vec2(cam.position().x, cam.position().y);
+
+    vec2 centeredMouse = {
+        localMouse.x - m_viewportSize.x * 0.5f,
+        -(localMouse.y - m_viewportSize.y * 0.5f)
+    };
+
+    vec2 worldPos = camPos + centeredMouse * (1.0f / zoom);
+
+    auto &world = m_scene.GetWorld();
+    auto entity = m_testEntities[m_selectedEntityIdx];
+    auto *trans = world.getComponent<Components::Transform>(entity);
+    if (trans) {
+      if (m_snapToGrid) {
+        // Snap to grid
+        trans->position = snapToGrid(worldPos, m_gridSize);
+      } else {
+        // Free movement
+        trans->position = worldPos;
+      }
+    }
+  }
+
+  // Stop direct dragging on mouse release
+  if (m_isDirectDragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    // Record undo command if position changed
+    if (m_selectedEntityIdx >= 0 && m_selectedEntityIdx < (int)m_testEntities.size()) {
+      auto &world = m_scene.GetWorld();
+      auto entity = m_testEntities[m_selectedEntityIdx];
+      auto *trans = world.getComponent<Components::Transform>(entity);
+      if (trans) {
+        vec2 newPos = trans->position;
+        if (m_directDragStartPos.x != newPos.x || m_directDragStartPos.y != newPos.y) {
+          auto cmd = Sandbox::makePropertyCommand(
+              world, entity, &Components::Transform::position,
+              m_directDragStartPos, newPos, "Move Entity");
+          executeCommand(std::move(cmd));
+
+          // Update tilemap position for this entity so the old cell becomes free
+          for (auto &tile : m_tilemap) {
+            if (tile.entity.id == entity.id && tile.entity.generation == entity.generation) {
+              tile.position = newPos;
+              break;
+            }
+          }
+        }
+      }
+    }
+    m_isDirectDragging = false;
   }
 
   // Right-click on empty space to deselect
@@ -3765,8 +3882,27 @@ void SandboxState::renderSceneWindow() {
       if (m_selectedEntityIdx >= 0 &&
           m_selectedEntityIdx < (int)m_testEntities.size()) {
         auto &world = m_scene.GetWorld();
-        world.destroyEntity(m_testEntities[m_selectedEntityIdx]);
+        auto entityToDelete = m_testEntities[m_selectedEntityIdx];
+
+        // Remove from groups first
+        removeEntityFromGroups(entityToDelete);
+
+        // Remove from tilemap
+        auto tilemapIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+            [&](const TileData &tile) {
+              return tile.entity.id == entityToDelete.id &&
+                     tile.entity.generation == entityToDelete.generation;
+            });
+        if (tilemapIt != m_tilemap.end()) {
+          m_tilemap.erase(tilemapIt);
+        }
+
+        // Destroy entity from ECS
+        world.destroyEntity(entityToDelete);
+
+        // Remove from test entities
         m_testEntities.erase(m_testEntities.begin() + m_selectedEntityIdx);
+
         m_selectedEntityIdx = -1;
         m_gizmoActiveAxis = -1; // Reset gizmo
       }
@@ -3909,6 +4045,7 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       m_gizmoActiveAxis = hoverX ? 0 : 1;
       m_gizmoOriginalPos = vec2(trans->position.x, trans->position.y);
       m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
+      m_isDirectDragging = false;  // Cancel direct drag when gizmo is used
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
@@ -3957,6 +4094,7 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       m_gizmoOriginalRotation = trans->rotation;
       m_gizmoClickOffset.x =
           atan2(mousePos.y - origin.y, mousePos.x - origin.x);
+      m_isDirectDragging = false;  // Cancel direct drag when gizmo is used
     }
 
     if (mouseDown && m_gizmoActiveAxis == 2) {
@@ -3997,6 +4135,7 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
       m_gizmoActiveAxis = hoverX ? 0 : 1;
       m_gizmoOriginalScale = vec2(trans->scale.x, trans->scale.y);
       m_gizmoClickOffset = vec2(mousePos.x, mousePos.y);
+      m_isDirectDragging = false;  // Cancel direct drag when gizmo is used
     }
 
     if (mouseDown && m_gizmoActiveAxis != -1) {
@@ -4028,6 +4167,14 @@ void SandboxState::renderGizmos(const vec2 &windowPos, const vec2 &windowSize,
             world, entity, &Components::Transform::position, m_gizmoOriginalPos,
             newPos, "Move Entity");
         executeCommand(std::move(cmd));
+
+        // Update tilemap position for this entity so the old cell becomes free
+        for (auto &tile : m_tilemap) {
+          if (tile.entity.id == entity.id && tile.entity.generation == entity.generation) {
+            tile.position = newPos;
+            break;
+          }
+        }
       }
     } else if (m_gizmoMode == GizmoMode::Rotation) {
       float newRot = trans->rotation;
@@ -4560,8 +4707,10 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
 }
 
 bool Runtime::SandboxState::isCellOccupied(vec2 worldPos, int layer) const {
+  const auto &world = m_scene.GetWorld();
   for (const auto &tile : m_tilemap) {
-    if (tile.layer == layer && tile.entity.isValid()) {
+    // Use world.isValid() to check entity still exists (not just non-zero ID)
+    if (tile.layer == layer && world.isValid(tile.entity)) {
       float dist = magnitude(tile.position - worldPos);
       if (dist < m_gridSize * 0.1f) {
         return true;
@@ -4629,8 +4778,10 @@ void SandboxState::removeEntityFromGroups(ECS::Entity entity) {
 
 void SandboxState::rebuildGroupsFromTilemap() {
   m_entityGroups.clear();
+  auto &world = m_scene.GetWorld();
   for (const auto &tile : m_tilemap) {
-    if (!tile.entity.isValid())
+    // Use world.isValid() to check entity actually exists, not just non-zero ID
+    if (!world.isValid(tile.entity))
       continue;
     auto *group = getOrCreateLayerGroup(tile.layer);
     // Check for duplicates before adding

@@ -112,6 +112,10 @@ private:
   bool m_isDragging{false};
   vec2 m_dragOffset{0.f, 0.f};
 
+  // Direct entity body dragging (click and drag without gizmo)
+  bool m_isDirectDragging{false};
+  vec2 m_directDragStartPos{0.f, 0.f};  // For undo support
+
   // Scene View & Gizmos
   Graphics::FrameBuffer m_framebuffer;
   vec2 m_viewportSize{0.f, 0.f};
@@ -130,6 +134,7 @@ private:
   // Editor Features
   bool m_showGrid{true};
   float m_gridSize{100.0f};
+  bool m_snapToGrid{true};  // Toggle for snapping entities to grid
   bool m_isPaused{true};
   bool m_showAssetBrowser = true;
   bool m_showAudioBrowser = true;
