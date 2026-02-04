@@ -142,6 +142,7 @@ void FragmentSystem::update(ECS::World &world, double dt) {
     auto *sprite = world.getComponent<Components::SpriteRenderer>(entity);
     if (sprite) {
       sprite->color.a = frag.currentAlpha;
+      sprite->unlit = true; // Fragments should ignore global darkness
     }
 
     // --- COLLECTION LOGIC ---

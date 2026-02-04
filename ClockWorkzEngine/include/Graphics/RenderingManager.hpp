@@ -41,8 +41,13 @@ public:
   void endFrame();
   void beginDebugPass(const glm::mat4 &vp);
   void endDebugPass();
-  void beginScenePass(const glm::mat4 &vp);
+  void beginScenePass(const glm::mat4 &vp,
+                      const glm::vec4 &tint = glm::vec4(1.0f));
   void endScenePass();
+  // Allow manual flushing and uniform updates for mixed-pass rendering
+  void flush();
+  void setTint(const glm::vec4 &tint);
+  const glm::vec4 &getTint() const { return m_currentTint; }
   void beginFontPass(const glm::mat4 &vp);
   void endFontPass();
 
@@ -88,6 +93,7 @@ private:
   Renderer2D m_renderer2D;         // textured renderer
   unsigned int m_vao{0}, m_vbo{0}; // Debug draw
   glm::mat4 m_viewProj{1.0f};
+  glm::vec4 m_currentTint{1.0f}; // Track current tint for restoration
   // unsigned int m_shader{0};
 };
 } // namespace Graphics

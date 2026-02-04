@@ -94,6 +94,8 @@ static json SerializeWorld(ECS::World &world) {
             {"b", sc->color.b},
             {"a", sc->color.a}}},
           {"visible", sc->visible},
+          {"visible", sc->visible},
+          {"unlit", sc->unlit},
           {"sortOrder", sc->sortOrder}};
     }
 
@@ -317,6 +319,12 @@ void SceneSerializer::Serialize(Scene &scene, const std::string &filepath) {
     root["soundVolumes"] = vols;
   }
 
+  // Darkness Settings
+  root["enableDarkness"] = scene.isDarknessEnabled();
+  root["darknessIntensity"] = scene.getDarknessIntensity();
+  glm::vec3 dc = scene.getDarknessColor();
+  root["darknessColor"] = {{"r", dc.r}, {"g", dc.g}, {"b", dc.b}};
+
   std::ofstream o(filepath);
   o << std::setw(4) << root << std::endl;
 }
@@ -398,6 +406,8 @@ bool SceneSerializer::Deserialize(ECS::World &world,
           sprite.color.a = sc["color"].value("a", 1.0f);
         }
         sprite.visible = sc.value("visible", true);
+        sprite.visible = sc.value("visible", true);
+        sprite.unlit = sc.value("unlit", false);
         sprite.sortOrder = sc.value("sortOrder", 0);
 
         world.addComponent(entity, sprite);
@@ -740,6 +750,20 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
          it != root["soundVolumes"].end(); ++it) {
       scene.setSoundVolumeOverride(it.key(), it.value().get<float>());
     }
+  }
+
+  if (root.contains("enableDarkness")) {
+    scene.setDarknessEnabled(root["enableDarkness"]);
+  }
+  if (root.contains("darknessIntensity")) {
+    scene.setDarknessIntensity(root["darknessIntensity"]);
+  }
+  if (root.contains("darknessColor") && root["darknessColor"].is_object()) {
+    glm::vec3 dc;
+    dc.r = root["darknessColor"].value("r", 0.7f);
+    dc.g = root["darknessColor"].value("g", 0.7f);
+    dc.b = root["darknessColor"].value("b", 0.9f);
+    scene.setDarknessColor(dc);
   }
 
   // Populate World as usual

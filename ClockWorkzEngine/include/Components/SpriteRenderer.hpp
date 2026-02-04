@@ -29,7 +29,8 @@ struct SpriteRenderer {
   vec2 size{100.f, 100.f};              ///< Sprite size in world units
   bool visible{true};                   ///< Visibility flag
   glm::vec4 color{1.f, 1.f, 1.f, 1.f};  ///< Tint color (RGBA)
-  int sortOrder{0};                     ///< Render order (higher = rendered first / behind)
+  bool unlit{false}; ///< If true, ignores global lighting/tint
+  int sortOrder{0};  ///< Render order (higher = rendered first / behind)
 };
 
 } // namespace Components

@@ -128,6 +128,11 @@ private:
   vec2 m_spawnPoint{0.0f, 0.0f};
   std::unordered_map<std::string, float> m_soundVolumeOverrides;
 
+  // Darkness Settings
+  bool m_enableDarkness{false};
+  float m_darknessIntensity{0.8f};
+  glm::vec3 m_darknessColor{0.7f, 0.7f, 0.9f};
+
 public:
   void setBGM(const std::string &bgm) { m_bgm = bgm; }
   std::string getBGM() const { return m_bgm; }
@@ -143,6 +148,18 @@ public:
 
   void setSpawnPoint(const vec2 &p) { m_spawnPoint = p; }
   vec2 getSpawnPoint() const { return m_spawnPoint; }
+
+  // Darkness / Global Tint Settings
+  void setDarknessEnabled(bool enabled) { m_enableDarkness = enabled; }
+  bool isDarknessEnabled() const { return m_enableDarkness; }
+
+  void setDarknessIntensity(float intensity) {
+    m_darknessIntensity = intensity;
+  }
+  float getDarknessIntensity() const { return m_darknessIntensity; }
+
+  void setDarknessColor(const glm::vec3 &color) { m_darknessColor = color; }
+  glm::vec3 getDarknessColor() const { return m_darknessColor; }
 
   // Legacy GameObject Support
   std::vector<std::unique_ptr<Gameplay::GameObject>> m_gameObjects;

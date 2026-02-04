@@ -23,6 +23,7 @@ reserved.
 #include "Assets/TextureManager.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
+#include "Components/FragmentCollector.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/Portal.hpp"
 #include "Components/SpriteRenderer.hpp"
@@ -89,7 +90,10 @@ void TestLevelState::onEnter() {
   m_viewportSize = {static_cast<float>(window.width()),
                     static_cast<float>(window.height())};
   glViewport(0, 0, window.width(), window.height());
-  Core::Engine::Get().camera().setViewport(window.width(), window.height());
+
+  auto &camera = Core::Engine::Get().camera();
+  camera.setViewport(window.width(), window.height());
+  camera.setZoom(2.0f); // Zoom in to focus on the corridor (User request)
 
   // Force camera to 0,0 or find player? Update will handle it.
 }
@@ -148,7 +152,17 @@ void TestLevelState::render(Core::Time *timer) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   // Render Scene
-  renderer.beginScenePass(camera.viewProj());
+  // Render Scene
+  bool enableDarkness = m_scene.isDarknessEnabled();
+  float darknessIntensity = m_scene.getDarknessIntensity();
+  glm::vec3 darknessColor = m_scene.getDarknessColor();
+
+  glm::vec4 tint = glm::vec4(1.0f);
+  if (enableDarkness) {
+    tint = glm::vec4(darknessColor * darknessIntensity, 1.0f);
+  }
+
+  renderer.beginScenePass(camera.viewProj(), tint);
   m_scene.Render(renderer);
   renderer.endScenePass();
 
@@ -188,6 +202,63 @@ void TestLevelState::render(Core::Time *timer) {
             renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
                                 glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
           }
+        });
+
+    // --- Render Fragment HUD ---
+    world.each<Components::FragmentCollector, Components::PlayerController>(
+        [&](ECS::Entity, Components::FragmentCollector &col,
+            Components::PlayerController &) {
+          glm::vec2 uiSize(64.0f, 64.0f);
+          float margin = 20.0f;
+
+          // Position to the left of Battery (which is at right edge)
+          // Battery ~ 128px wide + margin.
+          float batteryWidth = 128.0f;
+          float spacing = 20.0f;
+
+          // x = ViewportW - margin - BatteryW - spacing - FragIconW
+          float fragIconX =
+              m_viewportSize.x - margin - batteryWidth - spacing - uiSize.x;
+          float fragIconY = m_viewportSize.y - margin - uiSize.y;
+
+          glm::vec2 uiPos(fragIconX, fragIconY);
+
+          // 1. Draw Icon
+          auto tex = Assets::TextureManager::Get("fragment_texture");
+          if (tex) {
+            renderer.drawSprite(tex->id(), uiPos, uiSize, 0.0f,
+                                glm::vec4(0, 0, 1, 1), glm::vec4(1), true);
+          }
+
+          // 2. Draw Text (Collected Count)
+          // Switch to Font Pass for text
+          renderer.endScenePass(); // End Sprite Pass temporarily
+          renderer.beginFontPass(uiProj);
+
+          auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+          auto font =
+              Assets::ResourceManager<Assets::FontManager>::Get("Debug");
+
+          if (shader && font) {
+            std::string text = std::to_string(col.collectedCount) + " / " +
+                               std::to_string(col.requiredFragments);
+
+            // Rough centering vertically relative to icon
+            float textY = fragIconY + (uiSize.y * 0.25f);
+            float textX =
+                fragIconX - (text.length() * 15.0f) - 10.0f; // Estimate width
+
+            // Hand-written font style
+            font->RenderText(text, textX, textY, 1.0f, glm::vec3(1.0f),
+                             *shader);
+          }
+
+          // Restore Scene Pass for any subsequent UI elements?
+          // Since we are inside the 'each', breaking the pass inside might be
+          // tricky if we had more entities. But here we likely only have 1
+          // player. However, RenderFontPass ends itself. We need to restart
+          // ScenePass if we continue loop or have more UI.
+          renderer.beginScenePass(uiProj);
         });
 
     renderer.endScenePass();

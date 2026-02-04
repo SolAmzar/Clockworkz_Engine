@@ -328,7 +328,8 @@ void RenderingManager::endFontPass() {
   glDepthMask(GL_FALSE);
 }
 
-void RenderingManager::beginScenePass(const glm::mat4 &vp) {
+void RenderingManager::beginScenePass(const glm::mat4 &vp,
+                                      const glm::vec4 &tint) {
   // auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
   // if (!shader) return;
   // glEnable(GL_BLEND);
@@ -361,6 +362,7 @@ void RenderingManager::beginScenePass(const glm::mat4 &vp) {
   // --- Now activate sprite shader ---
   shader->use();
   shader->setMat4("uVP", vp);
+  shader->setVec4("uTint", tint);
 
   int samplers[MAX_TEXTURE_SLOTS];
   for (int i = 0; i < MAX_TEXTURE_SLOTS; ++i)
@@ -370,6 +372,18 @@ void RenderingManager::beginScenePass(const glm::mat4 &vp) {
 
   // --- Start fresh batch ---
   // m_renderer2D.beginBatch();
+  m_currentTint = tint;
+}
+
+void RenderingManager::flush() { m_renderer2D.flush(); }
+
+void RenderingManager::setTint(const glm::vec4 &tint) {
+  m_currentTint = tint;
+  auto shader = Assets::ResourceManager<Graphics::Shader>::Get("texture");
+  if (!shader)
+    return;
+  shader->use();
+  shader->setVec4("uTint", tint);
 }
 
 void RenderingManager::endScenePass() {
