@@ -1,0 +1,40 @@
+{
+    "category": "Custom",
+    "components": {
+        "collider": {
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 100.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "moveable": false,
+            "width": 100.0
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "textureId": "corridor wall3"
+        },
+        "transform": {
+            "position": {
+                "x": 150.0,
+                "y": 150.0
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        }
+    },
+    "name": "concrete top_right"
+}
