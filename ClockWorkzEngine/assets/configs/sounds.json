@@ -25,7 +25,7 @@
             "name": "menu_bgm",
             "path": "assets/audio/menu_bgm.wav",
             "stream": true,
-            "volume": 0.953000009059906
+            "volume": 0.7720000147819519
         },
         {
             "group": "BGM",
@@ -34,7 +34,7 @@
             "name": "level_bgm",
             "path": "assets/audio/level_bgm.wav",
             "stream": true,
-            "volume": 0.3089999854564667
+            "volume": 0.2669999897480011
         },
         {
             "group": "SFX",
@@ -70,7 +70,7 @@
             "name": "enemy_death_1",
             "path": "assets/audio/sfx/enemy_death_1.wav",
             "stream": true,
-            "volume": 0.699999988079071
+            "volume": 0.1889999955892563
         },
         {
             "group": "SFX",
@@ -79,7 +79,7 @@
             "name": "enemy_death_2",
             "path": "assets/audio/sfx/enemy_death_2.wav",
             "stream": true,
-            "volume": 0.699999988079071
+            "volume": 0.15800000727176666
         },
         {
             "group": "SFX",
@@ -88,7 +88,7 @@
             "name": "enemy_death_3",
             "path": "assets/audio/sfx/enemy_death_3.wav",
             "stream": true,
-            "volume": 0.699999988079071
+            "volume": 0.20499999821186066
         },
         {
             "group": "SFX",
@@ -97,7 +97,7 @@
             "name": "fs_concrete_1",
             "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.05400000140070915
         },
         {
             "group": "SFX",
@@ -106,7 +106,7 @@
             "name": "fs_concrete_2",
             "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.06300000101327896
         },
         {
             "group": "SFX",
@@ -124,7 +124,7 @@
             "name": "fs_concrete_4",
             "path": "assets/audio/fs/Concrete/fs_concrete_4.mp3",
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.06300000101327896
         },
         {
             "group": "SFX",
@@ -133,7 +133,7 @@
             "name": "fs_tile_1",
             "path": "assets/audio/fs/Tile/fs_tile_1.ogg",
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.029999999329447746
         },
         {
             "group": "SFX",
@@ -142,7 +142,7 @@
             "name": "fs_tile_2",
             "path": "assets/audio/fs/Tile/fs_tile_2.ogg",
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.05299999937415123
         },
         {
             "group": "SFX",
@@ -151,7 +151,7 @@
             "name": "fs_tile_3",
             "path": "assets/audio/fs/Tile/fs_tile_3.ogg",
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.04899999871850014
         },
         {
             "group": "SFX",

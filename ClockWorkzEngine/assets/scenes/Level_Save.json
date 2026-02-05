@@ -42536,7 +42536,7 @@
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,
-                    "detectionRadius": 300.0,
+                    "detectionRadius": 400.0,
                     "patrolSpeed": 50.0
                 },
                 "health": {
@@ -44913,7 +44913,7 @@
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,
-                    "detectionRadius": 300.0,
+                    "detectionRadius": 400.0,
                     "patrolSpeed": 50.0
                 },
                 "health": {
@@ -44960,8 +44960,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2420.359619140625,
-                        "y": 415.4377136230469
+                        "x": 2450.0,
+                        "y": 450.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -45061,7 +45061,7 @@
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,
-                    "detectionRadius": 300.0,
+                    "detectionRadius": 400.0,
                     "patrolSpeed": 50.0
                 },
                 "health": {
@@ -45108,8 +45108,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2133.674560546875,
-                        "y": 352.065185546875
+                        "x": 2150.0,
+                        "y": 350.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -45250,13 +45250,17 @@
     ],
     "sfxVolume": 1.0,
     "soundVolumes": {
+        "enemy_death_1": 0.1889999955892563,
+        "enemy_death_2": 0.15800000727176666,
+        "enemy_death_3": 0.20499999821186066,
         "fs_concrete_1": 0.05400000140070915,
         "fs_concrete_2": 0.06300000101327896,
         "fs_concrete_4": 0.06300000101327896,
         "fs_tile_1": 0.029999999329447746,
         "fs_tile_2": 0.05299999937415123,
         "fs_tile_3": 0.04899999871850014,
-        "menu_bgm": 0.9160000085830688
+        "level_bgm": 0.2669999897480011,
+        "menu_bgm": 0.7720000147819519
     },
     "spawnPoint": {
         "x": -950.0,

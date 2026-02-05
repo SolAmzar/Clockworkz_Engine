@@ -20,7 +20,9 @@ reserved.
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp" // Added
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -53,13 +55,20 @@ void AISystem::update(ECS::World &world, double dt) {
   // 1. Find Player Position
   vec2 playerPos{0, 0};
   bool playerFound = false;
+  bool playerDead = false;
 
   world.each<Components::PlayerController, Components::Transform>(
-      [&](ECS::Entity, Components::PlayerController &,
+      [&](ECS::Entity e, Components::PlayerController &,
           Components::Transform &t) {
         playerPos = t.position;
         playerFound = true;
+        if (auto *anim = world.getComponent<Components::SpriteAnimator>(e)) {
+          if (anim->currentClip == "death")
+            playerDead = true;
+        }
       });
+  if (playerDead)
+    playerFound = false;
 
   auto disableColliderForDeath = [&](ECS::Entity e, Components::EnemyAI &ai) {
     auto *col = world.getComponent<Components::Collider>(e);
@@ -86,8 +95,9 @@ void AISystem::update(ECS::World &world, double dt) {
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
           Components::Velocity &vel) {
+        Components::AIState prevState = ai.previousState;
         // Check for Revive (Transition from Death -> !Death)
-        if (ai.previousState == Components::AIState::Death &&
+        if (prevState == Components::AIState::Death &&
             ai.state != Components::AIState::Death) {
           // Restore Alpha
           auto *sprite = world.getComponent<Components::SpriteRenderer>(e);
@@ -109,8 +119,21 @@ void AISystem::update(ECS::World &world, double dt) {
         // Update previous state at the start/end of the loop
         ai.previousState = ai.state;
 
+        auto playDeathSfxIfNeeded = [&]() {
+          if (ai.state != Components::AIState::Death ||
+              prevState == Components::AIState::Death) {
+            return;
+          }
+          static const std::array<const char *, 3> deathIds = {
+              "enemy_death_1", "enemy_death_2", "enemy_death_3"};
+          const char *id = deathIds[static_cast<size_t>(rand()) %
+                                   deathIds.size()];
+          Assets::SoundManager::Play(id);
+        };
+
         // Dead Check
         if (ai.state == Components::AIState::Death) {
+          playDeathSfxIfNeeded();
           vel.velocity = {0.f, 0.f};
           disableColliderForDeath(e, ai);
 
@@ -152,6 +175,12 @@ void AISystem::update(ECS::World &world, double dt) {
           return;
         }
 
+        if (playerDead && ai.state == Components::AIState::Chase) {
+          ai.state = Components::AIState::Patrol;
+          ai.wanderTimer = 0.0f;
+          vel.velocity = {0.f, 0.f};
+        }
+
         // --- Light Sensitivity Check ---
         float speedMultiplier = 1.0f;
         auto *lightExp = world.getComponent<Components::LightExposure>(e);
@@ -182,6 +211,7 @@ void AISystem::update(ECS::World &world, double dt) {
 
         // Re-Check Death after damage
         if (ai.state == Components::AIState::Death) {
+          playDeathSfxIfNeeded();
           vel.velocity = {0.f, 0.f};
           disableColliderForDeath(e, ai);
           return;
