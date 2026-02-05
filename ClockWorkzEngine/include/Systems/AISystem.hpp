@@ -15,6 +15,7 @@ reserved.
 
 #pragma once
 #include "ECS/World.hpp"
+#include <vector>
 
 namespace Systems {
 
@@ -27,8 +28,10 @@ public:
    * @brief Update enemy behaviors
    * @param world ECS world containing entities
    * @param dt Delta time for movement/timers
+   * @param layerEnabled Optional layer enabled flags (nullptr = all enabled)
    */
-  void update(ECS::World &world, double dt);
+  void update(ECS::World &world, double dt,
+              const std::vector<bool> *layerEnabled = nullptr);
 };
 
 } // namespace Systems
