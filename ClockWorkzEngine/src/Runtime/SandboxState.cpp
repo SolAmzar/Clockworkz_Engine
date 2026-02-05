@@ -626,8 +626,39 @@ void SandboxState::render(Core::Time *timer) {
 
   renderer.beginScenePass(camera.viewProj(), tint);
 
+  // Hide entities on invisible layers before rendering
+  struct HiddenEntity {
+    ECS::Entity entity;
+    bool wasVisible;
+  };
+  std::vector<HiddenEntity> hiddenEntities;
+  {
+    ECS::World &ecsWorld = m_scene.GetWorld();
+    ecsWorld.each<Components::SpriteRenderer>(
+        [&](ECS::Entity entity, Components::SpriteRenderer &sprite) {
+          int layer = sprite.sortOrder;
+          if (layer >= 0 && layer < static_cast<int>(m_layerVisible.size()) &&
+              !m_layerVisible[layer]) {
+            hiddenEntities.push_back({entity, sprite.visible});
+            sprite.visible = false;
+          }
+        });
+  }
+
   // Run Scene Render
   m_scene.Render(renderer);
+
+  // Restore visibility for hidden entities
+  {
+    ECS::World &ecsWorld = m_scene.GetWorld();
+    for (size_t i = 0; i < hiddenEntities.size(); ++i) {
+      Components::SpriteRenderer *spritePtr =
+          ecsWorld.getComponent<Components::SpriteRenderer>(hiddenEntities[i].entity);
+      if (spritePtr) {
+        spritePtr->visible = hiddenEntities[i].wasVisible;
+      }
+    }
+  }
 
   // Render Activation Zones
   renderActivationZones(renderer);
