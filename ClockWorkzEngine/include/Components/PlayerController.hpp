@@ -48,7 +48,7 @@ struct PlayerController {
   // Footsteps
   // Footsteps
   float footstepTimer{0.0f};
-  float footstepInterval{0.4f};
+  float footstepInterval{0.6f};
 
   // Torch Bobbing
   vec2 m_baseTorchOffset{-9999.0f, -9999.0f}; // Sentinel value

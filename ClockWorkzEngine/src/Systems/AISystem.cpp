@@ -20,7 +20,9 @@ reserved.
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp" // Added
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -86,8 +88,9 @@ void AISystem::update(ECS::World &world, double dt) {
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
           Components::Velocity &vel) {
+        Components::AIState prevState = ai.previousState;
         // Check for Revive (Transition from Death -> !Death)
-        if (ai.previousState == Components::AIState::Death &&
+        if (prevState == Components::AIState::Death &&
             ai.state != Components::AIState::Death) {
           // Restore Alpha
           auto *sprite = world.getComponent<Components::SpriteRenderer>(e);
@@ -109,8 +112,21 @@ void AISystem::update(ECS::World &world, double dt) {
         // Update previous state at the start/end of the loop
         ai.previousState = ai.state;
 
+        auto playDeathSfxIfNeeded = [&]() {
+          if (ai.state != Components::AIState::Death ||
+              prevState == Components::AIState::Death) {
+            return;
+          }
+          static const std::array<const char *, 3> deathIds = {
+              "enemy_death_1", "enemy_death_2", "enemy_death_3"};
+          const char *id = deathIds[static_cast<size_t>(rand()) %
+                                   deathIds.size()];
+          Assets::SoundManager::Play(id);
+        };
+
         // Dead Check
         if (ai.state == Components::AIState::Death) {
+          playDeathSfxIfNeeded();
           vel.velocity = {0.f, 0.f};
           disableColliderForDeath(e, ai);
 
@@ -182,6 +198,7 @@ void AISystem::update(ECS::World &world, double dt) {
 
         // Re-Check Death after damage
         if (ai.state == Components::AIState::Death) {
+          playDeathSfxIfNeeded();
           vel.velocity = {0.f, 0.f};
           disableColliderForDeath(e, ai);
           return;

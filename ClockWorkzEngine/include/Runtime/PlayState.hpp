@@ -93,7 +93,7 @@ private:
   float m_distanceSinceStep = 0.0f;
   float m_stepDistance = 60.0f;
   float m_timeSinceStep = 0.0f;
-  float m_minStepInterval = 0.22f;
+  float m_minStepInterval = 0.30f;
   vec2 m_lastFootPos{};
   bool m_haveLastFootPos = false;
   vec2 m_spawnPoint;
