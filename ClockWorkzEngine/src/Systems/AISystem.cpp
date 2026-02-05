@@ -55,13 +55,20 @@ void AISystem::update(ECS::World &world, double dt) {
   // 1. Find Player Position
   vec2 playerPos{0, 0};
   bool playerFound = false;
+  bool playerDead = false;
 
   world.each<Components::PlayerController, Components::Transform>(
-      [&](ECS::Entity, Components::PlayerController &,
+      [&](ECS::Entity e, Components::PlayerController &,
           Components::Transform &t) {
         playerPos = t.position;
         playerFound = true;
+        if (auto *anim = world.getComponent<Components::SpriteAnimator>(e)) {
+          if (anim->currentClip == "death")
+            playerDead = true;
+        }
       });
+  if (playerDead)
+    playerFound = false;
 
   auto disableColliderForDeath = [&](ECS::Entity e, Components::EnemyAI &ai) {
     auto *col = world.getComponent<Components::Collider>(e);
@@ -166,6 +173,12 @@ void AISystem::update(ECS::World &world, double dt) {
             }
           }
           return;
+        }
+
+        if (playerDead && ai.state == Components::AIState::Chase) {
+          ai.state = Components::AIState::Patrol;
+          ai.wanderTimer = 0.0f;
+          vel.velocity = {0.f, 0.f};
         }
 
         // --- Light Sensitivity Check ---
