@@ -17,8 +17,11 @@ reserved.
 #pragma warning(push, 0)
 #include "Core/json.hpp" // nlohmann::json
 #pragma warning(pop)
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
+
+namespace fs = std::filesystem;
 
 namespace Assets {
 Audio::AudioManager *SoundManager::s_audio = nullptr;
@@ -242,6 +245,170 @@ SoundManager::ParseConfig(const std::string &configPath) {
   }
 
   return result;
+}
+
+std::string SoundManager::GetFilePath(const std::string &name,
+                                      const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return "";
+
+  nlohmann::json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return "";
+  }
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return "";
+
+  for (const auto &entry : j["sounds"]) {
+    if (entry.value("name", "") == name) {
+      return entry.value("path", "");
+    }
+  }
+
+  return "";
+}
+
+bool SoundManager::ImportSound(const std::string &sourcePath,
+                               const std::string &name,
+                               const SoundConfig &config,
+                               const std::string &configPath) {
+  // 1. Validate source file exists
+  if (!fs::exists(sourcePath)) {
+    std::cerr << "[SoundManager] Source file not found: " << sourcePath
+              << std::endl;
+    return false;
+  }
+
+  // 2. Determine destination path
+  fs::path source(sourcePath);
+  std::string filename = source.filename().string();
+  std::string destPath = "assets/audio/" + filename;
+
+  // 3. Create destination directory if needed
+  fs::create_directories("assets/audio");
+
+  // 4. Copy file to assets folder
+  try {
+    fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
+    std::cout << "[SoundManager] Copied file to: " << destPath << std::endl;
+  } catch (const fs::filesystem_error &e) {
+    std::cerr << "[SoundManager] Failed to copy file: " << e.what()
+              << std::endl;
+    return false;
+  }
+
+  // 5. Add entry to JSON config
+  std::ifstream inFile(configPath);
+  nlohmann::json j;
+  if (inFile.is_open()) {
+    try {
+      inFile >> j;
+    } catch (...) {
+      j = nlohmann::json::object();
+    }
+    inFile.close();
+  }
+
+  if (!j.contains("sounds") || !j["sounds"].is_array()) {
+    j["sounds"] = nlohmann::json::array();
+  }
+
+  // Check if name already exists
+  for (const auto &entry : j["sounds"]) {
+    if (entry.value("name", "") == name) {
+      std::cerr << "[SoundManager] Sound name already exists: " << name
+                << std::endl;
+      return false;
+    }
+  }
+
+  // Add new entry
+  nlohmann::json newEntry;
+  newEntry["name"] = name;
+  newEntry["path"] = destPath;
+  newEntry["loop"] = config.loop;
+  newEntry["stream"] = config.stream;
+  newEntry["is3D"] = config.is3D;
+  newEntry["volume"] = config.volume;
+  newEntry["pitch"] = config.pitch;
+  newEntry["group"] = config.group;
+  j["sounds"].push_back(newEntry);
+
+  // Write back to config
+  std::ofstream outFile(configPath);
+  if (!outFile.is_open()) {
+    std::cerr << "[SoundManager] Failed to write config: " << configPath
+              << std::endl;
+    return false;
+  }
+  outFile << std::setw(4) << j << std::endl;
+  outFile.close();
+
+  // 6. Load the sound into memory
+  auto clip = LoadSound(name, destPath, config.loop, config.stream, config.is3D);
+  if (!clip) {
+    std::cerr << "[SoundManager] Failed to load imported sound" << std::endl;
+    return false;
+  }
+
+  // Register profile
+  if (s_audio) {
+    Audio::AudioManager::SoundProfile profile;
+    profile.volume = config.volume;
+    profile.pitch = config.pitch;
+    profile.group = (config.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+    s_audio->registerSoundProfile(name, profile);
+  }
+
+  s_configs[name] = config;
+  s_configs[name].path = destPath;
+
+  std::cout << "[SoundManager] Successfully imported: " << name << std::endl;
+  return true;
+}
+
+bool SoundManager::DeleteFromDisk(const std::string &name,
+                                  const std::string &configPath) {
+  // 1. Get the file path before removing from config
+  std::string filePath = GetFilePath(name, configPath);
+  if (filePath.empty()) {
+    std::cerr << "[SoundManager] Sound not found in config: " << name
+              << std::endl;
+    return false;
+  }
+
+  // 2. Unload from memory
+  Unload(name);
+
+  // 3. Remove from JSON config
+  if (!RemoveFromConfig(name, configPath)) {
+    std::cerr << "[SoundManager] Failed to remove from config: " << name
+              << std::endl;
+    return false;
+  }
+
+  // 4. Delete physical file from disk
+  try {
+    if (fs::exists(filePath)) {
+      fs::remove(filePath);
+      std::cout << "[SoundManager] Deleted file from disk: " << filePath
+                << std::endl;
+    } else {
+      std::cerr << "[SoundManager] File not found on disk: " << filePath
+                << std::endl;
+    }
+  } catch (const fs::filesystem_error &e) {
+    std::cerr << "[SoundManager] Failed to delete file: " << e.what()
+              << std::endl;
+    return false;
+  }
+
+  std::cout << "[SoundManager] Successfully deleted: " << name << std::endl;
+  return true;
 }
 
 } // namespace Assets

@@ -14,9 +14,13 @@ reserved.
 #pragma warning(push, 0)
 #include "Core/json.hpp" // nlohmann::json
 #pragma warning(pop)
+#include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
+
+namespace fs = std::filesystem;
 
 using json = nlohmann::json;
 
@@ -185,6 +189,193 @@ TextureManager::ParseConfig(const std::string &configPath) {
   }
 
   return configs;
+}
+
+bool TextureManager::ImportTexture(const std::string &sourcePath,
+                                   const std::string &name,
+                                   const std::string &configPath) {
+  // 1. Validate source file exists
+  if (!fs::exists(sourcePath)) {
+    std::cerr << "[TextureManager] Source file not found: " << sourcePath
+              << std::endl;
+    return false;
+  }
+
+  // 2. Determine destination path
+  fs::path source(sourcePath);
+  std::string filename = source.filename().string();
+  std::string destPath = "assets/textures/" + filename;
+
+  // 3. Create destination directory if needed
+  fs::create_directories("assets/textures");
+
+  // 4. Copy file to assets folder
+  try {
+    fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
+    std::cout << "[TextureManager] Copied file to: " << destPath << std::endl;
+  } catch (const fs::filesystem_error &e) {
+    std::cerr << "[TextureManager] Failed to copy file: " << e.what()
+              << std::endl;
+    return false;
+  }
+
+  // 5. Add entry to JSON config
+  std::ifstream inFile(configPath);
+  json j;
+  if (inFile.is_open()) {
+    try {
+      inFile >> j;
+    } catch (...) {
+      j = json::object();
+    }
+    inFile.close();
+  }
+
+  if (!j.contains("textures") || !j["textures"].is_array()) {
+    j["textures"] = json::array();
+  }
+
+  // Check if name already exists
+  for (const auto &entry : j["textures"]) {
+    if (entry.value("name", "") == name) {
+      std::cerr << "[TextureManager] Texture name already exists: " << name
+                << std::endl;
+      return false;
+    }
+  }
+
+  // Add new entry
+  json newEntry;
+  newEntry["name"] = name;
+  newEntry["path"] = destPath;
+  newEntry["flipY"] = true;
+  newEntry["alphaOnlyIsRed"] = false;
+  j["textures"].push_back(newEntry);
+
+  // Write back to config
+  std::ofstream outFile(configPath);
+  if (!outFile.is_open()) {
+    std::cerr << "[TextureManager] Failed to write config: " << configPath
+              << std::endl;
+    return false;
+  }
+  outFile << std::setw(4) << j << std::endl;
+  outFile.close();
+
+  // 6. Load the texture into memory
+  auto texture = LoadTexture(name, destPath);
+  if (!texture) {
+    std::cerr << "[TextureManager] Failed to load imported texture" << std::endl;
+    return false;
+  }
+
+  std::cout << "[TextureManager] Successfully imported: " << name << std::endl;
+  return true;
+}
+
+std::string TextureManager::GetFilePath(const std::string &name,
+                                        const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file.is_open())
+    return "";
+
+  json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return "";
+  }
+
+  if (!j.contains("textures") || !j["textures"].is_array())
+    return "";
+
+  for (const auto &entry : j["textures"]) {
+    if (entry.value("name", "") == name) {
+      return entry.value("path", "");
+    }
+  }
+
+  return "";
+}
+
+bool TextureManager::RemoveFromConfig(const std::string &name,
+                                      const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file.is_open())
+    return false;
+
+  json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return false;
+  }
+  file.close();
+
+  if (!j.contains("textures") || !j["textures"].is_array())
+    return false;
+
+  auto &arr = j["textures"];
+  bool removed = false;
+  for (auto it = arr.begin(); it != arr.end();) {
+    if (it->value("name", "") == name) {
+      it = arr.erase(it);
+      removed = true;
+    } else {
+      ++it;
+    }
+  }
+
+  if (!removed)
+    return false;
+
+  std::ofstream outFile(configPath);
+  if (!outFile.is_open())
+    return false;
+
+  outFile << std::setw(4) << j << std::endl;
+  std::cout << "[TextureManager] Removed from config: " << name << std::endl;
+  return true;
+}
+
+bool TextureManager::DeleteFromDisk(const std::string &name,
+                                    const std::string &configPath) {
+  // 1. Get the file path before removing from config
+  std::string filePath = GetFilePath(name, configPath);
+  if (filePath.empty()) {
+    std::cerr << "[TextureManager] Texture not found in config: " << name
+              << std::endl;
+    return false;
+  }
+
+  // 2. Unload from memory
+  Unload(name);
+
+  // 3. Remove from JSON config
+  if (!RemoveFromConfig(name, configPath)) {
+    std::cerr << "[TextureManager] Failed to remove from config: " << name
+              << std::endl;
+    return false;
+  }
+
+  // 4. Delete physical file from disk
+  try {
+    if (fs::exists(filePath)) {
+      fs::remove(filePath);
+      std::cout << "[TextureManager] Deleted file from disk: " << filePath
+                << std::endl;
+    } else {
+      std::cerr << "[TextureManager] File not found on disk: " << filePath
+                << std::endl;
+    }
+  } catch (const fs::filesystem_error &e) {
+    std::cerr << "[TextureManager] Failed to delete file: " << e.what()
+              << std::endl;
+    return false;
+  }
+
+  std::cout << "[TextureManager] Successfully deleted: " << name << std::endl;
+  return true;
 }
 
 } // namespace Assets
