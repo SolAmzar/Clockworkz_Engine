@@ -2,7 +2,7 @@
 /*!
 \file           RenderSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon], 100%
 \brief          RenderSystem implementation - renders sprites.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights

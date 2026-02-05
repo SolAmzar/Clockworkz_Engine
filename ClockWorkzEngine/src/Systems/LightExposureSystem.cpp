@@ -2,7 +2,7 @@
 /*!
 \file           LightExposureSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon], 100%
 \brief          Implementation of LightExposureSystem.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights

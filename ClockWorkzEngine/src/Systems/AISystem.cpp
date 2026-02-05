@@ -2,7 +2,7 @@
 /*!
 \file           AISystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon], 100%
 \brief          Implementation of AISystem state machine.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -11,8 +11,9 @@ reserved.
 /******************************************************************************/
 
 #include "Systems/AISystem.hpp"
-#include "Components/EnemyAI.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Components/Collider.hpp"
+#include "Components/EnemyAI.hpp"
 #include "Components/Health.hpp" // Added
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
@@ -20,12 +21,12 @@ reserved.
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
-#include "Assets/SoundManager.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp" // Added
 #include <array>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+
 
 namespace Systems {
 
@@ -126,8 +127,8 @@ void AISystem::update(ECS::World &world, double dt) {
           }
           static const std::array<const char *, 3> deathIds = {
               "enemy_death_1", "enemy_death_2", "enemy_death_3"};
-          const char *id = deathIds[static_cast<size_t>(rand()) %
-                                   deathIds.size()];
+          const char *id =
+              deathIds[static_cast<size_t>(rand()) % deathIds.size()];
           Assets::SoundManager::Play(id);
         };
 

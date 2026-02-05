@@ -2,7 +2,7 @@
 /*!
 \file           LevelEditor.cpp
 \project        Lights Out - Level Editor
-\author(s)      [Yusuf], 100%
+\author(s)      [Yusuf] 10%, [Lebon] 90%
 \brief          Implementation of comprehensive level editor with all features
                 required by the rubric criteria.
 
@@ -2169,8 +2169,8 @@ bool LevelEditor::savePrefab(const std::string &name) {
   file << json.dump(4);
   file.close();
 
-  std::cout << "[LevelEditor] Saved prefab (Build): "
-            << fs::absolute(filepath) << "\n";
+  std::cout << "[LevelEditor] Saved prefab (Build): " << fs::absolute(filepath)
+            << "\n";
 
   // --- DUAL SAVE STRATEGY ---
   // Also save to the source directory so changes are tracked by git
@@ -2189,8 +2189,8 @@ bool LevelEditor::savePrefab(const std::string &name) {
         std::cout << "[LevelEditor] DUAL SAVE: Also saved prefab to Source: "
                   << sourcePath << "\n";
       } else {
-        std::cerr << "[LevelEditor] DUAL SAVE FAILED for prefab: "
-                  << sourcePath << "\n";
+        std::cerr << "[LevelEditor] DUAL SAVE FAILED for prefab: " << sourcePath
+                  << "\n";
       }
     } catch (const std::exception &e) {
       std::cerr << "[LevelEditor] Prefab Dual Save Exception: " << e.what()
@@ -4328,7 +4328,8 @@ vec2 LevelEditor::snapToGrid(vec2 position) const {
 
   // Snap to grid with half-grid offset (-50, 50, 150, 250, etc.)
   // Use floor(x + 0.5) for consistent "round half up" behavior
-  // This ensures symmetric grid cell ranges: [-100,0) -> -50, [0,100) -> 50, etc.
+  // This ensures symmetric grid cell ranges: [-100,0) -> -50, [0,100) -> 50,
+  // etc.
   float halfGrid = m_gridSize * 0.5f;
   float nx = std::floor((position.x - halfGrid) / m_gridSize + 0.5f);
   float ny = std::floor((position.y - halfGrid) / m_gridSize + 0.5f);

@@ -2,7 +2,7 @@
 /*!
 \file           AudioSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon], 100%
 \brief          Implementation of AudioSystem.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -14,7 +14,6 @@ reserved.
 #include "Audio/AudioManager.hpp"
 #include "Components/AudioSource.hpp"
 #include "Core/Engine.hpp"
-
 
 namespace Systems {
 

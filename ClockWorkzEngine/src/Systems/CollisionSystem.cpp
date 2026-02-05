@@ -2,7 +2,7 @@
 /*!
 \file           CollisionSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon], 100%
 \brief          CollisionSystem implementation - AABB intersection.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -16,11 +16,12 @@ reserved.
 #include <algorithm> // For std::min/max
 #include <cmath>     // For std::abs
 #include <cstdint>
-#include <unordered_map>
-#include <unordered_set>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
+#include <unordered_map>
+#include <unordered_set>
+
 
 namespace Systems {
 
@@ -36,8 +37,7 @@ static void getWorldAABB(const Components::Transform &t,
                          glm::vec2 &outMax) {
   glm::vec2 effectiveOffset(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y);
   glm::vec2 rotatedOffset = rotateVec(effectiveOffset, t.rotation);
-  glm::vec2 center =
-      glm::vec2(t.position.x, t.position.y) + rotatedOffset;
+  glm::vec2 center = glm::vec2(t.position.x, t.position.y) + rotatedOffset;
 
   if (c.shape == Components::Collider::Shape::Circle) {
     float radius = c.radius * std::max(t.scale.x, t.scale.y);

@@ -1,3 +1,12 @@
+/******************************************************************************/
+/*!
+\file           Scene.cpp
+\project        Lights Out
+\author(s)      [Lebon] 100%
+\brief          Implementation of the Scene class.
+*/
+/******************************************************************************/
+
 #include "Runtime/Scene.hpp"
 
 // Components
