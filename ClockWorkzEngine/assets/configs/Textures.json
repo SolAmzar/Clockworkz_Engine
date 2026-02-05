@@ -911,12 +911,18 @@
             "flipY": true,
             "name": "cabinet",
             "path": "assets/textures/imported/cabinet.png"
+         },
+        {
+          "alphaOnlyIsRed": false,
+          "flipY": true,
+          "name": "cabinet2",
+          "path": "assets/textures/imported/cabinet2.png"
         },
         {
-            "alphaOnlyIsRed": false,
-            "flipY": true,
-            "name": "cabinet2",
-            "path": "assets/textures/imported/cabinet2.png"
+          "alphaOnlyIsRed": false,
+          "flipY": true,
+          "name": "blockage",
+          "path": "assets/textures/imported/blockage.jpg"
         }
     ]
 }
