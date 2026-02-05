@@ -341,8 +341,11 @@ void SandboxState::onEnter() {
   // Initialize texture file path mapping for hot-reload
   initTextureFilePaths();
 
-  // Initialize layer visibility
+  // Initialize layer visibility (sync with Scene's layer system)
   m_layerVisible.resize(m_numLayers, true);
+  for (int i = 0; i < m_numLayers; i++) {
+    m_scene.setLayerEnabled(i, true);
+  }
 
   // Init Framebuffer for Scene View
   m_framebuffer.create(800, 600);
@@ -4669,6 +4672,7 @@ void Runtime::SandboxState::renderToolbar() {
     if (ImGui::Button("+##addlayer")) {
       m_numLayers++;
       m_layerVisible.push_back(true);
+      m_scene.setLayerEnabled(m_numLayers - 1, true);
     }
     ImGui::SameLine();
     if (m_numLayers > 1 && ImGui::Button("-##remlayer")) {
@@ -4685,6 +4689,7 @@ void Runtime::SandboxState::renderToolbar() {
       bool vis = m_layerVisible[i];
       if (ImGui::Checkbox("##vis", &vis)) {
         m_layerVisible[i] = vis;
+        m_scene.setLayerEnabled(i, vis); // Sync with Scene layer system
       }
       ImGui::SameLine();
       bool selected = (m_currentLayer == i);
@@ -6594,6 +6599,10 @@ void Runtime::SandboxState::loadTilemap(const std::string &filepath) {
     m_numLayers = tilemapJson["numLayers"].get<int>();
   }
   m_layerVisible.resize(m_numLayers, true);
+  // Sync with Scene's layer system
+  for (int i = 0; i < m_numLayers; i++) {
+    m_scene.setLayerEnabled(i, true);
+  }
 
   // Load tiles
   if (tilemapJson.contains("tiles")) {

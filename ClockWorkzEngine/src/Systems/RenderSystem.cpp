@@ -12,6 +12,7 @@ reserved.
 
 #include "Systems/RenderSystem.hpp"
 #include "Assets/TextureManager.hpp"
+#include "Components/Layer.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Graphics/RenderingManager.hpp"
@@ -23,7 +24,8 @@ reserved.
 namespace Systems {
 
 void RenderSystem::update(ECS::World &world,
-                          Graphics::RenderingManager &renderer) {
+                          Graphics::RenderingManager &renderer,
+                          const std::vector<bool> *layerEnabled) {
   struct RenderEntry {
     Components::Transform *transform;
     Components::SpriteRenderer *sprite;
@@ -35,9 +37,20 @@ void RenderSystem::update(ECS::World &world,
   world.each<Components::Transform, Components::SpriteRenderer>(
       [&](ECS::Entity entity, Components::Transform &transform,
           Components::SpriteRenderer &sprite) {
-        (void)entity;
         if (!sprite.visible)
           return;
+
+        // Check if entity's layer is enabled
+        if (layerEnabled) {
+          if (auto *layer = world.getComponent<Components::Layer>(entity)) {
+            int idx = layer->index;
+            if (idx >= 0 && idx < static_cast<int>(layerEnabled->size()) &&
+                !(*layerEnabled)[idx]) {
+              return; // Skip entities on disabled layers
+            }
+          }
+        }
+
         entries.push_back({&transform, &sprite});
       });
 

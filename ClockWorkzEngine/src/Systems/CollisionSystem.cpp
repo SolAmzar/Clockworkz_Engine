@@ -12,6 +12,7 @@ reserved.
 
 #include "Systems/CollisionSystem.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Layer.hpp"
 #include "Components/Transform.hpp"
 #include <algorithm> // For std::min/max
 #include <cmath>     // For std::abs
@@ -60,7 +61,8 @@ static void getWorldAABB(const Components::Transform &t,
   outMax = center + extents;
 }
 
-void CollisionSystem::update(ECS::World &world) {
+void CollisionSystem::update(ECS::World &world,
+                             const std::vector<bool> *layerEnabled) {
   m_collisions.clear();
 
   // Collect all entities with Transform + Collider
@@ -69,6 +71,16 @@ void CollisionSystem::update(ECS::World &world) {
   std::vector<ECS::Entity> entities;
   world.each<Components::Transform, Components::Collider>(
       [&](ECS::Entity e, Components::Transform &, Components::Collider &) {
+        // Check if entity's layer is enabled
+        if (layerEnabled) {
+          if (auto *layer = world.getComponent<Components::Layer>(e)) {
+            int idx = layer->index;
+            if (idx >= 0 && idx < static_cast<int>(layerEnabled->size()) &&
+                !(*layerEnabled)[idx]) {
+              return; // Skip entities on disabled layers
+            }
+          }
+        }
         entities.push_back(e);
       });
 

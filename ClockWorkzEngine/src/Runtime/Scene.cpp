@@ -10,6 +10,7 @@
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/Health.hpp"
+#include "Components/Layer.hpp"
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/SpriteAnimator.hpp"
@@ -83,6 +84,26 @@ void Scene::Init() {
   m_world.registerComponent<Components::Tag>();
   m_world.registerComponent<Components::Portal>();
   m_world.registerComponent<Gameplay::SurfaceComponent>();
+  m_world.registerComponent<Components::Layer>();
+
+  // Initialize layer enabled flags (all enabled by default)
+  m_layerEnabled.resize(MAX_LAYERS, true);
+}
+
+void Scene::setLayerEnabled(int layer, bool enabled) {
+  if (layer >= 0 && layer < MAX_LAYERS) {
+    if (layer >= static_cast<int>(m_layerEnabled.size())) {
+      m_layerEnabled.resize(layer + 1, true);
+    }
+    m_layerEnabled[layer] = enabled;
+  }
+}
+
+bool Scene::isLayerEnabled(int layer) const {
+  if (layer >= 0 && layer < static_cast<int>(m_layerEnabled.size())) {
+    return m_layerEnabled[layer];
+  }
+  return true; // Default to enabled if layer not in range
 }
 
 void Scene::Clear() {
@@ -129,10 +150,14 @@ bool Scene::LoadFromFile(const std::string &path) {
 }
 
 void Scene::Update(double dt, Platform::InputManager &input) {
+  // Get layer enabled flags pointer for systems
+  const std::vector<bool> *layerFlags =
+      m_layerEnabled.empty() ? nullptr : &m_layerEnabled;
+
   if (m_physicsSystemEnabled)
-    m_physicsSystem.update(m_world, dt);
+    m_physicsSystem.update(m_world, dt, layerFlags);
   if (m_collisionSystemEnabled)
-    m_collisionSystem.update(m_world);
+    m_collisionSystem.update(m_world, layerFlags);
   if (m_activationSystemEnabled)
     m_activationSystem.update(m_world, m_collisionSystem);
   if (m_batterySystemEnabled)
@@ -142,7 +167,7 @@ void Scene::Update(double dt, Platform::InputManager &input) {
   if (m_fragmentSystemEnabled)
     m_fragmentSystem.update(m_world, dt);
   if (m_aiSystemEnabled)
-    m_aiSystem.update(m_world, dt);
+    m_aiSystem.update(m_world, dt, layerFlags);
   if (m_audioSystemEnabled)
     m_audioSystem.update(m_world);
   if (m_animSystemEnabled)
@@ -152,7 +177,7 @@ void Scene::Update(double dt, Platform::InputManager &input) {
 
   // Player System needs input
   if (m_playerSystemEnabled)
-    m_playerSystem.update(m_world, dt, input);
+    m_playerSystem.update(m_world, dt, input, layerFlags);
 
   if (m_doorSystemEnabled)
     m_doorSystem.update(m_world, dt);
@@ -277,8 +302,12 @@ void Scene::Update(double dt, Platform::InputManager &input) {
 }
 
 void Scene::Render(Graphics::RenderingManager &renderer) {
+  // Get layer enabled flags pointer for render system
+  const std::vector<bool> *layerFlags =
+      m_layerEnabled.empty() ? nullptr : &m_layerEnabled;
+
   if (m_renderSystemEnabled) {
-    m_renderSystem.update(m_world, renderer);
+    m_renderSystem.update(m_world, renderer, layerFlags);
   }
 
   // --- Render Legacy GameObjects ---

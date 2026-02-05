@@ -38,8 +38,10 @@ public:
   /**
    * @brief Update collision detection
    * @param world ECS world containing entities
+   * @param layerEnabled Optional layer enabled flags (nullptr = all enabled)
    */
-  void update(ECS::World &world);
+  void update(ECS::World &world,
+              const std::vector<bool> *layerEnabled = nullptr);
   void setGridCellSize(float size) { m_cellSize = size; }
 
   /**

@@ -14,6 +14,7 @@ reserved.
 #include "Components/EnemyAI.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Health.hpp" // Added
+#include "Components/Layer.hpp"
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/SpriteAnimator.hpp"
@@ -49,7 +50,8 @@ static float randomFloat() {
   return (static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f;
 }
 
-void AISystem::update(ECS::World &world, double dt) {
+void AISystem::update(ECS::World &world, double dt,
+                      const std::vector<bool> *layerEnabled) {
   float fDt = static_cast<float>(dt);
 
   // 1. Find Player Position
@@ -69,6 +71,20 @@ void AISystem::update(ECS::World &world, double dt) {
       });
   if (playerDead)
     playerFound = false;
+
+  // Helper lambda to check if entity's layer is enabled
+  auto isLayerActive = [&](ECS::Entity e) -> bool {
+    if (!layerEnabled)
+      return true;
+    if (auto *layer = world.getComponent<Components::Layer>(e)) {
+      int idx = layer->index;
+      if (idx >= 0 && idx < static_cast<int>(layerEnabled->size()) &&
+          !(*layerEnabled)[idx]) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   auto disableColliderForDeath = [&](ECS::Entity e, Components::EnemyAI &ai) {
     auto *col = world.getComponent<Components::Collider>(e);
@@ -95,6 +111,10 @@ void AISystem::update(ECS::World &world, double dt) {
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
           Components::Velocity &vel) {
+        // Skip entities on disabled layers
+        if (!isLayerActive(e))
+          return;
+
         Components::AIState prevState = ai.previousState;
         // Check for Revive (Transition from Death -> !Death)
         if (prevState == Components::AIState::Death &&
