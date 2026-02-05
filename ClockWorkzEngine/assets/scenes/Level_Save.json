@@ -25873,8 +25873,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 285.019775390625,
-                        "y": 118.41349029541016
+                        "x": -950.0,
+                        "y": 150.0
                     },
                     "rotation": 2.2121927738189697,
                     "scale": {
@@ -32347,24 +32347,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -42538,7 +42520,7 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 30.0,
+                    "height": 100.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -42550,7 +42532,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 30.0
+                    "width": 100.0
                 },
                 "enemyAI": {
                     "chaseSpeed": 150.0,
@@ -42581,8 +42563,8 @@
                         "r": 1.0
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 150.0,
+                        "y": 150.0
                     },
                     "sortOrder": 2,
                     "textureId": "monster_texture",
@@ -42601,8 +42583,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2586.98046875,
-                        "y": 3649.45263671875
+                        "x": 850.0,
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -43187,10 +43169,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 611.364990234375,
-                        "y": 25.975433349609375
+                        "x": 1934.7628173828125,
+                        "y": -52.30759811401367
                     },
-                    "rotation": 0.0,
+                    "rotation": 1.5707963705062866,
                     "scale": {
                         "x": 1.7999999523162842,
                         "y": 1.7999999523162842
@@ -43378,7 +43360,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 1,
                     "textureId": "carpet",
                     "unlit": false,
                     "uv": [
@@ -43405,7 +43387,7 @@
                     }
                 }
             },
-            "name": "Entity 511"
+            "name": "Carpet"
         },
         {
             "active": true,
@@ -43771,7 +43753,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -43915,8 +43897,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1027.3466796875,
-                        "y": -629.2039794921875
+                        "x": 1023.5401611328125,
+                        "y": -629.6351318359375
                     },
                     "rotation": 1.4849427938461304,
                     "scale": {
@@ -44281,8 +44263,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 769.665771484375,
-                        "y": -365.0453186035156
+                        "x": 774.9124755859375,
+                        "y": -327.4517822265625
                     },
                     "rotation": 1.5362484455108643,
                     "scale": {
@@ -44907,6 +44889,363 @@
                 }
             },
             "name": "Entity 509 (Clone) (Clone) (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "enemyAI": {
+                    "chaseSpeed": 150.0,
+                    "detectionRadius": 300.0,
+                    "patrolSpeed": 50.0
+                },
+                "health": {
+                    "hp": 50.0,
+                    "invulnerable": false,
+                    "isDead": false,
+                    "maxHp": 50.0,
+                    "regenRate": 0.0
+                },
+                "lightExposure": {
+                    "exposureTime": 0.0,
+                    "inLight": false,
+                    "isDangerous": false,
+                    "maxExposureTime": 10.0
+                },
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2420.359619140625,
+                        "y": 415.4377136230469
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": -1.0,
+                        "y": 1.0
+                    }
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": 0.9073347449302673,
+                    "y": -0.42040908336639404
+                }
+            },
+            "name": "Enemy (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 90.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "shoerack2",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 631.364990234375,
+                        "y": 5.975433349609375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.7999999523162842,
+                        "y": 1.7999999523162842
+                    }
+                }
+            },
+            "name": "Entity 482 (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "enemyAI": {
+                    "chaseSpeed": 150.0,
+                    "detectionRadius": 300.0,
+                    "patrolSpeed": 50.0
+                },
+                "health": {
+                    "hp": 50.0,
+                    "invulnerable": false,
+                    "isDead": false,
+                    "maxHp": 50.0,
+                    "regenRate": 0.0
+                },
+                "lightExposure": {
+                    "exposureTime": 0.0,
+                    "inLight": false,
+                    "isDangerous": false,
+                    "maxExposureTime": 10.0
+                },
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2133.674560546875,
+                        "y": 352.065185546875
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": -1.0,
+                        "y": 1.0
+                    }
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": 0.9073347449302673,
+                    "y": -0.42040908336639404
+                }
+            },
+            "name": "Enemy (Clone) (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "styrofoambox",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1950.0,
+                        "y": 240.0
+                    },
+                    "rotation": -1.3089969158172607,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Syrofoam box"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "styrofoambox",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1950.0,
+                        "y": 150.0
+                    },
+                    "rotation": -1.7627825736999512,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    }
+                }
+            },
+            "name": "Syrofoam box (Clone)"
         }
     ],
     "sfxVolume": 1.0,
@@ -44920,7 +45259,7 @@
         "menu_bgm": 0.9160000085830688
     },
     "spawnPoint": {
-        "x": -1050.0,
-        "y": 250.0
+        "x": -950.0,
+        "y": 150.0
     }
 }
