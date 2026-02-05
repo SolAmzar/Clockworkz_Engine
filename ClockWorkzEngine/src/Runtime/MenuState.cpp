@@ -378,15 +378,15 @@ void MenuState::render(Core::Time *timer) {
     // - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
   }
 #ifdef _DEBUG
-  if (debugFont) {
-    if (timer) {
-      std::stringstream ss{};
-      ss << " screenW: " << m_window.width()
-         << " screenH: " << m_window.height() << " FPS: " << timer->fps();
-      debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f,
-                            glm::vec3(0.8f, 0.8f, 1.0f), *shader);
-    }
-  }
+  //if (debugFont) {
+  //  if (timer) {
+  //    std::stringstream ss{};
+  //    ss << " screenW: " << m_window.width()
+  //       << " screenH: " << m_window.height() << " FPS: " << timer->fps();
+  //    debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f,
+  //                          glm::vec3(0.8f, 0.8f, 1.0f), *shader);
+  //  }
+  //}
 #endif
 
   // Start: Syafiq
