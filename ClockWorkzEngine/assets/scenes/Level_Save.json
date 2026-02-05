@@ -6637,7 +6637,7 @@
                     },
                     "position": {
                         "x": -950.0,
-                        "y": 452.3839111328125
+                        "y": 450.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -42369,7 +42369,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -44746,7 +44746,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -44894,7 +44894,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
