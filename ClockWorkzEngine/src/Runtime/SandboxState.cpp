@@ -4196,6 +4196,7 @@ void SandboxState::renderComponentWindow() {
                              500.f);
       ImGui::DragFloatRange2("Size", &sys.sizeEnd, &sys.sizeStart, 0.05f, 0.f,
                              10.f);
+      ImGui::DragFloat("Spawn Radius", &sys.spawnRadius, 0.5f, 0.0f, 500.0f);
       ImGui::ColorEdit4("Start Color", &sys.colorStart.r);
       ImGui::ColorEdit4("End Color", &sys.colorEnd.r);
 
