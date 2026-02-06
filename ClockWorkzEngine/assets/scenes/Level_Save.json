@@ -35828,6 +35828,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36315,24 +36333,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36499,6 +36499,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36582,6 +36600,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -43808,8 +43844,8 @@
                     },
                     "rotation": -3.593535900115967,
                     "scale": {
-                        "x": 1.7999999523162842,
-                        "y": 1.7999999523162842
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 }
             },
@@ -43991,8 +44027,8 @@
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.7999999523162842,
-                        "y": 1.7999999523162842
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 }
             },
@@ -44108,13 +44144,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 733.2445678710938,
-                        "y": -956.887939453125
+                        "x": 719.21484375,
+                        "y": -949.9473876953125
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.7999999523162842,
-                        "y": 1.7999999523162842
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 }
             },
@@ -44352,13 +44388,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 664.6235961914063,
-                        "y": -1053.387939453125
+                        "x": 666.21484375,
+                        "y": -1047.9473876953125
                     },
                     "rotation": -6.205493450164795,
                     "scale": {
-                        "x": 1.7999999523162842,
-                        "y": 1.7999999523162842
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 }
             },
@@ -44418,8 +44454,8 @@
                     },
                     "rotation": -9.308708190917969,
                     "scale": {
-                        "x": 1.7999999523162842,
-                        "y": 1.7999999523162842
+                        "x": 1.5,
+                        "y": 1.5
                     }
                 }
             },
