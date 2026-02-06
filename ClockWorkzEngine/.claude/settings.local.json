@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cmake --build:*)",
-      "Bash(dir /b \"assets\\\\prefabs\"\" 2>nul || echo \"Directory empty or doesn 't exist \")",
-      "Bash(if not exist \"assets\\\\prefabs\" mkdir \"assets\\\\prefabs\")"
-    ]
-  }
-}
