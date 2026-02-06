@@ -1,7 +1,7 @@
 /*!
 \file           SceneSerializer.hpp
 \project        Lights Out
-\author(s)      [Lebon], 89%, [Amzar] 10% , [Yusuf] 1%
+\author(s)      [Lebon], 80%, [Amzar] 19% , [Yusuf] 1%
 \brief          Loads and saves entire scenes to/from JSON files.
 
                                 Takes an ECS World and serializes all entities

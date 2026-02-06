@@ -2,7 +2,7 @@
 /*!
 \file           Scene.cpp
 \project        Lights Out
-\author(s)      [Lebon] 100%
+\author(s)      [Lebon] 90% [Amzar] 10% 
 \brief          Implementation of the Scene class.
 */
 /******************************************************************************/
