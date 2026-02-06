@@ -7,7 +7,7 @@ All content © 2025 DigiPen (SINGAPORE) Corporation, all rights reserved.
 1. Game Concept
 ==================================================
 
-Light Out is a top-down survival puzzle game built on a custom engine developed by Team Clockworkz.  
+Lights Out is a top-down survival puzzle game built on a custom engine developed by Team Clockworkz.  
 The player navigates through dark, maze-like environments where light becomes both a resource and a threat.
 
 Core mechanics:
@@ -26,20 +26,16 @@ Every enemy and hazard follows predictable logic that can be learned and exploit
 ==================================================
 
 ----------- Movement -----------
-W / A / S / D ............... Move player
-Shift            ............ Run (faster movement)
+W / S ....................... Move player
+Shift ....................... Run (faster movement)
+Mouse ....................... Face direction / Rotate
 
 ----------- Interaction / Gameplay -----------
-R............................ Flashlight On and Off (Flashlight Drains over Time)
-Esc ......................... Pause 
-Q ........................... Zoom In
-E ........................... Zoom Out 
-Arrow Keys .................. Move in Menu
-
+F ........................... Toggle Flashlight (Drains Battery)
+Esc ......................... Pause Game
 
 ----------- Debug / Developer Tools -----------
-Z ...........................  Toggle Level Editor 
-Mouse (Level Editor only) .... Object selection and placement
+F1 (Menu) ................... Launch Sandbox / Test Level (Main Menu)
 
 
 Demo expectations:
@@ -66,12 +62,12 @@ Team Clockworkz – CSD2401F25
 | Yusuf Bin Abdul Rahman Bahajjaj           | Level Editor & Design            | Tools / Usability Champion |
 
 Leadership Summary:
-  • Project Leadership – Ho Xin Yu Lebon
-  • Technical Leadership – Amirul Syafiq
-  • Gameplay / Physics Leadership – Muhamad Amzar
-  • Rendering Leadership – Ching Wei An
-  • Asset / Visual Champion – Koh Teng Meng
-  • Tooling / Level Editor Champion – Yusuf
+  • Project Leadership ...............Ho Xin Yu Lebon
+  • Technical Leadership .............Amirul Syafiq
+  • Audio / Physics Leadership .......Muhamad Amzar
+  • Rendering Leadership .............Ching Wei An
+  • Asset / Visual Champion ..........Koh Teng Meng
+  • Tooling / Level Editor Champion...Yusuf
 
 
 
@@ -86,9 +82,6 @@ Leadership Summary:
    - Move around the environment
    - Avoid enemy patrol routes
    - Use light strategically to manipulate danger and survival
-5. Toggle debug/editor tools if needed:
-   - Level Editor via F1
-   - Debug rendering via F2
 
 For final milestone and performance testing, run in **Release** mode.
 
