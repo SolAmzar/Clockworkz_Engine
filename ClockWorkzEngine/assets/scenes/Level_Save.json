@@ -25786,6 +25786,10 @@
                     "maxHp": 100.0,
                     "regenRate": 0.0
                 },
+                "luaScript": {
+                    "enabled": true,
+                    "scriptPath": "player_movement.lua"
+                },
                 "playerController": {
                     "sprintMultiplier": 2.0,
                     "walkMultiplier": 1.0
@@ -34013,7 +34017,7 @@
                     "height": 100.0,
                     "isHazard": false,
                     "isSolid": false,
-                    "isTrigger": true,
+                    "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
@@ -34922,7 +34926,7 @@
                     "height": 100.0,
                     "isHazard": false,
                     "isSolid": false,
-                    "isTrigger": true,
+                    "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
@@ -35824,24 +35828,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36430,24 +36416,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36531,24 +36499,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36632,24 +36582,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -43523,8 +43455,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 445.63726806640625,
-                        "y": -450.6689147949219
+                        "x": 432.20330810546875,
+                        "y": -438.32275390625
                     },
                     "rotation": 1.5872985124588013,
                     "scale": {
@@ -44054,8 +43986,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 564.49169921875,
-                        "y": -946.8856201171875
+                        "x": 568.9699096679688,
+                        "y": -949.572509765625
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -44176,7 +44108,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 731.4533081054688,
+                        "x": 733.2445678710938,
                         "y": -956.887939453125
                     },
                     "rotation": 0.0,
@@ -44542,8 +44474,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 412.1341857910156,
-                        "y": -689.2489013671875
+                        "x": 429.2961120605469,
+                        "y": -630.6267700195313
                     },
                     "rotation": -1.5404975414276123,
                     "scale": {
@@ -44812,8 +44744,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2354.065185546875,
-                        "y": 291.73516845703125
+                        "x": 2345.940185546875,
+                        "y": 299.6237487792969
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -44960,8 +44892,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2411.8076171875,
-                        "y": 239.3231658935547
+                        "x": 2412.940185546875,
+                        "y": 228.62374877929688
                     },
                     "rotation": 0.0,
                     "scale": {

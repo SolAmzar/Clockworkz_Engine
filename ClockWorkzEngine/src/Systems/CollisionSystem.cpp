@@ -2,7 +2,7 @@
 /*!
 \file           CollisionSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon] [Syafiq]
 \brief          CollisionSystem implementation - AABB intersection.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -161,6 +161,10 @@ void CollisionSystem::update(ECS::World &world) {
 
         // Check for valid pointers (should be valid given the query above)
         if (tA && cA && tB && cB) {
+          // Filter by collision mask/category
+          if ((cA->collisionMask & cB->collisionCategory) == 0) continue;
+          if ((cB->collisionMask & cA->collisionCategory) == 0) continue;
+
           // Check collision if both are solid OR if one is a trigger
           bool isSolidCollision = cA->isSolid && cB->isSolid;
           bool isTriggerCollision = cA->isTrigger || cB->isTrigger;

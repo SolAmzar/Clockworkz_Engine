@@ -10,6 +10,7 @@ All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 
 #include "Scripting/LuaBindings.hpp"
+#include "Scripting/EntityRef.hpp"
 #include "Math/Vec2.hpp"
 #include "Math/config.hpp"
 #include "Gameplay/GameObject.hpp"
@@ -426,6 +427,56 @@ namespace Scripting {
     }
 
     //-------------------------------------------------------------------------
+    // EntityRef Binding
+    //-------------------------------------------------------------------------
+    void RegisterEntityRef(sol::state& lua) {
+        lua.new_usertype<Scripting::EntityRef>("EntityRef",
+            sol::no_constructor,
+
+            // Identity
+            "id", sol::property(&Scripting::EntityRef::getId),
+            "isValid", &Scripting::EntityRef::isValid,
+
+            // Transform
+            "position", sol::property(
+                &Scripting::EntityRef::getPosition,
+                &Scripting::EntityRef::setPosition
+            ),
+            "rotation", sol::property(
+                &Scripting::EntityRef::getRotation,
+                &Scripting::EntityRef::setRotation
+            ),
+            "scale", sol::property(
+                &Scripting::EntityRef::getScale,
+                &Scripting::EntityRef::setScale
+            ),
+
+            // Velocity
+            "velocity", sol::property(
+                &Scripting::EntityRef::getVelocity,
+                &Scripting::EntityRef::setVelocity
+            ),
+            "moveSpeed", sol::property(
+                &Scripting::EntityRef::getMoveSpeed,
+                &Scripting::EntityRef::setMoveSpeed
+            ),
+
+            // Health
+            "hp", sol::property(
+                &Scripting::EntityRef::getHp,
+                &Scripting::EntityRef::setHp
+            ),
+            "maxHp", sol::property(&Scripting::EntityRef::getMaxHp),
+            "isDead", sol::property(&Scripting::EntityRef::isDead),
+
+            // Component checks
+            "hasTransform", &Scripting::EntityRef::hasTransform,
+            "hasVelocity", &Scripting::EntityRef::hasVelocity,
+            "hasHealth", &Scripting::EntityRef::hasHealth
+        );
+    }
+
+    //-------------------------------------------------------------------------
     // Master Registration
     //-------------------------------------------------------------------------
     void RegisterAllBindings(sol::state& lua) {
@@ -449,6 +500,9 @@ namespace Scripting {
 
         RegisterInput(lua);
         std::cout << "[LuaBindings] Registered Input and key constants" << std::endl;
+
+        RegisterEntityRef(lua);
+        std::cout << "[LuaBindings] Registered EntityRef" << std::endl;
 
         // Create Engine global table for accessing engine services
         sol::table engine = lua.create_table();
