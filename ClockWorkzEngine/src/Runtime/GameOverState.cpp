@@ -2,7 +2,7 @@
 /*!
 \file           GameOverState.cpp
 \project        Lights Out
-\author(s)      Syafiq 100%
+\author(s)      [Syafiq] 90% [Lebon] 10%
 \brief          Implements GameOverState, the game over screen.
 
 All content c 2025 DigiPen Institute of Technology Singapore. All rights

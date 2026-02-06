@@ -36,6 +36,15 @@ float ParticleSystem::frand(float a, float b) {
   return a + (b - a) * frand01();
 }
 
+ps::v2 ParticleSystem::randInCircle(float radius) {
+  if (radius <= 0.f)
+    return {0.f, 0.f};
+  const float twoPi = 6.28318530718f;
+  float angle = frand(0.f, twoPi);
+  float r = std::sqrt(frand01()) * radius;
+  return {std::cos(angle) * r, std::sin(angle) * r};
+}
+
 ps::v2 ParticleSystem::randDirInCone(ps::v2 basis, float halfAngleDeg) {
   ps::v2 d = ps::normalize(basis);
   float a = ps::radians(frand(-halfAngleDeg, halfAngleDeg));
@@ -48,7 +57,7 @@ void ParticleSystem::revive(Particle &p, ps::v2 origin) {
   p.invLife = 1.0f / p.life;
   ps::v2 vdir = randDirInCone(dir, spreadDeg);
   float spd = frand(speedMin, speedMax);
-  p.pos = origin;
+  p.pos = origin + randInCircle(spawnRadius);
   p.vel = vdir * spd;
   p.acc = acceleration;
   p.rotation = 0.f;

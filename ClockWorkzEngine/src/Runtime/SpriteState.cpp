@@ -3,7 +3,7 @@
 /*!
 \file           SpriteState.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon] 90%, [Wei An] 10%
 \brief          Provides the Sprite Editor state for previewing and editing
 animations. Supports loading scenes, manipulating sprite sheets, and
 saving/loading animation JSON files.
@@ -51,7 +51,6 @@ reserved.
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
 
 using namespace Components;
 #include <filesystem>

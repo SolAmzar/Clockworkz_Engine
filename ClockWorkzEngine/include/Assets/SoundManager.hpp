@@ -70,6 +70,40 @@ public:
       const std::unordered_map<std::string, float> &volumes,
       const std::string &configPath = "assets/configs/sounds.json");
 
+  /**
+   * @brief Import a sound file into the assets folder and register it
+   *
+   * @param sourcePath Path to the source audio file
+   * @param name Unique name for the sound
+   * @param config Sound configuration (loop, stream, volume, etc.)
+   * @param configPath Path to JSON config file
+   * @return true if import successful, false otherwise
+   */
+  static bool ImportSound(const std::string &sourcePath, const std::string &name,
+                          const SoundConfig &config,
+                          const std::string &configPath =
+                              "assets/configs/sounds.json");
+
+  /**
+   * @brief Delete sound from memory, config, AND physical file from disk
+   *
+   * @param name Sound name to delete
+   * @param configPath Path to JSON config file
+   * @return true if fully deleted, false otherwise
+   *
+   * WARNING: This permanently deletes the file from disk!
+   */
+  static bool DeleteFromDisk(const std::string &name,
+                             const std::string &configPath =
+                                 "assets/configs/sounds.json");
+
+  /**
+   * @brief Get the file path for a sound from config
+   */
+  static std::string GetFilePath(const std::string &name,
+                                 const std::string &configPath =
+                                     "assets/configs/sounds.json");
+
 private:
   static std::vector<SoundConfig> ParseConfig(const std::string &configPath);
   static Audio::AudioManager *s_audio;

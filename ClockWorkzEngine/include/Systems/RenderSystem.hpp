@@ -15,6 +15,7 @@ reserved.
 
 #pragma once
 #include "ECS/World.hpp"
+#include <vector>
 
 namespace Graphics {
 class RenderingManager;
@@ -34,8 +35,10 @@ public:
    * @brief Update the render system
    * @param world ECS world containing entities
    * @param renderer Rendering manager for drawing
+   * @param layerEnabled Optional layer enabled flags (nullptr = all enabled)
    */
-  void update(ECS::World &world, Graphics::RenderingManager &renderer);
+  void update(ECS::World &world, Graphics::RenderingManager &renderer,
+              const std::vector<bool> *layerEnabled = nullptr);
 };
 
 } // namespace Systems

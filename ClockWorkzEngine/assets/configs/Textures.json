@@ -911,18 +911,24 @@
             "flipY": true,
             "name": "cabinet",
             "path": "assets/textures/imported/cabinet.png"
-         },
-        {
-          "alphaOnlyIsRed": false,
-          "flipY": true,
-          "name": "cabinet2",
-          "path": "assets/textures/imported/cabinet2.png"
         },
         {
-          "alphaOnlyIsRed": false,
-          "flipY": true,
-          "name": "blockage",
-          "path": "assets/textures/imported/blockage.jpg"
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "cabinet2",
+            "path": "assets/textures/imported/cabinet2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "blockage",
+            "path": "assets/textures/imported/blockage.jpg"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "how_to_play_texture",
+            "path": "assets/textures/imported/how_to_play.png"
         }
     ]
 }

@@ -7,89 +7,97 @@
                 Responsibilities include:
                 - Displaying menu options such as Start, Options, Credits, Exit
                 - Handling keyboard and mouse input for menu navigation
-                - Triggering state transitions (e.g., moving from menu to PlayState)
+                - Triggering state transitions (e.g., moving from menu to
+PlayState)
                 - Rendering UI text using FontManager and Shader resources
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
+reserved.
 */
 /******************************************************************************/
 #pragma once
-#include "Runtime/GameState.hpp"
 #include "Gameplay/GameObject.hpp"
-#include <vector>
-#include <string>
+#include "Runtime/GameState.hpp"
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
-namespace ClockWorkz::Assets { class FontManager; }
-
-namespace Platform { class InputManager; class WindowManager; }
-namespace Runtime { class GameStateManager; }
-namespace Audio { class AudioManager; }
-namespace Core { class Time; }  // forward declare
-namespace Graphics {
-    class RenderingManager;
-    class Camera2D;
+namespace ClockWorkz::Assets {
+class FontManager;
 }
 
-
-
+namespace Platform {
+class InputManager;
+class WindowManager;
+} // namespace Platform
+namespace Runtime {
+class GameStateManager;
+}
+namespace Audio {
+class AudioManager;
+}
+namespace Core {
+class Time;
+} // namespace Core
+namespace Graphics {
+class RenderingManager;
+class Camera2D;
+} // namespace Graphics
 
 namespace Runtime {
 
-    struct MenuPosition {
-        float centerX, centerY, scale;
-    };
+struct MenuPosition {
+  float centerX, centerY, scale;
+};
 
-    class MenuState final : public GameState {
-    public:
-        // quitFn is called when "Exit Game" is selected (Engine sets a flag / stops loop)
-        MenuState(GameStateManager& gsm, Platform::InputManager& input, Platform::WindowManager& window, Audio::AudioManager& audio);                
+class MenuState final : public GameState {
+public:
+  // quitFn is called when "Exit Game" is selected (Engine sets a flag / stops
+  // loop)
+  MenuState(GameStateManager &gsm, Platform::InputManager &input,
+            Platform::WindowManager &window, Audio::AudioManager &audio);
 
-        const char* name() const override{ return "MenuState"; }
-        void onEnter() override;
-        void onExit()  override;
-        void update(double dt) override;
-        void render(Core::Time* timer) override;
+  const char *name() const override { return "MenuState"; }
+  void onEnter() override;
+  void onExit() override;
+  void update(double dt) override;
+  void render(Core::Time *timer) override;
 
-        void renderImGui(Core::Time* timer) override;
-       
+  void renderImGui(Core::Time *timer) override;
 
-    private:
-        void printMenu();
-        void moveUp();
-        void moveDown();
-        void select();
+private:
+  void printMenu();
+  void moveUp();
+  void moveDown();
+  void select();
 
-        GameStateManager& m_gsm;
-        Platform::InputManager& m_input;
-        Platform::WindowManager& m_window;
-        Audio::AudioManager& m_audio;
-        //SceneManager m_scenes;
-        Graphics::RenderingManager* m_renderer{ nullptr };
-        Graphics::Camera2D* m_cam{ nullptr };
-        //std::function<void()>   m_quitFn;
+  GameStateManager &m_gsm;
+  Platform::InputManager &m_input;
+  Platform::WindowManager &m_window;
+  Audio::AudioManager &m_audio;
+  // SceneManager m_scenes;
+  Graphics::RenderingManager *m_renderer{nullptr};
+  Graphics::Camera2D *m_cam{nullptr};
+  // std::function<void()>   m_quitFn;
 
-        Gameplay::GameObject m_background;
-        Gameplay::GameObject m_logo;
+  Gameplay::GameObject m_background;
+  Gameplay::GameObject m_howToPlayScreen;
+  Gameplay::GameObject m_logo;
 
-        std::vector<std::string> m_items{
-          "Start Game",
-          "Load Game",
-          "Option",
-          "Credits",
-          "Exit Game"
-        };
+  std::vector<std::string> m_items{"Start Game", "Load Game", "Option",
+                                   "How to Play", "Exit Game"};
 
-        int  m_selected{ 0 };
-        bool m_dirty{ true };
-        bool m_debug{ false };
-        int m_bgmChannel = 0;
-        bool m_bgmPaused = false;
-        float m_bgmVol = 1.4f;
-        bool m_loaded = false;
-        MenuPosition m_positions[5] = {0,0,0,0,0};
-        void updateLayout(int w, int h);
-    };
+  int m_selected{0};
+  bool m_dirty{true};
+  bool m_showingHowToPlay{false};
+  bool m_debug{false};
+  int m_bgmChannel = 0;
+  bool m_bgmPaused = false;
+  float m_bgmVol = 1.4f;
+  bool m_loaded = false;
+  MenuPosition m_positions[5] = {0, 0, 0, 0, 0};
+  void updateLayout(int w, int h);
+};
 
 } // namespace Runtime

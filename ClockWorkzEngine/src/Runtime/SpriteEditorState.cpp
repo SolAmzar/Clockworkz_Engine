@@ -2,7 +2,7 @@
 /*!
 \file           SpriteEditorState.cpp
 \project        Lights Out
-\author(s)      [User/Refactor], 100%
+\author(s)      [Lebon], 100%
 \brief          Implements SpriteEditorState.
 */
 /******************************************************************************/
@@ -132,7 +132,7 @@ void SpriteEditorState::update(double dt) {
 }
 
 void SpriteEditorState::render(Core::Time *timer) {
-    
+
   (void)timer;
 
   if (!m_loaded || !m_renderer)

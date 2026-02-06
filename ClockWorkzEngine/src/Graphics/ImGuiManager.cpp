@@ -3,7 +3,7 @@
 /*!
 \file           ImGuiManager.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 100%
+\author(s)      [Syafiq] 80%, [Lebon] 20%
 \brief          Define ImGuiManager, debugging window for our engine.
                                 Responsibilities include:
                                 - Loading ImGui Window
@@ -16,13 +16,14 @@ reserved.
 // #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 
 #pragma once
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include "IMGUI/imgui.h"
 #include "Graphics/ImGuiManager.hpp"
+#include "IMGUI/imgui.h"
 #include "IMGUI/imgui_impl_glfw.h"
 #include "IMGUI/imgui_impl_opengl3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
+
 
 namespace Graphics {
 

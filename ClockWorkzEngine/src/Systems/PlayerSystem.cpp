@@ -1,4 +1,5 @@
 #include "Systems/PlayerSystem.hpp"
+#include "Components/Layer.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/Transform.hpp"
@@ -10,9 +11,21 @@
 namespace Systems {
 
 void PlayerSystem::update(ECS::World &world, double dt,
-                          Platform::InputManager &input) {
+                          Platform::InputManager &input,
+                          const std::vector<bool> *layerEnabled) {
   world.each<Components::PlayerController>(
       [&](ECS::Entity entity, Components::PlayerController &pc) {
+        // Check if entity's layer is enabled
+        if (layerEnabled) {
+          if (auto *layer = world.getComponent<Components::Layer>(entity)) {
+            int idx = layer->index;
+            if (idx >= 0 && idx < static_cast<int>(layerEnabled->size()) &&
+                !(*layerEnabled)[idx]) {
+              return; // Skip entities on disabled layers
+            }
+          }
+        }
+
         // Check for initialization (Simulating Start/OnEnter)
         if (!pc.initialized) {
           pc.OnEnter(entity, world);

@@ -2,7 +2,7 @@
 /*!
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
-\author(s)      Yusuf,[100%]
+\author(s)      Yusuf [10%], Lebon [90%]
 \brief          Comprehensive level editor with integrated gizmo system,
                 property editing, hierarchy view, and multi-level support.
 

@@ -91,6 +91,13 @@ public:
   bool m_textRenderSystemEnabled{true};
   bool m_scriptSystemEnabled{true};
 
+  // Layer System
+  static constexpr int MAX_LAYERS = 32;
+  std::vector<bool> m_layerEnabled;
+  void setLayerEnabled(int layer, bool enabled);
+  bool isLayerEnabled(int layer) const;
+  const std::vector<bool>& getLayerEnabled() const { return m_layerEnabled; }
+
   // Public access to systems if needed for debug overlay (e.g. collision list)
   Systems::CollisionSystem &GetCollisionSystem() { return m_collisionSystem; }
   Systems::PhysicsSystem *getPhysics() { return &m_physicsSystem; }

@@ -1,8 +1,7 @@
-/******************************************************************************/
 /*!
 \file           Renderer2D.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon] 90%, [Wei An] 10%
 \brief          Implements a batched 2D renderer for efficient sprite drawing
                 using OpenGL.
 
@@ -35,7 +34,6 @@ reserved.
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 
 using namespace Graphics;
 
@@ -385,7 +383,7 @@ void Renderer2D::end() {}
 //
 // bool Renderer2D::init() {
 //	// unit quad (0..1), we’ll scale in shader with model or via vertex
-//attribs; here keep it simple
+// attribs; here keep it simple
 //		// ========== VAO 1: Unit Quad (0..1) ==========
 //	float vertsUnit[] = {
 //		// pos      // uv
@@ -418,26 +416,26 @@ void Renderer2D::end() {}
 //			glBindVertexArray(vao);
 //			glBindBuffer(GL_ARRAY_BUFFER, vbo);
 //			glBufferData(GL_ARRAY_BUFFER, vertSize, verts,
-//GL_STATIC_DRAW);
+// GL_STATIC_DRAW);
 //
 //			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 //			glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxSize, idx,
-//GL_STATIC_DRAW);
+// GL_STATIC_DRAW);
 //
 //			glEnableVertexAttribArray(0); // pos
 //			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 *
-//sizeof(float), (void*)0); 			glEnableVertexAttribArray(1); // uv
-//			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 *
-//sizeof(float), (void*)(2 * sizeof(float)));
+// sizeof(float), (void*)0); 			glEnableVertexAttribArray(1); //
+// uv 			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
+// (void*)(2 * sizeof(float)));
 //
 //			glBindVertexArray(0);
 //		};
 //
 //	// ========== Create both VAOs ==========
 //	makeVAO(vertsUnit, sizeof(vertsUnit), idx, sizeof(idx), m_vaoBottomLeft,
-//m_vboBottomLeft, m_eboBottomLeft); 	makeVAO(vertsCentered,
-//sizeof(vertsCentered), idx, sizeof(idx), m_vaoCenter, m_vboCenter,
-//m_eboCenter);
+// m_vboBottomLeft, m_eboBottomLeft); 	makeVAO(vertsCentered,
+// sizeof(vertsCentered), idx, sizeof(idx), m_vaoCenter, m_vboCenter,
+// m_eboCenter);
 //
 //	return true;
 //
@@ -445,9 +443,9 @@ void Renderer2D::end() {}
 //
 // void Renderer2D::shutdown() {
 //	if (m_eboBottomLeft) glDeleteBuffers(1, &m_eboBottomLeft),
-//m_eboBottomLeft = 0; 	if (m_vboBottomLeft) glDeleteBuffers(1,
+// m_eboBottomLeft = 0; 	if (m_vboBottomLeft) glDeleteBuffers(1,
 //&m_vboBottomLeft), m_vboBottomLeft = 0; 	if (m_vaoBottomLeft)
-//glDeleteVertexArrays(1, &m_vaoBottomLeft), m_vaoBottomLeft = 0;
+// glDeleteVertexArrays(1, &m_vaoBottomLeft), m_vaoBottomLeft = 0;
 //
 //	if (m_eboCenter) glDeleteBuffers(1, &m_eboCenter), m_eboCenter = 0;
 //	if (m_vboCenter) glDeleteBuffers(1, &m_vboCenter), m_vboCenter = 0;
@@ -476,7 +474,7 @@ void Renderer2D::end() {}
 //	model = glm::translate(model, glm::vec3(x, y, 0.0f));
 //	if (angleRad != 0.0f) {
 //		model = glm::rotate(model, angleRad, glm::vec3(0.0f,
-//0.0f, 1.0f)); // radians!
+// 0.0f, 1.0f)); // radians!
 //	}
 //	model = glm::scale(model, glm::vec3(w, h, 1.0f));
 //	shader->setMat4("model", model);

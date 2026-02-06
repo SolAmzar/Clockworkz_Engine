@@ -66,11 +66,14 @@ MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input,
       m_positions{0, 0, 0, 0, 0},
       m_background(GameObjectType::Unknown, "MenuBG",
                    GameObjectShape::Rectangle),
+      m_howToPlayScreen(GameObjectType::Unknown, "HowToPlay",
+                        GameObjectShape::Rectangle),
       m_logo(GameObjectType::Unknown, "Logo", GameObjectShape::Rectangle) {}
 
 void MenuState::onEnter() {
   m_selected = 0;
   m_dirty = true;
+  m_showingHowToPlay = false;
 
   Core::Engine &engine = Core::Engine::Get();
   m_renderer = &engine.rendering();
@@ -81,7 +84,7 @@ void MenuState::onEnter() {
   m_cam->setPosition(glm::vec2(0.0f, 0.0f));
   m_cam->setZoom(1.0f);
   if (m_items.empty()) {
-    m_items = {"Start Game", "Load Game", "Option", "Credits", "Quit Game"};
+    m_items = {"Start Game", "Load Game", "Option", "How to Play", "Exit Game"};
   }
 
   // m_audio.stopGroup(Audio::Group::Music);
@@ -121,6 +124,23 @@ void MenuState::onEnter() {
       m_logo.getComponent<SpriteRendererComponent>();
   logoSprite->setIsUI(true);
   m_logo.setSize({1.f, 1.f});
+
+  // Initialize How to Play screen
+  m_howToPlayScreen.addComponent<SpriteRendererComponent>(
+      "how_to_play_texture");
+  SpriteRendererComponent *htpSprite =
+      m_howToPlayScreen.getComponent<SpriteRendererComponent>();
+  htpSprite->setIsUI(true);
+
+  // Center and scale
+  // Assuming 1920x1080 design reference, adjust scale as needed
+  m_howToPlayScreen.transform().position = {
+      (float)m_window.width() * 0.5f - 400.f,
+      (float)m_window.height() * 0.5f - 300.f};
+  m_howToPlayScreen.transform().scale = {
+      800.f, 600.f}; // Default size, will be updated in updateLayout
+
+  m_showingHowToPlay = false;
 
   updateLayout(m_window.width(), m_window.height());
 
@@ -184,6 +204,11 @@ void MenuState::select() {
     return;
   }
   // yusuf
+  if (choice == "How to Play") {
+    m_showingHowToPlay = true;
+    return;
+  }
+
   if (choice == "Load Game") {
     // m_gsm.push(std::make_shared<PlayState>("Level_01_autosave", m_input,
     // m_gsm));
@@ -230,6 +255,17 @@ void MenuState::updateLayout(int w, int h) {
   // Apply transform
   m_logo.transform().position = {logoX, logoY};
   m_logo.transform().scale = {desiredLogoWidth, desiredLogoHeight};
+
+  // Update How To Play Screen Layout
+  float htpWidth = w * 0.8f;  // 80% screen width
+  float htpHeight = h * 0.8f; // 80% screen height
+  // Maintain aspect ratio if desired, but filling 80% is safe for now
+
+  float htpX = (w - htpWidth) / 2.0f;
+  float htpY = (h - htpHeight) / 2.0f;
+
+  m_howToPlayScreen.transform().position = {htpX, htpY};
+  m_howToPlayScreen.transform().scale = {htpWidth, htpHeight};
 }
 
 void MenuState::update(double /*dt*/) {
@@ -240,6 +276,17 @@ void MenuState::update(double /*dt*/) {
   // int w = m_window.width();
   int h = m_window.height();
   float glMouseY = h - static_cast<float>(mouseY);
+
+  if (m_showingHowToPlay) {
+    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+        m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
+        m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
+        m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+      m_showingHowToPlay = false;
+      Assets::SoundManager::Play("ui_select"); // Optional feedback
+    }
+    return; // Skip menu navigation
+  }
 
   bool isHover = false;
 
@@ -350,6 +397,11 @@ void MenuState::render(Core::Time *timer) {
   m_renderer->beginScenePass(uiProj);
   m_background.render(*m_renderer);
   m_logo.render(*m_renderer);
+
+  m_logo.render(*m_renderer);
+
+  // Removed m_howToPlayScreen rendering from here to render it AFTER text
+
   m_renderer->endScenePass();
 
   // m_renderer->beginScenePass(m_cam->viewProj());
@@ -378,15 +430,15 @@ void MenuState::render(Core::Time *timer) {
     // - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
   }
 #ifdef _DEBUG
-  //if (debugFont) {
-  //  if (timer) {
-  //    std::stringstream ss{};
-  //    ss << " screenW: " << m_window.width()
-  //       << " screenH: " << m_window.height() << " FPS: " << timer->fps();
-  //    debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f,
-  //                          glm::vec3(0.8f, 0.8f, 1.0f), *shader);
-  //  }
-  //}
+  // if (debugFont) {
+  //   if (timer) {
+  //     std::stringstream ss{};
+  //     ss << " screenW: " << m_window.width()
+  //        << " screenH: " << m_window.height() << " FPS: " << timer->fps();
+  //     debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f,
+  //                           glm::vec3(0.8f, 0.8f, 1.0f), *shader);
+  //   }
+  // }
 #endif
 
   // Start: Syafiq
@@ -409,6 +461,8 @@ void MenuState::render(Core::Time *timer) {
     // };
 
     for (int i = 0; i < static_cast<int>(m_items.size()); ++i) {
+      // Logic removed: text will be rendered behind the overlay now
+
       const std::string &item = m_items[i];
       glm::vec3 color = (i == m_selected) ? selectedCol : normalCol;
 
@@ -421,7 +475,15 @@ void MenuState::render(Core::Time *timer) {
                              *shader);
     }
   }
+
   m_renderer->endFontPass();
+
+  // Render How to Play screen ON TOP of text (post-font pass)
+  if (m_showingHowToPlay) {
+    m_renderer->beginScenePass(uiProj);
+    m_howToPlayScreen.render(*m_renderer);
+    m_renderer->endScenePass();
+  }
 }
 
 // Implementation of ImGui

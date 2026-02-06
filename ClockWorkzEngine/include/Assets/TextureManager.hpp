@@ -25,7 +25,7 @@ Example JSON format (textures.json):
   ]
 }
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -126,6 +126,55 @@ namespace Assets {
          * @return true if loaded, false otherwise
          */
         static bool IsLoaded(const std::string& name);
+
+        /**
+         * @brief Import a texture file into the assets folder and register it
+         *
+         * @param sourcePath Path to the source texture file (e.g., "C:/Downloads/hero.png")
+         * @param name Unique name for the texture
+         * @param configPath Path to JSON config file (default: "assets/configs/Textures.json")
+         * @return true if import successful, false otherwise
+         *
+         * This will:
+         * 1. Copy the file to assets/textures/
+         * 2. Add an entry to the JSON config
+         * 3. Load the texture into memory
+         */
+        static bool ImportTexture(const std::string& sourcePath,
+                                  const std::string& name,
+                                  const std::string& configPath = "assets/configs/Textures.json");
+
+        /**
+         * @brief Remove texture entry from JSON config (does not delete file)
+         *
+         * @param name Texture name to remove
+         * @param configPath Path to JSON config file
+         * @return true if removed, false otherwise
+         */
+        static bool RemoveFromConfig(const std::string& name,
+                                     const std::string& configPath = "assets/configs/Textures.json");
+
+        /**
+         * @brief Delete texture from memory, config, AND physical file from disk
+         *
+         * @param name Texture name to delete
+         * @param configPath Path to JSON config file
+         * @return true if fully deleted, false otherwise
+         *
+         * WARNING: This permanently deletes the file from disk!
+         */
+        static bool DeleteFromDisk(const std::string& name,
+                                   const std::string& configPath = "assets/configs/Textures.json");
+
+        /**
+         * @brief Get the file path for a texture from config
+         *
+         * @param name Texture name
+         * @param configPath Path to JSON config file
+         * @return File path string, or empty if not found
+         */
+        static std::string GetFilePath(const std::string& name,
+                                       const std::string& configPath = "assets/configs/Textures.json");
 
     private:
         /**

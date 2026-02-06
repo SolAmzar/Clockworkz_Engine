@@ -1,8 +1,7 @@
-/******************************************************************************/
 /*!
-\file           InputManager.hpp
+\file           InputManager.cpp
 \project        Lights Out
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon] 50%, [Wei An] 50%
 \brief          Declares InputManager, a system for handling user input with
 GLFW. Responsibilities include:
                 - Tracking specific keys and mouse buttons

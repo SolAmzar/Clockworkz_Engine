@@ -12,15 +12,17 @@ reserved.
 
 #include "Systems/CollisionSystem.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Layer.hpp"
 #include "Components/Transform.hpp"
 #include <algorithm> // For std::min/max
 #include <cmath>     // For std::abs
 #include <cstdint>
-#include <unordered_map>
-#include <unordered_set>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
+#include <unordered_map>
+#include <unordered_set>
+
 
 namespace Systems {
 
@@ -36,8 +38,7 @@ static void getWorldAABB(const Components::Transform &t,
                          glm::vec2 &outMax) {
   glm::vec2 effectiveOffset(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y);
   glm::vec2 rotatedOffset = rotateVec(effectiveOffset, t.rotation);
-  glm::vec2 center =
-      glm::vec2(t.position.x, t.position.y) + rotatedOffset;
+  glm::vec2 center = glm::vec2(t.position.x, t.position.y) + rotatedOffset;
 
   if (c.shape == Components::Collider::Shape::Circle) {
     float radius = c.radius * std::max(t.scale.x, t.scale.y);
@@ -60,7 +61,8 @@ static void getWorldAABB(const Components::Transform &t,
   outMax = center + extents;
 }
 
-void CollisionSystem::update(ECS::World &world) {
+void CollisionSystem::update(ECS::World &world,
+                             const std::vector<bool> *layerEnabled) {
   m_collisions.clear();
 
   // Collect all entities with Transform + Collider
@@ -69,6 +71,16 @@ void CollisionSystem::update(ECS::World &world) {
   std::vector<ECS::Entity> entities;
   world.each<Components::Transform, Components::Collider>(
       [&](ECS::Entity e, Components::Transform &, Components::Collider &) {
+        // Check if entity's layer is enabled
+        if (layerEnabled) {
+          if (auto *layer = world.getComponent<Components::Layer>(e)) {
+            int idx = layer->index;
+            if (idx >= 0 && idx < static_cast<int>(layerEnabled->size()) &&
+                !(*layerEnabled)[idx]) {
+              return; // Skip entities on disabled layers
+            }
+          }
+        }
         entities.push_back(e);
       });
 

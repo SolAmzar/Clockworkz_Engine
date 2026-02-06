@@ -29,6 +29,7 @@ public:
 	float sizeStart = 2.25f, sizeEnd = 0.f;
 	ps::Color colorStart = { 1,1,1,1 };
 	ps::Color colorEnd = { 1,1,1,0 };
+	float spawnRadius = 0.f; // Random spawn radius (0 = center)
 	bool  worldSpace = true;
 	bool  looping = true;
 
@@ -45,6 +46,7 @@ private:
 
 	float frand01();
 	float frand(float a, float b);
+	ps::v2 randInCircle(float radius);
 	ps::v2 randDirInCone(ps::v2 basis, float halfAngleDeg);
 	void revive(Particle& p, ps::v2 origin);
 };
