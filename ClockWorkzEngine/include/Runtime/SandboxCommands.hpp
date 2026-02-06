@@ -1,9 +1,12 @@
 /******************************************************************************/
 /*!
+* \file         SandboxState.cpp
+\project        ClockWorkz Engine
+\author(s)      [Yusuf] 100%
+
 \file           SandboxCommands.hpp
 \brief          Command pattern implementation for undo/redo in SandboxState
-                Captures ALL property modifications for complete undo/redo
-support
+                Captures ALL property modifications for complete undo/redo support
 
                 Uses SandboxCommand (not EditorCommand) to avoid conflicts with
 LevelEditor
