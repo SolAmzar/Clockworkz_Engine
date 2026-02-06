@@ -35,6 +35,7 @@ reserved.
 
 #include "Assets/SoundManager.hpp"
 #include "Components/Battery.hpp"
+#include "Components/LuaScript.hpp"
 
 namespace Components {
 
@@ -137,108 +138,155 @@ struct PlayerController {
 
     std::string currentState = "idle";
 
+    // Check if movement is handled by a Lua script
+    auto *luaScript = world.getComponent<LuaScript>(entity);
+
     if (vel && trans) {
-      // Get forward/backward input (W/S)
-      float forwardInput = 0.f;
-      if (input.isKeyDown(GLFW_KEY_W))
-        forwardInput += 1.f;
-      if (input.isKeyDown(GLFW_KEY_S))
-        forwardInput -= 1.f;
+      if (luaScript && luaScript->enabled) {
+        // --- Lua handles movement; infer animation state from velocity ---
+        float velMag = std::sqrt(vel->velocity.x * vel->velocity.x +
+                                 vel->velocity.y * vel->velocity.y);
+        if (velMag > 0.01f) {
+          bool isSprinting = input.isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
+                             input.isKeyDown(GLFW_KEY_RIGHT_SHIFT);
+          currentState = isSprinting ? "run" : "walk";
 
-      if (forwardInput != 0.f) {
-        // Determine speed multiplier
-        bool isSprinting = input.isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
-                           input.isKeyDown(GLFW_KEY_RIGHT_SHIFT);
+          // Footstep Logic
+          footstepTimer -= static_cast<float>(dt);
+          if (footstepTimer <= 0.0f) {
+            float interval = footstepInterval;
+            if (isSprinting)
+              interval *= 0.6f;
+            footstepTimer = interval;
 
-        float speedMultiplier = isSprinting ? sprintMultiplier : walkMultiplier;
-        float currentSpeed = vel->moveSpeed * speedMultiplier;
-
-        // Calculate movement direction based on player's rotation
-        float playerAngle = trans->rotation;
-
-        // Forward direction (along player's facing)
-        vec2 forward{std::cos(playerAngle), std::sin(playerAngle)};
-
-        // Combine forward movement
-        vec2 moveDir = forward * forwardInput;
-
-        // Normalize if moving diagonally
-        float moveLength =
-            std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
-        if (moveLength > 0.f) {
-          moveDir.x /= moveLength;
-          moveDir.y /= moveLength;
-        }
-
-        vel->velocity = {moveDir.x * currentSpeed, moveDir.y * currentSpeed};
-
-        // Update animation state
-        if (isSprinting) {
-          currentState = "run";
-        } else {
-          currentState = "walk";
-        }
-
-        // Footstep Logic
-        footstepTimer -= static_cast<float>(dt);
-        if (footstepTimer <= 0.0f) {
-          float interval = footstepInterval;
-          if (isSprinting)
-            interval *= 0.6f; // Faster footsteps when running
-          footstepTimer = interval;
-
-          std::string surfaceInfo = "concrete"; // Default fallback
-
-          // Naive Surface Detection: Check overlap with SurfaceComponent
-          // entities
-          if (col) {
-            world.each<Transform, Collider, Gameplay::SurfaceComponent>(
-                [&](ECS::Entity e, Transform &tSurface, Collider &cSurface,
-                    Gameplay::SurfaceComponent &surfComp) {
-                  if (e.id == entity.id)
-                    return; // Skip self
-
-                  // Simple AABB Overlap Check
-                  vec2 posA = trans->position + col->offset;
-                  vec2 posB = tSurface.position + cSurface.offset;
-                  vec2 halfA = col->size * 0.5f;
-                  vec2 halfB = cSurface.size * 0.5f;
-
-                  bool overlap = (posA.x - halfA.x < posB.x + halfB.x &&
-                                  posA.x + halfA.x > posB.x - halfB.x &&
-                                  posA.y - halfA.y < posB.y + halfB.y &&
-                                  posA.y + halfA.y > posB.y - halfB.y);
-
-                  if (overlap) {
-                    switch (surfComp.type()) {
-                    case Gameplay::SurfaceType::Tile:
-                      surfaceInfo = "tile";
-                      break;
-                    case Gameplay::SurfaceType::Wood:
-                      surfaceInfo = "wood";
-                      break;
-                    case Gameplay::SurfaceType::Concrete:
-                      surfaceInfo = "concrete";
-                      break;
-                    default:
-                      surfaceInfo = "concrete";
-                      break;
+            std::string surfaceInfo = "concrete";
+            if (col) {
+              world.each<Transform, Collider, Gameplay::SurfaceComponent>(
+                  [&](ECS::Entity e, Transform &tSurface, Collider &cSurface,
+                      Gameplay::SurfaceComponent &surfComp) {
+                    if (e.id == entity.id)
+                      return;
+                    vec2 posA = trans->position + col->offset;
+                    vec2 posB = tSurface.position + cSurface.offset;
+                    vec2 halfA = col->size * 0.5f;
+                    vec2 halfB = cSurface.size * 0.5f;
+                    bool overlap = (posA.x - halfA.x < posB.x + halfB.x &&
+                                    posA.x + halfA.x > posB.x - halfB.x &&
+                                    posA.y - halfA.y < posB.y + halfB.y &&
+                                    posA.y + halfA.y > posB.y - halfB.y);
+                    if (overlap) {
+                      switch (surfComp.type()) {
+                      case Gameplay::SurfaceType::Tile:
+                        surfaceInfo = "tile";
+                        break;
+                      case Gameplay::SurfaceType::Wood:
+                        surfaceInfo = "wood";
+                        break;
+                      case Gameplay::SurfaceType::Concrete:
+                        surfaceInfo = "concrete";
+                        break;
+                      default:
+                        surfaceInfo = "concrete";
+                        break;
+                      }
                     }
-                  }
-                });
+                  });
+            }
+            int variation = (std::rand() % 4) + 1;
+            std::string soundName =
+                "fs_" + surfaceInfo + "_" + std::to_string(variation);
+            Assets::SoundManager::Play(soundName);
+          }
+        } else {
+          currentState = "idle";
+          footstepTimer = 0.05f;
+        }
+      } else {
+        // --- Original C++ movement (fallback when no LuaScript) ---
+        float forwardInput = 0.f;
+        if (input.isKeyDown(GLFW_KEY_W))
+          forwardInput += 1.f;
+        if (input.isKeyDown(GLFW_KEY_S))
+          forwardInput -= 1.f;
+
+        if (forwardInput != 0.f) {
+          bool isSprinting = input.isKeyDown(GLFW_KEY_LEFT_SHIFT) ||
+                             input.isKeyDown(GLFW_KEY_RIGHT_SHIFT);
+
+          float speedMultiplier =
+              isSprinting ? sprintMultiplier : walkMultiplier;
+          float currentSpeed = vel->moveSpeed * speedMultiplier;
+
+          float playerAngle = trans->rotation;
+          vec2 forward{std::cos(playerAngle), std::sin(playerAngle)};
+          vec2 moveDir = forward * forwardInput;
+
+          float moveLength =
+              std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+          if (moveLength > 0.f) {
+            moveDir.x /= moveLength;
+            moveDir.y /= moveLength;
           }
 
-          // Randomize variation (1 to 4)
-          int variation = (std::rand() % 4) + 1;
-          std::string soundName =
-              "fs_" + surfaceInfo + "_" + std::to_string(variation);
-          Assets::SoundManager::Play(soundName);
-        }
+          vel->velocity = {moveDir.x * currentSpeed, moveDir.y * currentSpeed};
 
-      } else {
-        vel->velocity = {0.f, 0.f};
-        currentState = "idle";
-        footstepTimer = 0.05f; // Ready to step as soon as we move
+          if (isSprinting) {
+            currentState = "run";
+          } else {
+            currentState = "walk";
+          }
+
+          footstepTimer -= static_cast<float>(dt);
+          if (footstepTimer <= 0.0f) {
+            float interval = footstepInterval;
+            if (isSprinting)
+              interval *= 0.6f;
+            footstepTimer = interval;
+
+            std::string surfaceInfo = "concrete";
+            if (col) {
+              world.each<Transform, Collider, Gameplay::SurfaceComponent>(
+                  [&](ECS::Entity e, Transform &tSurface, Collider &cSurface,
+                      Gameplay::SurfaceComponent &surfComp) {
+                    if (e.id == entity.id)
+                      return;
+                    vec2 posA = trans->position + col->offset;
+                    vec2 posB = tSurface.position + cSurface.offset;
+                    vec2 halfA = col->size * 0.5f;
+                    vec2 halfB = cSurface.size * 0.5f;
+                    bool overlap = (posA.x - halfA.x < posB.x + halfB.x &&
+                                    posA.x + halfA.x > posB.x - halfB.x &&
+                                    posA.y - halfA.y < posB.y + halfB.y &&
+                                    posA.y + halfA.y > posB.y - halfB.y);
+                    if (overlap) {
+                      switch (surfComp.type()) {
+                      case Gameplay::SurfaceType::Tile:
+                        surfaceInfo = "tile";
+                        break;
+                      case Gameplay::SurfaceType::Wood:
+                        surfaceInfo = "wood";
+                        break;
+                      case Gameplay::SurfaceType::Concrete:
+                        surfaceInfo = "concrete";
+                        break;
+                      default:
+                        surfaceInfo = "concrete";
+                        break;
+                      }
+                    }
+                  });
+            }
+            int variation = (std::rand() % 4) + 1;
+            std::string soundName =
+                "fs_" + surfaceInfo + "_" + std::to_string(variation);
+            Assets::SoundManager::Play(soundName);
+          }
+
+        } else {
+          vel->velocity = {0.f, 0.f};
+          currentState = "idle";
+          footstepTimer = 0.05f;
+        }
       }
     }
 

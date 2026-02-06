@@ -27,6 +27,10 @@ namespace Platform {
 }
 
 namespace Scripting {
+    class EntityRef;
+}
+
+namespace Scripting {
 
     //-------------------------------------------------------------------------
     // Math Bindings
@@ -70,6 +74,15 @@ namespace Scripting {
     //          isMouseDown, wasMousePressed, mousePosition
     //          Also creates Keys and Mouse constant tables
     void RegisterInput(sol::state& lua);
+
+    //-------------------------------------------------------------------------
+    // EntityRef Binding (ScriptSystem proxy)
+    //-------------------------------------------------------------------------
+
+    // Register EntityRef usertype with Lua
+    // Exposes: id, position, rotation, scale, velocity, moveSpeed, hp, maxHp,
+    //          isDead, isValid, hasTransform, hasVelocity, hasHealth
+    void RegisterEntityRef(sol::state& lua);
 
     //-------------------------------------------------------------------------
     // Master Registration

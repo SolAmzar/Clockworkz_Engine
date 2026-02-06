@@ -23,6 +23,7 @@ reserved.
 #include "Components/DoorSwing.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/Health.hpp"
+#include "Components/LuaScript.hpp"
 #include "Components/LightExposure.hpp"
 #include "Components/TextRenderer.hpp"
 
@@ -295,6 +296,12 @@ static json SerializeWorld(ECS::World &world) {
     // Portal
     if (auto *portal = world.getComponent<Components::Portal>(entity)) {
       obj["components"]["portal"] = {{"levelName", portal->levelName}};
+    }
+
+    // LuaScript
+    if (auto *ls = world.getComponent<Components::LuaScript>(entity)) {
+      obj["components"]["luaScript"] = {{"scriptPath", ls->scriptPath},
+                                        {"enabled", ls->enabled}};
     }
 
     root["objects"].push_back(obj);
@@ -716,6 +723,15 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         Components::Portal portal;
         portal.levelName = pc.value("levelName", "");
         world.addComponent(entity, portal);
+      }
+
+      // LuaScript
+      if (components.contains("luaScript")) {
+        auto &lsc = components["luaScript"];
+        Components::LuaScript ls;
+        ls.scriptPath = lsc.value("scriptPath", "");
+        ls.enabled = lsc.value("enabled", true);
+        world.addComponent(entity, ls);
       }
     }
   }

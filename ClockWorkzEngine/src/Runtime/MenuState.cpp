@@ -373,12 +373,15 @@ void MenuState::update(double /*dt*/) {
   if (m_input.wasKeyPressed(GLFW_KEY_U))
     m_audio.setGroupVolume(Audio::Group::BGM, 0.7f);
 
+#ifdef DEBUG
+
   if (m_input.wasKeyTriggered(GLFW_KEY_F1)) {
     std::cout << "[MenuState] F1 Pressed! Pushing SandboxState..." << std::endl;
     m_audio.stopGroup(Audio::Group::BGM);
     m_gsm.push(std::make_shared<SandboxState>(m_input, m_gsm));
     return;
   }
+#endif // DEBUG
 }
 
 void MenuState::render(Core::Time *timer) {

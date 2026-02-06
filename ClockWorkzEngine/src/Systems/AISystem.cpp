@@ -2,7 +2,7 @@
 /*!
 \file           AISystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon], 100%
+\author(s)      [Lebon] [Syafiq]
 \brief          Implementation of AISystem state machine.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -112,6 +112,10 @@ void AISystem::update(ECS::World &world, double dt,
   world.each<Components::EnemyAI, Components::Transform, Components::Velocity>(
       [&](ECS::Entity e, Components::EnemyAI &ai, Components::Transform &t,
           Components::Velocity &vel) {
+        // Ensure enemy colliders are moveable so they get pushed out of walls
+        if (auto *col = world.getComponent<Components::Collider>(e)) {
+          if (!col->moveable) col->moveable = true;
+        }
         // Skip entities on disabled layers
         if (!isLayerActive(e))
           return;

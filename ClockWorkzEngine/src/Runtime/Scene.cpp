@@ -31,6 +31,7 @@
 #include "Components/Transform.hpp"
 
 #include "Components/ActivationZone.hpp"
+#include "Components/LuaScript.hpp"
 #include "Components/Portal.hpp"
 #include "Components/Velocity.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
@@ -93,6 +94,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::Tag>();
   m_world.registerComponent<Components::Portal>();
   m_world.registerComponent<Gameplay::SurfaceComponent>();
+  m_world.registerComponent<Components::LuaScript>();
   m_world.registerComponent<Components::Layer>();
 
   // Initialize layer enabled flags (all enabled by default)
@@ -119,6 +121,8 @@ void Scene::Clear() {
   // Stop BGM when clearing scene
   std::cout << "[Scene] Clearing Scene... Stopping BGM Group.\n";
   Audio::AudioManager::get().stopGroup(Audio::Group::BGM);
+
+  m_scriptSystem.clear();
 
   // Destroy all entities in the world
   m_world.destroyAll();
@@ -176,7 +180,9 @@ void Scene::Update(double dt, Platform::InputManager &input) {
   if (m_fragmentSystemEnabled)
     m_fragmentSystem.update(m_world, dt);
   if (m_aiSystemEnabled)
-    m_aiSystem.update(m_world, dt, layerFlags);
+    m_aiSystem.update(m_world, dt);
+  if (m_scriptSystemEnabled)
+    m_scriptSystem.update(m_world, dt);
   if (m_audioSystemEnabled)
     m_audioSystem.update(m_world);
   if (m_animSystemEnabled)

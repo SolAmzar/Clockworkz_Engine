@@ -27,6 +27,7 @@
 #include "Systems/PlayerSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "Systems/StateMachineSystem.hpp"
+#include "Systems/ScriptSystem.hpp"
 #include "Systems/TextRenderSystem.hpp"
 
 namespace Runtime {
@@ -88,6 +89,7 @@ public:
   bool m_doorSwingSystemEnabled{true};
   bool m_activationSystemEnabled{true};
   bool m_textRenderSystemEnabled{true};
+  bool m_scriptSystemEnabled{true};
 
   // Layer System
   static constexpr int MAX_LAYERS = 32;
@@ -128,6 +130,7 @@ private:
   Systems::DoorSwingSystem m_doorSwingSystem;
   Systems::ActivationSystem m_activationSystem;
   Systems::TextRenderSystem m_textRenderSystem;
+  Systems::ScriptSystem m_scriptSystem;
 
   std::string m_name;
   std::string m_bgm;       // Background music track name
