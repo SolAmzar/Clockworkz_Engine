@@ -1,3 +1,12 @@
+/******************************************************************************/
+/*!
+\file           ActivationSystem.cpp
+\project        Lights Out
+\author(s)      [Amzar] 100%
+\brief          Implementation of the Scene class.
+*/
+/******************************************************************************/
+
 #include "Systems/ActivationSystem.hpp"
 #include "Assets/SoundManager.hpp"
 #include "Components/ActivationZone.hpp"

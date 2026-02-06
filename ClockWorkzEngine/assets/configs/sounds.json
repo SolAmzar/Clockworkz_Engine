@@ -61,7 +61,7 @@
             "name": "flashlight_off",
             "path": "assets/audio/sfx/flashlight_off.wav",
             "stream": true,
-            "volume": 0.5
+            "volume": 0.6620000004768372
         },
         {
             "group": "SFX",

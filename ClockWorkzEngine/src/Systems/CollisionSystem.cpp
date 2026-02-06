@@ -2,7 +2,7 @@
 /*!
 \file           CollisionSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon] [Syafiq]
+\author(s)      [Lebon] [Syafiq] [Amzar]
 \brief          CollisionSystem implementation - AABB intersection.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
