@@ -220,7 +220,11 @@ void Scene::Update(double dt, Platform::InputManager &input) {
   // --- Game Logic ---
   // 1. Handle Level Transition
   if (!m_pendingLevel.empty()) {
-    LoadFromFile(m_pendingLevel);
+    std::string levelPath = m_pendingLevel;
+    if (levelPath.find("assets/scenes/") == std::string::npos) {
+      levelPath = "assets/scenes/" + levelPath;
+    }
+    LoadFromFile(levelPath);
     m_pendingLevel.clear();
     // Return early to avoid updating a just-cleared or fresh scene with old
     // input
