@@ -43,6 +43,7 @@
 
 #include "Audio/AudioManager.hpp"
 #include "Core/Engine.hpp"
+#include "Memory/MemoryManager.hpp"
 
 namespace Runtime {
 
@@ -70,7 +71,10 @@ float Scene::getSoundVolumeOverride(const std::string &name,
 }
 
 void Scene::Init() {
-  // Register all component types
+  // Pre-allocate memory pool registry entries at load time (25 component types).
+  Memory::MemoryManager::Get().preallocateForScene(25);
+
+  // Register all component types.
   m_world.registerComponent<Components::Transform>();
   m_world.registerComponent<Components::Velocity>();
   m_world.registerComponent<Components::SpriteRenderer>();

@@ -24,6 +24,7 @@ reserved.
 #include <fmod.hpp>
 #include <fmod_errors.h>
 #include <iostream>
+#include <objbase.h> // CoInitializeEx / CoUninitialize
 
 using namespace Audio;
 
@@ -87,6 +88,14 @@ bool AudioManager::init(int maxChannels) {
   std::cout << "[DEBUG] AudioManager::init called\n";
   if (m_system)
     return true;
+
+  // FMOD requires COM to be initialised on the calling thread before
+  // System_Create. COINIT_APARTMENTTHREADED is the mode FMOD recommends.
+  // We track the result so we only call CoUninitialize() if WE initialised it
+  // (S_FALSE means COM was already initialised — we still own a reference).
+  HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  m_comInitialized = SUCCEEDED(hr);
+
   if (!FMOD_CHECK(FMOD::System_Create(&m_system), "System_Create"))
     return false;
   if (!FMOD_CHECK(m_system->init(maxChannels, FMOD_INIT_NORMAL, nullptr),
@@ -123,6 +132,12 @@ void AudioManager::shutdown() {
     m_system->release();
     m_system = nullptr;
     m_masterGroup = nullptr;
+  }
+
+  // Release the COM reference we acquired in init().
+  if (m_comInitialized) {
+    CoUninitialize();
+    m_comInitialized = false;
   }
   m_channels.clear();
   m_nextChannelId = 1;
