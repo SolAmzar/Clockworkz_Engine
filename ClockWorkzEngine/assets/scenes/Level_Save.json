@@ -36333,6 +36333,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -36416,6 +36434,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "particleEmitter": {
                     "acceleration": {
                         "x": 0.0,
@@ -43231,7 +43267,7 @@
                     "width": 100.0
                 },
                 "portal": {
-                    "levelName": "Level1.json"
+                    "levelName": "Level_Save_02.json"
                 },
                 "spriteRenderer": {
                     "color": {
