@@ -124,6 +124,7 @@ private:
   FMOD::ChannelGroup *m_masterGroup = nullptr;
   FMOD::ChannelGroup *m_bgmGroup = nullptr;
   FMOD::ChannelGroup *m_sfxGroup = nullptr;
+  bool m_comInitialized = false; ///< True if we called CoInitializeEx; paired CoUninitialize in shutdown().
 
   std::unordered_map<std::string, SoundProfile> m_soundProfiles;
   std::unordered_map<std::string, FMOD::Sound *> m_sounds;

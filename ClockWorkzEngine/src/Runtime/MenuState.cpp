@@ -385,6 +385,7 @@ void MenuState::update(double /*dt*/) {
 }
 
 void MenuState::render(Core::Time *timer) {
+  (void) timer;
   int w = m_window.width();
   int h = m_window.height();
   glViewport(0, 0, w, h);
@@ -407,8 +408,7 @@ void MenuState::render(Core::Time *timer) {
 
   m_renderer->endScenePass();
 
-  // m_renderer->beginScenePass(m_cam->viewProj());
-  // m_logo.render(*m_renderer);
+   // m_logo.render(*m_renderer);
   // m_renderer->endScenePass();
 
   // Later, retrieve them anywhere:

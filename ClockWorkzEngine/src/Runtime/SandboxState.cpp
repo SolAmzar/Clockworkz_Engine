@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 
 #include "Runtime/SandboxState.hpp"
+#include "Memory/MemoryDebugPanel.hpp"
 
 // MUST be included before any other OpenGL-related headers
 #include "Platform/WindowManager.hpp"
@@ -1715,6 +1716,8 @@ void SandboxState::renderImGui(Core::Time *timer) {
   renderTilePalette();
   renderUndoRedoPanel();
   renderUnsupportedDropPopup();
+
+  Memory::MemoryDebugPanel::draw();
 
   // End DockSpace
   Core::Engine::Get().imguiManager().endDockspace();
