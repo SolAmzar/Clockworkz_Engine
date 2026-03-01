@@ -1,14 +1,19 @@
 # engine/CMakeLists.txt — ClockWorkzEngine static library
 #
-# STEP 1 (temporary): sources are still in the top-level src/ and include/.
-# Later steps will move them into engine/src/ and engine/include/ progressively.
+# STEP 2: Pure engine subsystems live in engine/src/ and engine/include/.
+# Remaining game-specific and not-yet-moved files still live in top-level src/ and include/.
+# Both locations are globbed; game-specific files are split out later (Steps 3-9).
 
-# --- Sources & Headers (temporarily from top-level src/ and include/) ---
+# --- Sources & Headers ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
   "${CMAKE_SOURCE_DIR}/src/*.cpp"
   "${CMAKE_SOURCE_DIR}/src/*.c"
 )
 file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
   "${CMAKE_SOURCE_DIR}/include/*.h"
   "${CMAKE_SOURCE_DIR}/include/*.hpp"
 )
@@ -51,8 +56,12 @@ endif()
 # --- Include directories ---
 # SYSTEM PUBLIC: game inherits these; SYSTEM suppresses 3rd-party warnings
 target_include_directories(ClockWorkzEngine
-  SYSTEM PUBLIC  "${CMAKE_SOURCE_DIR}/include"
-  PRIVATE        "${CMAKE_SOURCE_DIR}/src"
+  SYSTEM PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/include"
+  PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_SOURCE_DIR}/src"
 )
 
 # --- Link libraries (PUBLIC so the game executable inherits them) ---
@@ -73,5 +82,36 @@ else()
 endif()
 
 # --- Source groups for Visual Studio IDE ---
-source_group(TREE "${CMAKE_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${ENGINE_HEADERS})
-source_group(TREE "${CMAKE_SOURCE_DIR}/src"     PREFIX "Source Files" FILES ${ENGINE_SOURCES})
+# Split file lists by their root so each source_group gets only files under its TREE root.
+set(_ENGINE_HEADERS_LOCAL  "")
+set(_ENGINE_HEADERS_TOPLVL "")
+foreach(_f IN LISTS ENGINE_HEADERS)
+  if(_f MATCHES "^${CMAKE_CURRENT_SOURCE_DIR}/")
+    list(APPEND _ENGINE_HEADERS_LOCAL  "${_f}")
+  else()
+    list(APPEND _ENGINE_HEADERS_TOPLVL "${_f}")
+  endif()
+endforeach()
+
+set(_ENGINE_SOURCES_LOCAL  "")
+set(_ENGINE_SOURCES_TOPLVL "")
+foreach(_f IN LISTS ENGINE_SOURCES)
+  if(_f MATCHES "^${CMAKE_CURRENT_SOURCE_DIR}/")
+    list(APPEND _ENGINE_SOURCES_LOCAL  "${_f}")
+  else()
+    list(APPEND _ENGINE_SOURCES_TOPLVL "${_f}")
+  endif()
+endforeach()
+
+if(_ENGINE_HEADERS_LOCAL)
+  source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include" PREFIX "Engine/Headers" FILES ${_ENGINE_HEADERS_LOCAL})
+endif()
+if(_ENGINE_HEADERS_TOPLVL)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/include" PREFIX "Top/Headers" FILES ${_ENGINE_HEADERS_TOPLVL})
+endif()
+if(_ENGINE_SOURCES_LOCAL)
+  source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "Engine/Sources" FILES ${_ENGINE_SOURCES_LOCAL})
+endif()
+if(_ENGINE_SOURCES_TOPLVL)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/src" PREFIX "Top/Sources" FILES ${_ENGINE_SOURCES_TOPLVL})
+endif()
