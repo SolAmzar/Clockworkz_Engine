@@ -19,12 +19,13 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 /******************************************************************************/
 
 #pragma once
+#include <functional>
 #include <memory>
 #include "Graphics/ImGuiManager.hpp"
 #include "Core/Logger.hpp"
 #include "Core/EventBus.hpp"
 #include "Core/Event.hpp"
-namespace Runtime { class GameStateManager; class MenuState; }
+namespace Runtime { class GameStateManager; class GameState; }
 
 namespace Audio { class AudioManager; class SurfaceAudioSystem; }
 
@@ -48,6 +49,16 @@ namespace Core {
 		Engine();
 		~Engine();
 		int Run();
+
+		// Register a factory called after init() inside Run(), once config is loaded.
+		// Use this to push the initial game state without touching engine internals.
+		using BootstrapFn = std::function<std::shared_ptr<Runtime::GameState>(Engine&)>;
+		void setBootstrap(BootstrapFn fn);
+
+		Runtime::GameStateManager& gsm() { return *m_gsm; }
+
+		// Read the configured start state name — only valid after Run() has started init.
+		const std::string& startState() const;
 
 		Audio::AudioManager& audio();
 		Audio::AudioManager const& audio() const;
@@ -114,5 +125,6 @@ namespace Core {
 		bool m_pausedByFocus;
 		bool m_quitRequested{ false };
 		float m_quitFadeTimer{ 0.0f };
+		BootstrapFn m_bootstrap;
 	};
 }

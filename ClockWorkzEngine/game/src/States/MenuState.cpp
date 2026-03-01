@@ -16,7 +16,7 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/MenuState.hpp"
+#include "States/MenuState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/SoundManager.hpp"
@@ -28,7 +28,7 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/PlayState.hpp"
+#include "States/PlayState.hpp"
 #include <Core/Engine.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -44,14 +44,14 @@ reserved.
 #include <thread>
 
 #include <Gameplay/Components/SpriteRenderer.hpp>
-#include <Runtime/SandboxState.hpp>
-#include <Runtime/SpriteEditorState.hpp>
+#include "States/SandboxState.hpp"
+#include "States/SpriteEditorState.hpp"
 
 using Assets::ResourceManager;
 using Graphics::Shader;
 using namespace Gameplay;
-#include "Runtime/Level1State.hpp"
-#include "Runtime/TestLevelState.hpp"
+#include "States/Level1State.hpp"
+#include "States/TestLevelState.hpp"
 
 namespace Runtime {
 

@@ -345,7 +345,7 @@ macro(import_fmod target)
       set_target_properties(${target} PROPERTIES BUILD_RPATH "$ORIGIN")
     endif()
 
-    target_link_libraries(${target} PRIVATE FMOD::fmod)
+    target_link_libraries(${target} PUBLIC FMOD::fmod)
   endif()
 endmacro()
 

@@ -40,10 +40,8 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
+#include "Runtime/GameState.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
-#include "Runtime/SandboxState.hpp"
-#include "Runtime/SpriteState.hpp"
 #include "Scripting/LuaManager.hpp"
 #include <GLFW/glfw3.h>
 #include <exception>
@@ -64,6 +62,14 @@ Engine::Engine() {
 Engine::~Engine() {
   s_instance = nullptr; // clear singleton instance
   shutdown();
+}
+
+void Engine::setBootstrap(BootstrapFn fn) {
+  m_bootstrap = std::move(fn);
+}
+
+const std::string& Engine::startState() const {
+  return m_config->startState;
 }
 
 Engine &Engine::Get() {
@@ -287,18 +293,7 @@ void Engine::update(double dt) {
   // Check if Fixed Delta time (Uncomment if you want to check)
   /*std::cout << m_time->fixedDelta() << std::endl;*/
 
-  if (!m_booted) {
-    // Initial State when Run Game, start off from Sandbox State for ECS testing
-    // Push SandboxState once
-    if (m_config->startState == "Sandbox") {
-      m_gsm->push(std::make_shared<Runtime::SandboxState>(*m_input, *m_gsm));
-    } else {
-      m_gsm->push(std::make_shared<Runtime::MenuState>(*m_gsm, *m_input,
-                                                       *m_window, *m_audio));
-    }
-
-    m_booted = true;
-  }
+  // Initial state is pushed inside Run() via the bootstrap factory.
   m_audio->update(dt); // Update the audio manager class
   m_input->update(); // Update the input manager class
   if (m_input->wasKeyPressed(GLFW_KEY_F11)) {
@@ -351,6 +346,10 @@ int Engine::Run() {
   try {
     if (!init())
       return -1;
+
+    // Push the initial game state via the bootstrap factory registered by main().
+    if (m_bootstrap)
+      m_gsm->push(m_bootstrap(*this));
 
     // `m_running` is a private data member of type bool, and was set to true by
     // `init()`.

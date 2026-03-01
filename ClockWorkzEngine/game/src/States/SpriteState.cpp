@@ -14,7 +14,7 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/SpriteState.hpp"
+#include "States/SpriteState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Audio/AudioManager.hpp"
@@ -29,7 +29,7 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
+#include "States/MenuState.hpp"
 #include "Runtime/Scene.hpp"
 #include "Runtime/SceneManager.hpp"
 #include <Assets/TextureManager.hpp>

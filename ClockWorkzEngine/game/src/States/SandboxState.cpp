@@ -10,7 +10,7 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/SandboxState.hpp"
+#include "States/SandboxState.hpp"
 #include "Memory/MemoryDebugPanel.hpp"
 
 // MUST be included before any other OpenGL-related headers
@@ -59,7 +59,7 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Platform/InputManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
+#include "States/MenuState.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "Systems/AISystem.hpp"
 #include "Systems/AnimationSystem.hpp"

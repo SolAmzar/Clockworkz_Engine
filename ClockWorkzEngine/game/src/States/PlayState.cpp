@@ -20,7 +20,7 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/PlayState.hpp"
+#include "States/PlayState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/SoundManager.hpp"
@@ -45,10 +45,10 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
-#include "Runtime/GameOverState.hpp"
+#include "States/GameOverState.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
-#include "Runtime/PauseState.hpp"
+#include "States/MenuState.hpp"
+#include "States/PauseState.hpp"
 #include "Runtime/Scene.hpp"
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/SceneSerializer.hpp"

@@ -10,14 +10,14 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/GameOverState.hpp"
+#include "States/GameOverState.hpp"
 #include "Core/Engine.hpp"
 #include "IMGUI/imgui.h"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
-#include "Runtime/PlayState.hpp"
+#include "States/MenuState.hpp"
+#include "States/PlayState.hpp"
 #include <GLFW/glfw3.h>
 #include <iostream>
 

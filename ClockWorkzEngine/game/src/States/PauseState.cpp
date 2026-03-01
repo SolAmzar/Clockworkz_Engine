@@ -10,7 +10,7 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/PauseState.hpp"
+#include "States/PauseState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Audio/AudioManager.hpp"
@@ -22,8 +22,8 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
-#include "Runtime/PlayState.hpp"
+#include "States/MenuState.hpp"
+#include "States/PlayState.hpp"
 #include <Assets/TextureManager.hpp>
 #include <GLFW/glfw3.h>
 #include <Gameplay/Components/SpriteRenderer.hpp>

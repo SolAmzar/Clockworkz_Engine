@@ -10,7 +10,7 @@ reserved.
 */
 /******************************************************************************/
 
-#include "Runtime/TestLevelState.hpp"
+#include "States/TestLevelState.hpp"
 
 // Must be included before other OpenGL headers
 #include "Platform/WindowManager.hpp"
@@ -36,8 +36,8 @@ reserved.
 #include "Graphics/Shader.hpp"
 #include "Platform/InputManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "Runtime/MenuState.hpp"
-#include "Runtime/PauseState.hpp"
+#include "States/MenuState.hpp"
+#include "States/PauseState.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <algorithm>
 #include <cmath>

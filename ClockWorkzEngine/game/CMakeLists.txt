@@ -16,9 +16,11 @@ file(GLOB_RECURSE GAME_HEADERS CONFIGURE_DEPENDS
 add_executable(LightsOut ${GAME_SOURCES} ${GAME_HEADERS})
 
 # --- Include directories ---
-# Engine's PUBLIC includes are already inherited via target_link_libraries below.
+# Engine's PUBLIC includes (engine/include, top-level include) are inherited via
+# target_link_libraries. Add game-local include roots here.
 target_include_directories(LightsOut PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
 # --- Link against engine (inherits engine's PUBLIC includes + libraries) ---

@@ -83,12 +83,12 @@ function(import_lua TARGET_NAME)
         target_compile_options(lua_static PRIVATE -w)
     endif()
 
-    # Link Lua and Sol2 to the target
-    target_link_libraries(${TARGET_NAME} PRIVATE lua_static)
-    target_link_libraries(${TARGET_NAME} PRIVATE sol2::sol2)
-    
-    # Make Lua headers available
-    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${LUA_SRC_DIR})
+    # Link Lua and Sol2 to the target (PUBLIC so headers propagate to consumers)
+    target_link_libraries(${TARGET_NAME} PUBLIC lua_static)
+    target_link_libraries(${TARGET_NAME} PUBLIC sol2::sol2)
+
+    # Make Lua headers available to consumers
+    target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${LUA_SRC_DIR})
 
     # Treat Sol2 headers as external to suppress their warnings only
     if(MSVC)
