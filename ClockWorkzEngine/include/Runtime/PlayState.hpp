@@ -26,6 +26,14 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
 #include "Runtime/SceneManager.hpp"
+#include "Systems/AISystem.hpp"
+#include "Systems/ActivationSystem.hpp"
+#include "Systems/BatterySystem.hpp"
+#include "Systems/DoorSwingSystem.hpp"
+#include "Systems/DoorSystem.hpp"
+#include "Systems/FragmentSystem.hpp"
+#include "Systems/LightExposureSystem.hpp"
+#include "Systems/PlayerSystem.hpp"
 #include <map>
 #include <memory>
 #include <string>
@@ -150,6 +158,16 @@ private:
   std::map<uint32_t, ECS::Entity> m_enemyMap;
   void clearEnemyAI();
   void syncEnemyTransforms();
+
+  // Game-specific ECS systems (removed from Scene, owned by PlayState)
+  Systems::PlayerSystem m_playerSystem;
+  Systems::AISystem m_aiSystem;
+  Systems::BatterySystem m_batterySystem;
+  Systems::FragmentSystem m_fragmentSystem;
+  Systems::LightExposureSystem m_lightSystem;
+  Systems::DoorSystem m_doorSystem;
+  Systems::DoorSwingSystem m_doorSwingSystem;
+  Systems::ActivationSystem m_activationSystem;
 };
 
 } // namespace Runtime

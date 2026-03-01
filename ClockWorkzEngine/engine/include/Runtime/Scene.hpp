@@ -11,20 +11,12 @@
 #include "Math/Vec2.hpp"
 #include "Platform/InputManager.hpp"
 
-// System Includes
+// Engine System Includes (game-specific systems live in PlayState)
 #include "Gameplay/Physics2D.hpp"
-#include "Systems/AISystem.hpp"
-#include "Systems/ActivationSystem.hpp"
 #include "Systems/AnimationSystem.hpp"
 #include "Systems/AudioSystem.hpp"
-#include "Systems/BatterySystem.hpp"
 #include "Systems/CollisionSystem.hpp"
-#include "Systems/DoorSwingSystem.hpp"
-#include "Systems/DoorSystem.hpp"
-#include "Systems/FragmentSystem.hpp"
-#include "Systems/LightExposureSystem.hpp"
 #include "Systems/PhysicsSystem.hpp"
-#include "Systems/PlayerSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "Systems/StateMachineSystem.hpp"
 #include "Systems/ScriptSystem.hpp"
@@ -77,17 +69,9 @@ public:
   bool m_renderSystemEnabled{true};
   bool m_physicsSystemEnabled{true};
   bool m_collisionSystemEnabled{true};
-  bool m_batterySystemEnabled{true};
-  bool m_lightSystemEnabled{true};
-  bool m_fragmentSystemEnabled{true};
-  bool m_aiSystemEnabled{true};
   bool m_audioSystemEnabled{true};
   bool m_animSystemEnabled{true};
   bool m_stateMachineSystemEnabled{true};
-  bool m_playerSystemEnabled{true};
-  bool m_doorSystemEnabled{true};
-  bool m_doorSwingSystemEnabled{true};
-  bool m_activationSystemEnabled{true};
   bool m_textRenderSystemEnabled{true};
   bool m_scriptSystemEnabled{true};
 
@@ -106,31 +90,21 @@ public:
 private:
   ECS::World m_world;
 
-  // Systems
+  // --- Engine Systems ---
   Systems::RenderSystem m_renderSystem;
   Systems::PhysicsSystem m_physicsSystem;
-  // --- Game Logic State ---
-  float m_playerDeathTimer = -1.0f;
-  float m_deathDuration =
-      0.0f; // Track how long player has been dead for fade-in
-  std::string m_pendingLevel;
-
-  // --- Systems ---
   Gameplay::Physics2D m_legacyPhysics;
   Systems::CollisionSystem m_collisionSystem;
-  Systems::BatterySystem m_batterySystem;
-  Systems::LightExposureSystem m_lightSystem;
-  Systems::FragmentSystem m_fragmentSystem;
-  Systems::AISystem m_aiSystem;
   Systems::AudioSystem m_audioSystem;
   Systems::AnimationSystem m_animSystem;
   Systems::StateMachineSystem m_stateMachineSystem;
-  Systems::PlayerSystem m_playerSystem;
-  Systems::DoorSystem m_doorSystem;
-  Systems::DoorSwingSystem m_doorSwingSystem;
-  Systems::ActivationSystem m_activationSystem;
   Systems::TextRenderSystem m_textRenderSystem;
   Systems::ScriptSystem m_scriptSystem;
+
+  // --- Game Logic State (set/read by game states) ---
+  float m_playerDeathTimer = -1.0f;
+  float m_deathDuration = 0.0f;
+  std::string m_pendingLevel;
 
   std::string m_name;
   std::string m_bgm;       // Background music track name

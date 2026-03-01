@@ -167,24 +167,16 @@ bool Scene::LoadFromFile(const std::string &path) {
 }
 
 void Scene::Update(double dt, Platform::InputManager &input) {
+  (void)input; // input used by game-specific systems in PlayState/SandboxState
   // Get layer enabled flags pointer for systems
   const std::vector<bool> *layerFlags =
       m_layerEnabled.empty() ? nullptr : &m_layerEnabled;
 
+  // Engine systems
   if (m_physicsSystemEnabled)
     m_physicsSystem.update(m_world, dt, layerFlags);
   if (m_collisionSystemEnabled)
     m_collisionSystem.update(m_world, layerFlags);
-  if (m_activationSystemEnabled)
-    m_activationSystem.update(m_world, m_collisionSystem);
-  if (m_batterySystemEnabled)
-    m_batterySystem.update(m_world, dt);
-  if (m_lightSystemEnabled)
-    m_lightSystem.update(m_world, dt);
-  if (m_fragmentSystemEnabled)
-    m_fragmentSystem.update(m_world, dt);
-  if (m_aiSystemEnabled)
-    m_aiSystem.update(m_world, dt);
   if (m_scriptSystemEnabled)
     m_scriptSystem.update(m_world, dt);
   if (m_audioSystemEnabled)
@@ -193,16 +185,8 @@ void Scene::Update(double dt, Platform::InputManager &input) {
     m_animSystem.update(m_world, dt);
   if (m_stateMachineSystemEnabled)
     m_stateMachineSystem.update(m_world, dt);
-
-  // Player System needs input
-  if (m_playerSystemEnabled)
-    m_playerSystem.update(m_world, dt, input, layerFlags);
-
-  if (m_doorSystemEnabled)
-    m_doorSystem.update(m_world, dt);
-
-  if (m_doorSwingSystemEnabled)
-    m_doorSwingSystem.update(m_world, dt);
+  // Note: game-specific systems (PlayerSystem, AISystem, BatterySystem, etc.)
+  // are called by the game state (PlayState) after this update.
 
   // --- Update Legacy GameObjects ---
   for (auto &obj : m_gameObjects) {

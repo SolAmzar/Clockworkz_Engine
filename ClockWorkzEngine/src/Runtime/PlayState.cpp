@@ -498,8 +498,23 @@ void PlayState::update(double dt) {
   // Syafiq - Player movement
   if (auto *scene = m_scenes.current()) {
     m_scenes.update(dt, m_input);
-    // object unique name to array of objects. objMap["Player"][0] <- since only
-    // 1 player. index 0 will work.
+
+    // --- Game-specific systems (moved from Scene::Update) ---
+    {
+      auto &world = scene->GetWorld();
+      auto &collisions = scene->GetCollisionSystem();
+      const std::vector<bool> *layerFlags =
+          scene->m_layerEnabled.empty() ? nullptr : &scene->m_layerEnabled;
+
+      m_activationSystem.update(world, collisions);
+      m_batterySystem.update(world, dt);
+      m_lightSystem.update(world, dt);
+      m_fragmentSystem.update(world, dt);
+      m_aiSystem.update(world, dt);
+      m_playerSystem.update(world, dt, m_input, layerFlags);
+      m_doorSystem.update(world, dt);
+      m_doorSwingSystem.update(world, dt);
+    }
 
     // ---- CAMERA FOLLOW (ECS Based) ----
     // This ensures camera tracks player even if "m_player" GameObject pointer

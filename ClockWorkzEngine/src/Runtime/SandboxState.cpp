@@ -511,9 +511,20 @@ void SandboxState::update(double dt) {
   }
 
   // Update Scene Logic
-  // Update Scene Logic
   if (!m_isPaused) {
     m_scene.Update(dt, m_input);
+
+    // Game-specific systems (toggled via the Systems debug window)
+    auto &world = m_scene.GetWorld();
+    auto &collisions = m_scene.GetCollisionSystem();
+    const std::vector<bool> *layerFlags =
+        m_scene.m_layerEnabled.empty() ? nullptr : &m_scene.m_layerEnabled;
+    m_activationSystem.update(world, collisions);
+    if (m_batterySystemEnabled)  m_batterySystem.update(world, dt);
+    if (m_lightSystemEnabled)    m_lightSystem.update(world, dt);
+    if (m_fragmentSystemEnabled) m_fragmentSystem.update(world, dt);
+    if (m_aiSystemEnabled)       m_aiSystem.update(world, dt);
+    if (m_playerSystemEnabled)   m_playerSystem.update(world, dt, m_input, layerFlags);
   }
 
   // Camera Logic
@@ -4928,14 +4939,14 @@ void SandboxState::renderSystemsWindow() {
   ImGui::Checkbox("RenderSystem", &m_scene.m_renderSystemEnabled);
   ImGui::Checkbox("PhysicsSystem", &m_scene.m_physicsSystemEnabled);
   ImGui::Checkbox("CollisionSystem", &m_scene.m_collisionSystemEnabled);
-  ImGui::Checkbox("BatterySystem", &m_scene.m_batterySystemEnabled);
-  ImGui::Checkbox("LightExposureSystem", &m_scene.m_lightSystemEnabled);
-  ImGui::Checkbox("FragmentSystem", &m_scene.m_fragmentSystemEnabled);
-  ImGui::Checkbox("AISystem", &m_scene.m_aiSystemEnabled);
+  ImGui::Checkbox("BatterySystem", &m_batterySystemEnabled);
+  ImGui::Checkbox("LightExposureSystem", &m_lightSystemEnabled);
+  ImGui::Checkbox("FragmentSystem", &m_fragmentSystemEnabled);
+  ImGui::Checkbox("AISystem", &m_aiSystemEnabled);
   ImGui::Checkbox("AudioSystem", &m_scene.m_audioSystemEnabled);
   ImGui::Checkbox("AnimationSystem", &m_scene.m_animSystemEnabled);
   ImGui::Checkbox("StateMachineSystem", &m_scene.m_stateMachineSystemEnabled);
-  ImGui::Checkbox("PlayerSystem", &m_scene.m_playerSystemEnabled);
+  ImGui::Checkbox("PlayerSystem", &m_playerSystemEnabled);
   ImGui::Checkbox("TextRenderSystem", &m_scene.m_textRenderSystemEnabled);
 
   ImGui::End();

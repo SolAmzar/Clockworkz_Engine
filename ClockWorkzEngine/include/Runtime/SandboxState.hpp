@@ -29,6 +29,14 @@ reserved.
 #include "Graphics/FrameBuffer.hpp"
 #include "Runtime/Scene.hpp"
 #include "SandboxCommands.hpp"
+#include "Systems/AISystem.hpp"
+#include "Systems/ActivationSystem.hpp"
+#include "Systems/BatterySystem.hpp"
+#include "Systems/DoorSwingSystem.hpp"
+#include "Systems/DoorSystem.hpp"
+#include "Systems/FragmentSystem.hpp"
+#include "Systems/LightExposureSystem.hpp"
+#include "Systems/PlayerSystem.hpp"
 #include "UndoableImGui.hpp"
 #include <filesystem>
 #include <memory>
@@ -81,6 +89,23 @@ private:
 
   // Scene (Runtime Logic)
   Scene m_scene;
+
+  // Game-specific systems (owned by SandboxState, not Scene)
+  Systems::PlayerSystem m_playerSystem;
+  Systems::AISystem m_aiSystem;
+  Systems::BatterySystem m_batterySystem;
+  Systems::FragmentSystem m_fragmentSystem;
+  Systems::LightExposureSystem m_lightSystem;
+  Systems::DoorSystem m_doorSystem;
+  Systems::DoorSwingSystem m_doorSwingSystem;
+  Systems::ActivationSystem m_activationSystem;
+
+  // Game system toggles (for the debug Systems window)
+  bool m_batterySystemEnabled{false};
+  bool m_lightSystemEnabled{false};
+  bool m_fragmentSystemEnabled{false};
+  bool m_aiSystemEnabled{false};
+  bool m_playerSystemEnabled{false};
 
   bool m_showSystemsWindow{true};
 
