@@ -269,10 +269,8 @@ macro(import_fmod target)
         IMPORTED_LOCATION_MINSIZEREL        "${FMOD_DLL_RELEASE}"
       )
 
-      add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
-          "$<TARGET_FILE_DIR:${PROJECT_NAME}>/")
+      # DLL copy is handled by the game executable's CMakeLists.txt
+      # (static libs don't have a meaningful runtime output directory)
 
     elseif(APPLE)
       set(_FMOD_LIBDIR_CANDIDATES
@@ -308,7 +306,7 @@ macro(import_fmod target)
           IMPORTED_LOCATION_DEBUG "${FMOD_DYLIB_RELEASE}")
       endif()
 
-      set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "@loader_path")
+      set_target_properties(${target} PROPERTIES BUILD_RPATH "@loader_path")
 
     else() # Linux
       set(_FMOD_LIBDIR_CANDIDATES
@@ -344,7 +342,7 @@ macro(import_fmod target)
           IMPORTED_LOCATION_DEBUG "${FMOD_SO_RELEASE}")
       endif()
 
-      set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "$ORIGIN")
+      set_target_properties(${target} PROPERTIES BUILD_RPATH "$ORIGIN")
     endif()
 
     target_link_libraries(${target} PRIVATE FMOD::fmod)
