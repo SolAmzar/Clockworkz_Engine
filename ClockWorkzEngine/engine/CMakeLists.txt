@@ -1,15 +1,14 @@
 # engine/CMakeLists.txt — ClockWorkzEngine static library
 #
-# STEP 2: Pure engine subsystems live in engine/src/ and engine/include/.
-# Remaining game-specific and not-yet-moved files still live in top-level src/ and include/.
-# Both locations are globbed; game-specific files are split out later (Steps 3-9).
+# All engine sources live in engine/src/ and engine/include/.
+# The top-level include/ is still on the include path because a small number of
+# engine files (Scene.cpp, SceneSerializer.cpp, EntityRef.cpp) reference game-specific
+# component headers that have not yet been fully decoupled.
 
 # --- Sources & Headers ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
-  "${CMAKE_SOURCE_DIR}/src/*.cpp"
-  "${CMAKE_SOURCE_DIR}/src/*.c"
 )
 file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
@@ -17,9 +16,6 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/include/*.h"
   "${CMAKE_SOURCE_DIR}/include/*.hpp"
 )
-
-# Exclude main.cpp — it belongs to the game executable
-list(FILTER ENGINE_SOURCES EXCLUDE REGEX ".*/src/main\\.cpp$")
 
 # --- Static library target ---
 add_library(ClockWorkzEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
@@ -58,10 +54,9 @@ endif()
 target_include_directories(ClockWorkzEngine
   SYSTEM PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/include"   # kept: engine files reference game headers here (known coupling)
   PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${CMAKE_SOURCE_DIR}/src"
 )
 
 # --- Link libraries (PUBLIC so the game executable inherits them) ---

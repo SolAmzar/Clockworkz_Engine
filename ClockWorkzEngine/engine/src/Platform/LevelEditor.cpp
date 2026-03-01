@@ -12,6 +12,7 @@ reserved.
 /******************************************************************************/
 
 #include "Platform/LevelEditor.hpp"
+#include "Audio/SurfaceAudioSystem.hpp"
 #include "Core/Logger.hpp"
 #include "Core/Time.hpp"
 #include "Gameplay/GameObject.hpp"
