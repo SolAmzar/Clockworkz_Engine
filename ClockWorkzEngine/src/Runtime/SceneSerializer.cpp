@@ -138,7 +138,8 @@ static json SerializeWorld(ECS::World &world) {
     if (auto *ai = world.getComponent<Components::EnemyAI>(entity)) {
       obj["components"]["enemyAI"] = {{"detectionRadius", ai->detectionRadius},
                                       {"chaseSpeed", ai->chaseSpeed},
-                                      {"patrolSpeed", ai->patrolSpeed}};
+                                      {"patrolSpeed", ai->patrolSpeed},
+                                      {"attractedToLight", ai->attractedToLight}};
     }
 
     // StateMachine
@@ -467,6 +468,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         ai.detectionRadius = aic.value("detectionRadius", 300.f);
         ai.chaseSpeed = aic.value("chaseSpeed", 100.f);
         ai.patrolSpeed = aic.value("patrolSpeed", 50.f);
+        ai.attractedToLight = aic.value("attractedToLight", false);
         world.addComponent(entity, ai);
       }
 

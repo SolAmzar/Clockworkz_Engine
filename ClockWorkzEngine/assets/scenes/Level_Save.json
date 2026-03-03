@@ -42391,8 +42391,9 @@
                     "width": 100.0
                 },
                 "enemyAI": {
+                    "attractedToLight": true,
                     "chaseSpeed": 150.0,
-                    "detectionRadius": 400.0,
+                    "detectionRadius": 300.0,
                     "patrolSpeed": 50.0
                 },
                 "health": {
@@ -42439,8 +42440,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 841.939208984375,
-                        "y": 88.69573211669922
+                        "x": 850.0,
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -44768,6 +44769,7 @@
                     "width": 100.0
                 },
                 "enemyAI": {
+                    "attractedToLight": false,
                     "chaseSpeed": 150.0,
                     "detectionRadius": 400.0,
                     "patrolSpeed": 50.0
@@ -44916,6 +44918,7 @@
                     "width": 100.0
                 },
                 "enemyAI": {
+                    "attractedToLight": false,
                     "chaseSpeed": 150.0,
                     "detectionRadius": 400.0,
                     "patrolSpeed": 50.0

@@ -3172,9 +3172,9 @@ void SandboxState::renderComponentWindow() {
           });
           auto *firstAI = world.getComponent<Components::EnemyAI>(firstEntity);
           if (firstAI) {
-            const char *states[] = {"Patrol", "Chase", "Alert", "Death"};
+            const char *states[] = {"Patrol", "Chase", "FlashlightChase", "Alert", "Death"};
             int s = (int)firstAI->state;
-            if (ImGui::Combo("State##multi", &s, states, 4)) {
+            if (ImGui::Combo("State##multi", &s, states, 5)) {
               for (auto &se : selEntities) {
                 auto *ai = world.getComponent<Components::EnemyAI>(se);
                 if (ai)
@@ -3188,6 +3188,15 @@ void SandboxState::renderComponentWindow() {
                 auto *ai = world.getComponent<Components::EnemyAI>(se);
                 if (ai)
                   ai->detectionRadius = detectRadius;
+              }
+            }
+
+            bool attracted = firstAI->attractedToLight;
+            if (ImGui::Checkbox("Attracted To Light##multi", &attracted)) {
+              for (auto &se : selEntities) {
+                auto *ai = world.getComponent<Components::EnemyAI>(se);
+                if (ai)
+                  ai->attractedToLight = attracted;
               }
             }
           }
@@ -3962,11 +3971,12 @@ void SandboxState::renderComponentWindow() {
   if (ImGui::CollapsingHeader("EnemyAI")) {
     auto *ai = world.getComponent<Components::EnemyAI>(entity);
     if (ai) {
-      const char *states[] = {"Patrol", "Chase", "Alert", "Death"};
+      const char *states[] = {"Patrol", "Chase", "FlashlightChase", "Alert", "Death"};
       int s = (int)ai->state;
-      if (ImGui::Combo("State", &s, states, 4))
+      if (ImGui::Combo("State", &s, states, 5))
         ai->state = (Components::AIState)s;
       ImGui::InputFloat("Detect Radius", &ai->detectionRadius);
+      ImGui::Checkbox("Attracted To Light", &ai->attractedToLight);
       if (ImGui::Button("Remove EnemyAI"))
         world.removeComponent<Components::EnemyAI>(entity);
     } else {
