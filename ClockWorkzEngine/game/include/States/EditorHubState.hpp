@@ -1,0 +1,71 @@
+/******************************************************************************/
+/*!
+\file           EditorHubState.hpp
+\project        ClockWorkz Engine
+\author         [Syafiq]
+\brief          EditorHubState: Unity-style project launcher hub.
+                Serves as the engine's default entry point.
+                Allows opening existing projects or creating new ones.
+
+All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+#pragma once
+#include "Runtime/GameState.hpp"
+#include <string>
+#include <vector>
+
+namespace Platform {
+class InputManager;
+}
+namespace Core {
+class Time;
+}
+namespace Runtime {
+class GameStateManager;
+}
+
+namespace Runtime {
+
+class EditorHubState final : public GameState {
+public:
+    EditorHubState(GameStateManager& gsm, Platform::InputManager& input);
+
+    const char* name() const override { return "EditorHub"; }
+
+    void onEnter()  override;
+    void onExit()   override;
+    void update(double dt) override;
+    void render(Core::Time* timer) override;
+    void renderImGui(Core::Time* timer) override;
+
+private:
+    struct ProjectEntry {
+        std::string name;
+        std::string path;          // relative to getSourceRoot(), e.g. "assets" or "projects/MyGame"
+        std::string initialScene;  // relative to project path, e.g. "scenes/LightsOut001.json"
+        std::string description;
+    };
+
+    void loadRegistry();
+    void saveRegistry();
+    void openProject(const ProjectEntry& project);
+    void createNewProject(const std::string& projectName);
+    std::string resolveAbsoluteScenePath(const ProjectEntry& project) const;
+    static std::string getSourceRoot();
+
+    GameStateManager&         m_gsm;
+    Platform::InputManager&   m_input;
+    std::vector<ProjectEntry> m_projects;
+    int                       m_selectedIdx{-1};
+    char                      m_newProjectNameBuf[128]{};
+    bool                      m_showErrorPopup{false};
+    std::string               m_errorMessage;
+
+    // WARNING: Deferred project open — set in renderImGui(), 
+    // processed in update(), to avoid switching state mid-ImGui-frame.
+    int                       m_pendingOpenIdx{-1};
+};
+
+} // namespace Runtime

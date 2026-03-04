@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 
 #include "States/SandboxState.hpp"
+#include "States/EditorHubState.hpp"
 #include "Memory/MemoryDebugPanel.hpp"
 
 // MUST be included before any other OpenGL-related headers
@@ -317,6 +318,11 @@ static std::string importSoundAsset(const std::string &name,
 SandboxState::SandboxState(Platform::InputManager &input, GameStateManager &gsm)
     : m_input(input), m_gsm(gsm) {}
 
+SandboxState::SandboxState(Platform::InputManager &input, GameStateManager &gsm,
+                           std::string initialScenePath)
+    : m_input(input), m_gsm(gsm),
+      m_initialScenePath(std::move(initialScenePath)) {}
+
 SandboxState::~SandboxState() = default;
 
 void SandboxState::onEnter() {
@@ -353,6 +359,10 @@ void SandboxState::onEnter() {
 
   // Force reset dock layout on enter
   m_dockLayoutInitialized = false;
+
+  // If launched from EditorHubState, schedule the initial scene load
+  if (!m_initialScenePath.empty())
+    m_pendingLevel = m_initialScenePath;
 }
 
 void SandboxState::onExit() {
@@ -1616,7 +1626,12 @@ void SandboxState::renderDebugColliders(Graphics::RenderingManager &renderer) {
 }
 
 void SandboxState::loadLevel(const std::string &levelName) {
-  std::string path = "assets/scenes/" + levelName;
+  // Bare filename → prepend default scenes folder.
+  // Absolute/rooted path (contains '/' or '\') → use as-is (e.g. from EditorHub).
+  std::string path = (levelName.find('/') == std::string::npos &&
+                      levelName.find('\\') == std::string::npos)
+                         ? "assets/scenes/" + levelName
+                         : levelName;
   std::cout << "[Sandbox] Loading level: " << path << "\n";
 
   m_testEntities.clear();
@@ -4589,6 +4604,17 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
 
 void Runtime::SandboxState::renderToolbar() {
   ImGui::Begin("Toolbar");
+
+  if (ImGui::Button("Hub")) {
+    m_gsm.switchToAndClear(std::make_shared<EditorHubState>(
+        m_gsm, Core::Engine::Get().input()));
+  }
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("Return to Editor Hub");
+
+  ImGui::SameLine();
+  ImGui::Separator();
+  ImGui::SameLine();
 
   if (m_isPaused) {
     if (ImGui::Button("Play", ImVec2(50, 0))) {

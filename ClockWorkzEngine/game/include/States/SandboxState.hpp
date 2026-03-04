@@ -68,6 +68,8 @@ class GameStateManager;
 class SandboxState final : public GameState {
 public:
   explicit SandboxState(Platform::InputManager &input, GameStateManager &gsm);
+  SandboxState(Platform::InputManager &input, GameStateManager &gsm,
+               std::string initialScenePath);
   ~SandboxState();
 
   const char *name() const override { return "Sandbox"; }
@@ -318,7 +320,8 @@ private:
   void renderUnsupportedDropPopup();
 
   // Portal / Level Loading
-  std::string m_pendingLevel; // Restored for Editor logic
+  std::string m_pendingLevel;      // Restored for Editor logic
+  std::string m_initialScenePath; // Set by EditorHubState; loaded on first update
   void loadLevel(const std::string &levelName);
 };
 

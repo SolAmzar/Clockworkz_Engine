@@ -1,0 +1,10 @@
+{
+    "projects": [
+        {
+            "name": "Lights Out",
+            "path": "assets",
+            "initialScene": "scenes/LightsOut001.json",
+            "description": "The main Lights Out game project"
+        }
+    ]
+}
