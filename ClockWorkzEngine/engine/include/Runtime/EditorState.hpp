@@ -48,6 +48,9 @@ private:
     void renderViewport();
     void renderAssetBrowser();
     void renderSystemsWindow();
+    void renderLoadSceneWindow();
+    void renderStatsWindow();
+    void renderScriptsBrowser();
 
     // ----- Scene helpers -----
     void renderGrid();
@@ -116,6 +119,21 @@ private:
     bool                    m_pendingReturnToHub{false};
     bool                    m_pendingSave{false};
     bool                    m_pendingPlay{false};
+
+    // ----- Load scene window -----
+    char                    m_loadSceneFilter[128]{};
+    std::string             m_pendingLoadPath;
+
+    // ----- Asset rename/delete -----
+    std::string             m_renamingAsset;
+    char                    m_renameAssetBuf[128]{};
+    std::string             m_deletingAsset;
+
+    // ----- Scripts browser -----
+    char                    m_newScriptBuf[128]{};
+    std::string             m_renamingScriptPath;
+    char                    m_renameScriptBuf[256]{};
+    std::string             m_deletingScriptPath;
 };
 
 } // namespace Runtime

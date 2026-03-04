@@ -17,6 +17,11 @@ reserved.
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
 #include "Assets/TextureManager.hpp"
+#include "Assets/ResourceManager.hpp"
+#include "Assets/FontManager.hpp"
+#include "Graphics/Shader.hpp"
+#include "Memory/MemoryDebugRegistry.hpp"
+#include "Memory/IPoolStats.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Tag.hpp"
 #include "Components/SpriteRenderer.hpp"
@@ -33,9 +38,37 @@ reserved.
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
+#include <fstream>
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
+#  include <commdlg.h>
+#endif
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+
+// Engine components
+#include "Components/Velocity.hpp"
+#include "Components/AudioSource.hpp"
+#include "Components/SpriteAnimator.hpp"
+#include "Components/StateMachine.hpp"
+#include "Components/TextRenderer.hpp"
+#include "Components/LuaScript.hpp"
+// Game components
+#include "Components/Health.hpp"
+#include "Components/Battery.hpp"
+#include "Components/LightExposure.hpp"
+#include "Components/Fragment.hpp"
+#include "Components/EnemyAI.hpp"
+#include "Components/FragmentCollector.hpp"
+#include "Components/Torch.hpp"
+#include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
+#include "Components/ActivationZone.hpp"
+#include "Components/Portal.hpp"
+#include "Components/PlayerController.hpp"
 
 namespace Runtime {
 
@@ -64,6 +97,14 @@ static vec2 screenToWorld(const vec2& screenPos, const vec2& camPos,
     return camPos + vec2(centered.x / zoom, -centered.y / zoom);
 }
 
+template<typename T>
+static void addCompEntry(const char* label, ECS::Entity entity, ECS::World& world) {
+    bool has = world.hasComponent<T>(entity);
+    if (ImGui::MenuItem(label, nullptr, false, !has))
+        world.addComponent(entity, T{});
+    if (has) { ImGui::SameLine(); ImGui::TextDisabled("(present)"); }
+}
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
@@ -83,10 +124,22 @@ void EditorState::onEnter() {
     m_undoStack.clear();
     m_redoStack.clear();
 
+    // Load shaders required by the rendering passes (same as SandboxState)
+    Assets::ResourceManager<Graphics::Shader>::Load(
+        "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
+    Assets::ResourceManager<Graphics::Shader>::Load(
+        "light",   "assets/shaders/light.vert",   "assets/shaders/light.frag");
+    Assets::ResourceManager<Graphics::Shader>::Load(
+        "text",    "assets/shaders/text.vert",     "assets/shaders/text.frag");
+    Assets::ResourceManager<Assets::FontManager>::Load(
+        "Debug", "assets/fonts/MANIC1.TTF", 24);
+
     m_scene.Init();
 
+    // Defer the initial scene load to the first update() tick, so all
+    // engine systems (audio, etc.) are running before Clear()/Deserialize.
     if (!m_sceneFilePath.empty())
-        loadScene(m_sceneFilePath);
+        m_pendingLoadPath = m_sceneFilePath;
 
     auto& camera = Core::Engine::Get().camera();
     m_editorCamPos  = {0.0f, 0.0f};
@@ -104,6 +157,7 @@ void EditorState::onExit() {
     m_gizmoActiveAxis       = -1;
     m_isRenaming            = false;
     m_dockLayoutInitialized = false;
+    m_pendingLoadPath.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +170,14 @@ void EditorState::update(double dt) {
         m_pendingReturnToHub = false;
         m_gsm.switchToAndClear(
             std::make_shared<EditorHubState>(m_gsm, m_input));
+        return;
+    }
+
+    // Deferred: load scene
+    if (!m_pendingLoadPath.empty()) {
+        m_sceneFilePath = m_pendingLoadPath;
+        m_pendingLoadPath.clear();
+        loadScene(m_sceneFilePath);
         return;
     }
 
@@ -212,7 +274,7 @@ void EditorState::render(Core::Time* timer) {
 
     m_framebuffer.bind();
 
-    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     auto& engine   = Core::Engine::Get();
@@ -253,27 +315,37 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderAddNode(dockId, ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(dockId, ImGui::GetMainViewport()->Size);
 
-        ImGuiID main  = dockId;
-        ImGuiID left  = 0, center = 0, right = 0, rightTop = 0, rightBot = 0;
+        ImGuiID main      = dockId;
+        ImGuiID left      = 0, center    = 0;
+        ImGuiID centerTop = 0, centerBot = 0;
+        ImGuiID right     = 0, rightTop  = 0;
 
-        ImGui::DockBuilderSplitNode(main,   ImGuiDir_Left,  0.20f, &left,  &center);
-        ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.28f, &right, &center);
-        ImGui::DockBuilderSplitNode(right,  ImGuiDir_Down,  0.40f, &rightBot, &rightTop);
+        ImGui::DockBuilderSplitNode(main,   ImGuiDir_Left,  0.20f, &left,      &center);
+        ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.28f, &right,     &center);
+        ImGui::DockBuilderSplitNode(center, ImGuiDir_Down,  0.28f, &centerBot, &centerTop);
+        // right column is a single node (Inspector + Stats tabs — no split needed)
+        rightTop = right;
 
         ImGui::DockBuilderDockWindow("Hierarchy",              left);
         ImGui::DockBuilderDockWindow("Systems",                left);
-        ImGui::DockBuilderDockWindow("Scene##EditorViewport",  center);
+        ImGui::DockBuilderDockWindow("Scenes",                 left);
+        ImGui::DockBuilderDockWindow("Scene##EditorViewport",  centerTop);
+        ImGui::DockBuilderDockWindow("Assets",                 centerBot);
+        ImGui::DockBuilderDockWindow("Scripts",                centerBot);
         ImGui::DockBuilderDockWindow("Inspector",              rightTop);
-        ImGui::DockBuilderDockWindow("Assets",                 rightBot);
+        ImGui::DockBuilderDockWindow("Stats",                  rightTop);
 
         ImGui::DockBuilderFinish(dockId);
     }
 
     renderSystemsWindow();
     renderHierarchy();
+    renderLoadSceneWindow();
     renderInspector();
     renderViewport();
     renderAssetBrowser();
+    renderStatsWindow();
+    renderScriptsBrowser();
 
     Core::Engine::Get().imguiManager().endDockspace();
 }
@@ -384,6 +456,166 @@ void EditorState::renderSystemsWindow() {
 
     ImGui::Spacing();
     ImGui::Text("Entity count: %u", m_scene.GetWorld().entityCount());
+
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderStatsWindow  (ECS info + memory management, merged)
+// ---------------------------------------------------------------------------
+
+void EditorState::renderStatsWindow() {
+    ImGui::Begin("Stats");
+
+    auto& world = m_scene.GetWorld();
+
+    // ── ECS ─────────────────────────────────────────────────────────────────
+    ImGui::SeparatorText("ECS");
+    ImGui::Text("Entities : %u", world.entityCount());
+    ImGui::Spacing();
+    ImGui::Text("Component Counts:");
+    ImGui::Text("  Transform      : %zu", world.componentCount<Components::Transform>());
+    ImGui::Text("  Velocity       : %zu", world.componentCount<Components::Velocity>());
+    ImGui::Text("  SpriteRenderer : %zu", world.componentCount<Components::SpriteRenderer>());
+    ImGui::Text("  SpriteAnimator : %zu", world.componentCount<Components::SpriteAnimator>());
+    ImGui::Text("  Collider       : %zu", world.componentCount<Components::Collider>());
+    ImGui::Text("  LuaScript      : %zu", world.componentCount<Components::LuaScript>());
+    ImGui::Text("  AudioSource    : %zu", world.componentCount<Components::AudioSource>());
+
+    ImGui::Spacing();
+    ImGui::Text("FPS        : %.1f",      ImGui::GetIO().Framerate);
+    ImGui::Text("Frame Time : %.3f ms",   1000.0f / ImGui::GetIO().Framerate);
+
+    // ── Memory ───────────────────────────────────────────────────────────────
+    ImGui::Spacing();
+    ImGui::SeparatorText("Memory");
+
+    auto& reg = Memory::MemoryDebugRegistry::Get();
+    auto  agg = reg.aggregate();
+
+    ImGui::Text("Used     : %zu B  (%.2f KB)", agg.usedBytes,  agg.usedBytes  / 1024.0f);
+    ImGui::Text("Capacity : %zu B  (%.2f KB)", agg.totalBytes, agg.totalBytes / 1024.0f);
+    ImGui::Text("Peak     : %zu B  (%.2f KB)", agg.peakBytes,  agg.peakBytes  / 1024.0f);
+    ImGui::Text("Blocks   : Used %zu  |  Free %zu  |  Total %zu",
+        agg.usedBlocks, agg.freeBlocks, agg.usedBlocks + agg.freeBlocks);
+    ImGui::Text("Pools registered : %zu", reg.poolCount());
+
+    if (reg.leakDetected()) {
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.25f, 0.25f, 1.0f));
+        ImGui::TextWrapped("!! LEAK DETECTED - at least one pool was destroyed "
+                           "with unfreed blocks. Check console.");
+        ImGui::PopStyleColor();
+    }
+
+    // Usage bar
+    ImGui::Spacing();
+    {
+        float ratio = (agg.totalBytes > 0)
+            ? static_cast<float>(agg.usedBytes) / static_cast<float>(agg.totalBytes)
+            : 0.0f;
+        char overlay[32];
+        snprintf(overlay, sizeof(overlay), "%.1f%%", ratio * 100.0f);
+        ImGui::ProgressBar(ratio, ImVec2(-1.0f, 0.0f), overlay);
+    }
+
+    // History graph
+    static float s_history[128] = {};
+    static int   s_offset       = 0;
+    s_history[s_offset] = static_cast<float>(agg.usedBytes) / 1024.0f;
+    s_offset = (s_offset + 1) % 128;
+
+    ImGui::Spacing();
+    float graphMax = (agg.totalBytes > 0)
+        ? static_cast<float>(agg.totalBytes) / 1024.0f : 1.0f;
+    ImGui::PlotLines("##memhist", s_history, 128, s_offset,
+                     nullptr, 0.0f, graphMax, ImVec2(-1.0f, 60.0f));
+
+    // Per-pool table
+    ImGui::Spacing();
+    ImGui::SeparatorText("Pools");
+
+    constexpr ImGuiTableFlags kTableFlags =
+        ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+        ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit;
+
+    if (ImGui::BeginTable("##pools", 6, kTableFlags, ImVec2(0.0f, 140.0f))) {
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("Pool",  ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("BlkSz", ImGuiTableColumnFlags_WidthFixed, 55.0f);
+        ImGui::TableSetupColumn("Used",  ImGuiTableColumnFlags_WidthFixed, 44.0f);
+        ImGui::TableSetupColumn("Free",  ImGuiTableColumnFlags_WidthFixed, 44.0f);
+        ImGui::TableSetupColumn("Total", ImGuiTableColumnFlags_WidthFixed, 44.0f);
+        ImGui::TableSetupColumn("Peak",  ImGuiTableColumnFlags_WidthFixed, 44.0f);
+        ImGui::TableHeadersRow();
+
+        for (size_t i = 0; i < reg.poolCount(); ++i) {
+            const Memory::IPoolStats* p = reg.getPool(i);
+            if (!p) continue;
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            if (reg.leakDetected() && p->usedBlocks() > 0)
+                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", p->poolName());
+            else
+                ImGui::TextUnformatted(p->poolName());
+            ImGui::TableSetColumnIndex(1); ImGui::Text("%zu B", p->blockSize());
+            ImGui::TableSetColumnIndex(2); ImGui::Text("%zu",   p->usedBlocks());
+            ImGui::TableSetColumnIndex(3); ImGui::Text("%zu",   p->freeBlocks());
+            ImGui::TableSetColumnIndex(4); ImGui::Text("%zu",   p->totalBlocks());
+            ImGui::TableSetColumnIndex(5); ImGui::Text("%zu",   p->peakUsedBlocks());
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderLoadSceneWindow
+// ---------------------------------------------------------------------------
+
+void EditorState::renderLoadSceneWindow() {
+    ImGui::Begin("Scenes");
+
+    if (m_sceneFilePath.empty()) {
+        ImGui::TextDisabled("No scene loaded.");
+        ImGui::End();
+        return;
+    }
+
+    namespace fs = std::filesystem;
+    fs::path sceneDir  = fs::path(m_sceneFilePath).parent_path();
+    std::string curFile = fs::path(m_sceneFilePath).filename().string();
+
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::InputText("##scenefilter", m_loadSceneFilter, sizeof(m_loadSceneFilter));
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Filter scenes");
+
+    ImGui::Separator();
+
+    std::string filterStr = m_loadSceneFilter;
+    std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), ::tolower);
+
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator(sceneDir, ec)) {
+        if (entry.path().extension() != ".json") continue;
+
+        std::string fname   = entry.path().filename().string();
+        std::string fnameLow = fname;
+        std::transform(fnameLow.begin(), fnameLow.end(), fnameLow.begin(), ::tolower);
+        if (!filterStr.empty() && fnameLow.find(filterStr) == std::string::npos)
+            continue;
+
+        bool isCurrent = (fname == curFile);
+        if (isCurrent)
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.9f, 0.4f, 1.0f));
+
+        if (ImGui::Selectable(fname.c_str(), isCurrent))
+            m_pendingLoadPath = entry.path().string();
+
+        if (isCurrent)
+            ImGui::PopStyleColor();
+    }
 
     ImGui::End();
 }
@@ -515,6 +747,61 @@ void EditorState::renderInspector() {
         return;
     }
 
+    // ── Add Component ───────────────────────────────────────────────────────
+    if (ImGui::Button("Add Component", ImVec2(-1, 0)))
+        ImGui::OpenPopup("##AddComp");
+
+    if (ImGui::BeginPopup("##AddComp")) {
+        if (ImGui::BeginMenu("Core")) {
+            addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world);
+            addCompEntry<Components::Tag>("Tag", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Rendering")) {
+            addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world);
+            addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world);
+            addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Physics")) {
+            addCompEntry<Components::Collider>("Collider", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Audio")) {
+            addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Scripting")) {
+            addCompEntry<Components::LuaScript>("LuaScript", m_selectedEntity, world);
+            addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Gameplay")) {
+            addCompEntry<Components::Health>("Health", m_selectedEntity, world);
+            addCompEntry<Components::Battery>("Battery", m_selectedEntity, world);
+            addCompEntry<Components::LightExposure>("LightExposure", m_selectedEntity, world);
+            addCompEntry<Components::Door>("Door", m_selectedEntity, world);
+            addCompEntry<Components::DoorSwing>("DoorSwing", m_selectedEntity, world);
+            addCompEntry<Components::Fragment>("Fragment", m_selectedEntity, world);
+            addCompEntry<Components::FragmentCollector>("FragmentCollector", m_selectedEntity, world);
+            addCompEntry<Components::Portal>("Portal", m_selectedEntity, world);
+            addCompEntry<Components::ActivationZone>("ActivationZone", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Character")) {
+            addCompEntry<Components::PlayerController>("PlayerController", m_selectedEntity, world);
+            addCompEntry<Components::EnemyAI>("EnemyAI", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("FX")) {
+            addCompEntry<Components::TorchComponent>("TorchComponent", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
+
+    ImGui::Separator();
+
     // Tag
     if (auto* tag = world.getComponent<Components::Tag>(m_selectedEntity)) {
         if (ImGui::CollapsingHeader("Tag", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -603,6 +890,335 @@ void EditorState::renderInspector() {
             col->size = {sz[0], sz[1]};
             ImGui::DragFloat("Radius", &col->radius, 1.0f);
         }
+    }
+
+    // ── Velocity ────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::Velocity>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Velocity##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rv")) rm = true;
+        if (open) {
+            auto* vel = world.getComponent<Components::Velocity>(m_selectedEntity);
+            float vv[2] = {vel->velocity.x, vel->velocity.y};
+            if (ImGui::DragFloat2("Velocity##vel", vv, 0.5f))
+                vel->velocity = {vv[0], vv[1]};
+            ImGui::DragFloat("MoveSpeed##vel", &vel->moveSpeed, 1.0f);
+        }
+        if (rm) world.removeComponent<Components::Velocity>(m_selectedEntity);
+    }
+
+    // ── AudioSource ─────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::AudioSource>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("AudioSource##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##ras")) rm = true;
+        if (open) {
+            auto* au = world.getComponent<Components::AudioSource>(m_selectedEntity);
+            char sndbuf[256]; snprintf(sndbuf, sizeof(sndbuf), "%s", au->soundId.c_str());
+            if (ImGui::InputText("Sound ID##au", sndbuf, sizeof(sndbuf))) au->soundId = sndbuf;
+            ImGui::SliderFloat("Volume##au", &au->volume, 0.0f, 1.0f);
+            ImGui::Checkbox("Loop##au", &au->loop);
+            ImGui::SameLine();
+            ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
+        }
+        if (rm) world.removeComponent<Components::AudioSource>(m_selectedEntity);
+    }
+
+    // ── SpriteAnimator ──────────────────────────────────────────────────────
+    if (world.hasComponent<Components::SpriteAnimator>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("SpriteAnimator##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rsa")) rm = true;
+        if (open) {
+            auto* sa = world.getComponent<Components::SpriteAnimator>(m_selectedEntity);
+            char fbuf[256]; snprintf(fbuf, sizeof(fbuf), "%s", sa->filename.c_str());
+            if (ImGui::InputText("File##sa", fbuf, sizeof(fbuf))) sa->filename = fbuf;
+            char cbuf[128]; snprintf(cbuf, sizeof(cbuf), "%s", sa->currentClip.c_str());
+            if (ImGui::InputText("Current Clip##sa", cbuf, sizeof(cbuf))) sa->currentClip = cbuf;
+            ImGui::Checkbox("Playing##sa", &sa->playing);
+            ImGui::SameLine();
+            ImGui::Checkbox("Paused##sa", &sa->paused);
+        }
+        if (rm) world.removeComponent<Components::SpriteAnimator>(m_selectedEntity);
+    }
+
+    // ── StateMachine ────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::StateMachine>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("StateMachine##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rsm")) rm = true;
+        if (open) {
+            auto* sm = world.getComponent<Components::StateMachine>(m_selectedEntity);
+            char sbuf[128]; snprintf(sbuf, sizeof(sbuf), "%s", sm->currentState.c_str());
+            if (ImGui::InputText("Current State##sm", sbuf, sizeof(sbuf))) sm->currentState = sbuf;
+            ImGui::BeginDisabled(true);
+            ImGui::DragFloat("State Timer##sm", &sm->stateTimer, 0.0f);
+            ImGui::EndDisabled();
+        }
+        if (rm) world.removeComponent<Components::StateMachine>(m_selectedEntity);
+    }
+
+    // ── LuaScript ───────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::LuaScript>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("LuaScript##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rls")) rm = true;
+        if (open) {
+            auto* ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
+            char spbuf[256]; snprintf(spbuf, sizeof(spbuf), "%s", ls->scriptPath.c_str());
+            if (ImGui::InputText("Script Path##ls", spbuf, sizeof(spbuf))) ls->scriptPath = spbuf;
+            ImGui::Checkbox("Enabled##ls", &ls->enabled);
+        }
+        if (rm) world.removeComponent<Components::LuaScript>(m_selectedEntity);
+    }
+
+    // ── TextRenderer ────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::TextRenderer>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("TextRenderer##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rtr")) rm = true;
+        if (open) {
+            auto* tr = world.getComponent<Components::TextRenderer>(m_selectedEntity);
+            char tbuf[512]; snprintf(tbuf, sizeof(tbuf), "%s", tr->text.c_str());
+            if (ImGui::InputTextMultiline("Text##tr", tbuf, sizeof(tbuf), ImVec2(-1, 60)))
+                tr->text = tbuf;
+            char trfbuf[128]; snprintf(trfbuf, sizeof(trfbuf), "%s", tr->fontId.c_str());
+            if (ImGui::InputText("Font ID##tr", trfbuf, sizeof(trfbuf))) tr->fontId = trfbuf;
+            ImGui::DragFloat("Font Size##tr", &tr->fontSize, 0.01f);
+            ImGui::ColorEdit3("Color##tr", glm::value_ptr(tr->color));
+            ImGui::Checkbox("Visible##tr", &tr->visible);
+            const char* alignItems[] = {"Left", "Center", "Right"};
+            int alignIdx = static_cast<int>(tr->alignment);
+            if (ImGui::Combo("Alignment##tr", &alignIdx, alignItems, 3))
+                tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
+        }
+        if (rm) world.removeComponent<Components::TextRenderer>(m_selectedEntity);
+    }
+
+    // ── Health ──────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::Health>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Health##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rh")) rm = true;
+        if (open) {
+            auto* h = world.getComponent<Components::Health>(m_selectedEntity);
+            ImGui::DragFloat("HP##h", &h->hp, 0.1f);
+            ImGui::DragFloat("MaxHP##h", &h->maxHp, 0.1f);
+            ImGui::Checkbox("Invulnerable##h", &h->invulnerable);
+            ImGui::SameLine();
+            ImGui::Checkbox("IsDead##h", &h->isDead);
+        }
+        if (rm) world.removeComponent<Components::Health>(m_selectedEntity);
+    }
+
+    // ── Battery ─────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::Battery>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Battery##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rb")) rm = true;
+        if (open) {
+            auto* b = world.getComponent<Components::Battery>(m_selectedEntity);
+            ImGui::DragFloat("Charge##b", &b->charge, 0.1f);
+            ImGui::DragFloat("MaxCharge##b", &b->maxCharge, 0.1f);
+            ImGui::DragFloat("DrainRate##b", &b->drainRate, 0.1f);
+            ImGui::DragFloat("ChargeRate##b", &b->chargeRate, 0.1f);
+            ImGui::Checkbox("IsCharging##b", &b->isCharging);
+        }
+        if (rm) world.removeComponent<Components::Battery>(m_selectedEntity);
+    }
+
+    // ── LightExposure ───────────────────────────────────────────────────────
+    if (world.hasComponent<Components::LightExposure>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("LightExposure##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rle")) rm = true;
+        if (open) {
+            auto* le = world.getComponent<Components::LightExposure>(m_selectedEntity);
+            ImGui::DragFloat("ExposureTime##le", &le->exposureTime, 0.1f);
+            ImGui::DragFloat("MaxExposureTime##le", &le->maxExposureTime, 0.1f);
+            ImGui::Checkbox("InLight##le", &le->inLight);
+            ImGui::SameLine();
+            ImGui::Checkbox("IsDangerous##le", &le->isDangerous);
+        }
+        if (rm) world.removeComponent<Components::LightExposure>(m_selectedEntity);
+    }
+
+    // ── EnemyAI ─────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::EnemyAI>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("EnemyAI##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##reai")) rm = true;
+        if (open) {
+            auto* ai = world.getComponent<Components::EnemyAI>(m_selectedEntity);
+            ImGui::DragFloat("DetectionRadius##ai", &ai->detectionRadius, 1.0f);
+            ImGui::DragFloat("ChaseSpeed##ai", &ai->chaseSpeed, 1.0f);
+            ImGui::DragFloat("PatrolSpeed##ai", &ai->patrolSpeed, 1.0f);
+            const char* stateNames[] = {"Patrol", "Chase", "Alert", "Death"};
+            ImGui::TextDisabled("State: %s", stateNames[static_cast<int>(ai->state)]);
+        }
+        if (rm) world.removeComponent<Components::EnemyAI>(m_selectedEntity);
+    }
+
+    // ── PlayerController ────────────────────────────────────────────────────
+    if (world.hasComponent<Components::PlayerController>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("PlayerController##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rpc")) rm = true;
+        if (open) {
+            auto* pc = world.getComponent<Components::PlayerController>(m_selectedEntity);
+            ImGui::DragFloat("WalkMultiplier##pc", &pc->walkMultiplier, 0.01f);
+            ImGui::DragFloat("SprintMultiplier##pc", &pc->sprintMultiplier, 0.01f);
+        }
+        if (rm) world.removeComponent<Components::PlayerController>(m_selectedEntity);
+    }
+
+    // ── FragmentCollector ───────────────────────────────────────────────────
+    if (world.hasComponent<Components::FragmentCollector>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("FragmentCollector##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rfc")) rm = true;
+        if (open) {
+            auto* fc = world.getComponent<Components::FragmentCollector>(m_selectedEntity);
+            ImGui::DragInt("RequiredFragments##fc", &fc->requiredFragments, 1);
+            ImGui::DragInt("CollectedCount##fc", &fc->collectedCount, 1);
+            ImGui::DragFloat("PickupRadius##fc", &fc->pickupRadius, 1.0f);
+        }
+        if (rm) world.removeComponent<Components::FragmentCollector>(m_selectedEntity);
+    }
+
+    // ── Fragment ────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::Fragment>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Fragment##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rfr")) rm = true;
+        if (open) {
+            auto* fr = world.getComponent<Components::Fragment>(m_selectedEntity);
+            ImGui::DragInt("Fragment ID##fr", &fr->fragmentId, 1);
+            ImGui::Checkbox("Collected##fr", &fr->collected);
+            ImGui::SameLine();
+            ImGui::Checkbox("RequiresLight##fr", &fr->requiresLight);
+        }
+        if (rm) world.removeComponent<Components::Fragment>(m_selectedEntity);
+    }
+
+    // ── Door ────────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::Door>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Door##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rd")) rm = true;
+        if (open) {
+            auto* d = world.getComponent<Components::Door>(m_selectedEntity);
+            ImGui::DragInt("RequiredFragments##d", &d->requiredFragments, 1);
+            ImGui::Checkbox("IsOpen##d", &d->isOpen);
+            char otbuf[256]; snprintf(otbuf, sizeof(otbuf), "%s", d->openTexture.c_str());
+            if (ImGui::InputText("Open Texture##d", otbuf, sizeof(otbuf))) d->openTexture = otbuf;
+            char ctbuf[256]; snprintf(ctbuf, sizeof(ctbuf), "%s", d->closedTexture.c_str());
+            if (ImGui::InputText("Closed Texture##d", ctbuf, sizeof(ctbuf))) d->closedTexture = ctbuf;
+        }
+        if (rm) world.removeComponent<Components::Door>(m_selectedEntity);
+    }
+
+    // ── DoorSwing ───────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::DoorSwing>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("DoorSwing##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rds")) rm = true;
+        if (open) {
+            auto* ds = world.getComponent<Components::DoorSwing>(m_selectedEntity);
+            ImGui::Checkbox("IsOpen##ds", &ds->isOpen);
+            ImGui::DragFloat("SwingAngle##ds", &ds->swingAngle, 1.0f);
+            ImGui::DragFloat("Speed##ds", &ds->speed, 1.0f);
+            ImGui::Checkbox("Clockwise##ds", &ds->clockwise);
+        }
+        if (rm) world.removeComponent<Components::DoorSwing>(m_selectedEntity);
+    }
+
+    // ── ActivationZone ──────────────────────────────────────────────────────
+    if (world.hasComponent<Components::ActivationZone>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("ActivationZone##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##raz")) rm = true;
+        if (open) {
+            auto* az = world.getComponent<Components::ActivationZone>(m_selectedEntity);
+            const char* actionItems[] = {"None", "PlayAudio", "SpawnEnemy", "ChangeVariable"};
+            int actionIdx = static_cast<int>(az->actionType);
+            if (ImGui::Combo("Action Type##az", &actionIdx, actionItems, 4))
+                az->actionType = static_cast<Components::ActivationZone::ActionType>(actionIdx);
+            char pbuf[256]; snprintf(pbuf, sizeof(pbuf), "%s", az->payload.c_str());
+            if (ImGui::InputText("Payload##az", pbuf, sizeof(pbuf))) az->payload = pbuf;
+            ImGui::Checkbox("OneShot##az", &az->oneShot);
+            ImGui::SameLine();
+            ImGui::Checkbox("Active##az", &az->active);
+        }
+        if (rm) world.removeComponent<Components::ActivationZone>(m_selectedEntity);
+    }
+
+    // ── Portal ──────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::Portal>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Portal##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rpo")) rm = true;
+        if (open) {
+            auto* po = world.getComponent<Components::Portal>(m_selectedEntity);
+            char lbuf[256]; snprintf(lbuf, sizeof(lbuf), "%s", po->levelName.c_str());
+            if (ImGui::InputText("Level Name##po", lbuf, sizeof(lbuf))) po->levelName = lbuf;
+        }
+        if (rm) world.removeComponent<Components::Portal>(m_selectedEntity);
+    }
+
+    // ── TorchComponent ──────────────────────────────────────────────────────
+    if (world.hasComponent<Components::TorchComponent>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("TorchComponent##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rtc")) rm = true;
+        if (open) {
+            auto* tc = world.getComponent<Components::TorchComponent>(m_selectedEntity);
+            ImGui::Checkbox("Active##tc", &tc->active);
+            float off[2] = {tc->offset.x, tc->offset.y};
+            if (ImGui::DragFloat2("Offset##tc", off, 0.5f))
+                tc->offset = {off[0], off[1]};
+            ImGui::DragFloat("Radius##tc", &tc->radius, 1.0f);
+            ImGui::DragFloat("Angle##tc", &tc->angle, 0.5f);
+            ImGui::DragFloat("Intensity##tc", &tc->intensity, 0.01f, 0.0f, 1.0f);
+            ImGui::ColorEdit3("Color##tc", glm::value_ptr(tc->color));
+        }
+        if (rm) world.removeComponent<Components::TorchComponent>(m_selectedEntity);
     }
 
     ImGui::End();
@@ -894,19 +1510,107 @@ void EditorState::renderAssetBrowser() {
 
     if (ImGui::BeginPopupModal("##AddTexture", nullptr,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Load Texture Asset");
+        ImGui::Text("Import Texture");
         ImGui::Separator();
-        ImGui::InputText("ID",   m_newAssetNameBuf, sizeof(m_newAssetNameBuf));
-        ImGui::InputText("Path", m_newAssetPathBuf, sizeof(m_newAssetPathBuf));
-        if (ImGui::Button("Load", ImVec2(100, 0))) {
-            if (m_newAssetNameBuf[0] && m_newAssetPathBuf[0])
-                Assets::TextureManager::LoadTexture(m_newAssetNameBuf,
-                                                    m_newAssetPathBuf);
+
+        // Source path row — editable + Browse button
+        ImGui::SetNextItemWidth(260.0f);
+        ImGui::InputText("##srcpath", m_newAssetPathBuf, sizeof(m_newAssetPathBuf));
+        ImGui::SameLine();
+        if (ImGui::Button("Browse...")) {
+#ifdef _WIN32
+            OPENFILENAMEA ofn{};
+            char szFile[512]{};
+            ofn.lStructSize = sizeof(ofn);
+            ofn.lpstrFile   = szFile;
+            ofn.nMaxFile    = sizeof(szFile);
+            ofn.lpstrFilter =
+                "Image Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files\0*.*\0";
+            ofn.nFilterIndex = 1;
+            ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+            if (GetOpenFileNameA(&ofn)) {
+                strncpy_s(m_newAssetPathBuf, szFile, sizeof(m_newAssetPathBuf) - 1);
+                // Auto-fill asset ID from filename stem if not already set
+                if (!m_newAssetNameBuf[0]) {
+                    namespace fs = std::filesystem;
+                    std::string stem = fs::path(szFile).stem().string();
+                    strncpy_s(m_newAssetNameBuf, stem.c_str(),
+                              sizeof(m_newAssetNameBuf) - 1);
+                }
+            }
+#endif
+        }
+        ImGui::TextDisabled("Source file");
+
+        ImGui::SetNextItemWidth(260.0f);
+        ImGui::InputText("Asset ID", m_newAssetNameBuf, sizeof(m_newAssetNameBuf));
+        ImGui::TextDisabled("Copied to assets/textures/ on import");
+
+        ImGui::Separator();
+        bool canImport = m_newAssetNameBuf[0] && m_newAssetPathBuf[0];
+        if (!canImport) ImGui::BeginDisabled();
+        if (ImGui::Button("Import", ImVec2(100, 0))) {
+            Assets::TextureManager::ImportTexture(m_newAssetPathBuf,
+                                                  m_newAssetNameBuf);
             ImGui::CloseCurrentPopup();
         }
+        if (!canImport) ImGui::EndDisabled();
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0)))
             ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+
+    // ── Rename modal ─────────────────────────────────────────────────────────
+    if (!m_renamingAsset.empty())
+        ImGui::OpenPopup("##RenameAsset");
+
+    if (ImGui::BeginPopupModal("##RenameAsset", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Rename asset: %s", m_renamingAsset.c_str());
+        ImGui::Separator();
+        ImGui::InputText("New ID", m_renameAssetBuf, sizeof(m_renameAssetBuf));
+        if (ImGui::Button("Rename", ImVec2(100, 0))) {
+            if (m_renameAssetBuf[0] && m_renameAssetBuf != m_renamingAsset) {
+                std::string oldPath = Assets::TextureManager::GetFilePath(m_renamingAsset);
+                if (!oldPath.empty()) {
+                    Assets::TextureManager::LoadTexture(m_renameAssetBuf, oldPath);
+                    Assets::TextureManager::RemoveFromConfig(m_renamingAsset);
+                    Assets::TextureManager::Unload(m_renamingAsset);
+                }
+            }
+            m_renamingAsset.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_renamingAsset.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // ── Delete confirmation ───────────────────────────────────────────────────
+    if (!m_deletingAsset.empty())
+        ImGui::OpenPopup("##DeleteAsset");
+
+    if (ImGui::BeginPopupModal("##DeleteAsset", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Delete '%s' from disk?", m_deletingAsset.c_str());
+        ImGui::TextDisabled("This permanently removes the file.");
+        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
+        if (ImGui::Button("Delete", ImVec2(100, 0))) {
+            Assets::TextureManager::DeleteFromDisk(m_deletingAsset);
+            m_deletingAsset.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_deletingAsset.clear();
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 
@@ -948,15 +1652,26 @@ void EditorState::renderAssetBrowser() {
                     ImGui::EndDragDropSource();
                 }
 
-                // Right-click: apply to selected entity's SpriteRenderer
+                // Right-click context menu
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Apply to selected")) {
                         if (auto* sr = m_scene.GetWorld()
                                 .getComponent<Components::SpriteRenderer>(m_selectedEntity))
                             sr->textureId = name;
                     }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Rename")) {
+                        m_renamingAsset = name;
+                        strncpy_s(m_renameAssetBuf, name.c_str(),
+                                  sizeof(m_renameAssetBuf) - 1);
+                    }
                     if (ImGui::MenuItem("Unload"))
                         Assets::TextureManager::Unload(name);
+                    ImGui::Separator();
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+                    if (ImGui::MenuItem("Delete from disk"))
+                        m_deletingAsset = name;
+                    ImGui::PopStyleColor();
                     ImGui::EndPopup();
                 }
 
@@ -975,6 +1690,275 @@ void EditorState::renderAssetBrowser() {
                 }
             }
             ImGui::TextUnformatted(name.c_str());
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderScriptsBrowser
+// ---------------------------------------------------------------------------
+
+void EditorState::renderScriptsBrowser() {
+    ImGui::Begin("Scripts");
+
+    namespace fs = std::filesystem;
+
+    // ── Add Script button ────────────────────────────────────────────────────
+    if (ImGui::Button("Add Script")) {
+        m_newScriptBuf[0] = '\0';
+        ImGui::OpenPopup("##AddScript");
+    }
+
+    if (ImGui::BeginPopupModal("##AddScript", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create New Script");
+        ImGui::Separator();
+        ImGui::InputText("Name", m_newScriptBuf, sizeof(m_newScriptBuf));
+        ImGui::TextDisabled("'.lua' extension added automatically");
+
+        if (ImGui::Button("Create", ImVec2(100, 0))) {
+            if (m_newScriptBuf[0]) {
+                std::string fname = m_newScriptBuf;
+                if (fname.size() < 4 ||
+                    fname.substr(fname.size() - 4) != ".lua")
+                    fname += ".lua";
+
+                fs::create_directories("assets/scripts");
+                std::string fullPath = "assets/scripts/" + fname;
+                if (!fs::exists(fullPath)) {
+                    std::ofstream f(fullPath);
+                    f << "-- " << fname << "\n";
+                }
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0)))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+    }
+
+    // ── Rename modal ─────────────────────────────────────────────────────────
+    if (!m_renamingScriptPath.empty())
+        ImGui::OpenPopup("##RenameScript");
+
+    if (ImGui::BeginPopupModal("##RenameScript", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        fs::path renamePath(m_renamingScriptPath);
+        ImGui::Text("Rename: %s", renamePath.filename().string().c_str());
+        ImGui::Separator();
+        ImGui::InputText("New name", m_renameScriptBuf, sizeof(m_renameScriptBuf));
+        ImGui::TextDisabled("'.lua' extension added automatically");
+        if (ImGui::Button("Rename", ImVec2(100, 0))) {
+            if (m_renameScriptBuf[0]) {
+                std::string newName = m_renameScriptBuf;
+                if (newName.size() < 4 || newName.substr(newName.size() - 4) != ".lua")
+                    newName += ".lua";
+                fs::path newPath = renamePath.parent_path() / newName;
+                std::error_code ec2;
+                fs::rename(renamePath, newPath, ec2);
+            }
+            m_renamingScriptPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_renamingScriptPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // ── Delete confirmation ───────────────────────────────────────────────────
+    if (!m_deletingScriptPath.empty())
+        ImGui::OpenPopup("##DeleteScript");
+
+    if (ImGui::BeginPopupModal("##DeleteScript", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        fs::path delPath(m_deletingScriptPath);
+        ImGui::Text("Delete '%s'?", delPath.filename().string().c_str());
+        ImGui::TextDisabled("This permanently removes the file.");
+        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
+        if (ImGui::Button("Delete", ImVec2(100, 0))) {
+            std::error_code ec2;
+            fs::remove(delPath, ec2);
+            m_deletingScriptPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_deletingScriptPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    ImGui::Separator();
+
+    // ── Script file grid ─────────────────────────────────────────────────────
+    std::error_code ec;
+    std::vector<fs::path> scripts;
+    for (const auto& entry : fs::directory_iterator("assets/scripts", ec)) {
+        if (entry.path().extension() == ".lua")
+            scripts.push_back(entry.path());
+    }
+
+    if (scripts.empty()) {
+        ImGui::TextDisabled("No scripts found in assets/scripts/");
+        ImGui::End();
+        return;
+    }
+
+    constexpr float kIconW   = 64.0f;
+    constexpr float kIconH   = 72.0f;
+    constexpr float kMinCell = kIconW + 20.0f;
+    float panelW = ImGui::GetContentRegionAvail().x;
+    int   cols   = std::max(1, static_cast<int>(panelW / kMinCell));
+
+    // SizingStretchSame distributes all columns equally across the panel width
+    if (ImGui::BeginTable("##ScriptsTbl", cols,
+                          ImGuiTableFlags_SizingStretchSame)) {
+        for (const auto& path : scripts) {
+            ImGui::TableNextColumn();
+            std::string fname = path.filename().string();
+            std::string stem  = path.stem().string();
+            ImGui::PushID(fname.c_str());
+
+            // Centre the icon within the (equally-wide) column cell
+            float colW   = ImGui::GetContentRegionAvail().x;
+            float iconOX = (colW - kIconW) * 0.5f;
+            if (iconOX > 0.0f)
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
+
+            // ── File icon button ─────────────────────────────────────────────
+            ImGui::PushStyleColor(ImGuiCol_Button,
+                ImVec4(0.14f, 0.16f, 0.32f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                ImVec4(0.22f, 0.28f, 0.55f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                ImVec4(0.10f, 0.12f, 0.22f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+
+            ImGui::Button("##icon", ImVec2(kIconW, kIconH));
+
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(3);
+
+            // Double-click → open in VS Code (no terminal window)
+            if (ImGui::IsItemHovered() &&
+                ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                std::string absPath = fs::absolute(path, ec).string();
+#ifdef _WIN32
+                std::string cmdLine = "cmd /c code \"" + absPath + "\"";
+                STARTUPINFOA si{};
+                si.cb = sizeof(si);
+                PROCESS_INFORMATION pi{};
+                CreateProcessA(nullptr, &cmdLine[0],
+                               nullptr, nullptr, FALSE,
+                               CREATE_NO_WINDOW,
+                               nullptr, nullptr, &si, &pi);
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+#else
+                system(("code \"" + absPath + "\"").c_str());
+#endif
+            }
+
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Double-click to open: %s", fname.c_str());
+
+            // ── Right-click context menu ─────────────────────────────────────
+            if (ImGui::BeginPopupContextItem("##ScriptCtx")) {
+                if (ImGui::MenuItem("Open in VS Code")) {
+                    std::string absPath = fs::absolute(path, ec).string();
+#ifdef _WIN32
+                    std::string cmdLine = "cmd /c code \"" + absPath + "\"";
+                    STARTUPINFOA si2{};
+                    si2.cb = sizeof(si2);
+                    PROCESS_INFORMATION pi2{};
+                    CreateProcessA(nullptr, &cmdLine[0],
+                                   nullptr, nullptr, FALSE,
+                                   CREATE_NO_WINDOW,
+                                   nullptr, nullptr, &si2, &pi2);
+                    CloseHandle(pi2.hProcess);
+                    CloseHandle(pi2.hThread);
+#else
+                    system(("code \"" + absPath + "\"").c_str());
+#endif
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Rename")) {
+                    m_renamingScriptPath = path.string();
+                    strncpy_s(m_renameScriptBuf, stem.c_str(),
+                              sizeof(m_renameScriptBuf) - 1);
+                }
+                if (ImGui::MenuItem("Duplicate")) {
+                    std::string newName = stem + "_copy.lua";
+                    fs::path    newPath = path.parent_path() / newName;
+                    // Avoid collision
+                    int n = 2;
+                    while (fs::exists(newPath)) {
+                        newName = stem + "_copy" + std::to_string(n++) + ".lua";
+                        newPath = path.parent_path() / newName;
+                    }
+                    std::error_code ec2;
+                    fs::copy(path, newPath, ec2);
+                }
+                ImGui::Separator();
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+                if (ImGui::MenuItem("Delete"))
+                    m_deletingScriptPath = path.string();
+                ImGui::PopStyleColor();
+                ImGui::EndPopup();
+            }
+
+            // ── Custom draw: page + fold corner + "LUA" label ───────────────
+            {
+                ImVec2 btnMin = ImGui::GetItemRectMin();
+                ImVec2 btnMax = ImGui::GetItemRectMax();
+                ImDrawList* dl = ImGui::GetWindowDrawList();
+
+                constexpr float fold = 12.0f;
+                ImVec2 p0 = { btnMin.x + 6.0f,          btnMin.y + 6.0f };
+                ImVec2 p1 = { btnMax.x - 6.0f - fold,   btnMin.y + 6.0f };
+                ImVec2 p3 = { btnMax.x - 6.0f,          btnMax.y - 6.0f };
+                ImVec2 p4 = { btnMin.x + 6.0f,          btnMax.y - 6.0f };
+                ImVec2 c1 = { btnMax.x - 6.0f - fold,   btnMin.y + 6.0f };
+                dl->AddQuadFilled(p0, p1, p3, p4, IM_COL32(60, 80, 180, 120));
+                dl->AddTriangleFilled(c1,
+                    { c1.x + fold, c1.y },
+                    { c1.x, c1.y + fold },
+                    IM_COL32(30, 40, 100, 200));
+
+                const char* lbl  = "LUA";
+                ImVec2      tsz  = ImGui::CalcTextSize(lbl);
+                ImVec2      tpos = {
+                    btnMin.x + (btnMax.x - btnMin.x - tsz.x) * 0.5f,
+                    btnMin.y + (btnMax.y - btnMin.y - tsz.y) * 0.5f + 6.0f
+                };
+                dl->AddText(tpos, IM_COL32(160, 200, 255, 255), lbl);
+            }
+
+            // ── Filename label centred below the icon ────────────────────────
+            std::string label = stem;
+            if (label.size() > 9)
+                label = label.substr(0, 7) + "..";
+
+            float textW  = ImGui::CalcTextSize(label.c_str()).x;
+            float textOX = (colW - textW) * 0.5f;
+            if (textOX > 0.0f)
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOX);
+            ImGui::TextUnformatted(label.c_str());
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", fname.c_str());
+
             ImGui::PopID();
         }
         ImGui::EndTable();
