@@ -55,6 +55,20 @@ namespace Core {
 		using BootstrapFn = std::function<std::shared_ptr<Runtime::GameState>(Engine&)>;
 		void setBootstrap(BootstrapFn fn);
 
+		// Register a factory the EditorHubState calls when opening a project.
+		// Receives the resolved absolute scene path; returns the editor game state.
+		// Keeps engine code free of game-specific state types (e.g. SandboxState).
+		using EditorFactory = std::function<std::shared_ptr<Runtime::GameState>(const std::string& scenePath)>;
+		void setEditorFactory(EditorFactory fn);
+		const EditorFactory& editorFactory() const { return m_editorFactory; }
+
+		// Register a factory EditorState calls when Play is pressed.
+		// Receives the scene path; returns a game state that plays the scene.
+		// The play state should call engine.editorFactory()(scenePath) to return.
+		using PlayFactory = std::function<std::shared_ptr<Runtime::GameState>(const std::string& scenePath)>;
+		void setPlayFactory(PlayFactory fn);
+		const PlayFactory& playFactory() const { return m_playFactory; }
+
 		Runtime::GameStateManager& gsm() { return *m_gsm; }
 
 		// Read the configured start state name — only valid after Run() has started init.
@@ -125,6 +139,8 @@ namespace Core {
 		bool m_pausedByFocus;
 		bool m_quitRequested{ false };
 		float m_quitFadeTimer{ 0.0f };
-		BootstrapFn m_bootstrap;
+		BootstrapFn   m_bootstrap;
+		EditorFactory m_editorFactory;
+		PlayFactory   m_playFactory;
 	};
 }

@@ -68,6 +68,14 @@ void Engine::setBootstrap(BootstrapFn fn) {
   m_bootstrap = std::move(fn);
 }
 
+void Engine::setEditorFactory(EditorFactory fn) {
+  m_editorFactory = std::move(fn);
+}
+
+void Engine::setPlayFactory(PlayFactory fn) {
+  m_playFactory = std::move(fn);
+}
+
 const std::string& Engine::startState() const {
   return m_config->startState;
 }

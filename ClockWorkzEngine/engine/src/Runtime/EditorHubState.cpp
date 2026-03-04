@@ -3,15 +3,16 @@
 \file           EditorHubState.cpp
 \project        ClockWorkz Engine
 \author         [Syafiq]
-\brief          Implementation of EditorHubState: Unity-style project launcher.
+\brief          Engine-level project launcher hub.
+                Opens projects via Core::Engine::editorFactory() so engine
+                code stays free of game-specific state types.
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 
-#include "States/EditorHubState.hpp"
-#include "States/SandboxState.hpp"
+#include "Runtime/EditorHubState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
@@ -32,6 +33,11 @@ static std::string getSourceRootImpl() {
     namespace fs = std::filesystem;
     fs::path dir = fs::path(__FILE__).parent_path();
     for (int i = 0; i < 10 && !dir.empty(); ++i) {
+        // Engine file lives in engine/src/Runtime/ — walk up to ClockWorkzEngine/
+        // and return the game/ subfolder as the project root.
+        if (fs::exists(dir / "game" / "CMakeLists.txt") && fs::exists(dir / "game" / "assets"))
+            return (dir / "game").generic_string();
+        // Fallback: file is already inside game/ (e.g. during migration)
         if (fs::exists(dir / "CMakeLists.txt") && fs::exists(dir / "assets"))
             return dir.generic_string();
         dir = dir.parent_path();
@@ -339,9 +345,16 @@ void EditorHubState::openProject(const ProjectEntry& project) {
         return;
     }
 
-    auto& e = Core::Engine::Get();
-    auto sandbox = std::make_shared<SandboxState>(e.input(), m_gsm, scenePath);
-    m_gsm.switchToAndClear(sandbox);
+    const auto& factory = Core::Engine::Get().editorFactory();
+    if (!factory) {
+        m_errorMessage   = "No editor factory registered. Call engine.setEditorFactory() in main.cpp.";
+        m_showErrorPopup = true;
+        return;
+    }
+
+    auto editorState = factory(scenePath);
+    if (editorState)
+        m_gsm.switchToAndClear(editorState);
 }
 
 } // namespace Runtime

@@ -4,8 +4,8 @@
 \project        ClockWorkz Engine
 \author         [Syafiq]
 \brief          EditorHubState: Unity-style project launcher hub.
-                Serves as the engine's default entry point.
-                Allows opening existing projects or creating new ones.
+                Engine entry point. Lists projects, creates new ones, and
+                opens them in the registered editor via Core::Engine::editorFactory().
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
@@ -16,15 +16,9 @@ reserved.
 #include <string>
 #include <vector>
 
-namespace Platform {
-class InputManager;
-}
-namespace Core {
-class Time;
-}
-namespace Runtime {
-class GameStateManager;
-}
+namespace Platform { class InputManager; }
+namespace Core    { class Time; }
+namespace Runtime { class GameStateManager; }
 
 namespace Runtime {
 
@@ -43,8 +37,8 @@ public:
 private:
     struct ProjectEntry {
         std::string name;
-        std::string path;          // relative to getSourceRoot(), e.g. "assets" or "projects/MyGame"
-        std::string initialScene;  // relative to project path, e.g. "scenes/LightsOut001.json"
+        std::string path;         // project root, relative to getSourceRoot()
+        std::string initialScene; // scene path, relative to project root
         std::string description;
     };
 
@@ -63,8 +57,8 @@ private:
     bool                      m_showErrorPopup{false};
     std::string               m_errorMessage;
 
-    // WARNING: Deferred project open — set in renderImGui(), 
-    // processed in update(), to avoid switching state mid-ImGui-frame.
+    // NOTE: Deferred project open: set in renderImGui(), 
+    // consumed in update(),  to avoid switching state mid-ImGui-frame.
     int                       m_pendingOpenIdx{-1};
 };
 

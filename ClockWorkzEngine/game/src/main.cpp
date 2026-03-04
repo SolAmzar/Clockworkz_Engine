@@ -1,5 +1,7 @@
 #include "Core/Engine.hpp"
-#include "States/EditorHubState.hpp"
+#include "Runtime/EditorHubState.hpp"
+#include "Runtime/EditorState.hpp"
+#include "Runtime/EditorPlayState.hpp"
 #include <iostream>
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
@@ -21,8 +23,19 @@ int main()
 
 	Core::Engine engine;
 
+	// Editor factory: called by EditorHubState when opening a project.
+	engine.setEditorFactory([&engine](const std::string& scenePath) -> std::shared_ptr<Runtime::GameState> {
+		return std::make_shared<Runtime::EditorState>(engine.input(), engine.gsm(), scenePath);
+	});
+
+	// Play factory: called by EditorState when Play is pressed.
+	// Creates EditorPlayState — runs the scene with all systems active.
+	// Stop button returns to EditorState via Engine::editorFactory().
+	engine.setPlayFactory([&engine](const std::string& scenePath) -> std::shared_ptr<Runtime::GameState> {
+		return std::make_shared<Runtime::EditorPlayState>(engine.input(), engine.gsm(), scenePath);
+	});
+
 	// Engine always boots to the EditorHubState (Unity-style project launcher).
-	// From the hub, open "Lights Out" or create new projects.
 	engine.setBootstrap([](Core::Engine& e) -> std::shared_ptr<Runtime::GameState> {
 		return std::make_shared<Runtime::EditorHubState>(e.gsm(), e.input());
 	});

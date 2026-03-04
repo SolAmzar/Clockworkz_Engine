@@ -11,7 +11,7 @@ reserved.
 /******************************************************************************/
 
 #include "States/SandboxState.hpp"
-#include "States/EditorHubState.hpp"
+#include "Runtime/EditorHubState.hpp"
 #include "Memory/MemoryDebugPanel.hpp"
 
 // MUST be included before any other OpenGL-related headers
