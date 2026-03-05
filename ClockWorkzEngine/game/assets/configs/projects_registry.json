@@ -1,10 +1,22 @@
 {
     "projects": [
         {
+            "description": "The main Lights Out game project",
+            "initialScene": "assets/scenes/LightsOut001.json",
             "name": "Lights Out",
-            "path": "assets",
-            "initialScene": "scenes/LightsOut001.json",
-            "description": "The main Lights Out game project"
+            "path": "projects/LightsOut"
+        },
+        {
+            "description": "New project",
+            "initialScene": "assets/scenes/Main.json",
+            "name": "racing",
+            "path": "projects/racing"
+        },
+        {
+            "description": "New project",
+            "initialScene": "assets/scenes/Main.json",
+            "name": "dede",
+            "path": "projects/dede"
         }
     ]
 }

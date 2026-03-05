@@ -171,9 +171,6 @@ bool Engine::init() {
 
   m_lua->Initialize();
 
-  // Test Line
-  m_lua->ExecuteScript("assets/scripts/test.lua");
-
   m_gsm = std::make_unique<Runtime::GameStateManager>();
 
   /*

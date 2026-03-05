@@ -68,6 +68,17 @@ if(EXISTS "${ACTIVE_ASSETS_DIR}")
   )
 endif()
 
+# --- Copy projects to output directory ---
+# Each project lives in game/projects/<Name>/ and must be available at runtime
+# for the editor to read project-specific assets directly from source.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/projects")
+  add_custom_command(TARGET LightsOut POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_CURRENT_SOURCE_DIR}/projects"
+      "$<TARGET_FILE_DIR:LightsOut>/projects"
+  )
+endif()
+
 # --- Copy FMOD directory into build ---
 set(ENGINE_FMOD_DIR "${CMAKE_SOURCE_DIR}/fmod")
 if(EXISTS "${ENGINE_FMOD_DIR}")

@@ -124,6 +124,7 @@ void EditorHubState::renderImGui(Core::Time* timer) {
     ImGui::SameLine();
 
     // ---- Right panel ----
+    bool openNewProjectModal = false;
     ImGui::BeginChild("##RightPanel", ImVec2(0.0f, panelHeight), true);
     ImGui::Text("Actions");
     ImGui::Separator();
@@ -131,7 +132,7 @@ void EditorHubState::renderImGui(Core::Time* timer) {
 
     if (ImGui::Button("New Game", ImVec2(200.0f, 40.0f))) {
         memset(m_newProjectNameBuf, 0, sizeof(m_newProjectNameBuf));
-        ImGui::OpenPopup("##NewProjectModal");
+        openNewProjectModal = true;
     }
 
     ImGui::Spacing();
@@ -159,6 +160,8 @@ void EditorHubState::renderImGui(Core::Time* timer) {
 
     // ---- New Project Modal ----
     ImVec2 center(vp->Pos.x + vp->Size.x * 0.5f, vp->Pos.y + vp->Size.y * 0.5f);
+    if (openNewProjectModal)
+        ImGui::OpenPopup("##NewProjectModal");
     ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
     if (ImGui::BeginPopupModal("##NewProjectModal", nullptr,
@@ -298,13 +301,18 @@ void EditorHubState::createNewProject(const std::string& projectName) {
 
     // Create required subfolders
     std::error_code ec;
-    fs::create_directories(projectRoot / "assets" / "scenes",   ec);
-    fs::create_directories(projectRoot / "assets" / "scripts",  ec);
-    fs::create_directories(projectRoot / "assets" / "configs",  ec);
-    fs::create_directories(projectRoot / "assets" / "textures", ec);
-    fs::create_directories(projectRoot / "assets" / "prefabs",  ec);
-
-    if (ec) {
+    const auto mkdirs = [&](const fs::path& p) {
+        fs::create_directories(p, ec);
+        return !ec;
+    };
+    if (!mkdirs(projectRoot / "assets" / "scenes")     ||
+        !mkdirs(projectRoot / "assets" / "scripts")    ||
+        !mkdirs(projectRoot / "assets" / "configs")    ||
+        !mkdirs(projectRoot / "assets" / "textures")   ||
+        !mkdirs(projectRoot / "assets" / "prefabs")    ||
+        !mkdirs(projectRoot / "assets" / "animations") ||
+        !mkdirs(projectRoot / "assets" / "audio")      ||
+        !mkdirs(projectRoot / "assets" / "fonts")) {
         m_errorMessage   = "Failed to create project folders: " + ec.message();
         m_showErrorPopup = true;
         return;

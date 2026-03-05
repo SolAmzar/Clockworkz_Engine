@@ -38,9 +38,9 @@ bool TextureManager::LoadFromConfig(const std::string &configPath) {
     std::vector<TextureConfig> configs = ParseConfig(configPath);
 
     if (configs.empty()) {
-      std::cerr << "[TextureManager] Warning: No textures found in config file"
+      std::cout << "[TextureManager] No textures in config file (empty project)."
                 << std::endl;
-      return false;
+      return true; // Empty config is valid
     }
 
     // Load each texture

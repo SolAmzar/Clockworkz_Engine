@@ -135,7 +135,7 @@ namespace Gameplay
                 }
 
                 std::cout << "[PrefabFactory] Loaded " << loadedCount << " prefabs from: " << filepath << "\n";
-                return loadedCount > 0;
+                return true; // Empty array is valid; 0 prefabs is not an error
             }
             // Single prefab format
             else if (j.contains("prefabName") && j.contains("components"))

@@ -17,7 +17,9 @@ reserved.
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
 #include "Assets/TextureManager.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Assets/ResourceManager.hpp"
+#include "Gameplay/Prefab.hpp"
 #include "Assets/FontManager.hpp"
 #include "Graphics/Shader.hpp"
 #include "Memory/MemoryDebugRegistry.hpp"
@@ -124,15 +126,49 @@ void EditorState::onEnter() {
     m_undoStack.clear();
     m_redoStack.clear();
 
-    // Load shaders required by the rendering passes (same as SandboxState)
+    // Derive the project root and engine assets root from the scene file path.
+    // Scene path structure: <projectRoot>/assets/scenes/<name>.json
+    // Engine assets (shaders, fonts) live in <projectRoot>/../../assets/
+    {
+        namespace fs = std::filesystem;
+        fs::path sceneFs(m_sceneFilePath);
+        m_projectRoot = sceneFs.parent_path()  // .../assets/scenes/
+                               .parent_path()  // .../assets/
+                               .parent_path()  // <projectRoot>/
+                               .generic_string();
+        m_engineAssetsRoot = (fs::path(m_projectRoot).parent_path()   // projects/
+                                                      .parent_path()   // game/
+                              / "assets").generic_string();
+
+        // Change CWD to project root so ALL "assets/..." relative paths
+        // (scripts, textures, audio, etc.) resolve to this project's folder.
+        m_originalCwd = fs::current_path().generic_string();
+        std::error_code cwdEc;
+        fs::current_path(m_projectRoot, cwdEc);
+    }
+
+    // Load shaders required by the rendering passes — use absolute paths since
+    // shaders live in game/assets/, not inside the project folder.
     Assets::ResourceManager<Graphics::Shader>::Load(
-        "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
+        "texture",
+        m_engineAssetsRoot + "/shaders/texture.vert",
+        m_engineAssetsRoot + "/shaders/texture.frag");
     Assets::ResourceManager<Graphics::Shader>::Load(
-        "light",   "assets/shaders/light.vert",   "assets/shaders/light.frag");
+        "light",
+        m_engineAssetsRoot + "/shaders/light.vert",
+        m_engineAssetsRoot + "/shaders/light.frag");
     Assets::ResourceManager<Graphics::Shader>::Load(
-        "text",    "assets/shaders/text.vert",     "assets/shaders/text.frag");
+        "text",
+        m_engineAssetsRoot + "/shaders/text.vert",
+        m_engineAssetsRoot + "/shaders/text.frag");
     Assets::ResourceManager<Assets::FontManager>::Load(
-        "Debug", "assets/fonts/MANIC1.TTF", 24);
+        "Debug", m_engineAssetsRoot + "/fonts/MANIC1.ttf", 24);
+
+    // Load project-specific assets (CWD is now the project root, so all
+    // "assets/..." paths resolve to this project's assets/ folder).
+    Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
+    Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json");
+    Gameplay::PrefabFactory::get().loadPrefabFromFile("assets/configs/Prefab.json");
 
     m_scene.Init();
 
@@ -149,6 +185,17 @@ void EditorState::onEnter() {
 }
 
 void EditorState::onExit() {
+    // Unload project-specific assets before switching projects.
+    Assets::TextureManager::Clear();
+    Assets::SoundManager::Clear();
+
+    // Restore CWD so EditorHubState can find its registry at the original path.
+    if (!m_originalCwd.empty()) {
+        std::error_code ec;
+        std::filesystem::current_path(m_originalCwd, ec);
+        m_originalCwd.clear();
+    }
+
     m_framebuffer.destroy();
     m_scene.Clear();
     m_undoStack.clear();

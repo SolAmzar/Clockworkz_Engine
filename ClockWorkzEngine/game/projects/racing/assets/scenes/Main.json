@@ -1,0 +1,16 @@
+{
+    "bgm": "",
+    "darknessColor": {
+        "b": 0.8999999761581421,
+        "g": 0.699999988079071,
+        "r": 0.699999988079071
+    },
+    "darknessIntensity": 0.800000011920929,
+    "enableDarkness": false,
+    "objects": [],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": 0.0,
+        "y": 0.0
+    }
+}

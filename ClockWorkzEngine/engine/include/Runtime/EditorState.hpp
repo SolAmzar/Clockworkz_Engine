@@ -69,6 +69,9 @@ private:
 
     // ----- Scene -----
     std::string             m_sceneFilePath;
+    std::string             m_projectRoot;       // Absolute path to the open project root
+    std::string             m_engineAssetsRoot;  // Absolute path to game/assets/ (shaders, fonts)
+    std::string             m_originalCwd;       // CWD before project opened; restored on exit
     Scene                   m_scene{"Editor"};
     Graphics::FrameBuffer   m_framebuffer;
 
