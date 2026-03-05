@@ -6,7 +6,8 @@
       "Bash(if not exist \"assets\\\\prefabs\" mkdir \"assets\\\\prefabs\")",
       "Bash(BASE=\"C:/Users/amiru/source/repos/csd2401f25_team_clockworkz/ClockWorkzEngine/game\" echo \"=== assets/textures \\(count\\) ===\" ls \"$BASE/assets/textures/\")",
       "Bash(echo \"\\(empty\\)\" echo \"=== assets/audio ===\" ls \"$BASE/assets/audio/\")",
-      "Bash(echo \"\\(empty\\)\" echo \"=== assets/prefabs ===\" ls \"$BASE/assets/prefabs/\")"
+      "Bash(echo \"\\(empty\\)\" echo \"=== assets/prefabs ===\" ls \"$BASE/assets/prefabs/\")",
+      "Bash(xargs grep:*)"
     ]
   }
 }

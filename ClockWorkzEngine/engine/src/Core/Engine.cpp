@@ -32,11 +32,14 @@ reserved.
 #include "Core/Logger.hpp"
 #include "Core/Profiler.hpp"
 #include "Core/Time.hpp"
+#include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
 #include "Gameplay/Prefab.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include "Graphics/RenderingManager.hpp"
+#include "Graphics/Shader.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
@@ -212,13 +215,7 @@ void Engine::shutdown() {
   if (m_logger)
     m_logger->info("Engine shutdown.");
 
-  // 1. First destroy IMGUI (UI layer)
-  if (m_imgui) {
-    m_imgui->shutdown();
-    m_imgui.reset();
-  }
-
-  // 2. Cleanup Game States (they may use ImGui in onExit)
+  // 1. Cleanup Game States first (they use ImGui in renderImGui/onExit)
   if (m_gsm) {
     while (m_gsm->top()) {
       m_gsm->pop();
@@ -227,32 +224,42 @@ void Engine::shutdown() {
     m_gsm.reset();
   }
 
+  // 2. Destroy ImGui AFTER all states are gone
+  if (m_imgui) {
+    m_imgui->shutdown();
+    m_imgui.reset();
+  }
+
   // 3. Camera must die BEFORE renderer + graphics
   if (m_camera) {
     m_camera.reset();
   }
 
-  // 4. RenderingManager (OpenGL buffers)
+  // 4. Free GPU-backed resources while the OpenGL context is still valid
+  Assets::ResourceManager<Graphics::Shader>::Clear();
+  Assets::ResourceManager<Assets::FontManager>::Clear();
+
+  // 5. RenderingManager (OpenGL buffers)
   if (m_renderer) {
     m_renderer.reset();
   }
 
-  // 5. GraphicsManager (viewport, GL state)
+  // 6. GraphicsManager (viewport, GL state)
   if (m_gfx) {
     m_gfx.reset();
   }
 
-  // 6. Input must die BEFORE window
+  // 7. Input must die BEFORE window
   if (m_input) {
     m_input.reset();
   }
 
-  // 7. WindowManager (destroys GLFW window + context)
+  // 8. WindowManager (destroys GLFW window + context)
   if (m_window) {
     m_window.reset();
   }
 
-  // 8. Audio shutdown
+  // 9. Audio shutdown
   if (m_audio) {
     Assets::SoundManager::Clear();
     m_audio.reset();
@@ -261,15 +268,15 @@ void Engine::shutdown() {
     m_sfAudio.reset();
   }
 
-  // 9. Lua Shutdown
+  // 10. Lua Shutdown
   if (m_lua) {
     m_lua.reset();
   }
 
-  // 10. TextureManager cleanup
+  // 11. TextureManager cleanup
   Assets::TextureManager::Clear();
 
-  // 11. Basic engine services (safe anywhere below)
+  // 12. Basic engine services (safe anywhere below)
   m_time.reset();
   m_logger.reset();
   m_config.reset();

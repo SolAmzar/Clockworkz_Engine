@@ -159,9 +159,9 @@ struct EntitySnapshot {
       hasSpriteAnimator = true;
       spriteAnimator = *anim;
     }
-    if (auto *torch = world.getComponent<Components::TorchComponent>(entity)) {
+    if (auto *torchComp = world.getComponent<Components::TorchComponent>(entity)) {
       hasTorch = true;
-      this->torch = *torch; // Dereference the pointer
+      torch = *torchComp;
     }
     if (auto *t = world.getComponent<Components::Tag>(entity)) {
       hasTag = true;
@@ -264,11 +264,11 @@ struct EntitySnapshot {
       }
     }
     if (hasTorch) {
-      if (auto *torch =
+      if (auto *torchComp =
               world.getComponent<Components::TorchComponent>(entity)) {
-        *torch = this->torch;
+        *torchComp = torch;
       } else {
-        world.addComponent(entity, this->torch);
+        world.addComponent(entity, torch);
       }
     }
     if (hasTag) {
