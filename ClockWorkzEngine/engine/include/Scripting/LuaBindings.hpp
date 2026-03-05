@@ -85,6 +85,20 @@ namespace Scripting {
     void RegisterEntityRef(sol::state& lua);
 
     //-------------------------------------------------------------------------
+    // Global Service Bindings (Lua-script API)
+    //-------------------------------------------------------------------------
+
+    // Register Input global table — string-key API for Lua scripts:
+    //   Input.isKeyDown("W"), Input.wasKeyPressed("SPACE"),
+    //   Input.isMouseDown("LEFT"), Input.getMousePos(), Input.getMouseWorldPos()
+    void RegisterInputGlobal(sol::state& lua);
+
+    // Register Audio global table — sound playback for Lua scripts:
+    //   Audio.play("name"), Audio.playOneShot("name"),
+    //   Audio.stop("name"), Audio.isPlaying("name")
+    void RegisterAudioGlobal(sol::state& lua);
+
+    //-------------------------------------------------------------------------
     // Master Registration
     //-------------------------------------------------------------------------
 

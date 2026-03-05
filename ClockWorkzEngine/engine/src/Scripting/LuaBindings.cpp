@@ -20,10 +20,12 @@ All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Graphics/Camera2D.hpp"
+#include "Audio/AudioManager.hpp"
 #include "Core/Engine.hpp"
 
 #include <GLFW/glfw3.h>
 #include <string>
+#include <unordered_map>
 #include <iostream>
 
 namespace Scripting {
@@ -564,6 +566,143 @@ namespace Scripting {
     }
 
     //-------------------------------------------------------------------------
+    // Input Global Binding  (string-key API for Lua scripts)
+    //-------------------------------------------------------------------------
+    void RegisterInputGlobal(sol::state& lua) {
+        // Static lookup tables — built once, shared by all lambda invocations.
+        static const std::unordered_map<std::string, int> s_keyMap = {
+            {"A",GLFW_KEY_A},{"B",GLFW_KEY_B},{"C",GLFW_KEY_C},{"D",GLFW_KEY_D},
+            {"E",GLFW_KEY_E},{"F",GLFW_KEY_F},{"G",GLFW_KEY_G},{"H",GLFW_KEY_H},
+            {"I",GLFW_KEY_I},{"J",GLFW_KEY_J},{"K",GLFW_KEY_K},{"L",GLFW_KEY_L},
+            {"M",GLFW_KEY_M},{"N",GLFW_KEY_N},{"O",GLFW_KEY_O},{"P",GLFW_KEY_P},
+            {"Q",GLFW_KEY_Q},{"R",GLFW_KEY_R},{"S",GLFW_KEY_S},{"T",GLFW_KEY_T},
+            {"U",GLFW_KEY_U},{"V",GLFW_KEY_V},{"W",GLFW_KEY_W},{"X",GLFW_KEY_X},
+            {"Y",GLFW_KEY_Y},{"Z",GLFW_KEY_Z},
+            {"0",GLFW_KEY_0},{"1",GLFW_KEY_1},{"2",GLFW_KEY_2},{"3",GLFW_KEY_3},
+            {"4",GLFW_KEY_4},{"5",GLFW_KEY_5},{"6",GLFW_KEY_6},{"7",GLFW_KEY_7},
+            {"8",GLFW_KEY_8},{"9",GLFW_KEY_9},
+            {"SPACE",GLFW_KEY_SPACE},{"ENTER",GLFW_KEY_ENTER},
+            {"ESCAPE",GLFW_KEY_ESCAPE},{"TAB",GLFW_KEY_TAB},
+            {"BACKSPACE",GLFW_KEY_BACKSPACE},
+            {"LEFT_SHIFT",GLFW_KEY_LEFT_SHIFT},{"RIGHT_SHIFT",GLFW_KEY_RIGHT_SHIFT},
+            {"SHIFT",GLFW_KEY_LEFT_SHIFT},         // friendly alias
+            {"LEFT_CTRL",GLFW_KEY_LEFT_CONTROL},{"RIGHT_CTRL",GLFW_KEY_RIGHT_CONTROL},
+            {"CTRL",GLFW_KEY_LEFT_CONTROL},         // friendly alias
+            {"LEFT_ALT",GLFW_KEY_LEFT_ALT},{"RIGHT_ALT",GLFW_KEY_RIGHT_ALT},
+            {"UP",GLFW_KEY_UP},{"DOWN",GLFW_KEY_DOWN},
+            {"LEFT",GLFW_KEY_LEFT},{"RIGHT",GLFW_KEY_RIGHT},
+            {"F1",GLFW_KEY_F1},{"F2",GLFW_KEY_F2},{"F3",GLFW_KEY_F3},
+            {"F4",GLFW_KEY_F4},{"F5",GLFW_KEY_F5},{"F6",GLFW_KEY_F6},
+            {"F7",GLFW_KEY_F7},{"F8",GLFW_KEY_F8},{"F9",GLFW_KEY_F9},
+            {"F10",GLFW_KEY_F10},{"F11",GLFW_KEY_F11},{"F12",GLFW_KEY_F12},
+            // Punctuation
+            {"APOSTROPHE",    GLFW_KEY_APOSTROPHE},    // '
+            {"COMMA",         GLFW_KEY_COMMA},          // ,
+            {"MINUS",         GLFW_KEY_MINUS},          // -
+            {"PERIOD",        GLFW_KEY_PERIOD},         // .
+            {"SLASH",         GLFW_KEY_SLASH},          // /
+            {"SEMICOLON",     GLFW_KEY_SEMICOLON},      // ;
+            {"EQUAL",         GLFW_KEY_EQUAL},          // =
+            {"LEFT_BRACKET",  GLFW_KEY_LEFT_BRACKET},   // [
+            {"BACKSLASH",     GLFW_KEY_BACKSLASH},      // '\'
+            {"RIGHT_BRACKET", GLFW_KEY_RIGHT_BRACKET},  // ]
+            {"GRAVE_ACCENT",  GLFW_KEY_GRAVE_ACCENT},   // `
+        };
+        static const std::unordered_map<std::string, int> s_mouseMap = {
+            {"LEFT",  GLFW_MOUSE_BUTTON_LEFT},
+            {"RIGHT", GLFW_MOUSE_BUTTON_RIGHT},
+            {"MIDDLE",GLFW_MOUSE_BUTTON_MIDDLE},
+        };
+
+        // Helper: resolve key name and lazy-track it if not already tracked.
+        // Common keys are pre-tracked in InputManager::init() so they have
+        // zero frame delay. Custom keys (not in init) auto-register here on
+        // first use — they will be correct from the very next frame onward.
+        auto ensureKey = [](const std::string& name) -> int {
+            auto it = s_keyMap.find(name);
+            if (it == s_keyMap.end()) return -1;
+            auto& inp = Core::Engine::Get().input();
+            if (!inp.isKeyTracked(it->second))
+                inp.trackKey(it->second);
+            return it->second;
+        };
+        auto ensureMouse = [](const std::string& name) -> int {
+            auto it = s_mouseMap.find(name);
+            if (it == s_mouseMap.end()) return -1;
+            auto& inp = Core::Engine::Get().input();
+            if (!inp.isMouseButtonTracked(it->second))
+                inp.trackMouseButton(it->second);
+            return it->second;
+        };
+
+        sol::table t = lua.create_table();
+
+        t.set_function("isKeyDown", [ensureKey](const std::string& name) -> bool {
+            int k = ensureKey(name);
+            return k != -1 && Core::Engine::Get().input().isKeyDown(k);
+        });
+        t.set_function("wasKeyPressed", [ensureKey](const std::string& name) -> bool {
+            int k = ensureKey(name);
+            return k != -1 && Core::Engine::Get().input().wasKeyPressed(k);
+        });
+        t.set_function("wasKeyReleased", [ensureKey](const std::string& name) -> bool {
+            int k = ensureKey(name);
+            return k != -1 && Core::Engine::Get().input().wasKeyReleased(k);
+        });
+
+        t.set_function("isMouseDown", [ensureMouse](const std::string& name) -> bool {
+            int b = ensureMouse(name);
+            return b != -1 && Core::Engine::Get().input().isMouseDown(b);
+        });
+        t.set_function("wasMousePressed", [ensureMouse](const std::string& name) -> bool {
+            int b = ensureMouse(name);
+            return b != -1 && Core::Engine::Get().input().wasMousePressed(b);
+        });
+
+        // Mouse position helpers
+        t.set_function("getMousePos", []() -> vec2 {
+            return Core::Engine::Get().input().mousePosition();
+        });
+        t.set_function("getMouseWorldPos", []() -> vec2 {
+            auto& eng = Core::Engine::Get();
+            return eng.input().getMouseWorldPos(eng.camera(),
+                static_cast<float>(eng.window().width()),
+                static_cast<float>(eng.window().height()));
+        });
+
+        lua["Input"] = t;
+    }
+
+    //-------------------------------------------------------------------------
+    // Audio Global Binding  (sound playback API for Lua scripts)
+    //-------------------------------------------------------------------------
+    void RegisterAudioGlobal(sol::state& lua) {
+        sol::table t = lua.create_table();
+
+        // play(name) — play by sound profile (honours loop/volume/pitch from config)
+        t.set_function("play", [](const std::string& name) {
+            Core::Engine::Get().audio().play(name);
+        });
+
+        // playOneShot(name) — fire-and-forget SFX with no channel tracking
+        t.set_function("playOneShot", [](const std::string& name) {
+            Core::Engine::Get().audio().playOneShot(name);
+        });
+
+        // stop(name) — stop a sound by its profile name
+        t.set_function("stop", [](const std::string& name) {
+            Core::Engine::Get().audio().stop(name);
+        });
+
+        // isPlaying(name) — returns true if that sound is currently active
+        t.set_function("isPlaying", [](const std::string& name) -> bool {
+            return Core::Engine::Get().audio().isPlaying(name);
+        });
+
+        lua["Audio"] = t;
+    }
+
+    //-------------------------------------------------------------------------
     // Master Registration
     //-------------------------------------------------------------------------
     void RegisterAllBindings(sol::state& lua) {
@@ -590,6 +729,12 @@ namespace Scripting {
 
         RegisterEntityRef(lua);
         std::cout << "[LuaBindings] Registered EntityRef" << std::endl;
+
+        RegisterInputGlobal(lua);
+        std::cout << "[LuaBindings] Registered Input global" << std::endl;
+
+        RegisterAudioGlobal(lua);
+        std::cout << "[LuaBindings] Registered Audio global" << std::endl;
 
         // Create Engine global table for accessing engine services
         sol::table engine = lua.create_table();

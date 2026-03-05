@@ -48,45 +48,55 @@ bool InputManager::init(WindowManager &wm) {
   // Register Scroll Callback
   glfwSetScrollCallback(m_window, ScrollCallback);
 
-  // Reasonable defaults for menus + gameplay
-  trackKey(GLFW_KEY_UP);
-  trackKey(GLFW_KEY_DOWN);
-  trackKey(GLFW_KEY_LEFT);
-  trackKey(GLFW_KEY_RIGHT);
+  // Track all standard keys so both C++ systems and Lua scripts can query
+  // any key from frame 1 without per-site trackKey() calls.
 
-  trackKey(GLFW_KEY_W);
-  trackKey(GLFW_KEY_S);
-  trackKey(GLFW_KEY_A);
-  trackKey(GLFW_KEY_D);
+  // Arrow keys
+  trackKey(GLFW_KEY_UP);    trackKey(GLFW_KEY_DOWN);
+  trackKey(GLFW_KEY_LEFT);  trackKey(GLFW_KEY_RIGHT);
 
-  trackKey(GLFW_KEY_Q);
-  trackKey(GLFW_KEY_E);
-  trackKey(GLFW_KEY_G);
+  // Full alphabet
+  trackKey(GLFW_KEY_A); trackKey(GLFW_KEY_B); trackKey(GLFW_KEY_C);
+  trackKey(GLFW_KEY_D); trackKey(GLFW_KEY_E); trackKey(GLFW_KEY_F);
+  trackKey(GLFW_KEY_G); trackKey(GLFW_KEY_H); trackKey(GLFW_KEY_I);
+  trackKey(GLFW_KEY_J); trackKey(GLFW_KEY_K); trackKey(GLFW_KEY_L);
+  trackKey(GLFW_KEY_M); trackKey(GLFW_KEY_N); trackKey(GLFW_KEY_O);
+  trackKey(GLFW_KEY_P); trackKey(GLFW_KEY_Q); trackKey(GLFW_KEY_R);
+  trackKey(GLFW_KEY_S); trackKey(GLFW_KEY_T); trackKey(GLFW_KEY_U);
+  trackKey(GLFW_KEY_V); trackKey(GLFW_KEY_W); trackKey(GLFW_KEY_X);
+  trackKey(GLFW_KEY_Y); trackKey(GLFW_KEY_Z);
 
-  trackKey(GLFW_KEY_ENTER);
-  trackKey(GLFW_KEY_KP_ENTER);
-  trackKey(GLFW_KEY_ESCAPE);
-  trackKey(GLFW_KEY_SPACE);
-  trackKey(GLFW_KEY_L);
+  // Number row
+  trackKey(GLFW_KEY_0); trackKey(GLFW_KEY_1); trackKey(GLFW_KEY_2);
+  trackKey(GLFW_KEY_3); trackKey(GLFW_KEY_4); trackKey(GLFW_KEY_5);
+  trackKey(GLFW_KEY_6); trackKey(GLFW_KEY_7); trackKey(GLFW_KEY_8);
+  trackKey(GLFW_KEY_9);
 
-  trackKey(GLFW_KEY_F11);
-  trackKey(GLFW_KEY_F1);
+  // Special keys
+  trackKey(GLFW_KEY_SPACE);     trackKey(GLFW_KEY_ENTER);
+  trackKey(GLFW_KEY_KP_ENTER);  trackKey(GLFW_KEY_ESCAPE);
+  trackKey(GLFW_KEY_TAB);       trackKey(GLFW_KEY_BACKSPACE);
 
-  trackKey(GLFW_KEY_R); // For Flashlight
-  trackKey(GLFW_KEY_F); // For Flashlight
-  trackKey(GLFW_KEY_Z); //
-  trackKey(GLFW_KEY_X);
-  trackKey(GLFW_KEY_P); // For debugging
-  trackKey(GLFW_KEY_V);
-  trackKey(GLFW_KEY_N); // Mute BGM
-  trackKey(GLFW_KEY_B); // Unmute BGM
-  trackKey(GLFW_KEY_M); // Sprite Editor from Menu Screen
-  trackKey(GLFW_KEY_LEFT_SHIFT);
-  trackKey(GLFW_KEY_RIGHT_SHIFT);
-  trackKey(GLFW_KEY_LEFT_CONTROL);
-  trackKey(GLFW_KEY_LEFT_BRACKET);
-  trackKey(GLFW_KEY_RIGHT_BRACKET);
+  // Punctuation
+  trackKey(GLFW_KEY_APOSTROPHE);   trackKey(GLFW_KEY_COMMA);
+  trackKey(GLFW_KEY_MINUS);        trackKey(GLFW_KEY_PERIOD);
+  trackKey(GLFW_KEY_SLASH);        trackKey(GLFW_KEY_SEMICOLON);
+  trackKey(GLFW_KEY_EQUAL);        trackKey(GLFW_KEY_LEFT_BRACKET);
+  trackKey(GLFW_KEY_BACKSLASH);    trackKey(GLFW_KEY_RIGHT_BRACKET);
+  trackKey(GLFW_KEY_GRAVE_ACCENT);
 
+  // Modifiers
+  trackKey(GLFW_KEY_LEFT_SHIFT);   trackKey(GLFW_KEY_RIGHT_SHIFT);
+  trackKey(GLFW_KEY_LEFT_CONTROL); trackKey(GLFW_KEY_RIGHT_CONTROL);
+  trackKey(GLFW_KEY_LEFT_ALT);     trackKey(GLFW_KEY_RIGHT_ALT);
+
+  // Function keys
+  trackKey(GLFW_KEY_F1);  trackKey(GLFW_KEY_F2);  trackKey(GLFW_KEY_F3);
+  trackKey(GLFW_KEY_F4);  trackKey(GLFW_KEY_F5);  trackKey(GLFW_KEY_F6);
+  trackKey(GLFW_KEY_F7);  trackKey(GLFW_KEY_F8);  trackKey(GLFW_KEY_F9);
+  trackKey(GLFW_KEY_F10); trackKey(GLFW_KEY_F11); trackKey(GLFW_KEY_F12);
+
+  // Mouse buttons
   trackMouseButton(GLFW_MOUSE_BUTTON_LEFT);
   trackMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
   trackMouseButton(GLFW_MOUSE_BUTTON_MIDDLE);
