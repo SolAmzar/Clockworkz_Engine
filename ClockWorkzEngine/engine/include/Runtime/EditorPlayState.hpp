@@ -40,6 +40,8 @@ private:
     Platform::InputManager& m_input;
     GameStateManager&       m_gsm;
     std::string             m_sceneFilePath;
+    std::string             m_projectRoot;
+    std::string             m_originalCwd;
     Scene                   m_scene{"EditorPlay"};
     bool                    m_pendingStop{false};
 };

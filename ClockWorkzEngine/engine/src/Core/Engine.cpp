@@ -23,6 +23,8 @@ reserved.
 */
 /******************************************************************************/
 #include "Core/Engine.hpp"
+#include "ECS/World.hpp"
+#include "Runtime/Scene.hpp"
 #include "Assets/SoundManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Audio/AudioManager.hpp"
@@ -77,6 +79,24 @@ void Engine::setEditorFactory(EditorFactory fn) {
 
 void Engine::setPlayFactory(PlayFactory fn) {
   m_playFactory = std::move(fn);
+}
+
+void Engine::setComponentRegistrar(ComponentRegistrar fn) {
+  m_componentRegistrar = std::move(fn);
+}
+
+void Engine::invokeComponentRegistrar(ECS::World& world) const {
+  if (m_componentRegistrar)
+    m_componentRegistrar(world);
+}
+
+void Engine::setSceneSetup(SceneSetupFn fn) {
+  m_sceneSetup = std::move(fn);
+}
+
+void Engine::invokeSceneSetup(Runtime::Scene& scene) const {
+  if (m_sceneSetup)
+    m_sceneSetup(scene);
 }
 
 const std::string& Engine::startState() const {

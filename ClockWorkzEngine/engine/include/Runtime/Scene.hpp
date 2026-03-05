@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -43,9 +44,23 @@ public:
   void RespawnPlayer();
   float GetDeathDuration() const { return m_deathDuration; }
 
+  // Game callbacks: let game-side code hook into Scene lifecycle without the
+  // engine needing to know about game-specific component types.
+  using SceneUpdateFn  = std::function<void(ECS::World&, double,
+                                            Systems::CollisionSystem&, Scene&)>;
+  using SceneRenderFn  = std::function<void(ECS::World&,
+                                            Graphics::RenderingManager&)>;
+  using SceneLoadFn    = std::function<void(ECS::World&, const vec2& spawnPoint)>;
+  using SceneRespawnFn = std::function<void(ECS::World&, const vec2& spawnPoint)>;
+  void setGameCallbacks(SceneUpdateFn  onUpdate,
+                        SceneRenderFn  onRender,
+                        SceneLoadFn    onLoad,
+                        SceneRespawnFn onRespawn);
+
   // Pending Level Accessors for Editor
   std::string GetPendingLevel() const { return m_pendingLevel; }
   void ClearPendingLevel() { m_pendingLevel.clear(); }
+  void SetPendingLevel(const std::string& level) { m_pendingLevel = level; }
 
   // "SceneManager" Interface (Legacy/Manager expectation)
   bool load() {
@@ -105,6 +120,12 @@ private:
   float m_playerDeathTimer = -1.0f;
   float m_deathDuration = 0.0f;
   std::string m_pendingLevel;
+
+  // --- Game callbacks (registered by game-side code) ---
+  SceneUpdateFn  m_onUpdate;
+  SceneRenderFn  m_onRender;
+  SceneLoadFn    m_onLoad;
+  SceneRespawnFn m_onRespawn;
 
   std::string m_name;
   std::string m_bgm;       // Background music track name

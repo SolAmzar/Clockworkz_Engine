@@ -13,13 +13,19 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
+#include "Assets/TextureManager.hpp"
+#include "Assets/SoundManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include "Platform/InputManager.hpp"
+#include "Platform/WindowManager.hpp"
+#include "Components/Tag.hpp"
+#include "Components/Transform.hpp"
 #include "IMGUI/imgui.h"
 
 #include <GL/glew.h>
+#include <filesystem>
 #include <iostream>
 
 namespace Runtime {
@@ -34,21 +40,57 @@ EditorPlayState::EditorPlayState(Platform::InputManager& input,
 // ---------------------------------------------------------------------------
 
 void EditorPlayState::onEnter() {
+    // Derive project root from scene path: <root>/assets/scenes/<name>.json
+    // (same logic as EditorState::onEnter)
+    namespace fs = std::filesystem;
+    fs::path sceneFs(m_sceneFilePath);
+    m_projectRoot = sceneFs.parent_path()  // .../assets/scenes/
+                           .parent_path()  // .../assets/
+                           .parent_path()  // <projectRoot>/
+                           .generic_string();
+
+    // Switch CWD to project root so "assets/..." relative paths resolve correctly
+    m_originalCwd = fs::current_path().generic_string();
+    std::error_code cwdEc;
+    fs::current_path(m_projectRoot, cwdEc);
+    if (cwdEc)
+        std::cerr << "[EditorPlayState] Failed to set CWD to: " << m_projectRoot << "\n";
+
+    // Reload project assets (EditorState::onExit clears them before we get here)
+    Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
+    Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json");
+
     m_scene.Init();
+    Core::Engine::Get().invokeSceneSetup(m_scene);
 
     if (!m_sceneFilePath.empty()) {
         if (!m_scene.LoadFromFile(m_sceneFilePath))
             std::cerr << "[EditorPlayState] Failed to load: " << m_sceneFilePath << "\n";
     }
 
-    // Reset camera to origin at 1:1 zoom for play mode
+    // Set camera to full-screen viewport for play mode
+    auto& window = Core::Engine::Get().window();
+    glViewport(0, 0, window.width(), window.height());
+
     auto& camera = Core::Engine::Get().camera();
+    camera.setViewport(window.width(), window.height());
     camera.setPosition({0.0f, 0.0f});
     camera.setZoom(1.0f);
 }
 
 void EditorPlayState::onExit() {
     m_scene.Clear();
+
+    // Unload project assets and restore CWD.
+    // EditorState::onEnter() will reload them when returning to the editor.
+    Assets::TextureManager::Clear();
+    Assets::SoundManager::Clear();
+
+    if (!m_originalCwd.empty()) {
+        std::error_code ec;
+        std::filesystem::current_path(m_originalCwd, ec);
+        m_originalCwd.clear();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +108,14 @@ void EditorPlayState::update(double dt) {
     }
 
     m_scene.Update(dt, m_input);
+
+    // Camera follow: track entity tagged "Player"
+    auto& camera = Core::Engine::Get().camera();
+    m_scene.GetWorld().each<Components::Tag, Components::Transform>(
+        [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
+            if (tag.tag == "Player")
+                camera.setPosition(glm::vec2(t.position.x, t.position.y));
+        });
 }
 
 // ---------------------------------------------------------------------------

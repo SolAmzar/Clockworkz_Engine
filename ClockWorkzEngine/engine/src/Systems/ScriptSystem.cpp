@@ -13,9 +13,18 @@ reserved.
 
 #include "Systems/ScriptSystem.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/Tag.hpp"
 #include "Core/Engine.hpp"
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
+// Game-specific components for World query helpers (known engine/game coupling)
+#include "Components/Battery.hpp"
+#include "Components/Torch.hpp"
+#include "Components/Fragment.hpp"
+#include "Components/FragmentCollector.hpp"
+#include "Components/Door.hpp"
+#include "Components/DoorSwing.hpp"
+#include "Components/LightExposure.hpp"
 #include <filesystem>
 #include <iostream>
 
@@ -24,6 +33,84 @@ namespace Systems {
 
 void ScriptSystem::update(ECS::World &world, double dt) {
   float fDt = static_cast<float>(dt);
+
+  // Set up the World Lua global so any script can query cross-entity data.
+  // Functions are rebuilt each frame so they capture the live world reference.
+  {
+    auto &luaMgr = Core::Engine::Get().lua();
+    sol::state &lua = luaMgr.GetState();
+
+    sol::table worldTable = lua.create_table();
+
+    // findByTag(tag) -> EntityRef or nil
+    worldTable.set_function("findByTag",
+        [&world](const std::string &tag) -> sol::optional<Scripting::EntityRef> {
+          sol::optional<Scripting::EntityRef> result;
+          world.each<Components::Tag>([&](ECS::Entity e, Components::Tag &t) {
+            if (!result && t.tag == tag)
+              result = Scripting::EntityRef(e, &world);
+          });
+          return result;
+        });
+
+    // eachByTag(tag, fn) - iterate entities matching a tag
+    worldTable.set_function("eachByTag",
+        [&world](const std::string &tag, sol::function fn) {
+          world.each<Components::Tag>([&](ECS::Entity e, Components::Tag &t) {
+            if (t.tag == tag) {
+              Scripting::EntityRef ref(e, &world);
+              fn(ref);
+            }
+          });
+        });
+
+    // eachFragment(fn)
+    worldTable.set_function("eachFragment",
+        [&world](sol::function fn) {
+          world.each<Components::Fragment>([&](ECS::Entity e, Components::Fragment &) {
+            Scripting::EntityRef ref(e, &world);
+            fn(ref);
+          });
+        });
+
+    // eachTorch(fn)
+    worldTable.set_function("eachTorch",
+        [&world](sol::function fn) {
+          world.each<Components::TorchComponent>([&](ECS::Entity e, Components::TorchComponent &) {
+            Scripting::EntityRef ref(e, &world);
+            fn(ref);
+          });
+        });
+
+    // eachDoor(fn)
+    worldTable.set_function("eachDoor",
+        [&world](sol::function fn) {
+          world.each<Components::Door>([&](ECS::Entity e, Components::Door &) {
+            Scripting::EntityRef ref(e, &world);
+            fn(ref);
+          });
+        });
+
+    // eachDoorSwing(fn)
+    worldTable.set_function("eachDoorSwing",
+        [&world](sol::function fn) {
+          world.each<Components::DoorSwing>([&](ECS::Entity e, Components::DoorSwing &) {
+            Scripting::EntityRef ref(e, &world);
+            fn(ref);
+          });
+        });
+
+    // eachLightExposure(fn)
+    worldTable.set_function("eachLightExposure",
+        [&world](sol::function fn) {
+          world.each<Components::LightExposure>([&](ECS::Entity e, Components::LightExposure &) {
+            Scripting::EntityRef ref(e, &world);
+            fn(ref);
+          });
+        });
+
+    lua["World"] = worldTable;
+  }
 
   world.each<Components::LuaScript>(
       [&](ECS::Entity entity, Components::LuaScript &script) {

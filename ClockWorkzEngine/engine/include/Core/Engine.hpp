@@ -25,7 +25,8 @@ All content © 2025 DigiPen Institute of Technology Singapore. All rights reserv
 #include "Core/Logger.hpp"
 #include "Core/EventBus.hpp"
 #include "Core/Event.hpp"
-namespace Runtime { class GameStateManager; class GameState; }
+namespace Runtime { class GameStateManager; class GameState; class Scene; }
+namespace ECS     { class World; }
 
 namespace Audio { class AudioManager; class SurfaceAudioSystem; }
 
@@ -68,6 +69,19 @@ namespace Core {
 		using PlayFactory = std::function<std::shared_ptr<Runtime::GameState>(const std::string& scenePath)>;
 		void setPlayFactory(PlayFactory fn);
 		const PlayFactory& playFactory() const { return m_playFactory; }
+
+		// Register a callback that Scene::Init() invokes to let the game register
+		// its own component types into the ECS World.  The engine only registers
+		// engine-level components; game-specific components are added here.
+		using ComponentRegistrar = std::function<void(ECS::World&)>;
+		void setComponentRegistrar(ComponentRegistrar fn);
+		void invokeComponentRegistrar(ECS::World& world) const;
+
+		// Register a callback called after Scene::Init() to let the game attach
+		// its own update/render/load/respawn callbacks to a Scene instance.
+		using SceneSetupFn = std::function<void(Runtime::Scene&)>;
+		void setSceneSetup(SceneSetupFn fn);
+		void invokeSceneSetup(Runtime::Scene& scene) const;
 
 		Runtime::GameStateManager& gsm() { return *m_gsm; }
 
@@ -139,8 +153,10 @@ namespace Core {
 		bool m_pausedByFocus;
 		bool m_quitRequested{ false };
 		float m_quitFadeTimer{ 0.0f };
-		BootstrapFn   m_bootstrap;
-		EditorFactory m_editorFactory;
-		PlayFactory   m_playFactory;
+		BootstrapFn          m_bootstrap;
+		EditorFactory        m_editorFactory;
+		PlayFactory          m_playFactory;
+		ComponentRegistrar   m_componentRegistrar;
+		SceneSetupFn         m_sceneSetup;
 	};
 }

@@ -328,6 +328,7 @@ SandboxState::~SandboxState() = default;
 void SandboxState::onEnter() {
   // Init Scene (registers components)
   m_scene.Init();
+  Core::Engine::Get().invokeSceneSetup(m_scene);
 
   // Load necessary shaders for RenderingManager scene pass
   Assets::ResourceManager<Graphics::Shader>::Load(

@@ -127,6 +127,7 @@ private:
     // ----- Load scene window -----
     char                    m_loadSceneFilter[128]{};
     std::string             m_pendingLoadPath;
+    char                    m_newSceneBuf[128]{};
 
     // ----- Asset rename/delete -----
     std::string             m_renamingAsset;

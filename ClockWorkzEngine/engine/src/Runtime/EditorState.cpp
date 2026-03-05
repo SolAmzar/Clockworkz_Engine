@@ -62,19 +62,6 @@ reserved.
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/LuaScript.hpp"
-// Game components
-#include "Components/Health.hpp"
-#include "Components/Battery.hpp"
-#include "Components/LightExposure.hpp"
-#include "Components/Fragment.hpp"
-#include "Components/EnemyAI.hpp"
-#include "Components/FragmentCollector.hpp"
-#include "Components/Torch.hpp"
-#include "Components/Door.hpp"
-#include "Components/DoorSwing.hpp"
-#include "Components/ActivationZone.hpp"
-#include "Components/Portal.hpp"
-#include "Components/PlayerController.hpp"
 
 namespace Runtime {
 
@@ -640,6 +627,58 @@ void EditorState::renderLoadSceneWindow() {
     fs::path sceneDir  = fs::path(m_sceneFilePath).parent_path();
     std::string curFile = fs::path(m_sceneFilePath).filename().string();
 
+    // New scene button
+    if (ImGui::Button("+ New Scene"))
+        ImGui::OpenPopup("NewScenePopup##ns");
+
+    // New scene modal
+    if (ImGui::BeginPopupModal("NewScenePopup##ns", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Scene name:");
+        ImGui::SetNextItemWidth(220.0f);
+        bool hitEnter = ImGui::InputText("##newscenename", m_newSceneBuf,
+                                         sizeof(m_newSceneBuf),
+                                         ImGuiInputTextFlags_EnterReturnsTrue);
+
+        bool doCreate = false;
+        if (ImGui::Button("Create") || hitEnter) doCreate = true;
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            m_newSceneBuf[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (doCreate && m_newSceneBuf[0] != '\0') {
+            std::string name = m_newSceneBuf;
+            // Append .json if missing
+            if (name.size() < 5 || name.substr(name.size() - 5) != ".json")
+                name += ".json";
+
+            fs::path newPath = sceneDir / name;
+            if (!fs::exists(newPath)) {
+                // Write minimal empty scene JSON
+                std::ofstream f(newPath.string());
+                f << "{\n"
+                  << "    \"entities\": [],\n"
+                  << "    \"bgm\": \"\",\n"
+                  << "    \"sfxVolume\": 1.0,\n"
+                  << "    \"spawnPoint\": {\"x\": 0, \"y\": 0},\n"
+                  << "    \"enableDarkness\": false,\n"
+                  << "    \"darknessIntensity\": 0.0,\n"
+                  << "    \"darknessColor\": {\"r\": 0, \"g\": 0, \"b\": 0}\n"
+                  << "}\n";
+                f.close();
+                m_pendingLoadPath = newPath.string();
+            }
+            m_newSceneBuf[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    ImGui::Separator();
+
     ImGui::SetNextItemWidth(-1.0f);
     ImGui::InputText("##scenefilter", m_loadSceneFilter, sizeof(m_loadSceneFilter));
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Filter scenes");
@@ -829,27 +868,6 @@ void EditorState::renderInspector() {
             addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world);
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Gameplay")) {
-            addCompEntry<Components::Health>("Health", m_selectedEntity, world);
-            addCompEntry<Components::Battery>("Battery", m_selectedEntity, world);
-            addCompEntry<Components::LightExposure>("LightExposure", m_selectedEntity, world);
-            addCompEntry<Components::Door>("Door", m_selectedEntity, world);
-            addCompEntry<Components::DoorSwing>("DoorSwing", m_selectedEntity, world);
-            addCompEntry<Components::Fragment>("Fragment", m_selectedEntity, world);
-            addCompEntry<Components::FragmentCollector>("FragmentCollector", m_selectedEntity, world);
-            addCompEntry<Components::Portal>("Portal", m_selectedEntity, world);
-            addCompEntry<Components::ActivationZone>("ActivationZone", m_selectedEntity, world);
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Character")) {
-            addCompEntry<Components::PlayerController>("PlayerController", m_selectedEntity, world);
-            addCompEntry<Components::EnemyAI>("EnemyAI", m_selectedEntity, world);
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("FX")) {
-            addCompEntry<Components::TorchComponent>("TorchComponent", m_selectedEntity, world);
-            ImGui::EndMenu();
-        }
         ImGui::EndPopup();
     }
 
@@ -911,6 +929,11 @@ void EditorState::renderInspector() {
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
             if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
                 sr->textureId = texBuf;
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+                    sr->textureId = static_cast<const char*>(pl->Data);
+                ImGui::EndDragDropTarget();
+            }
 
             // Show texture thumbnail if loaded
             auto tex = Assets::TextureManager::Get(sr->textureId);
@@ -973,6 +996,11 @@ void EditorState::renderInspector() {
             auto* au = world.getComponent<Components::AudioSource>(m_selectedEntity);
             char sndbuf[256]; snprintf(sndbuf, sizeof(sndbuf), "%s", au->soundId.c_str());
             if (ImGui::InputText("Sound ID##au", sndbuf, sizeof(sndbuf))) au->soundId = sndbuf;
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("AUDIO_ASSET"))
+                    au->soundId = static_cast<const char*>(pl->Data);
+                ImGui::EndDragDropTarget();
+            }
             ImGui::SliderFloat("Volume##au", &au->volume, 0.0f, 1.0f);
             ImGui::Checkbox("Loop##au", &au->loop);
             ImGui::SameLine();
@@ -1030,6 +1058,11 @@ void EditorState::renderInspector() {
             auto* ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
             char spbuf[256]; snprintf(spbuf, sizeof(spbuf), "%s", ls->scriptPath.c_str());
             if (ImGui::InputText("Script Path##ls", spbuf, sizeof(spbuf))) ls->scriptPath = spbuf;
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+                    ls->scriptPath = static_cast<const char*>(pl->Data);
+                ImGui::EndDragDropTarget();
+            }
             ImGui::Checkbox("Enabled##ls", &ls->enabled);
         }
         if (rm) world.removeComponent<Components::LuaScript>(m_selectedEntity);
@@ -1058,220 +1091,6 @@ void EditorState::renderInspector() {
                 tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
         }
         if (rm) world.removeComponent<Components::TextRenderer>(m_selectedEntity);
-    }
-
-    // ── Health ──────────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::Health>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("Health##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rh")) rm = true;
-        if (open) {
-            auto* h = world.getComponent<Components::Health>(m_selectedEntity);
-            ImGui::DragFloat("HP##h", &h->hp, 0.1f);
-            ImGui::DragFloat("MaxHP##h", &h->maxHp, 0.1f);
-            ImGui::Checkbox("Invulnerable##h", &h->invulnerable);
-            ImGui::SameLine();
-            ImGui::Checkbox("IsDead##h", &h->isDead);
-        }
-        if (rm) world.removeComponent<Components::Health>(m_selectedEntity);
-    }
-
-    // ── Battery ─────────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::Battery>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("Battery##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rb")) rm = true;
-        if (open) {
-            auto* b = world.getComponent<Components::Battery>(m_selectedEntity);
-            ImGui::DragFloat("Charge##b", &b->charge, 0.1f);
-            ImGui::DragFloat("MaxCharge##b", &b->maxCharge, 0.1f);
-            ImGui::DragFloat("DrainRate##b", &b->drainRate, 0.1f);
-            ImGui::DragFloat("ChargeRate##b", &b->chargeRate, 0.1f);
-            ImGui::Checkbox("IsCharging##b", &b->isCharging);
-        }
-        if (rm) world.removeComponent<Components::Battery>(m_selectedEntity);
-    }
-
-    // ── LightExposure ───────────────────────────────────────────────────────
-    if (world.hasComponent<Components::LightExposure>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("LightExposure##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rle")) rm = true;
-        if (open) {
-            auto* le = world.getComponent<Components::LightExposure>(m_selectedEntity);
-            ImGui::DragFloat("ExposureTime##le", &le->exposureTime, 0.1f);
-            ImGui::DragFloat("MaxExposureTime##le", &le->maxExposureTime, 0.1f);
-            ImGui::Checkbox("InLight##le", &le->inLight);
-            ImGui::SameLine();
-            ImGui::Checkbox("IsDangerous##le", &le->isDangerous);
-        }
-        if (rm) world.removeComponent<Components::LightExposure>(m_selectedEntity);
-    }
-
-    // ── EnemyAI ─────────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::EnemyAI>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("EnemyAI##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##reai")) rm = true;
-        if (open) {
-            auto* ai = world.getComponent<Components::EnemyAI>(m_selectedEntity);
-            ImGui::DragFloat("DetectionRadius##ai", &ai->detectionRadius, 1.0f);
-            ImGui::DragFloat("ChaseSpeed##ai", &ai->chaseSpeed, 1.0f);
-            ImGui::DragFloat("PatrolSpeed##ai", &ai->patrolSpeed, 1.0f);
-            const char* stateNames[] = {"Patrol", "Chase", "Alert", "Death"};
-            ImGui::TextDisabled("State: %s", stateNames[static_cast<int>(ai->state)]);
-        }
-        if (rm) world.removeComponent<Components::EnemyAI>(m_selectedEntity);
-    }
-
-    // ── PlayerController ────────────────────────────────────────────────────
-    if (world.hasComponent<Components::PlayerController>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("PlayerController##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rpc")) rm = true;
-        if (open) {
-            auto* pc = world.getComponent<Components::PlayerController>(m_selectedEntity);
-            ImGui::DragFloat("WalkMultiplier##pc", &pc->walkMultiplier, 0.01f);
-            ImGui::DragFloat("SprintMultiplier##pc", &pc->sprintMultiplier, 0.01f);
-        }
-        if (rm) world.removeComponent<Components::PlayerController>(m_selectedEntity);
-    }
-
-    // ── FragmentCollector ───────────────────────────────────────────────────
-    if (world.hasComponent<Components::FragmentCollector>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("FragmentCollector##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rfc")) rm = true;
-        if (open) {
-            auto* fc = world.getComponent<Components::FragmentCollector>(m_selectedEntity);
-            ImGui::DragInt("RequiredFragments##fc", &fc->requiredFragments, 1);
-            ImGui::DragInt("CollectedCount##fc", &fc->collectedCount, 1);
-            ImGui::DragFloat("PickupRadius##fc", &fc->pickupRadius, 1.0f);
-        }
-        if (rm) world.removeComponent<Components::FragmentCollector>(m_selectedEntity);
-    }
-
-    // ── Fragment ────────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::Fragment>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("Fragment##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rfr")) rm = true;
-        if (open) {
-            auto* fr = world.getComponent<Components::Fragment>(m_selectedEntity);
-            ImGui::DragInt("Fragment ID##fr", &fr->fragmentId, 1);
-            ImGui::Checkbox("Collected##fr", &fr->collected);
-            ImGui::SameLine();
-            ImGui::Checkbox("RequiresLight##fr", &fr->requiresLight);
-        }
-        if (rm) world.removeComponent<Components::Fragment>(m_selectedEntity);
-    }
-
-    // ── Door ────────────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::Door>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("Door##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rd")) rm = true;
-        if (open) {
-            auto* d = world.getComponent<Components::Door>(m_selectedEntity);
-            ImGui::DragInt("RequiredFragments##d", &d->requiredFragments, 1);
-            ImGui::Checkbox("IsOpen##d", &d->isOpen);
-            char otbuf[256]; snprintf(otbuf, sizeof(otbuf), "%s", d->openTexture.c_str());
-            if (ImGui::InputText("Open Texture##d", otbuf, sizeof(otbuf))) d->openTexture = otbuf;
-            char ctbuf[256]; snprintf(ctbuf, sizeof(ctbuf), "%s", d->closedTexture.c_str());
-            if (ImGui::InputText("Closed Texture##d", ctbuf, sizeof(ctbuf))) d->closedTexture = ctbuf;
-        }
-        if (rm) world.removeComponent<Components::Door>(m_selectedEntity);
-    }
-
-    // ── DoorSwing ───────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::DoorSwing>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("DoorSwing##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rds")) rm = true;
-        if (open) {
-            auto* ds = world.getComponent<Components::DoorSwing>(m_selectedEntity);
-            ImGui::Checkbox("IsOpen##ds", &ds->isOpen);
-            ImGui::DragFloat("SwingAngle##ds", &ds->swingAngle, 1.0f);
-            ImGui::DragFloat("Speed##ds", &ds->speed, 1.0f);
-            ImGui::Checkbox("Clockwise##ds", &ds->clockwise);
-        }
-        if (rm) world.removeComponent<Components::DoorSwing>(m_selectedEntity);
-    }
-
-    // ── ActivationZone ──────────────────────────────────────────────────────
-    if (world.hasComponent<Components::ActivationZone>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("ActivationZone##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##raz")) rm = true;
-        if (open) {
-            auto* az = world.getComponent<Components::ActivationZone>(m_selectedEntity);
-            const char* actionItems[] = {"None", "PlayAudio", "SpawnEnemy", "ChangeVariable"};
-            int actionIdx = static_cast<int>(az->actionType);
-            if (ImGui::Combo("Action Type##az", &actionIdx, actionItems, 4))
-                az->actionType = static_cast<Components::ActivationZone::ActionType>(actionIdx);
-            char pbuf[256]; snprintf(pbuf, sizeof(pbuf), "%s", az->payload.c_str());
-            if (ImGui::InputText("Payload##az", pbuf, sizeof(pbuf))) az->payload = pbuf;
-            ImGui::Checkbox("OneShot##az", &az->oneShot);
-            ImGui::SameLine();
-            ImGui::Checkbox("Active##az", &az->active);
-        }
-        if (rm) world.removeComponent<Components::ActivationZone>(m_selectedEntity);
-    }
-
-    // ── Portal ──────────────────────────────────────────────────────────────
-    if (world.hasComponent<Components::Portal>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("Portal##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rpo")) rm = true;
-        if (open) {
-            auto* po = world.getComponent<Components::Portal>(m_selectedEntity);
-            char lbuf[256]; snprintf(lbuf, sizeof(lbuf), "%s", po->levelName.c_str());
-            if (ImGui::InputText("Level Name##po", lbuf, sizeof(lbuf))) po->levelName = lbuf;
-        }
-        if (rm) world.removeComponent<Components::Portal>(m_selectedEntity);
-    }
-
-    // ── TorchComponent ──────────────────────────────────────────────────────
-    if (world.hasComponent<Components::TorchComponent>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("TorchComponent##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rtc")) rm = true;
-        if (open) {
-            auto* tc = world.getComponent<Components::TorchComponent>(m_selectedEntity);
-            ImGui::Checkbox("Active##tc", &tc->active);
-            float off[2] = {tc->offset.x, tc->offset.y};
-            if (ImGui::DragFloat2("Offset##tc", off, 0.5f))
-                tc->offset = {off[0], off[1]};
-            ImGui::DragFloat("Radius##tc", &tc->radius, 1.0f);
-            ImGui::DragFloat("Angle##tc", &tc->angle, 0.5f);
-            ImGui::DragFloat("Intensity##tc", &tc->intensity, 0.01f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("Color##tc", glm::value_ptr(tc->color));
-        }
-        if (rm) world.removeComponent<Components::TorchComponent>(m_selectedEntity);
     }
 
     ImGui::End();
@@ -1904,6 +1723,13 @@ void EditorState::renderScriptsBrowser() {
             ImGui::PopStyleVar();
             ImGui::PopStyleColor(3);
 
+            // Drag-drop source → LuaScript inspector accepts it
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                ImGui::SetDragDropPayload("SCRIPT_ASSET", fname.c_str(), fname.size() + 1);
+                ImGui::TextUnformatted(fname.c_str());
+                ImGui::EndDragDropSource();
+            }
+
             // Double-click → open in VS Code (no terminal window)
             if (ImGui::IsItemHovered() &&
                 ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -2163,6 +1989,13 @@ void EditorState::renderAudioBrowser() {
 
             ImGui::PopStyleVar();
             ImGui::PopStyleColor(3);
+
+            // Drag-drop source → AudioSource inspector accepts it
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                ImGui::SetDragDropPayload("AUDIO_ASSET", soundName.c_str(), soundName.size() + 1);
+                ImGui::TextUnformatted(soundName.c_str());
+                ImGui::EndDragDropSource();
+            }
 
             // Double-click → play
             if (ImGui::IsItemHovered() &&

@@ -18,6 +18,7 @@ reserved.
 #include "ECS/Entity.hpp"
 #include "ECS/World.hpp"
 #include "Math/Vec2.hpp"
+#include <string>
 
 namespace Scripting {
 
@@ -70,10 +71,96 @@ public:
 
 
   // Component-existence checks
-
   bool hasTransform() const;
   bool hasVelocity() const;
   bool hasHealth() const;
+
+  // --- Battery ---
+  bool hasBattery() const;
+  float getBatteryCharge() const;
+  void  setBatteryCharge(float c);
+  float getBatteryMaxCharge() const;
+  float getBatteryDrainRate() const;
+  float getBatteryChargeRate() const;
+  bool  isBatteryCharging() const;
+  void  setBatteryCharging(bool v);
+
+  // --- Torch ---
+  bool  hasTorch() const;
+  bool  isTorchActive() const;
+  void  setTorchActive(bool v);
+  float getTorchRadius() const;
+  float getTorchAngle() const;
+  float getTorchOffsetX() const;
+  float getTorchOffsetY() const;
+
+  // --- Fragment ---
+  bool  hasFragment() const;
+  bool  isFragmentCollected() const;
+  void  setFragmentCollected(bool v);
+  float getFragmentBobSpeed() const;
+  float getFragmentBobAmount() const;
+  float getFragmentAnimTimer() const;
+  void  setFragmentAnimTimer(float t);
+  float getFragmentAlpha() const;
+  void  setFragmentAlpha(float a);
+  bool  getFragmentRequiresLight() const;
+
+  // --- FragmentCollector ---
+  bool  hasFragmentCollector() const;
+  int   getCollectedCount() const;
+  void  setCollectedCount(int n);
+  int   getRequiredFragments() const;
+  float getPickupRadius() const;
+
+  // --- Door ---
+  bool        hasDoor() const;
+  bool        isDoorOpen() const;
+  void        setDoorOpen(bool v);
+  int         getDoorRequiredFragments() const;
+  std::string getDoorOpenTexture() const;
+  std::string getDoorClosedTexture() const;
+
+  // --- DoorSwing ---
+  bool  hasDoorSwing() const;
+  bool  isDoorSwingOpen() const;
+  void  setDoorSwingOpen(bool v);
+  bool  isDoorSwingInitialized() const;
+  void  setDoorSwingInitialized(bool v);
+  float getDoorSwingInitialRotation() const;
+  void  setDoorSwingInitialRotation(float r);
+  float getDoorSwingAngle() const;
+  bool  isDoorSwingClockwise() const;
+  float getDoorSwingSpeed() const;
+
+  // --- LightExposure ---
+  bool  hasLightExposure() const;
+  float getLightExposureTime() const;
+  void  setLightExposureTime(float t);
+  float getMaxLightExposureTime() const;
+  bool  isInLight() const;
+  void  setInLight(bool v);
+  bool  isExposureDangerous() const;
+
+  // --- SpriteRenderer ---
+  bool        hasSpriteRenderer() const;
+  std::string getSpriteTextureId() const;
+  void        setSpriteTextureId(const std::string &id);
+  float       getSpriteAlpha() const;
+  void        setSpriteAlpha(float a);
+  bool        isSpriteUnlit() const;
+  void        setSpriteUnlit(bool v);
+
+  // --- Collider ---
+  bool hasCollider() const;
+  bool isColliderSolid() const;
+  void setColliderSolid(bool v);
+  bool isColliderMoveable() const;
+  void setColliderMoveable(bool v);
+
+  // --- Tag ---
+  bool        hasTag() const;
+  std::string getTagValue() const;
 
 private:
   ECS::Entity m_entity;

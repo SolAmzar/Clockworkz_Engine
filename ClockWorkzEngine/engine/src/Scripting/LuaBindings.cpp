@@ -471,8 +471,95 @@ namespace Scripting {
 
             // Component checks
             "hasTransform", &Scripting::EntityRef::hasTransform,
-            "hasVelocity", &Scripting::EntityRef::hasVelocity,
-            "hasHealth", &Scripting::EntityRef::hasHealth
+            "hasVelocity",  &Scripting::EntityRef::hasVelocity,
+            "hasHealth",    &Scripting::EntityRef::hasHealth,
+
+            // Battery
+            "hasBattery",        &Scripting::EntityRef::hasBattery,
+            "getBatteryCharge",  &Scripting::EntityRef::getBatteryCharge,
+            "setBatteryCharge",  &Scripting::EntityRef::setBatteryCharge,
+            "getBatteryMaxCharge", &Scripting::EntityRef::getBatteryMaxCharge,
+            "getBatteryDrainRate", &Scripting::EntityRef::getBatteryDrainRate,
+            "getBatteryChargeRate",&Scripting::EntityRef::getBatteryChargeRate,
+            "isBatteryCharging", &Scripting::EntityRef::isBatteryCharging,
+            "setBatteryCharging",&Scripting::EntityRef::setBatteryCharging,
+
+            // Torch
+            "hasTorch",       &Scripting::EntityRef::hasTorch,
+            "isTorchActive",  &Scripting::EntityRef::isTorchActive,
+            "setTorchActive", &Scripting::EntityRef::setTorchActive,
+            "getTorchRadius", &Scripting::EntityRef::getTorchRadius,
+            "getTorchAngle",  &Scripting::EntityRef::getTorchAngle,
+            "getTorchOffsetX",&Scripting::EntityRef::getTorchOffsetX,
+            "getTorchOffsetY",&Scripting::EntityRef::getTorchOffsetY,
+
+            // Fragment
+            "hasFragment",              &Scripting::EntityRef::hasFragment,
+            "isFragmentCollected",      &Scripting::EntityRef::isFragmentCollected,
+            "setFragmentCollected",     &Scripting::EntityRef::setFragmentCollected,
+            "getFragmentBobSpeed",      &Scripting::EntityRef::getFragmentBobSpeed,
+            "getFragmentBobAmount",     &Scripting::EntityRef::getFragmentBobAmount,
+            "getFragmentAnimTimer",     &Scripting::EntityRef::getFragmentAnimTimer,
+            "setFragmentAnimTimer",     &Scripting::EntityRef::setFragmentAnimTimer,
+            "getFragmentAlpha",         &Scripting::EntityRef::getFragmentAlpha,
+            "setFragmentAlpha",         &Scripting::EntityRef::setFragmentAlpha,
+            "getFragmentRequiresLight", &Scripting::EntityRef::getFragmentRequiresLight,
+
+            // FragmentCollector
+            "hasFragmentCollector", &Scripting::EntityRef::hasFragmentCollector,
+            "getCollectedCount",    &Scripting::EntityRef::getCollectedCount,
+            "setCollectedCount",    &Scripting::EntityRef::setCollectedCount,
+            "getRequiredFragments", &Scripting::EntityRef::getRequiredFragments,
+            "getPickupRadius",      &Scripting::EntityRef::getPickupRadius,
+
+            // Door
+            "hasDoor",               &Scripting::EntityRef::hasDoor,
+            "isDoorOpen",            &Scripting::EntityRef::isDoorOpen,
+            "setDoorOpen",           &Scripting::EntityRef::setDoorOpen,
+            "getDoorRequiredFragments", &Scripting::EntityRef::getDoorRequiredFragments,
+            "getDoorOpenTexture",    &Scripting::EntityRef::getDoorOpenTexture,
+            "getDoorClosedTexture",  &Scripting::EntityRef::getDoorClosedTexture,
+
+            // DoorSwing
+            "hasDoorSwing",               &Scripting::EntityRef::hasDoorSwing,
+            "isDoorSwingOpen",            &Scripting::EntityRef::isDoorSwingOpen,
+            "setDoorSwingOpen",           &Scripting::EntityRef::setDoorSwingOpen,
+            "isDoorSwingInitialized",     &Scripting::EntityRef::isDoorSwingInitialized,
+            "setDoorSwingInitialized",    &Scripting::EntityRef::setDoorSwingInitialized,
+            "getDoorSwingInitialRotation",&Scripting::EntityRef::getDoorSwingInitialRotation,
+            "setDoorSwingInitialRotation",&Scripting::EntityRef::setDoorSwingInitialRotation,
+            "getDoorSwingAngle",          &Scripting::EntityRef::getDoorSwingAngle,
+            "isDoorSwingClockwise",       &Scripting::EntityRef::isDoorSwingClockwise,
+            "getDoorSwingSpeed",          &Scripting::EntityRef::getDoorSwingSpeed,
+
+            // LightExposure
+            "hasLightExposure",      &Scripting::EntityRef::hasLightExposure,
+            "getLightExposureTime",  &Scripting::EntityRef::getLightExposureTime,
+            "setLightExposureTime",  &Scripting::EntityRef::setLightExposureTime,
+            "getMaxLightExposureTime",&Scripting::EntityRef::getMaxLightExposureTime,
+            "isInLight",             &Scripting::EntityRef::isInLight,
+            "setInLight",            &Scripting::EntityRef::setInLight,
+            "isExposureDangerous",   &Scripting::EntityRef::isExposureDangerous,
+
+            // SpriteRenderer
+            "hasSpriteRenderer",  &Scripting::EntityRef::hasSpriteRenderer,
+            "getSpriteTextureId", &Scripting::EntityRef::getSpriteTextureId,
+            "setSpriteTextureId", &Scripting::EntityRef::setSpriteTextureId,
+            "getSpriteAlpha",     &Scripting::EntityRef::getSpriteAlpha,
+            "setSpriteAlpha",     &Scripting::EntityRef::setSpriteAlpha,
+            "isSpriteUnlit",      &Scripting::EntityRef::isSpriteUnlit,
+            "setSpriteUnlit",     &Scripting::EntityRef::setSpriteUnlit,
+
+            // Collider
+            "hasCollider",        &Scripting::EntityRef::hasCollider,
+            "isColliderSolid",    &Scripting::EntityRef::isColliderSolid,
+            "setColliderSolid",   &Scripting::EntityRef::setColliderSolid,
+            "isColliderMoveable", &Scripting::EntityRef::isColliderMoveable,
+            "setColliderMoveable",&Scripting::EntityRef::setColliderMoveable,
+
+            // Tag
+            "hasTag",    &Scripting::EntityRef::hasTag,
+            "getTagValue",&Scripting::EntityRef::getTagValue
         );
     }
 

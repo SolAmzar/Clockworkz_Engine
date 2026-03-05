@@ -54,6 +54,7 @@ TestLevelState::~TestLevelState() = default;
 
 void TestLevelState::onEnter() {
   m_scene.Init();
+  Core::Engine::Get().invokeSceneSetup(m_scene);
 
   // Load necessary shaders
   Assets::ResourceManager<Graphics::Shader>::Load(

@@ -45,7 +45,7 @@ private:
     void loadRegistry();
     void saveRegistry();
     void openProject(const ProjectEntry& project);
-    void createNewProject(const std::string& projectName);
+    void createNewProject(const std::string& projectName, const std::string& description);
     std::string resolveAbsoluteScenePath(const ProjectEntry& project) const;
     static std::string getSourceRoot();
 
@@ -54,12 +54,19 @@ private:
     std::vector<ProjectEntry> m_projects;
     int                       m_selectedIdx{-1};
     char                      m_newProjectNameBuf[128]{};
+    char                      m_newProjectDescBuf[512]{};
     bool                      m_showErrorPopup{false};
     std::string               m_errorMessage;
 
-    // NOTE: Deferred project open: set in renderImGui(), 
+    // NOTE: Deferred project open: set in renderImGui(),
     // consumed in update(),  to avoid switching state mid-ImGui-frame.
     int                       m_pendingOpenIdx{-1};
+
+    // Right-click edit/delete state
+    int                       m_editingIdx{-1};
+    char                      m_editNameBuf[128]{};
+    char                      m_editDescBuf[512]{};
+    int                       m_deletingIdx{-1};
 };
 
 } // namespace Runtime

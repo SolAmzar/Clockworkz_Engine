@@ -109,14 +109,38 @@ void EditorHubState::renderImGui(Core::Time* timer) {
     ImGui::Separator();
     ImGui::Spacing();
 
+    bool openEditModal   = false;
+    bool openDeleteModal = false;
+
     for (int i = 0; i < static_cast<int>(m_projects.size()); ++i) {
         const bool selected = (m_selectedIdx == i);
+        ImGui::PushID(i);
+
         if (ImGui::Selectable(m_projects[i].name.c_str(), selected,
                               ImGuiSelectableFlags_AllowDoubleClick)) {
             m_selectedIdx = i;
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 m_pendingOpenIdx = i;
         }
+
+        if (ImGui::BeginPopupContextItem("##ProjCtx")) {
+            m_selectedIdx = i;
+            if (ImGui::MenuItem("Edit")) {
+                m_editingIdx = i;
+                snprintf(m_editNameBuf, sizeof(m_editNameBuf),
+                         "%s", m_projects[i].name.c_str());
+                snprintf(m_editDescBuf, sizeof(m_editDescBuf),
+                         "%s", m_projects[i].description.c_str());
+                openEditModal = true;
+            }
+            if (ImGui::MenuItem("Delete")) {
+                m_deletingIdx = i;
+                openDeleteModal = true;
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopID();
     }
 
     ImGui::EndChild();
@@ -132,6 +156,7 @@ void EditorHubState::renderImGui(Core::Time* timer) {
 
     if (ImGui::Button("New Game", ImVec2(200.0f, 40.0f))) {
         memset(m_newProjectNameBuf, 0, sizeof(m_newProjectNameBuf));
+        memset(m_newProjectDescBuf, 0, sizeof(m_newProjectDescBuf));
         openNewProjectModal = true;
     }
 
@@ -171,12 +196,14 @@ void EditorHubState::renderImGui(Core::Time* timer) {
         ImGui::Spacing();
         ImGui::InputText("Project Name", m_newProjectNameBuf,
                          sizeof(m_newProjectNameBuf));
+        ImGui::InputTextMultiline("Description", m_newProjectDescBuf,
+                                  sizeof(m_newProjectDescBuf), ImVec2(360.0f, 80.0f));
         ImGui::Spacing();
 
         if (ImGui::Button("Create", ImVec2(120.0f, 0.0f))) {
             std::string name(m_newProjectNameBuf);
             if (!name.empty()) {
-                createNewProject(name);
+                createNewProject(name, m_newProjectDescBuf);
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -184,6 +211,66 @@ void EditorHubState::renderImGui(Core::Time* timer) {
         if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
             ImGui::CloseCurrentPopup();
 
+        ImGui::EndPopup();
+    }
+
+    // ---- Edit Project Modal ----
+    if (openEditModal)
+        ImGui::OpenPopup("##EditProjectModal");
+    ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("##EditProjectModal", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Edit Project");
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::InputText("Name##ep",        m_editNameBuf, sizeof(m_editNameBuf));
+        ImGui::InputTextMultiline("Description##ep", m_editDescBuf,
+                                  sizeof(m_editDescBuf), ImVec2(360.0f, 100.0f));
+        ImGui::Spacing();
+        if (ImGui::Button("Save##ep", ImVec2(120.0f, 0.0f))) {
+            if (m_editingIdx >= 0 && m_editingIdx < static_cast<int>(m_projects.size())
+                && m_editNameBuf[0] != '\0') {
+                m_projects[m_editingIdx].name        = m_editNameBuf;
+                m_projects[m_editingIdx].description = m_editDescBuf;
+                saveRegistry();
+            }
+            m_editingIdx = -1;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel##ep", ImVec2(120.0f, 0.0f))) {
+            m_editingIdx = -1;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // ---- Delete Confirm Modal ----
+    if (openDeleteModal)
+        ImGui::OpenPopup("##DeleteProjectModal");
+    ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("##DeleteProjectModal", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (m_deletingIdx >= 0 && m_deletingIdx < static_cast<int>(m_projects.size()))
+            ImGui::Text("Delete \"%s\" from the list?",
+                        m_projects[m_deletingIdx].name.c_str());
+        ImGui::TextDisabled("(Project files on disk are not removed.)");
+        ImGui::Spacing();
+        if (ImGui::Button("Delete##dp", ImVec2(120.0f, 0.0f))) {
+            if (m_deletingIdx >= 0 && m_deletingIdx < static_cast<int>(m_projects.size())) {
+                m_projects.erase(m_projects.begin() + m_deletingIdx);
+                if (m_selectedIdx >= static_cast<int>(m_projects.size()))
+                    m_selectedIdx = static_cast<int>(m_projects.size()) - 1;
+                saveRegistry();
+            }
+            m_deletingIdx = -1;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel##dp", ImVec2(120.0f, 0.0f))) {
+            m_deletingIdx = -1;
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 
@@ -286,7 +373,7 @@ void EditorHubState::saveRegistry() {
     }
 }
 
-void EditorHubState::createNewProject(const std::string& projectName) {
+void EditorHubState::createNewProject(const std::string& projectName, const std::string& description) {
     namespace fs = std::filesystem;
 
     const std::string srcRoot = getSourceRootImpl();
@@ -335,7 +422,7 @@ void EditorHubState::createNewProject(const std::string& projectName) {
     entry.name         = projectName;
     entry.path         = "projects/" + projectName;
     entry.initialScene = "assets/scenes/Main.json";
-    entry.description  = "New project";
+    entry.description  = description.empty() ? "New project" : description;
     m_projects.push_back(entry);
     m_selectedIdx = static_cast<int>(m_projects.size()) - 1;
 
