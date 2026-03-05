@@ -383,6 +383,7 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderDockWindow("Scene##EditorViewport",  centerTop);
         ImGui::DockBuilderDockWindow("Assets",                 centerBot);
         ImGui::DockBuilderDockWindow("Scripts",                centerBot);
+        ImGui::DockBuilderDockWindow("Audio",                  centerBot);
         ImGui::DockBuilderDockWindow("Inspector",              rightTop);
         ImGui::DockBuilderDockWindow("Stats",                  rightTop);
 
@@ -397,6 +398,7 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderAssetBrowser();
     renderStatsWindow();
     renderScriptsBrowser();
+    renderAudioBrowser();
 
     Core::Engine::Get().imguiManager().endDockspace();
 }
@@ -2009,6 +2011,226 @@ void EditorState::renderScriptsBrowser() {
             ImGui::TextUnformatted(label.c_str());
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("%s", fname.c_str());
+
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderAudioBrowser
+// ---------------------------------------------------------------------------
+
+void EditorState::renderAudioBrowser() {
+    ImGui::Begin("Audio");
+
+    namespace fs = std::filesystem;
+
+    // ── Import button ────────────────────────────────────────────────────────
+    if (ImGui::Button("Import Audio")) {
+        m_newAudioNameBuf[0] = '\0';
+        m_newAudioPathBuf[0] = '\0';
+        m_newAudioLoop   = false;
+        m_newAudioStream = false;
+        m_newAudioIs3D   = false;
+        m_newAudioVolume = 1.0f;
+        m_newAudioPitch  = 1.0f;
+        m_newAudioIsBGM  = false;
+        ImGui::OpenPopup("##ImportAudio");
+    }
+
+    // ── Import modal ─────────────────────────────────────────────────────────
+    if (ImGui::BeginPopupModal("##ImportAudio", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Import Audio File");
+        ImGui::Separator();
+
+        ImGui::InputText("Name##audio",  m_newAudioNameBuf, sizeof(m_newAudioNameBuf));
+        ImGui::InputText("Source path",  m_newAudioPathBuf, sizeof(m_newAudioPathBuf));
+
+#ifdef _WIN32
+        ImGui::SameLine();
+        if (ImGui::Button("Browse##audio")) {
+            OPENFILENAMEA ofn{};
+            char fileBuf[MAX_PATH]{};
+            ofn.lStructSize = sizeof(ofn);
+            ofn.lpstrFilter = "Audio Files\0*.wav;*.mp3;*.ogg;*.flac\0All Files\0*.*\0";
+            ofn.lpstrFile   = fileBuf;
+            ofn.nMaxFile    = MAX_PATH;
+            ofn.Flags       = OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+            if (GetOpenFileNameA(&ofn))
+                strncpy_s(m_newAudioPathBuf, fileBuf, sizeof(m_newAudioPathBuf) - 1);
+        }
+#endif
+
+        ImGui::Separator();
+        ImGui::Checkbox("Loop",   &m_newAudioLoop);
+        ImGui::SameLine();
+        ImGui::Checkbox("Stream", &m_newAudioStream);
+        ImGui::SameLine();
+        ImGui::Checkbox("3D",     &m_newAudioIs3D);
+        ImGui::Checkbox("BGM (unchecked = SFX)", &m_newAudioIsBGM);
+        ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Pitch",  &m_newAudioPitch,  0.1f, 3.0f);
+
+        ImGui::Separator();
+        bool canImport = m_newAudioNameBuf[0] != '\0' && m_newAudioPathBuf[0] != '\0';
+        if (!canImport) ImGui::BeginDisabled();
+        if (ImGui::Button("Import", ImVec2(100, 0))) {
+            Assets::SoundConfig cfg;
+            cfg.name   = m_newAudioNameBuf;
+            cfg.path   = m_newAudioPathBuf;
+            cfg.loop   = m_newAudioLoop;
+            cfg.stream = m_newAudioStream;
+            cfg.is3D   = m_newAudioIs3D;
+            cfg.volume = m_newAudioVolume;
+            cfg.pitch  = m_newAudioPitch;
+            cfg.group  = m_newAudioIsBGM ? "BGM" : "SFX";
+            Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg);
+            ImGui::CloseCurrentPopup();
+        }
+        if (!canImport) ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0)))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+    }
+
+    // ── Delete confirmation ───────────────────────────────────────────────────
+    if (!m_deletingAudio.empty())
+        ImGui::OpenPopup("##DeleteAudio");
+
+    if (ImGui::BeginPopupModal("##DeleteAudio", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Delete '%s'?", m_deletingAudio.c_str());
+        ImGui::TextDisabled("Removes from memory, config, and disk.");
+        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
+        if (ImGui::Button("Delete", ImVec2(100, 0))) {
+            Assets::SoundManager::DeleteFromDisk(m_deletingAudio);
+            m_deletingAudio.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_deletingAudio.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    ImGui::Separator();
+
+    // ── Sound grid ───────────────────────────────────────────────────────────
+    auto names = Assets::SoundManager::GetLoadedSoundNames();
+    if (names.empty()) {
+        ImGui::TextDisabled("No audio loaded. Use 'Import Audio' or check sounds.json.");
+        ImGui::End();
+        return;
+    }
+
+    constexpr float kIconW   = 64.0f;
+    constexpr float kIconH   = 72.0f;
+    constexpr float kMinCell = kIconW + 20.0f;
+    float panelW = ImGui::GetContentRegionAvail().x;
+    int   cols   = std::max(1, static_cast<int>(panelW / kMinCell));
+
+    if (ImGui::BeginTable("##AudioTbl", cols, ImGuiTableFlags_SizingStretchSame)) {
+        for (const auto& soundName : names) {
+            ImGui::TableNextColumn();
+            ImGui::PushID(soundName.c_str());
+
+            float colW   = ImGui::GetContentRegionAvail().x;
+            float iconOX = (colW - kIconW) * 0.5f;
+            if (iconOX > 0.0f)
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
+
+            // ── Icon button ───────────────────────────────────────────────────
+            ImGui::PushStyleColor(ImGuiCol_Button,
+                ImVec4(0.12f, 0.25f, 0.18f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                ImVec4(0.20f, 0.42f, 0.28f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                ImVec4(0.08f, 0.18f, 0.12f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+
+            ImGui::Button("##icon", ImVec2(kIconW, kIconH));
+
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(3);
+
+            // Double-click → play
+            if (ImGui::IsItemHovered() &&
+                ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                Assets::SoundManager::Play(soundName);
+            }
+
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Double-click to play: %s", soundName.c_str());
+
+            // ── Right-click context menu ──────────────────────────────────────
+            if (ImGui::BeginPopupContextItem("##AudioCtx")) {
+                if (ImGui::MenuItem("Play"))
+                    Assets::SoundManager::Play(soundName);
+                ImGui::Separator();
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+                if (ImGui::MenuItem("Delete"))
+                    m_deletingAudio = soundName;
+                ImGui::PopStyleColor();
+                ImGui::EndPopup();
+            }
+
+            // ── Draw speaker icon ─────────────────────────────────────────────
+            {
+                ImVec2 btnMin = ImGui::GetItemRectMin();
+                ImVec2 btnMax = ImGui::GetItemRectMax();
+                ImDrawList* dl = ImGui::GetWindowDrawList();
+
+                float cx = (btnMin.x + btnMax.x) * 0.5f;
+                float cy = (btnMin.y + btnMax.y) * 0.5f - 4.0f;
+                // Speaker body
+                dl->AddRectFilled({ cx - 10.0f, cy - 6.0f },
+                                  { cx - 2.0f,  cy + 6.0f },
+                                  IM_COL32(100, 220, 140, 200));
+                // Cone
+                dl->AddTriangleFilled(
+                    { cx - 2.0f,  cy - 6.0f },
+                    { cx - 2.0f,  cy + 6.0f },
+                    { cx + 10.0f, cy + 12.0f },
+                    IM_COL32(100, 220, 140, 200));
+                dl->AddTriangleFilled(
+                    { cx - 2.0f,  cy - 6.0f },
+                    { cx + 10.0f, cy - 12.0f },
+                    { cx + 10.0f, cy + 12.0f },
+                    IM_COL32(100, 220, 140, 200));
+
+                // "SFX" label inside icon
+                const char* lbl = "SFX";
+                ImVec2 tsz  = ImGui::CalcTextSize(lbl);
+                ImVec2 tpos = {
+                    btnMin.x + (btnMax.x - btnMin.x - tsz.x) * 0.5f,
+                    btnMin.y + (btnMax.y - btnMin.y - tsz.y) * 0.5f + 8.0f
+                };
+                dl->AddText(tpos, IM_COL32(160, 255, 180, 255), lbl);
+            }
+
+            // ── Name label centred below icon ─────────────────────────────────
+            std::string label = soundName;
+            if (label.size() > 9)
+                label = label.substr(0, 7) + "..";
+
+            float textW  = ImGui::CalcTextSize(label.c_str()).x;
+            float textOX = (colW - textW) * 0.5f;
+            if (textOX > 0.0f)
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOX);
+            ImGui::TextUnformatted(label.c_str());
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", soundName.c_str());
 
             ImGui::PopID();
         }

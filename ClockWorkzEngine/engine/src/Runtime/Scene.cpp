@@ -124,7 +124,7 @@ bool Scene::isLayerEnabled(int layer) const {
 void Scene::Clear() {
   // Stop BGM when clearing scene
   std::cout << "[Scene] Clearing Scene... Stopping BGM Group.\n";
-  Audio::AudioManager::get().stopGroup(Audio::Group::BGM);
+  Core::Engine::Get().audio().stopGroup(Audio::Group::BGM);
 
   m_scriptSystem.clear();
 

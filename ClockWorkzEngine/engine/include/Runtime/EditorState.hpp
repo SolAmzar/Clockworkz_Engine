@@ -51,6 +51,7 @@ private:
     void renderLoadSceneWindow();
     void renderStatsWindow();
     void renderScriptsBrowser();
+    void renderAudioBrowser();
 
     // ----- Scene helpers -----
     void renderGrid();
@@ -137,6 +138,17 @@ private:
     std::string             m_renamingScriptPath;
     char                    m_renameScriptBuf[256]{};
     std::string             m_deletingScriptPath;
+
+    // ----- Audio browser -----
+    char                    m_newAudioNameBuf[128]{};
+    char                    m_newAudioPathBuf[256]{};
+    bool                    m_newAudioLoop{false};
+    bool                    m_newAudioStream{false};
+    bool                    m_newAudioIs3D{false};
+    float                   m_newAudioVolume{1.0f};
+    float                   m_newAudioPitch{1.0f};
+    bool                    m_newAudioIsBGM{false};
+    std::string             m_deletingAudio;
 };
 
 } // namespace Runtime
