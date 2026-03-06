@@ -13,8 +13,6 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
-#include "Assets/TextureManager.hpp"
-#include "Assets/SoundManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/ImGuiManager.hpp"
@@ -40,25 +38,16 @@ EditorPlayState::EditorPlayState(Platform::InputManager& input,
 // ---------------------------------------------------------------------------
 
 void EditorPlayState::onEnter() {
-    // Derive project root from scene path: <root>/assets/scenes/<name>.json
-    // (same logic as EditorState::onEnter)
-    namespace fs = std::filesystem;
-    fs::path sceneFs(m_sceneFilePath);
-    m_projectRoot = sceneFs.parent_path()  // .../assets/scenes/
-                           .parent_path()  // .../assets/
-                           .parent_path()  // <projectRoot>/
-                           .generic_string();
+    // EditorState (below us on the stack) already set the CWD and loaded all
+    // assets — do not reload or change CWD here.
 
-    // Switch CWD to project root so "assets/..." relative paths resolve correctly
-    m_originalCwd = fs::current_path().generic_string();
-    std::error_code cwdEc;
-    fs::current_path(m_projectRoot, cwdEc);
-    if (cwdEc)
-        std::cerr << "[EditorPlayState] Failed to set CWD to: " << m_projectRoot << "\n";
-
-    // Reload project assets (EditorState::onExit clears them before we get here)
-    Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
-    Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json");
+    // Save editor camera state so we can restore it on stop
+    auto& camera = Core::Engine::Get().camera();
+    m_savedCamPos     = camera.position();
+    m_savedCamZoom    = camera.zoom();
+    auto& window      = Core::Engine::Get().window();
+    m_savedViewportW  = window.width();
+    m_savedViewportH  = window.height();
 
     m_scene.Init();
     Core::Engine::Get().invokeSceneSetup(m_scene);
@@ -69,10 +58,7 @@ void EditorPlayState::onEnter() {
     }
 
     // Set camera to full-screen viewport for play mode
-    auto& window = Core::Engine::Get().window();
     glViewport(0, 0, window.width(), window.height());
-
-    auto& camera = Core::Engine::Get().camera();
     camera.setViewport(window.width(), window.height());
     camera.setPosition({0.0f, 0.0f});
     camera.setZoom(1.0f);
@@ -81,16 +67,18 @@ void EditorPlayState::onEnter() {
 void EditorPlayState::onExit() {
     m_scene.Clear();
 
-    // Unload project assets and restore CWD.
-    // EditorState::onEnter() will reload them when returning to the editor.
-    Assets::TextureManager::Clear();
-    Assets::SoundManager::Clear();
+    // Restore the editor camera to how it was before play
+    auto& camera = Core::Engine::Get().camera();
+    camera.setViewport(m_savedViewportW, m_savedViewportH);
+    camera.setPosition(m_savedCamPos);
+    camera.setZoom(m_savedCamZoom);
 
-    if (!m_originalCwd.empty()) {
-        std::error_code ec;
-        std::filesystem::current_path(m_originalCwd, ec);
-        m_originalCwd.clear();
-    }
+    // Delete the temp playtest file — it should never persist between sessions
+    std::error_code ec;
+    std::filesystem::remove(m_sceneFilePath, ec);
+
+    // Assets and CWD are owned by EditorState (still on the stack) — do not
+    // clear or restore them here.
 }
 
 // ---------------------------------------------------------------------------
@@ -100,10 +88,7 @@ void EditorPlayState::onExit() {
 void EditorPlayState::update(double dt) {
     if (m_pendingStop) {
         m_pendingStop = false;
-        auto& engine = Core::Engine::Get();
-        if (engine.editorFactory()) {
-            m_gsm.switchTo(engine.editorFactory()(m_sceneFilePath));
-        }
+        m_gsm.pop();
         return;
     }
 

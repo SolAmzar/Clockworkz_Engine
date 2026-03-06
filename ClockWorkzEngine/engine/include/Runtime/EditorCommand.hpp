@@ -88,6 +88,24 @@ struct RotateEntityCmd final : IEditorCommand {
 };
 
 // ---------------------------------------------------------------------------
+// ScaleEntityCmd — records a scale change (from gizmo or inspector)
+// ---------------------------------------------------------------------------
+
+struct ScaleEntityCmd final : IEditorCommand {
+    ECS::World& world;
+    ECS::Entity entity;
+    vec2        oldScale;
+    vec2        newScale;
+
+    ScaleEntityCmd(ECS::World& w, ECS::Entity e, vec2 old_, vec2 new_)
+        : world(w), entity(e), oldScale(old_), newScale(new_) {}
+
+    void execute() override;
+    void undo()    override;
+    const char* label() const override { return "Scale Entity"; }
+};
+
+// ---------------------------------------------------------------------------
 // CreateEntityCmd — creates an entity from a snapshot; undo destroys it
 // ---------------------------------------------------------------------------
 

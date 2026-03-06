@@ -15,6 +15,7 @@ reserved.
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
+#include <glm/glm.hpp>
 #include <string>
 
 namespace Platform { class InputManager; }
@@ -40,9 +41,13 @@ private:
     Platform::InputManager& m_input;
     GameStateManager&       m_gsm;
     std::string             m_sceneFilePath;
-    std::string             m_projectRoot;
-    std::string             m_originalCwd;
     Scene                   m_scene{"EditorPlay"};
+
+    // Camera state saved before play, restored on stop
+    glm::vec2               m_savedCamPos{0.0f, 0.0f};
+    float                   m_savedCamZoom{1.0f};
+    int                     m_savedViewportW{0};
+    int                     m_savedViewportH{0};
     bool                    m_pendingStop{false};
 };
 

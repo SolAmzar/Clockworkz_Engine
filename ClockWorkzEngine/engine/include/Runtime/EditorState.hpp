@@ -78,6 +78,7 @@ private:
 
     // ----- Entity selection -----
     ECS::Entity             m_selectedEntity{0, 0};
+    std::vector<ECS::Entity> m_selectedEntities;    // all selected (incl. primary)
 
     // ----- Viewport -----
     vec2                    m_viewportSize{800.0f, 600.0f};
@@ -93,13 +94,35 @@ private:
     float                   m_gridSize{100.0f};
     bool                    m_snapToGrid{true};
 
+    // ----- Collider debug -----
+    bool                    m_showColliders{false};
+
     // ----- Gizmos -----
-    enum class GizmoMode { None, Translation, Rotation };
+    enum class GizmoMode { None, Translation, Rotation, Scale };
     GizmoMode               m_gizmoMode{GizmoMode::Translation};
     int                     m_gizmoActiveAxis{-1}; // 0=X 1=Y 2=Rotate -1=None
+    bool                    m_gizmoHoveredHandle{false}; // true when mouse is over a handle (prev frame)
     vec2                    m_gizmoOriginalPos{0.f, 0.f};
     vec2                    m_gizmoClickOffset{0.f, 0.f};
     float                   m_gizmoOriginalRotation{0.f};
+    vec2                    m_gizmoOriginalScale{1.f, 1.f};
+
+    // Group gizmo: original positions/rotations/scales for all selected entities
+    std::vector<std::pair<ECS::Entity, vec2>>  m_gizmoGroupOriginalPos;
+    std::vector<std::pair<ECS::Entity, float>> m_gizmoGroupOriginalRot;
+    std::vector<std::pair<ECS::Entity, vec2>>  m_gizmoGroupOriginalScale;
+
+    // ----- Direct entity drag (viewport body drag) -----
+    bool                    m_pendingEntityDrag{false};
+    bool                    m_isDraggingEntity{false};
+    vec2                    m_dragStartMousePos{0.f, 0.f};  // screen-space click pos
+    vec2                    m_dragClickWorldPos{0.f, 0.f};  // world-space click pos
+    static constexpr float  kDragThreshold = 5.0f;         // pixels before drag starts
+
+    // ----- Box selection -----
+    bool                    m_isBoxSelecting{false};
+    vec2                    m_boxSelectStart{0.f, 0.f};  // screen-space
+    vec2                    m_boxSelectEnd{0.f, 0.f};    // screen-space
 
     // ----- Rename state -----
     bool                    m_isRenaming{false};

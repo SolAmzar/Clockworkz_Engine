@@ -12,6 +12,7 @@ reserved.
 
 #include "Runtime/EditorState.hpp"
 #include "Runtime/EditorHubState.hpp"
+#include "Runtime/EditorPlayState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "Core/Engine.hpp"
@@ -192,7 +193,14 @@ void EditorState::onExit() {
     m_undoStack.clear();
     m_redoStack.clear();
     m_selectedEntity        = {0, 0};
+    m_selectedEntities.clear();
     m_gizmoActiveAxis       = -1;
+    m_gizmoGroupOriginalPos.clear();
+    m_gizmoGroupOriginalRot.clear();
+    m_gizmoGroupOriginalScale.clear();
+    m_pendingEntityDrag     = false;
+    m_isDraggingEntity      = false;
+    m_isBoxSelecting        = false;
     m_isRenaming            = false;
     m_dockLayoutInitialized = false;
     m_pendingLoadPath.clear();
@@ -222,11 +230,13 @@ void EditorState::update(double dt) {
     // Deferred: launch play mode
     if (m_pendingPlay) {
         m_pendingPlay = false;
-        auto& engine = Core::Engine::Get();
-        if (engine.playFactory()) {
-            saveScene(); // auto-save before play
-            m_gsm.switchTo(engine.playFactory()(m_sceneFilePath));
-        }
+        namespace fs = std::filesystem;
+        fs::path tempDir = fs::path(m_sceneFilePath).parent_path()
+                                                     .parent_path() / "temp";
+        fs::create_directories(tempDir);
+        std::string tempPath = (tempDir / "__playtest__.json").generic_string();
+        SceneSerializer::Serialize(m_scene, tempPath);
+        m_gsm.push(std::make_shared<EditorPlayState>(m_input, m_gsm, tempPath));
         return;
     }
 
@@ -262,7 +272,10 @@ void EditorState::update(double dt) {
     double cx = 0.0, cy = 0.0;
     m_input.getMousePosition(cx, cy);
 
-    if (m_viewportHovered && m_input.isMouseDown(GLFW_MOUSE_BUTTON_MIDDLE)) {
+    bool panning = m_viewportHovered &&
+                   (m_input.isMouseDown(GLFW_MOUSE_BUTTON_MIDDLE) ||
+                    m_input.isMouseDown(GLFW_MOUSE_BUTTON_RIGHT));
+    if (panning) {
         float dx = static_cast<float>(cx - lastMouseX);
         float dy = static_cast<float>(cy - lastMouseY);
         float ps = 1.0f / m_editorCamZoom;
@@ -298,6 +311,13 @@ void EditorState::update(double dt) {
         auto& world = m_scene.GetWorld();
         if (world.isValid(m_selectedEntity)) {
             executeCommand(std::make_unique<DeleteEntityCmd>(world, m_selectedEntity));
+            m_selectedEntities.erase(
+                std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                    [&](ECS::Entity e){
+                        return e.id == m_selectedEntity.id &&
+                               e.generation == m_selectedEntity.generation;
+                    }),
+                m_selectedEntities.end());
             m_selectedEntity = {0, 0};
         }
     }
@@ -323,10 +343,50 @@ void EditorState::render(Core::Time* timer) {
     m_scene.Render(renderer);
     renderer.endScenePass();
 
-    // Grid (debug pass, drawn on top of scene)
-    if (m_showGrid) {
+    // Grid + collider outlines (debug pass, drawn on top of scene)
+    if (m_showGrid || m_showColliders) {
         renderer.beginDebugPass(camera.viewProj());
-        renderGrid();
+
+        if (m_showGrid)
+            renderGrid();
+
+        if (m_showColliders) {
+            auto& world = m_scene.GetWorld();
+            world.each<Components::Transform, Components::Collider>(
+                [&](ECS::Entity, Components::Transform& t, Components::Collider& c) {
+                    auto rotVec = [](glm::vec2 v, float a) {
+                        return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
+                                        v.x * std::sin(a) + v.y * std::cos(a));
+                    };
+
+                    glm::vec2 offset = rotVec(
+                        glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
+                        t.rotation);
+                    glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
+
+                    // Yellow for triggers, green for solid
+                    glm::vec3 col = c.isTrigger
+                        ? glm::vec3(1.f, 1.f, 0.f)
+                        : glm::vec3(0.f, 1.f, 0.f);
+
+                    if (c.shape == Components::Collider::Shape::Box) {
+                        glm::vec2 half(c.size.x * t.scale.x * 0.5f,
+                                       c.size.y * t.scale.y * 0.5f);
+                        glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
+                        glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
+                        glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
+                        glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
+                        renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
+                        renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
+                        renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
+                        renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
+                    } else {
+                        float r = c.radius * std::max(t.scale.x, t.scale.y);
+                        renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
+                    }
+                });
+        }
+
         renderer.endDebugPass();
     }
 
@@ -441,6 +501,9 @@ void EditorState::renderToolbar() {
     ImGui::SameLine();
     if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotation))
         m_gizmoMode = GizmoMode::Rotation;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Scale",  m_gizmoMode == GizmoMode::Scale))
+        m_gizmoMode = GizmoMode::Scale;
 
     ImGui::Separator(); ImGui::SameLine();
 
@@ -722,6 +785,11 @@ void EditorState::renderHierarchy() {
     auto& world = m_scene.GetWorld();
 
     // Create entity
+    auto selectNew = [&](ECS::Entity e) {
+        m_selectedEntities.clear();
+        m_selectedEntity = e;
+        m_selectedEntities.push_back(e);
+    };
     if (ImGui::Button("+ Entity")) {
         EntitySnapshot snap;
         snap.tagName  = "Entity";
@@ -729,7 +797,7 @@ void EditorState::renderHierarchy() {
         auto cmd = std::make_unique<CreateEntityCmd>(world, snap);
         auto* rawCmd = cmd.get();
         executeCommand(std::move(cmd));
-        m_selectedEntity = rawCmd->createdEntity();
+        selectNew(rawCmd->createdEntity());
     }
     ImGui::SameLine();
     if (ImGui::Button("+ Sprite")) {
@@ -741,7 +809,7 @@ void EditorState::renderHierarchy() {
         auto cmd = std::make_unique<CreateEntityCmd>(world, snap);
         auto* rawCmd = cmd.get();
         executeCommand(std::move(cmd));
-        m_selectedEntity = rawCmd->createdEntity();
+        selectNew(rawCmd->createdEntity());
     }
 
     ImGui::Separator();
@@ -764,8 +832,17 @@ void EditorState::renderHierarchy() {
     });
 
     for (auto& row : rows) {
+        // Highlight if primary OR in secondary selection
         bool selected = (m_selectedEntity.id == row.entity.id &&
                          m_selectedEntity.generation == row.entity.generation);
+        if (!selected) {
+            for (auto& se : m_selectedEntities) {
+                if (se.id == row.entity.id && se.generation == row.entity.generation) {
+                    selected = true;
+                    break;
+                }
+            }
+        }
 
         // Inline rename
         if (m_isRenaming &&
@@ -786,7 +863,34 @@ void EditorState::renderHierarchy() {
 
         if (ImGui::Selectable(row.displayName.c_str(), selected,
                               ImGuiSelectableFlags_AllowDoubleClick)) {
-            m_selectedEntity = row.entity;
+            bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
+                         ImGui::IsKeyDown(ImGuiKey_RightShift);
+            if (shift) {
+                // Shift+click: toggle entity in selection
+                auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                    [&](ECS::Entity e){
+                        return e.id == row.entity.id && e.generation == row.entity.generation;
+                    });
+                if (it != m_selectedEntities.end()) {
+                    m_selectedEntities.erase(it);
+                    // If we removed the primary, pick a new one
+                    if (m_selectedEntity.id == row.entity.id &&
+                        m_selectedEntity.generation == row.entity.generation)
+                        m_selectedEntity = m_selectedEntities.empty()
+                                           ? ECS::Entity{0, 0}
+                                           : m_selectedEntities.front();
+                } else {
+                    m_selectedEntities.push_back(row.entity);
+                    // First entity becomes primary if none set
+                    if (!world.isValid(m_selectedEntity))
+                        m_selectedEntity = row.entity;
+                }
+            } else {
+                // Regular click: clear selection, make this entity primary
+                m_selectedEntities.clear();
+                m_selectedEntity = row.entity;
+                m_selectedEntities.push_back(row.entity);
+            }
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 m_isRenaming     = true;
                 m_renamingEntity = row.entity;
@@ -810,11 +914,22 @@ void EditorState::renderHierarchy() {
                 auto cmd = std::make_unique<CreateEntityCmd>(world, snap);
                 auto* rawCmd = cmd.get();
                 executeCommand(std::move(cmd));
-                m_selectedEntity = rawCmd->createdEntity();
+                selectNew(rawCmd->createdEntity());
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Delete")) {
-                if (selected) m_selectedEntity = {0, 0};
+                if (selected) {
+                    m_selectedEntities.erase(
+                        std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                            [&](ECS::Entity e){
+                                return e.id == row.entity.id &&
+                                       e.generation == row.entity.generation;
+                            }),
+                        m_selectedEntities.end());
+                    if (m_selectedEntity.id == row.entity.id &&
+                        m_selectedEntity.generation == row.entity.generation)
+                        m_selectedEntity = {0, 0};
+                }
                 executeCommand(std::make_unique<DeleteEntityCmd>(world, row.entity));
             }
             ImGui::EndPopup();
@@ -955,16 +1070,49 @@ void EditorState::renderInspector() {
             world.addComponent(m_selectedEntity, Components::SpriteRenderer{});
     }
 
-    // Collider (read-only)
-    if (world.hasComponent<Components::Collider>(m_selectedEntity)) {
-        auto* col = world.getComponent<Components::Collider>(m_selectedEntity);
-        if (ImGui::CollapsingHeader("Collider")) {
-            ImGui::Text("Shape: %s",
-                col->shape == Components::Collider::Shape::Box ? "Box" : "Circle");
-            float sz[2] = {col->size.x, col->size.y};
-            ImGui::DragFloat2("Size##col", sz, 1.0f);
-            col->size = {sz[0], sz[1]};
-            ImGui::DragFloat("Radius", &col->radius, 1.0f);
+    // Collider
+    if (ImGui::CollapsingHeader("Collider")) {
+        auto* c = world.getComponent<Components::Collider>(m_selectedEntity);
+        if (c) {
+            ImGui::Checkbox("Show Outline", &m_showColliders);
+            ImGui::Separator();
+
+            // Shape selector — changing this affects collision logic immediately
+            const char* shapeNames[] = {"Box", "Circle"};
+            int currentShape = static_cast<int>(c->shape);
+            if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2))
+                c->shape = static_cast<Components::Collider::Shape>(currentShape);
+
+            if (c->shape == Components::Collider::Shape::Box) {
+                ImGui::DragFloat2("Size##col", &c->size.x, 1.0f);
+            } else {
+                ImGui::DragFloat("Radius##col", &c->radius, 1.0f);
+            }
+
+            ImGui::DragFloat2("Offset##col", &c->offset.x, 1.0f);
+            ImGui::Checkbox("Solid##col",        &c->isSolid);
+            ImGui::Checkbox("Trigger##col",      &c->isTrigger);
+            ImGui::Checkbox("Blocks Light##col", &c->blocksLight);
+            ImGui::Checkbox("Moveable##col",     &c->moveable);
+            if (c->moveable)
+                ImGui::DragFloat("Mass##col", &c->mass, 0.1f);
+
+            if (ImGui::Button("Fit to Sprite##col")) {
+                auto* spr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+                if (spr) {
+                    if (c->shape == Components::Collider::Shape::Box)
+                        c->size = spr->size;
+                    else
+                        c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+                    c->offset = {0.f, 0.f};
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Remove##col"))
+                world.removeComponent<Components::Collider>(m_selectedEntity);
+        } else {
+            if (ImGui::Button("Add Collider##col"))
+                world.addComponent(m_selectedEntity, Components::Collider{});
         }
     }
 
@@ -1129,26 +1277,192 @@ void EditorState::renderViewport() {
     ImVec2 contMin   = ImGui::GetWindowContentRegionMin();
     vec2   vpMin     = {winPos.x + contMin.x, winPos.y + contMin.y};
 
-    // ----- Entity picking (left-click, no active gizmo) -----
+    auto& cam   = Core::Engine::Get().camera();
+    vec2  camP  = {cam.position().x, cam.position().y};
+    auto& ecs   = m_scene.GetWorld();
+
+    // ----- Entity picking (left-click) -----
+    // Skip if gizmo handle is active OR was hovered last frame (user is clicking handle)
     if (m_viewportHovered &&
         ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
-        m_gizmoActiveAxis == -1) {
-        ImVec2 mp    = ImGui::GetMousePos();
-        vec2   mPos  = {mp.x, mp.y};
-        auto&  cam   = Core::Engine::Get().camera();
-        vec2   camP  = {cam.position().x, cam.position().y};
-        vec2   world = screenToWorld(mPos, camP, m_editorCamZoom, vpMin, m_viewportSize);
+        m_gizmoActiveAxis == -1 &&
+        !m_gizmoHoveredHandle) {
+        ImVec2 mp       = ImGui::GetMousePos();
+        vec2   worldPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
 
-        auto& ecs    = m_scene.GetWorld();
-        float best   = 60.0f; // pick radius in world units
+        float best = 60.0f;
         ECS::Entity bestEnt{0, 0};
-
         ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
-            float d = magnitude(vec2(t.position.x, t.position.y) - world);
+            float d = magnitude(vec2(t.position.x, t.position.y) - worldPos);
             if (d < best) { best = d; bestEnt = e; }
         });
 
-        m_selectedEntity = bestEnt;
+        bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
+                     ImGui::IsKeyDown(ImGuiKey_RightShift);
+
+        if (shift) {
+            if (ecs.isValid(bestEnt)) {
+                // Shift+click entity: toggle in multi-selection
+                auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                    [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
+                if (it != m_selectedEntities.end()) {
+                    m_selectedEntities.erase(it);
+                    if (m_selectedEntity.id == bestEnt.id && m_selectedEntity.generation == bestEnt.generation)
+                        m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0,0} : m_selectedEntities.front();
+                } else {
+                    m_selectedEntities.push_back(bestEnt);
+                    if (!ecs.isValid(m_selectedEntity)) m_selectedEntity = bestEnt;
+                }
+            } else {
+                // Shift+click empty space: start additive box selection
+                m_isBoxSelecting = true;
+                m_boxSelectStart = {mp.x, mp.y};
+                m_boxSelectEnd   = {mp.x, mp.y};
+            }
+        } else {
+            // Check if clicking an already-selected entity
+            bool alreadySelected = ecs.isValid(bestEnt) &&
+                std::any_of(m_selectedEntities.begin(), m_selectedEntities.end(),
+                    [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
+
+            if (!alreadySelected) {
+                // New entity — clear selection and select this one
+                m_selectedEntities.clear();
+                m_selectedEntity = bestEnt;
+                if (ecs.isValid(bestEnt)) m_selectedEntities.push_back(bestEnt);
+            }
+            // Either way, start body-drag tracking for all selected entities
+            if (ecs.isValid(bestEnt)) {
+                m_pendingEntityDrag = true;
+                m_isDraggingEntity  = false;
+                m_dragStartMousePos = {mp.x, mp.y};
+                m_dragClickWorldPos = worldPos;
+                // Capture original positions for entire group
+                m_gizmoGroupOriginalPos.clear();
+                for (auto& se : m_selectedEntities) {
+                    if (auto* t = ecs.getComponent<Components::Transform>(se))
+                        m_gizmoGroupOriginalPos.push_back({se, {t->position.x, t->position.y}});
+                }
+            } else {
+                // Clicked empty space — start box selection
+                m_pendingEntityDrag = false;
+                m_isDraggingEntity  = false;
+                m_isBoxSelecting    = true;
+                m_boxSelectStart    = {mp.x, mp.y};
+                m_boxSelectEnd      = {mp.x, mp.y};
+                // Clear selection immediately (entities deselect on empty-space click)
+                if (!shift) {
+                    m_selectedEntities.clear();
+                    m_selectedEntity = {0, 0};
+                }
+            }
+        }
+    }
+
+    // ----- Direct entity body drag -----
+    if (m_gizmoActiveAxis != -1) {
+        m_pendingEntityDrag = false;
+        m_isDraggingEntity  = false;
+        m_isBoxSelecting    = false;
+    }
+
+    if (m_pendingEntityDrag && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        ImVec2 mp = ImGui::GetMousePos();
+        float  dx = mp.x - m_dragStartMousePos.x;
+        float  dy = mp.y - m_dragStartMousePos.y;
+        if (!m_isDraggingEntity && std::sqrt(dx * dx + dy * dy) > kDragThreshold)
+            m_isDraggingEntity = true;
+
+        if (m_isDraggingEntity) {
+            vec2 worldMouse = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+            vec2 delta = worldMouse - m_dragClickWorldPos;
+            // Move all selected entities by the same delta
+            for (auto& [e, origPos] : m_gizmoGroupOriginalPos) {
+                if (auto* t = ecs.getComponent<Components::Transform>(e)) {
+                    vec2 newPos = origPos + delta;
+                    if (m_snapToGrid) newPos = snapToGrid(newPos, m_gridSize);
+                    t->position = newPos;
+                }
+            }
+        }
+    }
+
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+        if (m_isDraggingEntity) {
+            // Push undo for every moved entity
+            for (auto& [e, origPos] : m_gizmoGroupOriginalPos) {
+                if (auto* t = ecs.getComponent<Components::Transform>(e)) {
+                    vec2 finalPos = {t->position.x, t->position.y};
+                    if (finalPos.x != origPos.x || finalPos.y != origPos.y)
+                        executeCommand(std::make_unique<MoveEntityCmd>(ecs, e, origPos, finalPos));
+                }
+            }
+        }
+        m_pendingEntityDrag = false;
+        m_isDraggingEntity  = false;
+    }
+
+    // ----- Box selection update / draw / finalize -----
+    if (m_isBoxSelecting) {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+            ImVec2 mp   = ImGui::GetMousePos();
+            m_boxSelectEnd = {mp.x, mp.y};
+
+            // Draw selection rectangle overlay
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            ImVec2 a = {std::min(m_boxSelectStart.x, m_boxSelectEnd.x),
+                        std::min(m_boxSelectStart.y, m_boxSelectEnd.y)};
+            ImVec2 b = {std::max(m_boxSelectStart.x, m_boxSelectEnd.x),
+                        std::max(m_boxSelectStart.y, m_boxSelectEnd.y)};
+            dl->AddRectFilled(a, b, IM_COL32(100, 160, 255, 35));
+            dl->AddRect      (a, b, IM_COL32(100, 160, 255, 220), 0.f, 0, 1.5f);
+        }
+
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            m_isBoxSelecting = false;
+
+            float minSX = std::min(m_boxSelectStart.x, m_boxSelectEnd.x);
+            float maxSX = std::max(m_boxSelectStart.x, m_boxSelectEnd.x);
+            float minSY = std::min(m_boxSelectStart.y, m_boxSelectEnd.y);
+            float maxSY = std::max(m_boxSelectStart.y, m_boxSelectEnd.y);
+
+            // Only act if box is large enough to be intentional
+            constexpr float kMinBox = 4.0f;
+            if ((maxSX - minSX) > kMinBox || (maxSY - minSY) > kMinBox) {
+                bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
+                             ImGui::IsKeyDown(ImGuiKey_RightShift);
+                if (!shift) {
+                    m_selectedEntities.clear();
+                    m_selectedEntity = {0, 0};
+                }
+
+                ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                    vec2 sc = worldToScreen({t.position.x, t.position.y},
+                                           camP, m_editorCamZoom, vpMin, m_viewportSize);
+                    if (sc.x >= minSX && sc.x <= maxSX &&
+                        sc.y >= minSY && sc.y <= maxSY) {
+                        bool alreadyIn = std::any_of(
+                            m_selectedEntities.begin(), m_selectedEntities.end(),
+                            [&](ECS::Entity se){ return se.id == e.id && se.generation == e.generation; });
+                        if (!alreadyIn) {
+                            m_selectedEntities.push_back(e);
+                            if (!ecs.isValid(m_selectedEntity))
+                                m_selectedEntity = e;
+                        }
+                    }
+                });
+
+                // Ensure primary is one of the selected entities
+                if (!m_selectedEntities.empty()) {
+                    bool primaryOk = std::any_of(
+                        m_selectedEntities.begin(), m_selectedEntities.end(),
+                        [&](ECS::Entity e){ return e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation; });
+                    if (!primaryOk)
+                        m_selectedEntity = m_selectedEntities.front();
+                }
+            }
+            // Box too small = just a click on empty space → selection stays cleared
+        }
     }
 
     // ----- Drag-drop: texture from Asset Browser → spawn entity -----
@@ -1156,8 +1470,6 @@ void EditorState::renderViewport() {
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
             const char* texName = static_cast<const char*>(pl->Data);
             ImVec2 mp = ImGui::GetMousePos();
-            auto&  cam = Core::Engine::Get().camera();
-            vec2   camP = {cam.position().x, cam.position().y};
             vec2   wPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
             if (m_snapToGrid) wPos = snapToGrid(wPos, m_gridSize);
 
@@ -1171,12 +1483,14 @@ void EditorState::renderViewport() {
             auto cmd = std::make_unique<CreateEntityCmd>(m_scene.GetWorld(), snap);
             auto* raw = cmd.get();
             executeCommand(std::move(cmd));
+            m_selectedEntities.clear();
             m_selectedEntity = raw->createdEntity();
+            m_selectedEntities.push_back(m_selectedEntity);
         }
         ImGui::EndDragDropTarget();
     }
 
-    // ----- Gizmos -----
+    // ----- Gizmos (drawn after Image so overlays are visible) -----
     renderGizmos(vpMin);
 
     ImGui::End();
@@ -1221,6 +1535,9 @@ void EditorState::renderGrid() {
 // ---------------------------------------------------------------------------
 
 void EditorState::renderGizmos(const vec2& viewportMin) {
+    // Always clear hover flag each frame; set below if handle is hovered
+    m_gizmoHoveredHandle = false;
+
     if (m_gizmoMode == GizmoMode::None) return;
 
     auto& world = m_scene.GetWorld();
@@ -1288,6 +1605,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
         bool hoverY = distToSeg(mousePos, origin, yEnd) < kHitR;
         if (m_gizmoActiveAxis == 0) hoverX = true;
         if (m_gizmoActiveAxis == 1) hoverY = true;
+        if (hoverX || hoverY) m_gizmoHoveredHandle = true;
 
         dl->AddLine(origin, xEnd, hoverX ? colHover : colX, kThick);
         dl->AddLine(origin, yEnd, hoverY ? colHover : colY, kThick);
@@ -1304,14 +1622,19 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
         drawArrow(xEnd, normalize(xAxisScr), hoverX ? colHover : colX);
         drawArrow(yEnd, normalize(yAxisScr), hoverY ? colHover : colY);
 
-        // Start drag
+        // Start drag — capture group original positions
         if (mouseClick && (hoverX || hoverY)) {
             m_gizmoActiveAxis   = hoverX ? 0 : 1;
             m_gizmoOriginalPos  = {trans->position.x, trans->position.y};
             m_gizmoClickOffset  = {mousePos.x, mousePos.y};
+            m_gizmoGroupOriginalPos.clear();
+            for (auto& e : m_selectedEntities) {
+                if (auto* t = world.getComponent<Components::Transform>(e))
+                    m_gizmoGroupOriginalPos.push_back({e, {t->position.x, t->position.y}});
+            }
         }
 
-        // Drag
+        // Drag — move primary and apply same delta to group
         if (mouseDown && m_gizmoActiveAxis != -1) {
             float dx = mousePos.x - m_gizmoClickOffset.x;
             float dy = mousePos.y - m_gizmoClickOffset.y;
@@ -1322,15 +1645,24 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             vec2  newPos    = m_gizmoOriginalPos + worldDir * proj;
             if (m_snapToGrid) newPos = snapToGrid(newPos, m_gridSize);
             trans->position = newPos;
+            vec2 delta = newPos - m_gizmoOriginalPos;
+            // Apply same delta to secondary entities
+            for (auto& [e, origPos] : m_gizmoGroupOriginalPos) {
+                if (e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation)
+                    continue; // primary already updated
+                if (auto* t = world.getComponent<Components::Transform>(e))
+                    t->position = origPos + delta;
+            }
         }
 
-        // Create undo command on release
+        // Undo commands for all moved entities on release
         if (releasedAxis != -1) {
-            vec2 finalPos = {trans->position.x, trans->position.y};
-            if (finalPos.x != m_gizmoOriginalPos.x ||
-                finalPos.y != m_gizmoOriginalPos.y) {
-                executeCommand(std::make_unique<MoveEntityCmd>(
-                    world, m_selectedEntity, m_gizmoOriginalPos, finalPos));
+            for (auto& [e, origPos] : m_gizmoGroupOriginalPos) {
+                if (auto* t = world.getComponent<Components::Transform>(e)) {
+                    vec2 finalPos = {t->position.x, t->position.y};
+                    if (finalPos.x != origPos.x || finalPos.y != origPos.y)
+                        executeCommand(std::make_unique<MoveEntityCmd>(world, e, origPos, finalPos));
+                }
             }
         }
     }
@@ -1342,13 +1674,19 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
                                (mousePos.y - origin.y) * (mousePos.y - origin.y));
         bool hover = std::abs(dist - radius) < 10.0f;
         if (m_gizmoActiveAxis == 2) hover = true;
-        if (hover) dl->AddCircle(origin, radius, colHover, 64, kThick);
+        if (hover) { m_gizmoHoveredHandle = true; dl->AddCircle(origin, radius, colHover, 64, kThick); }
+        else dl->AddCircle(origin, radius, colZ, 64, kThick * 0.5f);
 
         if (mouseClick && hover) {
             m_gizmoActiveAxis         = 2;
             m_gizmoOriginalRotation   = trans->rotation;
             m_gizmoClickOffset.x      = std::atan2(mousePos.y - origin.y,
                                                     mousePos.x - origin.x);
+            m_gizmoGroupOriginalRot.clear();
+            for (auto& e : m_selectedEntities) {
+                if (auto* t = world.getComponent<Components::Transform>(e))
+                    m_gizmoGroupOriginalRot.push_back({e, t->rotation});
+            }
         }
 
         if (mouseDown && m_gizmoActiveAxis == 2) {
@@ -1356,14 +1694,108 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
                                              mousePos.x - origin.x);
             float delta = currentAngle - m_gizmoClickOffset.x;
             trans->rotation = m_gizmoOriginalRotation + delta;
+            for (auto& [e, origRot] : m_gizmoGroupOriginalRot) {
+                if (e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation)
+                    continue;
+                if (auto* t = world.getComponent<Components::Transform>(e))
+                    t->rotation = origRot + delta;
+            }
         }
 
         if (releasedAxis == 2) {
-            if (trans->rotation != m_gizmoOriginalRotation)
-                executeCommand(std::make_unique<RotateEntityCmd>(
-                    world, m_selectedEntity,
-                    m_gizmoOriginalRotation, trans->rotation));
+            for (auto& [e, origRot] : m_gizmoGroupOriginalRot) {
+                if (auto* t = world.getComponent<Components::Transform>(e)) {
+                    if (t->rotation != origRot)
+                        executeCommand(std::make_unique<RotateEntityCmd>(
+                            world, e, origRot, t->rotation));
+                }
+            }
         }
+    }
+    else if (m_gizmoMode == GizmoMode::Scale) {
+        float angle = trans->rotation;
+        float c = std::cos(angle), s = std::sin(angle);
+        vec2 xAxisScr = {c, -s};
+        vec2 yAxisScr = {-s, -c};
+
+        ImVec2 xEnd = {origin.x + xAxisScr.x * kLen, origin.y + xAxisScr.y * kLen};
+        ImVec2 yEnd = {origin.x + yAxisScr.x * kLen, origin.y + yAxisScr.y * kLen};
+
+        bool hoverX = distToSeg(mousePos, origin, xEnd) < kHitR;
+        bool hoverY = distToSeg(mousePos, origin, yEnd) < kHitR;
+        if (m_gizmoActiveAxis == 0) hoverX = true;
+        if (m_gizmoActiveAxis == 1) hoverY = true;
+        if (hoverX || hoverY) m_gizmoHoveredHandle = true;
+
+        dl->AddLine(origin, xEnd, hoverX ? colHover : colX, kThick);
+        dl->AddLine(origin, yEnd, hoverY ? colHover : colY, kThick);
+
+        // Box heads (distinguishes scale from translate arrows)
+        auto drawBox = [&](ImVec2 center, ImU32 col) {
+            dl->AddRectFilled({center.x - 5, center.y - 5},
+                              {center.x + 5, center.y + 5}, col);
+        };
+        drawBox(xEnd, hoverX ? colHover : colX);
+        drawBox(yEnd, hoverY ? colHover : colY);
+
+        // Start drag — capture group original scales
+        if (mouseClick && (hoverX || hoverY)) {
+            m_gizmoActiveAxis    = hoverX ? 0 : 1;
+            m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
+            m_gizmoClickOffset   = {mousePos.x, mousePos.y};
+            m_gizmoGroupOriginalScale.clear();
+            for (auto& e : m_selectedEntities) {
+                if (auto* t = world.getComponent<Components::Transform>(e))
+                    m_gizmoGroupOriginalScale.push_back({e, {t->scale.x, t->scale.y}});
+            }
+        }
+
+        // Drag — project mouse movement onto axis, apply as scale delta
+        if (mouseDown && m_gizmoActiveAxis != -1) {
+            float dx = mousePos.x - m_gizmoClickOffset.x;
+            float dy = mousePos.y - m_gizmoClickOffset.y;
+            vec2 axisDir = normalize((m_gizmoActiveAxis == 0) ? xAxisScr : yAxisScr);
+            float proj       = dot(vec2(dx, dy), axisDir);
+            float scaleDelta = proj * 0.01f;
+            if (m_gizmoActiveAxis == 0)
+                trans->scale.x = m_gizmoOriginalScale.x + scaleDelta;
+            else
+                trans->scale.y = m_gizmoOriginalScale.y + scaleDelta;
+            // Apply same relative scale delta to secondary entities
+            for (auto& [e, origScale] : m_gizmoGroupOriginalScale) {
+                if (e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation)
+                    continue;
+                if (auto* t = world.getComponent<Components::Transform>(e)) {
+                    if (m_gizmoActiveAxis == 0)
+                        t->scale.x = origScale.x + scaleDelta;
+                    else
+                        t->scale.y = origScale.y + scaleDelta;
+                }
+            }
+        }
+
+        // Undo commands for all scaled entities on release
+        if (releasedAxis != -1) {
+            for (auto& [e, origScale] : m_gizmoGroupOriginalScale) {
+                if (auto* t = world.getComponent<Components::Transform>(e)) {
+                    vec2 finalScale = {t->scale.x, t->scale.y};
+                    if (finalScale.x != origScale.x || finalScale.y != origScale.y)
+                        executeCommand(std::make_unique<ScaleEntityCmd>(
+                            world, e, origScale, finalScale));
+                }
+            }
+        }
+    }
+
+    // ----- Highlight secondary selected entities -----
+    for (auto& e : m_selectedEntities) {
+        if (e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation)
+            continue; // primary — already shown by gizmo or green outline elsewhere
+        auto* t = world.getComponent<Components::Transform>(e);
+        if (!t) continue;
+        vec2 sc = worldToScreen({t->position.x, t->position.y},
+                                camPos, zoom, viewportMin, m_viewportSize);
+        dl->AddCircle({sc.x, sc.y}, 8.0f, IM_COL32(255, 200, 0, 200), 16, 2.0f);
     }
 }
 
@@ -2085,6 +2517,7 @@ void EditorState::loadScene(const std::string& path) {
     m_undoStack.clear();
     m_redoStack.clear();
     m_selectedEntity = {0, 0};
+    m_selectedEntities.clear();
 }
 
 void EditorState::saveScene() {

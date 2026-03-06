@@ -68,6 +68,20 @@ void RotateEntityCmd::undo() {
 }
 
 // ---------------------------------------------------------------------------
+// ScaleEntityCmd
+// ---------------------------------------------------------------------------
+
+void ScaleEntityCmd::execute() {
+    if (auto* t = world.getComponent<Components::Transform>(entity))
+        t->scale = newScale;
+}
+
+void ScaleEntityCmd::undo() {
+    if (auto* t = world.getComponent<Components::Transform>(entity))
+        t->scale = oldScale;
+}
+
+// ---------------------------------------------------------------------------
 // CreateEntityCmd
 // ---------------------------------------------------------------------------
 
