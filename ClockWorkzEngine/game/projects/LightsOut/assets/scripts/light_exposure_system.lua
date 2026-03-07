@@ -24,23 +24,23 @@ function LightExposureSystem:onUpdate(entity, dt)
     end)
 
     -- 2. For each active torch, mark targets that fall inside its cone
-    World.eachTorch(function(torchEnt)
+    World.eachLight(function(torchEnt)
         if not torchEnt:isValid() then return end
-        if not torchEnt:isTorchActive() then return end
+        if not torchEnt:isLightActive() then return end
         if torchEnt:hasBattery() and torchEnt:getBatteryCharge() <= 0.0 then return end
 
         -- Torch world-space origin
         local rot  = torchEnt.rotation
         local c, s = math.cos(rot), math.sin(rot)
-        local ox, oy = torchEnt:getTorchOffsetX(), torchEnt:getTorchOffsetY()
+        local ox, oy = torchEnt:getLightOffsetX(), torchEnt:getLightOffsetY()
         local tx = torchEnt.position.x + ox * c - oy * s
         local ty = torchEnt.position.y + ox * s + oy * c
 
         local tdx = math.cos(rot)
         local tdy = math.sin(rot)
-        local radius  = torchEnt:getTorchRadius()
+        local radius  = torchEnt:getLightRadius()
         local radiusSq = radius * radius
-        local halfFov  = (torchEnt:getTorchAngle() * math.pi / 180.0) * 0.5
+        local halfFov  = (torchEnt:getLightAngle() * math.pi / 180.0) * 0.5
         local cosHalf  = math.cos(halfFov)
 
         World.eachLightExposure(function(target)

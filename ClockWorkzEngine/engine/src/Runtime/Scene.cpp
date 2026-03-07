@@ -13,6 +13,7 @@
 #include "Components/AudioSource.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Layer.hpp"
+#include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
@@ -81,6 +82,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::Tag>();
   m_world.registerComponent<Components::LuaScript>();
   m_world.registerComponent<Components::Layer>();
+  m_world.registerComponent<Components::Light>();
 
   // Let the game register its own component types (set via Engine::setComponentRegistrar).
   Core::Engine::Get().invokeComponentRegistrar(m_world);

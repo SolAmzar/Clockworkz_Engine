@@ -27,7 +27,7 @@ reserved.
 #include "Components/PlayerController.hpp"
 #include "Components/Portal.hpp"
 #include "Components/SpriteRenderer.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
@@ -345,9 +345,9 @@ void TestLevelState::renderTorchPass(Graphics::RenderingManager &renderer) {
   auto &world = m_scene.GetWorld();
   Graphics::Camera2D &camera = Core::Engine::Get().camera();
 
-  world.each<Components::Transform, Components::TorchComponent>(
+  world.each<Components::Transform, Components::Light>(
       [&](ECS::Entity entity, Components::Transform &trans,
-          Components::TorchComponent &torch) {
+          Components::Light &torch) {
         if (!torch.active)
           return;
 

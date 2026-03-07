@@ -486,14 +486,14 @@ namespace Scripting {
             "isBatteryCharging", &Scripting::EntityRef::isBatteryCharging,
             "setBatteryCharging",&Scripting::EntityRef::setBatteryCharging,
 
-            // Torch
-            "hasTorch",       &Scripting::EntityRef::hasTorch,
-            "isTorchActive",  &Scripting::EntityRef::isTorchActive,
-            "setTorchActive", &Scripting::EntityRef::setTorchActive,
-            "getTorchRadius", &Scripting::EntityRef::getTorchRadius,
-            "getTorchAngle",  &Scripting::EntityRef::getTorchAngle,
-            "getTorchOffsetX",&Scripting::EntityRef::getTorchOffsetX,
-            "getTorchOffsetY",&Scripting::EntityRef::getTorchOffsetY,
+            // Light
+            "hasLight",       &Scripting::EntityRef::hasLight,
+            "isLightActive",  &Scripting::EntityRef::isLightActive,
+            "setLightActive", &Scripting::EntityRef::setLightActive,
+            "getLightRadius", &Scripting::EntityRef::getLightRadius,
+            "getLightAngle",  &Scripting::EntityRef::getLightAngle,
+            "getLightOffsetX",&Scripting::EntityRef::getLightOffsetX,
+            "getLightOffsetY",&Scripting::EntityRef::getLightOffsetY,
 
             // Fragment
             "hasFragment",              &Scripting::EntityRef::hasFragment,

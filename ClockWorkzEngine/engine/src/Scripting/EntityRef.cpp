@@ -19,7 +19,7 @@ reserved.
 #include "Components/Tag.hpp"
 // Game-specific components (top-level include/ is on the engine path)
 #include "Components/Battery.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/Door.hpp"
@@ -147,14 +147,14 @@ float EntityRef::getBatteryChargeRate() const { auto* b = m_world ? m_world->get
 bool  EntityRef::isBatteryCharging() const { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; return b ? b->isCharging : false; }
 void  EntityRef::setBatteryCharging(bool v) { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; if (b) b->isCharging = v; }
 
-// --- Torch ---
-bool  EntityRef::hasTorch() const { return m_world && m_world->hasComponent<Components::TorchComponent>(m_entity); }
-bool  EntityRef::isTorchActive() const { auto* t = m_world ? m_world->getComponent<Components::TorchComponent>(m_entity) : nullptr; return t ? t->active : false; }
-void  EntityRef::setTorchActive(bool v) { auto* t = m_world ? m_world->getComponent<Components::TorchComponent>(m_entity) : nullptr; if (t) t->active = v; }
-float EntityRef::getTorchRadius() const { auto* t = m_world ? m_world->getComponent<Components::TorchComponent>(m_entity) : nullptr; return t ? t->radius : 0.f; }
-float EntityRef::getTorchAngle() const { auto* t = m_world ? m_world->getComponent<Components::TorchComponent>(m_entity) : nullptr; return t ? t->angle : 0.f; }
-float EntityRef::getTorchOffsetX() const { auto* t = m_world ? m_world->getComponent<Components::TorchComponent>(m_entity) : nullptr; return t ? t->offset.x : 0.f; }
-float EntityRef::getTorchOffsetY() const { auto* t = m_world ? m_world->getComponent<Components::TorchComponent>(m_entity) : nullptr; return t ? t->offset.y : 0.f; }
+// --- Light ---
+bool  EntityRef::hasLight() const { return m_world && m_world->hasComponent<Components::Light>(m_entity); }
+bool  EntityRef::isLightActive() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->active : false; }
+void  EntityRef::setLightActive(bool v) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->active = v; }
+float EntityRef::getLightRadius() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->radius : 0.f; }
+float EntityRef::getLightAngle() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->angle : 0.f; }
+float EntityRef::getLightOffsetX() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.x : 0.f; }
+float EntityRef::getLightOffsetY() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.y : 0.f; }
 
 // --- Fragment ---
 bool  EntityRef::hasFragment() const { return m_world && m_world->hasComponent<Components::Fragment>(m_entity); }

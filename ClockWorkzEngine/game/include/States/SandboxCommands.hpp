@@ -31,7 +31,7 @@ LevelEditor
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "ECS/World.hpp"
 #include "Math/Vec2.hpp"
@@ -99,7 +99,7 @@ struct EntitySnapshot {
   Components::SpriteAnimator spriteAnimator;
 
   bool hasTorch = false;
-  Components::TorchComponent torch;
+  Components::Light torch;
 
   bool hasTag = false;
   Components::Tag tag;
@@ -159,7 +159,7 @@ struct EntitySnapshot {
       hasSpriteAnimator = true;
       spriteAnimator = *anim;
     }
-    if (auto *torchComp = world.getComponent<Components::TorchComponent>(entity)) {
+    if (auto *torchComp = world.getComponent<Components::Light>(entity)) {
       hasTorch = true;
       torch = *torchComp;
     }
@@ -265,7 +265,7 @@ struct EntitySnapshot {
     }
     if (hasTorch) {
       if (auto *torchComp =
-              world.getComponent<Components::TorchComponent>(entity)) {
+              world.getComponent<Components::Light>(entity)) {
         *torchComp = torch;
       } else {
         world.addComponent(entity, torch);

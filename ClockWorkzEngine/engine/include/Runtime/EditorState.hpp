@@ -53,6 +53,7 @@ private:
     void renderLoadSceneWindow();
     void renderStatsWindow();
     void renderScriptsBrowser();
+    void renderAnimationsBrowser();
     void renderAudioBrowser();
     void renderPrefabBrowser();
     void renderTilePalette();
@@ -129,6 +130,79 @@ private:
     // ----- Collider debug -----
     bool                    m_showColliders{false};
 
+    // ----- Asset browser -----
+    std::string             m_selectedAsset;
+    char                    m_newAssetNameBuf[128]{};
+    char                    m_newAssetPathBuf[256]{};
+    std::string             m_currentAssetDir;
+    std::string             m_renamingAssetDirPath;
+    char                    m_renameAssetDirBuf[256]{};
+    std::string             m_deletingAssetDirPath;
+    std::string             m_movingAssetPath;
+
+    // ----- Dockspace -----
+    bool                    m_dockLayoutInitialized{false};
+
+    // ----- Undo/redo -----
+    static constexpr size_t MAX_UNDO = 50;
+    std::vector<std::unique_ptr<IEditorCommand>> m_undoStack;
+    std::vector<std::unique_ptr<IEditorCommand>> m_redoStack;
+
+    // ----- Deferred actions -----
+    bool                    m_pendingReturnToHub{false};
+    bool                    m_pendingSave{false};
+    bool                    m_pendingPlay{false};
+
+    // ----- Load scene window -----
+    char                    m_loadSceneFilter[128]{};
+    std::string             m_pendingLoadPath;
+    char                    m_newSceneBuf[128]{};
+
+    // ----- Asset rename/delete -----
+    std::string             m_renamingAsset;
+    char                    m_renameAssetBuf[128]{};
+    std::string             m_deletingAsset;
+
+    // ----- Texture hot-reload -----
+    void        initTextureFilePaths();
+    void        checkAssetHotReload();
+    std::unordered_map<std::string, std::string>                       m_textureFilePaths;
+    std::unordered_map<std::string, std::filesystem::file_time_type>   m_assetFileTimestamps;
+    bool        m_hotReloadEnabled{true};
+    float       m_hotReloadTimer{0.f};
+    static constexpr float HOT_RELOAD_INTERVAL = 1.0f;
+
+    // ----- Scripts browser -----
+    char                    m_newScriptBuf[128]{};
+    char                    m_newScriptFolderBuf[64]{};   // subfolder for new script
+    std::string             m_currentScriptDir;
+    std::string             m_renamingScriptPath;
+    char                    m_renameScriptBuf[256]{};
+    std::string             m_deletingScriptPath;
+    std::string             m_movingScriptPath;           // script being moved to a folder
+
+    // ----- Animations browser -----
+    std::string             m_currentAnimDir;
+    std::string             m_renamingAnimPath;
+    char                    m_renameAnimBuf[256]{};
+    std::string             m_deletingAnimPath;
+
+    // ----- Audio browser -----
+    char                    m_newAudioNameBuf[128]{};
+    char                    m_newAudioPathBuf[256]{};
+    bool                    m_newAudioLoop{false};
+    bool                    m_newAudioStream{false};
+    bool                    m_newAudioIs3D{false};
+    float                   m_newAudioVolume{1.0f};
+    float                   m_newAudioPitch{1.0f};
+    bool                    m_newAudioIsBGM{false};
+    std::string             m_currentAudioDir;
+    std::string             m_renamingAudioPath;
+    char                    m_renameAudioBuf[256]{};
+    std::string             m_deletingAudio;
+    std::string             m_deletingAudioPath;
+    std::string             m_movingAudioPath;
+
     // ----- Prefab Browser -----
     std::vector<std::string> m_availablePrefabs;
     int                      m_selectedPrefabIndex{-1};
@@ -179,71 +253,6 @@ private:
     bool                    m_isRenaming{false};
     ECS::Entity             m_renamingEntity{0, 0};
     char                    m_renameBuffer[256]{};
-
-    // ----- Assets (Texture) browser -----
-    std::string             m_currentAssetDir{"assets/textures"};
-    std::string             m_selectedAsset;
-    char                    m_newAssetNameBuf[128]{};
-    char                    m_newAssetPathBuf[512]{};
-    std::string             m_renamingAsset;
-    char                    m_renameAssetBuf[128]{};
-    std::string             m_deletingAsset;
-    std::string             m_movingAssetPath;
-    std::string             m_renamingAssetDirPath;
-    char                    m_renameAssetDirBuf[128]{};
-    std::string             m_deletingAssetDirPath;
-
-    // ----- Dockspace -----
-    bool                    m_dockLayoutInitialized{false};
-
-    // ----- Undo/redo -----
-    static constexpr size_t MAX_UNDO = 50;
-    std::vector<std::unique_ptr<IEditorCommand>> m_undoStack;
-    std::vector<std::unique_ptr<IEditorCommand>> m_redoStack;
-
-    // ----- Deferred actions -----
-    bool                    m_pendingReturnToHub{false};
-    bool                    m_pendingSave{false};
-    bool                    m_pendingPlay{false};
-
-    // ----- Load scene window -----
-    char                    m_loadSceneFilter[128]{};
-    std::string             m_pendingLoadPath;
-    char                    m_newSceneBuf[128]{};
-
-    // ----- Texture hot-reload -----
-    void        initTextureFilePaths();
-    void        checkAssetHotReload();
-    std::unordered_map<std::string, std::string>                       m_textureFilePaths;
-    std::unordered_map<std::string, std::filesystem::file_time_type>   m_assetFileTimestamps;
-    bool        m_hotReloadEnabled{true};
-    float       m_hotReloadTimer{0.f};
-    static constexpr float HOT_RELOAD_INTERVAL = 1.0f;
-
-    // ----- Scripts browser -----
-    std::string             m_currentScriptDir{"assets/scripts"};
-    char                    m_newScriptBuf[128]{};
-    char                    m_newScriptFolderBuf[64]{};   // subfolder for new script
-    std::string             m_renamingScriptPath;
-    char                    m_renameScriptBuf[256]{};
-    std::string             m_deletingScriptPath;
-    std::string             m_movingScriptPath;           // script being moved to a folder
-
-    // ----- Audio browser -----
-    std::string             m_currentAudioDir{"assets/audio"};
-    char                    m_newAudioNameBuf[128]{};
-    char                    m_newAudioPathBuf[512]{};
-    bool                    m_newAudioLoop{false};
-    bool                    m_newAudioStream{false};
-    bool                    m_newAudioIs3D{false};
-    float                   m_newAudioVolume{1.0f};
-    float                   m_newAudioPitch{1.0f};
-    bool                    m_newAudioIsBGM{false};
-    std::string             m_deletingAudio;
-    std::string             m_renamingAudioPath;
-    char                    m_renameAudioBuf[128]{};
-    std::string             m_movingAudioPath;
-    std::string             m_deletingAudioPath;
 };
 
 } // namespace Runtime

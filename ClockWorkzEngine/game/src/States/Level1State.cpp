@@ -1,6 +1,6 @@
 #include "States/Level1State.hpp"
 #include "Components/PlayerController.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Runtime/Scene.hpp"
 #include <iostream>
 
@@ -19,7 +19,7 @@ void Level1State::onEnter() {
     return;
 
   // "Level_01.json" loads ECS entities directly into m_scene.GetWorld()
-  // We need to find the Player entity and give it a TorchComponent if it
+  // We need to find the Player entity and give it a Light component if it
   // doesn't have one.
   auto &world = scene->GetWorld();
 
@@ -31,8 +31,8 @@ void Level1State::onEnter() {
 
   world.each<Components::PlayerController>(
       [&](ECS::Entity entity, Components::PlayerController &) {
-        if (!world.hasComponent<Components::TorchComponent>(entity)) {
-          Components::TorchComponent torch;
+        if (!world.hasComponent<Components::Light>(entity)) {
+          Components::Light torch;
           torch.active = true;
           torch.radius = 300.0f;
           torch.angle = 60.0f;
@@ -40,7 +40,7 @@ void Level1State::onEnter() {
           torch.intensity = 1.0f;
           torch.offset = {35.0f, -20.0f};
           world.addComponent(entity, torch);
-          std::cout << "[Level1State] Added TorchComponent to Player entity "
+          std::cout << "[Level1State] Added Light component to Player entity "
                     << entity.id << "\n";
         }
       });

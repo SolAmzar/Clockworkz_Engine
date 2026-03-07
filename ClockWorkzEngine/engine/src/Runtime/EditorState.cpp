@@ -25,6 +25,7 @@ reserved.
 #include "Graphics/Shader.hpp"
 #include "Memory/MemoryDebugRegistry.hpp"
 #include "Memory/IPoolStats.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Tag.hpp"
 #include "Components/SpriteRenderer.hpp"
@@ -250,6 +251,11 @@ void EditorState::onEnter() {
     Gameplay::PrefabFactory::get().loadPrefabFromFile("assets/configs/Prefab.json");
 
     m_scene.Init();
+
+    m_currentAssetDir = "assets/textures";
+    m_currentAnimDir = "assets/animations";
+    m_currentScriptDir = "assets/scripts";
+    m_currentAudioDir = "assets/audio";
 
     loadAvailablePrefabs();
     m_layerVisible.assign(m_numLayers, true);
@@ -557,6 +563,7 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderDockWindow("Assets",                 centerBot);
         ImGui::DockBuilderDockWindow("Scripts",                centerBot);
         ImGui::DockBuilderDockWindow("Audio",                  centerBot);
+        ImGui::DockBuilderDockWindow("Animations",             centerBot);
         ImGui::DockBuilderDockWindow("Prefabs",                centerBot);
         ImGui::DockBuilderDockWindow("Tile Palette",           left);
         ImGui::DockBuilderDockWindow("Inspector",              rightTop);
@@ -573,6 +580,7 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderAssetBrowser();
     renderStatsWindow();
     renderScriptsBrowser();
+    renderAnimationsBrowser();
     renderAudioBrowser();
     renderPrefabBrowser();
     renderTilePalette();
@@ -1165,6 +1173,7 @@ void EditorState::renderInspector() {
             addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world);
             addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world);
             addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world);
+            addCompEntry<Components::Light>("Light", m_selectedEntity, world);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Physics")) {
@@ -1372,6 +1381,13 @@ void EditorState::renderInspector() {
             auto* sa = world.getComponent<Components::SpriteAnimator>(m_selectedEntity);
             char fbuf[256]; snprintf(fbuf, sizeof(fbuf), "%s", sa->filename.c_str());
             if (ImGui::InputText("File##sa", fbuf, sizeof(fbuf))) sa->filename = fbuf;
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("ANIMATION_ASSET")) {
+                    sa->filename = static_cast<const char*>(pl->Data);
+                    sa->loadFromPath("assets/animations/" + sa->filename);
+                }
+                ImGui::EndDragDropTarget();
+            }
             char cbuf[128]; snprintf(cbuf, sizeof(cbuf), "%s", sa->currentClip.c_str());
             if (ImGui::InputText("Current Clip##sa", cbuf, sizeof(cbuf))) sa->currentClip = cbuf;
             ImGui::Checkbox("Playing##sa", &sa->playing);
@@ -1501,6 +1517,25 @@ void EditorState::renderInspector() {
                 tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
         }
         if (rm) world.removeComponent<Components::TextRenderer>(m_selectedEntity);
+    }
+
+    // Light
+    if (world.hasComponent<Components::Light>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("Light##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rlt")) rm = true;
+        if (open) {
+            auto* lt = world.getComponent<Components::Light>(m_selectedEntity);
+            ImGui::Checkbox("Active##lt", &lt->active);
+            ImGui::DragFloat2("Offset##lt", &lt->offset.x, 1.0f);
+            ImGui::ColorEdit3("Color##lt", &lt->color.r);
+            ImGui::DragFloat("Radius##lt", &lt->radius, 1.0f, 0.0f, 2000.0f);
+            ImGui::DragFloat("Angle##lt", &lt->angle, 0.5f, 0.0f, 360.0f);
+            ImGui::SliderFloat("Intensity##lt", &lt->intensity, 0.0f, 1.0f);
+        }
+        if (rm) world.removeComponent<Components::Light>(m_selectedEntity);
     }
 
     ImGui::End();
@@ -2426,6 +2461,156 @@ void EditorState::renderAssetBrowser() {
 // ---------------------------------------------------------------------------
 // renderScriptsBrowser
 // ---------------------------------------------------------------------------
+
+void EditorState::renderAnimationsBrowser() {
+    ImGui::Begin("Animations");
+
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    const fs::path animRoot("assets/animations");
+
+    if (!fs::exists(animRoot)) {
+        fs::create_directories(animRoot, ec);
+    }
+
+    // ── Navigation Bar ───────────────────────────────────────────────────────
+    if (m_currentAnimDir != animRoot.generic_string()) {
+        if (ImGui::Button("<- Back##anim")) {
+            m_currentAnimDir = fs::path(m_currentAnimDir).parent_path().generic_string();
+        }
+        ImGui::SameLine();
+    }
+    ImGui::Text("Location: %s", fs::relative(m_currentAnimDir, animRoot, ec).generic_string().c_str());
+    ImGui::Separator();
+
+    if (ImGui::Button("New Folder##anim")) {
+        m_newScriptFolderBuf[0] = '\0';
+        ImGui::OpenPopup("##NewAnimFolder");
+    }
+
+    if (ImGui::BeginPopupModal("##NewAnimFolder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create Folder in: %s", m_currentAnimDir.c_str());
+        ImGui::InputText("Folder name##nfan", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
+        if (ImGui::Button("Create", ImVec2(100, 0))) {
+            if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAnimDir) / m_newScriptFolderBuf, ec);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+
+    if (!m_renamingAnimPath.empty()) ImGui::OpenPopup("##RenameAnim");
+    if (ImGui::BeginPopupModal("##RenameAnim", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        fs::path rPath(m_renamingAnimPath);
+        ImGui::Text("Rename: %s", rPath.filename().string().c_str());
+        ImGui::InputText("New name##rnan", m_renameAnimBuf, sizeof(m_renameAnimBuf));
+        if (ImGui::Button("Rename", ImVec2(100, 0))) {
+            if (m_renameAnimBuf[0]) {
+                std::string newName = m_renameAnimBuf;
+                if (!fs::is_directory(rPath) && (newName.size() < 5 || newName.substr(newName.size()-5) != ".json"))
+                    newName += ".json";
+                fs::rename(rPath, rPath.parent_path() / newName, ec);
+            }
+            m_renamingAnimPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_renamingAnimPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    if (!m_deletingAnimPath.empty()) ImGui::OpenPopup("##DeleteAnim");
+    if (ImGui::BeginPopupModal("##DeleteAnim", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        fs::path dPath(m_deletingAnimPath);
+        ImGui::Text("Delete '%s'?", dPath.filename().string().c_str());
+        if (ImGui::Button("Delete", ImVec2(100, 0))) {
+            fs::remove_all(dPath, ec);
+            m_deletingAnimPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAnimPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    ImGui::Separator();
+
+    // ── Grid ────────────────────────────────────────────────────────────────
+    std::vector<fs::path> items;
+    for (const auto& entry : fs::directory_iterator(m_currentAnimDir, ec)) {
+        if (entry.is_directory() || entry.path().extension() == ".json")
+            items.push_back(entry.path());
+    }
+    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
+        bool aDir = fs::is_directory(a), bDir = fs::is_directory(b);
+        if (aDir != bDir) return aDir;
+        return a.filename().string() < b.filename().string();
+    });
+
+    constexpr float kIconW = 64.0f, kIconH = 72.0f;
+    float panelW = ImGui::GetContentRegionAvail().x;
+    int cols = std::max(1, static_cast<int>(panelW / (kIconW + 20.0f)));
+
+    if (ImGui::BeginTable("##AnimTbl", cols)) {
+        for (const auto& path : items) {
+            ImGui::TableNextColumn();
+            std::string fname = path.filename().string();
+            std::string stem = path.stem().string();
+            std::string relPath = fs::relative(path, animRoot, ec).generic_string();
+            bool isDir = fs::is_directory(path);
+            ImGui::PushID(fname.c_str());
+
+            float colW = ImGui::GetContentRegionAvail().x;
+            float iconOX = (colW - kIconW) * 0.5f;
+            if (iconOX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
+
+            if (isDir) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.1f, 1.0f));
+                if (ImGui::Button("##icon", ImVec2(kIconW, kIconH))) m_currentAnimDir = path.generic_string();
+                ImGui::PopStyleColor();
+                DrawFolderIcon();
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("ANIMATION_ASSET")) {
+                        fs::path src(animRoot / (const char*)pl->Data);
+                        fs::rename(src, path / src.filename(), ec);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.15f, 0.35f, 1.0f));
+                ImGui::Button("##icon", ImVec2(kIconW, kIconH));
+                ImGui::PopStyleColor();
+                
+                // Anim icon (simple reel shape)
+                ImVec2 bMin = ImGui::GetItemRectMin(), bMax = ImGui::GetItemRectMax();
+                ImDrawList* dl = ImGui::GetWindowDrawList();
+                float cx = (bMin.x+bMax.x)*0.5f, cy = (bMin.y+bMax.y)*0.5f;
+                dl->AddRectFilled({cx-15, cy-15}, {cx+15, cy+15}, IM_COL32(200, 150, 255, 200), 2.0f);
+                dl->AddCircleFilled({cx-8, cy-8}, 3.0f, IM_COL32(50, 20, 80, 255));
+                dl->AddCircleFilled({cx+8, cy-8}, 3.0f, IM_COL32(50, 20, 80, 255));
+                dl->AddCircleFilled({cx-8, cy+8}, 3.0f, IM_COL32(50, 20, 80, 255));
+                dl->AddCircleFilled({cx+8, cy+8}, 3.0f, IM_COL32(50, 20, 80, 255));
+
+                if (ImGui::BeginDragDropSource()) {
+                    ImGui::SetDragDropPayload("ANIMATION_ASSET", relPath.c_str(), relPath.size() + 1);
+                    ImGui::Text("%s", fname.c_str());
+                    ImGui::EndDragDropSource();
+                }
+
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Rename")) { m_renamingAnimPath = path.string(); strncpy_s(m_renameAnimBuf, fname.c_str(), sizeof(m_renameAnimBuf)-1); }
+                    if (ImGui::MenuItem("Delete")) m_deletingAnimPath = path.string();
+                    ImGui::EndPopup();
+                }
+            }
+            ImGui::TextUnformatted(fname.c_str());
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+    ImGui::End();
+}
 
 void EditorState::renderScriptsBrowser() {
     ImGui::Begin("Scripts");

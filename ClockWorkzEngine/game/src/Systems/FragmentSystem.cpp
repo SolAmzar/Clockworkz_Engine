@@ -15,7 +15,7 @@ reserved.
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/SpriteRenderer.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Math/Vec2.hpp" // Use custom Math
@@ -70,9 +70,9 @@ void FragmentSystem::update(ECS::World &world, double dt) {
       // Check against all torches... (logic continues)
 
       // Check against all torches
-      world.each<Components::Transform, Components::TorchComponent>(
+      world.each<Components::Transform, Components::Light>(
           [&](ECS::Entity tEntity, Components::Transform &tTrans,
-              Components::TorchComponent &torch) {
+              Components::Light &torch) {
             if (!torch.active)
               return;
             if (targetAlpha >= 1.0f)

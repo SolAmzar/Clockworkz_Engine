@@ -29,7 +29,7 @@ reserved.
 #include "Components/Battery.hpp"
 #include "Components/EnemyAI.hpp"
 #include "Components/LightExposure.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
@@ -2056,9 +2056,9 @@ void Runtime::PlayState::renderTorchPass(Graphics::RenderingManager &renderer) {
   auto &world = scene->GetWorld();
   Graphics::Camera2D &camera = Core::Engine::Get().camera();
 
-  world.each<Components::Transform, Components::TorchComponent>(
+  world.each<Components::Transform, Components::Light>(
       [&](ECS::Entity entity, Components::Transform &trans,
-          Components::TorchComponent &torch) {
+          Components::Light &torch) {
         if (!torch.active)
           return;
 

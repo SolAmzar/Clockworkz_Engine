@@ -14,7 +14,7 @@ reserved.
 #include "Components/Battery.hpp"
 #include "Components/Collider.hpp"
 #include "Components/LightExposure.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Math/Vec2.hpp"
 #include <algorithm> // for min, max
@@ -78,9 +78,9 @@ void LightExposureSystem::update(ECS::World &world, double dt) {
   // if possible Or just iterate inside (simpler for now, optimization later)
 
   // 2. Iterate through all Torch sources
-  world.each<Components::Transform, Components::TorchComponent>(
+  world.each<Components::Transform, Components::Light>(
       [&](ECS::Entity torchEnt, Components::Transform &tTrans,
-          Components::TorchComponent &torch) {
+          Components::Light &torch) {
         if (!torch.active)
           return;
 

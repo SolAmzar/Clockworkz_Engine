@@ -18,9 +18,8 @@ reserved.
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
-// Game-specific components for World query helpers (known engine/game coupling)
 #include "Components/Battery.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Fragment.hpp"
 #include "Components/FragmentCollector.hpp"
 #include "Components/Door.hpp"
@@ -92,10 +91,10 @@ void ScriptSystem::update(ECS::World &world, double dt) {
           });
         });
 
-    // eachTorch(fn)
-    worldTable.set_function("eachTorch",
+    // eachLight(fn)
+    worldTable.set_function("eachLight",
         [&world](sol::function fn) {
-          world.each<Components::TorchComponent>([&](ECS::Entity e, Components::TorchComponent &) {
+          world.each<Components::Light>([&](ECS::Entity e, Components::Light &) {
             Scripting::EntityRef ref(e, &world);
             fn(ref);
           });

@@ -50,15 +50,15 @@ function FragmentSystem:onUpdate(entity, dt)
         if not frag:getFragmentRequiresLight() then
             targetAlpha = 1.0
         else
-            World.eachTorch(function(torchEnt)
+            World.eachLight(function(torchEnt)
                 if targetAlpha >= 1.0 then return end
                 if not torchEnt:isValid() then return end
-                if not torchEnt:isTorchActive() then return end
+                if not torchEnt:isLightActive() then return end
                 if torchEnt:hasBattery() and torchEnt:getBatteryCharge() <= 0.0 then return end
 
                 local rot  = torchEnt.rotation
                 local c, s = math.cos(rot), math.sin(rot)
-                local ox, oy = torchEnt:getTorchOffsetX(), torchEnt:getTorchOffsetY()
+                local ox, oy = torchEnt:getLightOffsetX(), torchEnt:getLightOffsetY()
                 local tx = torchEnt.position.x + ox * c - oy * s
                 local ty = torchEnt.position.y + ox * s + oy * c
 
@@ -66,14 +66,14 @@ function FragmentSystem:onUpdate(entity, dt)
                 local dx = fragPos.x - tx
                 local dy = fragPos.y - ty
                 local distSq = dx * dx + dy * dy
-                local radius = torchEnt:getTorchRadius()
+                local radius = torchEnt:getLightRadius()
 
                 if distSq <= radius * radius then
                     local dist = math.sqrt(distSq)
                     if dist > 0.0001 then
                         local fdx, fdy = dx / dist, dy / dist
                         local dotProd  = math.cos(rot) * fdx + math.sin(rot) * fdy
-                        local halfFov  = (torchEnt:getTorchAngle() * math.pi / 180.0) * 0.5
+                        local halfFov  = (torchEnt:getLightAngle() * math.pi / 180.0) * 0.5
                         if dotProd >= math.cos(halfFov) then
                             targetAlpha = 1.0
                         end

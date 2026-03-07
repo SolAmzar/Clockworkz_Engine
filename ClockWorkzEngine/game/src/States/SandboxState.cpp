@@ -45,7 +45,7 @@ reserved.
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Profiler.hpp"
@@ -1143,24 +1143,24 @@ void SandboxState::spawnPrefab(const std::string &prefabName, vec2 position) {
       world.addComponent(entity, pc);
     }
 
-    // TorchComponent
-    if (components.contains("torch")) {
-      Components::TorchComponent torch;
-      auto &tc = components["torch"];
-      torch.active = tc.value("active", true);
-      if (tc.contains("offset")) {
-        torch.offset.x = tc["offset"].value("x", 35.0f);
-        torch.offset.y = tc["offset"].value("y", -20.0f);
+    // Light
+    if (components.contains("light")) {
+      Components::Light lt;
+      auto &lc = components["light"];
+      lt.active = lc.value("active", true);
+      if (lc.contains("offset")) {
+        lt.offset.x = lc["offset"].value("x", 35.0f);
+        lt.offset.y = lc["offset"].value("y", -20.0f);
       }
-      if (tc.contains("color")) {
-        torch.color.r = tc["color"].value("r", 1.0f);
-        torch.color.g = tc["color"].value("g", 0.9f);
-        torch.color.b = tc["color"].value("b", 0.6f);
+      if (lc.contains("color")) {
+        lt.color.r = lc["color"].value("r", 1.0f);
+        lt.color.g = lc["color"].value("g", 0.9f);
+        lt.color.b = lc["color"].value("b", 0.6f);
       }
-      torch.radius = tc.value("radius", 300.0f);
-      torch.angle = tc.value("angle", 60.0f);
-      torch.intensity = tc.value("intensity", 1.0f);
-      world.addComponent(entity, torch);
+      lt.radius = lc.value("radius", 300.0f);
+      lt.angle = lc.value("angle", 60.0f);
+      lt.intensity = lc.value("intensity", 1.0f);
+      world.addComponent(entity, lt);
     }
 
     // ActivationZone
@@ -1406,9 +1406,9 @@ void SandboxState::renderTorchPass(Graphics::RenderingManager &renderer) {
   auto &world = m_scene.GetWorld();
   Graphics::Camera2D &camera = Core::Engine::Get().camera();
 
-  world.each<Components::Transform, Components::TorchComponent>(
+  world.each<Components::Transform, Components::Light>(
       [&](ECS::Entity entity, Components::Transform &trans,
-          Components::TorchComponent &torch) {
+          Components::Light &torch) {
         if (!torch.active)
           return;
 
@@ -3264,69 +3264,69 @@ void SandboxState::renderComponentWindow() {
         }
       }
 
-      // ==================== TorchComponent ====================
+      // ==================== Light ====================
       int torchCount = countWithComponent([&](ECS::Entity e) {
-        return world.getComponent<Components::TorchComponent>(e);
+        return world.getComponent<Components::Light>(e);
       });
       if (torchCount > 0) {
         if (ImGui::CollapsingHeader(
-                ("Torch (" + std::to_string(torchCount) + ")").c_str())) {
+                ("Light (" + std::to_string(torchCount) + ")").c_str())) {
           auto firstEntity = findFirstWithComponent([&](ECS::Entity e) {
-            return world.getComponent<Components::TorchComponent>(e);
+            return world.getComponent<Components::Light>(e);
           });
           auto *firstTorch =
-              world.getComponent<Components::TorchComponent>(firstEntity);
+              world.getComponent<Components::Light>(firstEntity);
           if (firstTorch) {
             bool active = firstTorch->active;
-            if (ImGui::Checkbox("Active##torchmulti", &active)) {
+            if (ImGui::Checkbox("Active##lightmulti", &active)) {
               for (auto &se : selEntities) {
-                auto *t = world.getComponent<Components::TorchComponent>(se);
+                auto *t = world.getComponent<Components::Light>(se);
                 if (t)
                   t->active = active;
               }
             }
 
             float offset[2] = {firstTorch->offset.x, firstTorch->offset.y};
-            if (ImGui::DragFloat2("Offset##torchmulti", offset, 1.0f)) {
+            if (ImGui::DragFloat2("Offset##lightmulti", offset, 1.0f)) {
               for (auto &se : selEntities) {
-                auto *t = world.getComponent<Components::TorchComponent>(se);
+                auto *t = world.getComponent<Components::Light>(se);
                 if (t)
                   t->offset = vec2{offset[0], offset[1]};
               }
             }
 
             glm::vec3 color = firstTorch->color;
-            if (ImGui::ColorEdit3("Color##torchmulti", &color.r)) {
+            if (ImGui::ColorEdit3("Color##lightmulti", &color.r)) {
               for (auto &se : selEntities) {
-                auto *t = world.getComponent<Components::TorchComponent>(se);
+                auto *t = world.getComponent<Components::Light>(se);
                 if (t)
                   t->color = color;
               }
             }
 
             float radius = firstTorch->radius;
-            if (ImGui::DragFloat("Radius##torchmulti", &radius, 1.0f)) {
+            if (ImGui::DragFloat("Radius##lightmulti", &radius, 1.0f)) {
               for (auto &se : selEntities) {
-                auto *t = world.getComponent<Components::TorchComponent>(se);
+                auto *t = world.getComponent<Components::Light>(se);
                 if (t)
                   t->radius = radius;
               }
             }
 
             float angle = firstTorch->angle;
-            if (ImGui::DragFloat("Angle##torchmulti", &angle, 1.0f)) {
+            if (ImGui::DragFloat("Angle##lightmulti", &angle, 1.0f)) {
               for (auto &se : selEntities) {
-                auto *t = world.getComponent<Components::TorchComponent>(se);
+                auto *t = world.getComponent<Components::Light>(se);
                 if (t)
                   t->angle = angle;
               }
             }
 
             float intensity = firstTorch->intensity;
-            if (ImGui::SliderFloat("Intensity##torchmulti", &intensity, 0.0f,
+            if (ImGui::SliderFloat("Intensity##lightmulti", &intensity, 0.0f,
                                    1.0f)) {
               for (auto &se : selEntities) {
-                auto *t = world.getComponent<Components::TorchComponent>(se);
+                auto *t = world.getComponent<Components::Light>(se);
                 if (t)
                   t->intensity = intensity;
               }
@@ -4093,9 +4093,9 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
-  // Torch
-  if (ImGui::CollapsingHeader("Torch")) {
-    auto *torch = world.getComponent<Components::TorchComponent>(entity);
+  // Light
+  if (ImGui::CollapsingHeader("Light")) {
+    auto *torch = world.getComponent<Components::Light>(entity);
     if (torch) {
       bool active = torch->active;
       if (ImGui::Checkbox("Active", &active))
@@ -4105,12 +4105,12 @@ void SandboxState::renderComponentWindow() {
       ImGui::DragFloat("Radius", &torch->radius);
       ImGui::DragFloat("Angle", &torch->angle);
       ImGui::SliderFloat("Intensity", &torch->intensity, 0.0f, 1.0f);
-      if (ImGui::Button("Remove Torch")) {
-        world.removeComponent<Components::TorchComponent>(entity);
+      if (ImGui::Button("Remove Light")) {
+        world.removeComponent<Components::Light>(entity);
       }
     } else {
-      if (ImGui::Button("Add Torch"))
-        world.addComponent(entity, Components::TorchComponent{});
+      if (ImGui::Button("Add Light"))
+        world.addComponent(entity, Components::Light{});
     }
   }
 
@@ -4434,7 +4434,7 @@ void SandboxState::spawnPlayer() {
   world.addComponent(entity, Components::Health{100.f, 100.f});
 
   // Add Torch
-  Components::TorchComponent torch;
+  Components::Light torch;
   torch.active = false; // Start off
   torch.offset = {35.f, -20.f};
   torch.radius = 400.f;
@@ -4547,7 +4547,7 @@ void SandboxState::cloneTestEntity(ECS::Entity sourceEntity) {
   copyXYZ(Identity<Components::EnemyAI>{});
   copyXYZ(Identity<Components::AudioSource>{});
   copyXYZ(Identity<Components::SpriteAnimator>{});
-  copyXYZ(Identity<Components::TorchComponent>{});
+  copyXYZ(Identity<Components::Light>{});
   copyXYZ(Identity<Components::StateMachine>{});
   copyXYZ(Identity<Components::PlayerController>{});
   copyXYZ(Identity<Components::Door>{});

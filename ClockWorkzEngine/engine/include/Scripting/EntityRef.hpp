@@ -85,14 +85,14 @@ public:
   bool  isBatteryCharging() const;
   void  setBatteryCharging(bool v);
 
-  // --- Torch ---
-  bool  hasTorch() const;
-  bool  isTorchActive() const;
-  void  setTorchActive(bool v);
-  float getTorchRadius() const;
-  float getTorchAngle() const;
-  float getTorchOffsetX() const;
-  float getTorchOffsetY() const;
+  // --- Light ---
+  bool  hasLight() const;
+  bool  isLightActive() const;
+  void  setLightActive(bool v);
+  float getLightRadius() const;
+  float getLightAngle() const;
+  float getLightOffsetX() const;
+  float getLightOffsetY() const;
 
   // --- Fragment ---
   bool  hasFragment() const;

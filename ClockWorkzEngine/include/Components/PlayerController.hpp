@@ -17,7 +17,7 @@ reserved.
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/Tag.hpp"
-#include "Components/Torch.hpp"
+#include "Components/Light.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Engine.hpp"
@@ -70,7 +70,7 @@ struct PlayerController {
     auto *trans = world.getComponent<Transform>(entity);
     auto *sm = world.getComponent<StateMachine>(entity);
     auto *anim = world.getComponent<SpriteAnimator>(entity);
-    auto *torch = world.getComponent<TorchComponent>(entity);
+    auto *torch = world.getComponent<Light>(entity);
     auto *col = world.getComponent<Components::Collider>(entity);
     auto *batt = world.getComponent<Components::Battery>(entity);
 

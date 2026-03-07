@@ -16,6 +16,7 @@
 #include "Components/Transform.hpp"
 #include "Graphics/RenderingManager.hpp"
 // Game-specific components
+#include "Systems/LightRenderSystem.hpp"
 #include "Components/ActivationZone.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Door.hpp"
@@ -27,7 +28,6 @@
 #include "Components/LightExposure.hpp"
 #include "Components/PlayerController.hpp"
 #include "Components/Portal.hpp"
-#include "Components/Torch.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Systems/PlayerSystem.hpp"
@@ -63,7 +63,6 @@ int main()
 		world.registerComponent<Components::EnemyAI>();
 		world.registerComponent<Components::PlayerController>();
 		world.registerComponent<Components::FragmentCollector>();
-		world.registerComponent<Components::TorchComponent>();
 		world.registerComponent<Components::Door>();
 		world.registerComponent<Components::DoorSwing>();
 		world.registerComponent<Components::ActivationZone>();
@@ -110,11 +109,6 @@ int main()
 				comps["playerController"] = {{"walkMultiplier", pc->walkMultiplier},
 				                             {"sprintMultiplier", pc->sprintMultiplier}};
 
-			if (auto* t = world.getComponent<Components::TorchComponent>(entity))
-				comps["torch"] = {{"active", t->active},
-				                  {"offset", {{"x", t->offset.x}, {"y", t->offset.y}}},
-				                  {"color", {{"r", t->color.r}, {"g", t->color.g}, {"b", t->color.b}}},
-				                  {"radius", t->radius}, {"angle", t->angle}, {"intensity", t->intensity}};
 
 			if (auto* d = world.getComponent<Components::Door>(entity))
 				comps["door"] = {{"requiredFragments", d->requiredFragments}, {"isOpen", d->isOpen},
@@ -212,15 +206,6 @@ int main()
 				pc.walkMultiplier = c["playerController"].value("walkMultiplier", 1.0f);
 				pc.sprintMultiplier = c["playerController"].value("sprintMultiplier", 2.0f);
 				world.addComponent(entity, pc);
-			}
-			if (c.contains("torch")) {
-				Components::TorchComponent t;
-				t.active = c["torch"].value("active", true);
-				if (c["torch"].contains("offset")) { t.offset.x = c["torch"]["offset"].value("x", 35.f); t.offset.y = c["torch"]["offset"].value("y", -20.f); }
-				if (c["torch"].contains("color"))  { t.color.r  = c["torch"]["color"].value("r", 1.f);   t.color.g  = c["torch"]["color"].value("g", 0.9f);  t.color.b  = c["torch"]["color"].value("b", 0.6f); }
-				t.radius = c["torch"].value("radius", 300.f); t.angle = c["torch"].value("angle", 60.f);
-				t.intensity = c["torch"].value("intensity", 1.f);
-				world.addComponent(entity, t);
 			}
 			if (c.contains("door")) {
 				Components::Door d;
@@ -350,7 +335,7 @@ int main()
 					}
 				}
 			},
-			// onRender: particle emitters
+			// onRender: particles + light pass
 			[](ECS::World& world, Graphics::RenderingManager& renderer) {
 				world.each<Components::ParticleEmitter>(
 					[&renderer](ECS::Entity, Components::ParticleEmitter& pe) {
@@ -359,6 +344,7 @@ int main()
 							pe.system().render(renderer);
 						}
 					});
+				Systems::renderLightPass(world, renderer);
 			},
 			// onLoad: reset player to spawn point
 			[](ECS::World& world, const vec2& spawn) {

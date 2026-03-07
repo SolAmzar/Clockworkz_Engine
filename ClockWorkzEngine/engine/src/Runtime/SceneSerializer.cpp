@@ -18,6 +18,7 @@ reserved.
 // Engine components only
 #include "Components/AudioSource.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Components/SpriteAnimator.hpp"
@@ -170,6 +171,15 @@ static json SerializeWorld(ECS::World &world,
         arr.push_back(lsj);
       }
       obj["components"]["luaScript"] = arr;
+    }
+
+    // Light
+    if (auto* lt = world.getComponent<Components::Light>(entity)) {
+      obj["components"]["light"] = {
+          {"active", lt->active},
+          {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
+          {"color",  {{"r", lt->color.r},  {"g", lt->color.g},  {"b", lt->color.b}}},
+          {"radius", lt->radius}, {"angle", lt->angle}, {"intensity", lt->intensity}};
     }
 
     // Game-specific components (registered via SceneSerializer::setExtensions)
@@ -402,6 +412,18 @@ bool SceneSerializer::Deserialize(ECS::World &world,
           ls.scripts.push_back(deserializeEntry(lsData)); // backward compat
         }
         world.addComponent(entity, ls);
+      }
+
+      // Light
+      if (components.contains("light")) {
+        auto& lc = components["light"];
+        Components::Light lt;
+        lt.active = lc.value("active", true);
+        if (lc.contains("offset")) { lt.offset.x = lc["offset"].value("x", 35.f); lt.offset.y = lc["offset"].value("y", -20.f); }
+        if (lc.contains("color"))  { lt.color.r  = lc["color"].value("r", 1.f);   lt.color.g  = lc["color"].value("g", 0.9f);  lt.color.b  = lc["color"].value("b", 0.6f); }
+        lt.radius = lc.value("radius", 300.f); lt.angle = lc.value("angle", 60.f);
+        lt.intensity = lc.value("intensity", 1.f);
+        world.addComponent(entity, lt);
       }
 
       // Game-specific components (registered via SceneSerializer::setExtensions)
