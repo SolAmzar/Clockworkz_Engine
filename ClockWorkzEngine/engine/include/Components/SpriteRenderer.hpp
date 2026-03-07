@@ -30,7 +30,7 @@ struct SpriteRenderer {
   bool visible{true};                   ///< Visibility flag
   glm::vec4 color{1.f, 1.f, 1.f, 1.f};  ///< Tint color (RGBA)
   bool unlit{false}; ///< If true, ignores global lighting/tint
-  int sortOrder{0};  ///< Render order (higher = rendered first / behind)
+  int sortOrder{0};  ///< Render order (lower = rendered first / behind, higher = on top)
 };
 
 } // namespace Components

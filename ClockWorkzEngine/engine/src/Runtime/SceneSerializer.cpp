@@ -19,6 +19,7 @@ reserved.
 #include "Components/AudioSource.hpp"
 #include "Components/Collider.hpp"
 #include "Components/LuaScript.hpp"
+#include "Scripting/ScriptPropertyReader.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
@@ -71,7 +72,8 @@ static json SerializeWorld(ECS::World &world,
         {"position", {{"x", tc.position.x}, {"y", tc.position.y}}},
         {"rotation", tc.rotation},
         {"scale", {{"x", tc.scale.x}, {"y", tc.scale.y}}},
-        {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}}};
+        {"pivot", {{"x", tc.pivot.x}, {"y", tc.pivot.y}}},
+        {"snapToGrid", tc.snapToGrid}};
 
     // Velocity
     if (auto *vel = world.getComponent<Components::Velocity>(entity)) {
@@ -152,10 +154,22 @@ static json SerializeWorld(ECS::World &world,
           {"alignment", (int)tr->alignment}};
     }
 
-    // LuaScript
+    // LuaScript — stored as a JSON array of script entries
     if (auto *ls = world.getComponent<Components::LuaScript>(entity)) {
-      obj["components"]["luaScript"] = {{"scriptPath", ls->scriptPath},
-                                        {"enabled", ls->enabled}};
+      json arr = json::array();
+      for (auto& entry : ls->scripts) {
+        json lsj;
+        lsj["scriptPath"] = entry.scriptPath;
+        lsj["enabled"]    = entry.enabled;
+        if (!entry.properties.empty()) {
+          json propsJ = json::object();
+          for (auto& [key, val] : entry.properties)
+            std::visit([&](auto&& v) { propsJ[key] = v; }, val);
+          lsj["properties"] = propsJ;
+        }
+        arr.push_back(lsj);
+      }
+      obj["components"]["luaScript"] = arr;
     }
 
     // Game-specific components (registered via SceneSerializer::setExtensions)
@@ -236,6 +250,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
           transform.pivot.x = tc["pivot"].value("x", 0.0f);
           transform.pivot.y = tc["pivot"].value("y", 0.0f);
         }
+        transform.snapToGrid = tc.value("snapToGrid", false);
         world.addComponent(entity, transform);
       }
 
@@ -358,12 +373,34 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         world.addComponent(entity, tr);
       }
 
-      // LuaScript
+      // LuaScript — supports new array format and old single-object format
       if (components.contains("luaScript")) {
-        auto &lsc = components["luaScript"];
+        auto& lsData = components["luaScript"];
         Components::LuaScript ls;
-        ls.scriptPath = lsc.value("scriptPath", "");
-        ls.enabled = lsc.value("enabled", true);
+
+        auto deserializeEntry = [](const json& lsj) {
+          Components::LuaScriptEntry entry;
+          entry.scriptPath = lsj.value("scriptPath", "");
+          entry.enabled    = lsj.value("enabled", true);
+          if (lsj.contains("properties") && !entry.scriptPath.empty()) {
+            auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
+            for (auto& def : propDefs) {
+              if (!lsj["properties"].contains(def.name)) continue;
+              auto& jv = lsj["properties"][def.name];
+              if      (def.type == "float")  entry.properties[def.name] = jv.get<float>();
+              else if (def.type == "int")    entry.properties[def.name] = jv.get<int>();
+              else if (def.type == "bool")   entry.properties[def.name] = jv.get<bool>();
+              else if (def.type == "string") entry.properties[def.name] = jv.get<std::string>();
+            }
+          }
+          return entry;
+        };
+
+        if (lsData.is_array()) {
+          for (auto& item : lsData) ls.scripts.push_back(deserializeEntry(item));
+        } else {
+          ls.scripts.push_back(deserializeEntry(lsData)); // backward compat
+        }
         world.addComponent(entity, ls);
       }
 

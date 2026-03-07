@@ -70,7 +70,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Entity_4"
@@ -163,7 +164,8 @@
                     "scale": {
                         "x": 1.5,
                         "y": 1.5
-                    }
+                    },
+                    "snapToGrid": false
                 },
                 "velocity": {
                     "moveSpeed": 12.0,
@@ -237,7 +239,8 @@
                     "scale": {
                         "x": 2.0,
                         "y": 0.30000001192092896
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Entity_6"
@@ -284,7 +287,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Fragment 2"
@@ -351,7 +355,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Entity_5"
@@ -470,7 +475,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 },
                 "velocity": {
                     "moveSpeed": 50.0,
@@ -522,7 +528,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Fragment 1"
@@ -569,7 +576,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Fragement 1"
@@ -633,7 +641,8 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
             "name": "Entity 9"

@@ -5,6 +5,12 @@
             "initialScene": "assets/scenes/LightsOut001.json",
             "name": "Lights Out",
             "path": "projects/LightsOut"
+        },
+        {
+            "description": "New project",
+            "initialScene": "assets/scenes/Main.json",
+            "name": "testing",
+            "path": "projects/testing"
         }
     ]
 }

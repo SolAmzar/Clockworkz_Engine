@@ -7,6 +7,9 @@
 
                 Pure data component. Script path only; heavy Lua objects
                 (environments, cached callbacks) are managed by ScriptSystem.
+                The properties map stores per-instance values declared in the
+                script's Properties table; defaults are seeded from the script,
+                then overridden by saved scene data and inspector edits.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
@@ -15,21 +18,24 @@ reserved.
 
 #pragma once
 #include <string>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 
 namespace Components {
 
-/**
- * @brief LuaScript component — attaches a Lua script to an ECS entity.
- *
- * The ScriptSystem looks for this component, loads the script file,
- * and calls its onStart / onUpdate callbacks each frame.
- */
+using ScriptPropValue = std::variant<float, int, bool, std::string>;
+
+// One script slot — an entity can have many of these.
+struct LuaScriptEntry {
+  std::string scriptPath;   // relative to assets/scripts/
+  bool        enabled{true};
+  std::unordered_map<std::string, ScriptPropValue> properties;
+};
+
+// Container component: holds all script slots for an entity.
 struct LuaScript {
-  // Path relative to assets/scripts/ (e.g. "example_behavior.lua")
-  std::string scriptPath;
-  
-  // Enable / disable script execution at runtimee
-  bool enabled{true};     
+  std::vector<LuaScriptEntry> scripts;
 };
 
 } // namespace Components

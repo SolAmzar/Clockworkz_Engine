@@ -59,6 +59,8 @@ reserved.
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <limits>
+#include <map>
 
 // Engine components
 #include "Components/Velocity.hpp"
@@ -67,6 +69,7 @@ reserved.
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/LuaScript.hpp"
+#include "Scripting/ScriptPropertyReader.hpp"
 
 namespace Runtime {
 
@@ -102,6 +105,84 @@ static void addCompEntry(const char* label, ECS::Entity entity, ECS::World& worl
     if (ImGui::MenuItem(label, nullptr, false, !has))
         world.addComponent(entity, T{});
     if (has) { ImGui::SameLine(); ImGui::TextDisabled("(present)"); }
+}
+
+// Helper: draw a speaker icon with sound waves
+static void DrawAudioIcon() {
+    ImVec2 bMin = ImGui::GetItemRectMin();
+    ImVec2 bMax = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    
+    float cx = (bMin.x + bMax.x) * 0.5f;
+    float cy = (bMin.y + bMax.y) * 0.5f - 4.0f;
+    ImU32 col = IM_COL32(120, 220, 160, 255);
+
+    // Speaker body
+    dl->AddRectFilled({ cx - 10, cy - 6 }, { cx - 2, cy + 6 }, col, 1.0f);
+    dl->AddTriangleFilled({ cx - 2, cy - 6 }, { cx - 2, cy + 6 }, { cx + 8, cy + 12 }, col);
+    dl->AddTriangleFilled({ cx - 2, cy - 6 }, { cx + 8, cy - 12 }, { cx + 8, cy + 12 }, col);
+
+    // Sound waves (Path-based for compatibility)
+    dl->PathArcTo({cx + 10, cy}, 6.0f, -0.8f, 0.8f, 10);
+    dl->PathStroke(col, false, 2.0f);
+    dl->PathArcTo({cx + 10, cy}, 12.0f, -0.8f, 0.8f, 10);
+    dl->PathStroke(col, false, 2.0f);
+}
+
+// Helper: draw the LUA file icon inside an existing Button item rect
+static void DrawScriptIcon(bool isComponent) {
+    ImVec2 btnMin = ImGui::GetItemRectMin();
+    ImVec2 btnMax = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    constexpr float fold = 12.0f;
+    ImVec2 p0 = { btnMin.x + 6.0f,        btnMin.y + 6.0f };
+    ImVec2 p1 = { btnMax.x - 6.0f - fold, btnMin.y + 6.0f };
+    ImVec2 p3 = { btnMax.x - 6.0f,        btnMax.y - 6.0f };
+    ImVec2 p4 = { btnMin.x + 6.0f,        btnMax.y - 6.0f };
+    ImVec2 c1 = { btnMax.x - 6.0f - fold, btnMin.y + 6.0f };
+    ImU32 bodyCol = isComponent ? IM_COL32(60, 120, 80, 120) : IM_COL32(60, 80, 180, 120);
+    ImU32 foldCol = isComponent ? IM_COL32(30, 70, 40, 200)  : IM_COL32(30, 40, 100, 200);
+    ImU32 textCol = isComponent ? IM_COL32(140, 220, 160, 255) : IM_COL32(160, 200, 255, 255);
+    dl->AddQuadFilled(p0, p1, p3, p4, bodyCol);
+    dl->AddTriangleFilled(c1, { c1.x + fold, c1.y }, { c1.x, c1.y + fold }, foldCol);
+    const char* lbl = "LUA";
+    ImVec2 tsz  = ImGui::CalcTextSize(lbl);
+    ImVec2 tpos = {
+        btnMin.x + (btnMax.x - btnMin.x - tsz.x) * 0.5f,
+        btnMin.y + (btnMax.y - btnMin.y - tsz.y) * 0.5f + 6.0f
+    };
+    dl->AddText(tpos, textCol, lbl);
+}
+
+// Helper: draw a folder icon inside an existing Button item rect
+static void DrawFolderIcon() {
+    ImVec2 btnMin = ImGui::GetItemRectMin();
+    ImVec2 btnMax = ImGui::GetItemRectMax();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    float cx = btnMin.x + (btnMax.x - btnMin.x) * 0.5f;
+    float cy = btnMin.y + (btnMax.y - btnMin.y) * 0.5f;
+    // Folder body
+    ImVec2 bodyTL = { cx - 22.0f, cy - 10.0f };
+    ImVec2 bodyBR = { cx + 22.0f, cy + 16.0f };
+    dl->AddRectFilled(bodyTL, bodyBR, IM_COL32(200, 170, 60, 180), 3.0f);
+    // Folder tab
+    ImVec2 tabTL = { bodyTL.x, bodyTL.y - 8.0f };
+    ImVec2 tabBR = { bodyTL.x + 18.0f, bodyTL.y + 1.0f };
+    dl->AddRectFilled(tabTL, tabBR, IM_COL32(220, 190, 80, 180), 2.0f);
+}
+
+// Helper: open a file in VS Code silently
+static void OpenInVSCode(const std::string& absPath) {
+#ifdef _WIN32
+    std::string cmdLine = "cmd /c code \"" + absPath + "\"";
+    STARTUPINFOA si{}; si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{};
+    CreateProcessA(nullptr, &cmdLine[0], nullptr, nullptr, FALSE,
+                   CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
+    CloseHandle(pi.hProcess); CloseHandle(pi.hThread);
+#else
+    system(("code \"" + absPath + "\"").c_str());
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -164,6 +245,7 @@ void EditorState::onEnter() {
     // Load project-specific assets (CWD is now the project root, so all
     // "assets/..." paths resolve to this project's assets/ folder).
     Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
+    initTextureFilePaths();
     Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json");
     Gameplay::PrefabFactory::get().loadPrefabFromFile("assets/configs/Prefab.json");
 
@@ -267,6 +349,13 @@ void EditorState::update(double dt) {
     if (m_pendingSave) {
         m_pendingSave = false;
         saveScene();
+    }
+
+    // Texture hot-reload
+    m_hotReloadTimer += static_cast<float>(dt);
+    if (m_hotReloadTimer >= HOT_RELOAD_INTERVAL) {
+        m_hotReloadTimer = 0.f;
+        checkAssetHotReload();
     }
 
     // Undo/Redo
@@ -1087,7 +1176,12 @@ void EditorState::renderInspector() {
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Scripting")) {
-            addCompEntry<Components::LuaScript>("LuaScript", m_selectedEntity, world);
+            // LuaScript: always available — adds a new script slot each click
+            if (ImGui::MenuItem("LuaScript")) {
+                if (!world.hasComponent<Components::LuaScript>(m_selectedEntity))
+                    world.addComponent(m_selectedEntity, Components::LuaScript{});
+                world.getComponent<Components::LuaScript>(m_selectedEntity)->scripts.push_back({});
+            }
             addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world);
             ImGui::EndMenu();
         }
@@ -1141,6 +1235,8 @@ void EditorState::renderInspector() {
             float pivot[2] = {t->pivot.x, t->pivot.y};
             if (ImGui::DragFloat2("Pivot", pivot, 0.5f))
                 t->pivot = {pivot[0], pivot[1]};
+
+            ImGui::Checkbox("Snap to Grid##transform", &t->snapToGrid);
         }
     }
 
@@ -1303,25 +1399,83 @@ void EditorState::renderInspector() {
         if (rm) world.removeComponent<Components::StateMachine>(m_selectedEntity);
     }
 
-    // ── LuaScript ───────────────────────────────────────────────────────────
+    // ── LuaScript (multi-slot) ───────────────────────────────────────────────
     if (world.hasComponent<Components::LuaScript>(m_selectedEntity)) {
-        bool rm = false;
-        bool open = ImGui::CollapsingHeader("LuaScript##hdr",
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
-        if (ImGui::SmallButton("X##rls")) rm = true;
-        if (open) {
-            auto* ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
-            char spbuf[256]; snprintf(spbuf, sizeof(spbuf), "%s", ls->scriptPath.c_str());
-            if (ImGui::InputText("Script Path##ls", spbuf, sizeof(spbuf))) ls->scriptPath = spbuf;
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
-                    ls->scriptPath = static_cast<const char*>(pl->Data);
-                ImGui::EndDragDropTarget();
+        namespace fs = std::filesystem;
+        auto* ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
+        bool removeComponent = false;
+
+        for (int si = 0; si < (int)ls->scripts.size(); ++si) {
+            auto& entry = ls->scripts[si];
+            ImGui::PushID(si);
+
+            // Header name: derive from script filename (e.g. "health.lua" → "Health")
+            std::string headerName = "Script";
+            if (!entry.scriptPath.empty()) {
+                std::string stem = fs::path(entry.scriptPath).stem().string();
+                if (!stem.empty()) stem[0] = (char)toupper((unsigned char)stem[0]);
+                headerName = stem;
             }
-            ImGui::Checkbox("Enabled##ls", &ls->enabled);
+
+            bool open = ImGui::CollapsingHeader(headerName.c_str(),
+                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+            if (ImGui::SmallButton("X##lse")) {
+                ls->scripts.erase(ls->scripts.begin() + si);
+                ImGui::PopID();
+                --si;
+                continue;
+            }
+
+            if (open) {
+                char spbuf[256]; snprintf(spbuf, sizeof(spbuf), "%s", entry.scriptPath.c_str());
+                if (ImGui::InputText("Script Path##lse", spbuf, sizeof(spbuf)))
+                    entry.scriptPath = spbuf;
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+                        entry.scriptPath = static_cast<const char*>(pl->Data);
+                    ImGui::EndDragDropTarget();
+                }
+                ImGui::Checkbox("Enabled##lse", &entry.enabled);
+
+                if (!entry.scriptPath.empty()) {
+                    auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
+                    if (!propDefs.empty()) {
+                        ImGui::Separator();
+                        ImGui::TextDisabled("Script Properties");
+                        for (auto& def : propDefs) {
+                            if (def.label.empty()) continue;
+                            if (!entry.properties.count(def.name))
+                                entry.properties[def.name] = def.defaultValue;
+                            auto& val = entry.properties[def.name];
+                            if (def.type == "float") {
+                                float v = std::get<float>(val);
+                                if (ImGui::DragFloat(def.label.c_str(), &v, 0.1f)) val = v;
+                            } else if (def.type == "int") {
+                                int v = std::get<int>(val);
+                                if (ImGui::DragInt(def.label.c_str(), &v)) val = v;
+                            } else if (def.type == "bool") {
+                                bool v = std::get<bool>(val);
+                                if (ImGui::Checkbox(def.label.c_str(), &v)) val = v;
+                            } else if (def.type == "string") {
+                                std::string sv = std::get<std::string>(val);
+                                char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                                    val = std::string(strbuf);
+                            }
+                        }
+                    }
+                }
+            }
+            ImGui::PopID();
         }
-        if (rm) world.removeComponent<Components::LuaScript>(m_selectedEntity);
+
+        // Remove entire component only if all slots removed
+        if (ls->scripts.empty()) {
+            if (ImGui::Button("Remove Script Component##lsrm"))
+                removeComponent = true;
+        }
+        if (removeComponent) world.removeComponent<Components::LuaScript>(m_selectedEntity);
     }
 
     // ── TextRenderer ────────────────────────────────────────────────────────
@@ -1404,11 +1558,37 @@ void EditorState::renderViewport() {
         ImVec2 mp       = ImGui::GetMousePos();
         vec2   worldPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
 
-        float best = 60.0f;
+        // Pick the topmost entity under the cursor.
+        // Among entities whose bounds contain worldPos, prefer lowest sortOrder
+        // (lower sortOrder = rendered last = visually on top).
+        // Fall back to closest-center distance for entities without a SpriteRenderer.
         ECS::Entity bestEnt{0, 0};
+        int   bestSort  = std::numeric_limits<int>::min();
+        float bestDist  = 60.0f;   // max pick radius for fallback
+        bool  foundBounds = false;
+
         ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
-            float d = magnitude(vec2(t.position.x, t.position.y) - worldPos);
-            if (d < best) { best = d; bestEnt = e; }
+            vec2 center{t.position.x, t.position.y};
+            auto* sr = ecs.getComponent<Components::SpriteRenderer>(e);
+            if (sr) {
+                // Axis-aligned bounds test (ignores rotation, good enough for picking)
+                float hw = (sr->size.x * std::abs(t.scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t.scale.y)) * 0.5f;
+                bool inside = (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
+                               worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
+                if (inside) {
+                    // Higher sortOrder = rendered last = visually on top → prefer it
+                    if (!foundBounds || sr->sortOrder > bestSort) {
+                        bestSort    = sr->sortOrder;
+                        bestEnt     = e;
+                        foundBounds = true;
+                    }
+                }
+            } else if (!foundBounds) {
+                // No sprite — fall back to proximity
+                float d = magnitude(center - worldPos);
+                if (d < bestDist) { bestDist = d; bestEnt = e; }
+            }
         });
 
         bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
@@ -1494,7 +1674,7 @@ void EditorState::renderViewport() {
             for (auto& [e, origPos] : m_gizmoGroupOriginalPos) {
                 if (auto* t = ecs.getComponent<Components::Transform>(e)) {
                     vec2 newPos = origPos + delta;
-                    if (m_snapToGrid) newPos = snapToGrid(newPos, m_gridSize);
+                    if (m_snapToGrid || t->snapToGrid) newPos = snapToGrid(newPos, m_gridSize);
                     t->position = newPos;
                 }
             }
@@ -1774,7 +1954,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             float proj      = dot(screenMove, axisDir) / zoom;
             vec2  worldDir  = (m_gizmoActiveAxis == 0) ? vec2(c, s) : vec2(-s, c);
             vec2  newPos    = m_gizmoOriginalPos + worldDir * proj;
-            if (m_snapToGrid) newPos = snapToGrid(newPos, m_gridSize);
+            if (m_snapToGrid || trans->snapToGrid) newPos = snapToGrid(newPos, m_gridSize);
             trans->position = newPos;
             vec2 delta = newPos - m_gizmoOriginalPos;
             // Apply same delta to secondary entities
@@ -1937,92 +2117,104 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
 void EditorState::renderAssetBrowser() {
     ImGui::Begin("Assets");
 
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    const fs::path assetsRoot("assets/textures");
+
+    // Ensure directory exists
+    if (!fs::exists(assetsRoot)) {
+        fs::create_directories(assetsRoot, ec);
+    }
+
     // ── Handle file drops from Windows Explorer ───────────────────────────────
-    // Note: IsWindowHovered() is false during OS drag, so consume unconditionally.
     {
         auto dropped = Core::Engine::Get().window().consumeDroppedFiles();
         for (const auto& filePath : dropped) {
-            namespace fs = std::filesystem;
             std::string ext = fs::path(filePath).extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
             static const char* kImgExts[] = {".png", ".jpg", ".jpeg", ".bmp", ".tga"};
             for (auto e : kImgExts) {
                 if (ext == e) {
                     std::string stem = fs::path(filePath).stem().string();
+                    // Import into CURRENT directory
+                    fs::path dest = fs::path(m_currentAssetDir) / fs::path(filePath).filename();
                     Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
+                    // If imported to a different location than the manager's default, 
+                    // we might need to handle the move, but ImportTexture handles the copy to assets/textures.
                     break;
                 }
             }
         }
     }
 
+    // ── Navigation Bar ───────────────────────────────────────────────────────
+    if (m_currentAssetDir != assetsRoot.generic_string()) {
+        if (ImGui::Button("<- Back##assets")) {
+            m_currentAssetDir = fs::path(m_currentAssetDir).parent_path().generic_string();
+        }
+        ImGui::SameLine();
+    }
+    ImGui::Text("Location: %s", fs::relative(m_currentAssetDir, assetsRoot, ec).generic_string().c_str());
+    ImGui::Separator();
+
     if (ImGui::Button("Add Texture")) {
         m_newAssetNameBuf[0] = '\0';
         m_newAssetPathBuf[0] = '\0';
         ImGui::OpenPopup("##AddTexture");
     }
+    ImGui::SameLine();
+    if (ImGui::Button("New Folder##assets")) {
+        m_newScriptFolderBuf[0] = '\0'; // reuse buffer
+        ImGui::OpenPopup("##NewAssetFolder");
+    }
 
-    if (ImGui::BeginPopupModal("##AddTexture", nullptr,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::BeginPopupModal("##AddTexture", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Import Texture");
         ImGui::Separator();
-
-        // Source path row — editable + Browse button
         ImGui::SetNextItemWidth(260.0f);
         ImGui::InputText("##srcpath", m_newAssetPathBuf, sizeof(m_newAssetPathBuf));
         ImGui::SameLine();
         if (ImGui::Button("Browse...")) {
 #ifdef _WIN32
-            OPENFILENAMEA ofn{};
-            char szFile[512]{};
-            ofn.lStructSize = sizeof(ofn);
-            ofn.lpstrFile   = szFile;
-            ofn.nMaxFile    = sizeof(szFile);
-            ofn.lpstrFilter =
-                "Image Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files\0*.*\0";
-            ofn.nFilterIndex = 1;
-            ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+            OPENFILENAMEA ofn{}; char szFile[512]{};
+            ofn.lStructSize = sizeof(ofn); ofn.lpstrFile = szFile; ofn.nMaxFile = sizeof(szFile);
+            ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files\0*.*\0";
+            ofn.nFilterIndex = 1; ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
             if (GetOpenFileNameA(&ofn)) {
                 strncpy_s(m_newAssetPathBuf, szFile, sizeof(m_newAssetPathBuf) - 1);
-                // Auto-fill asset ID from filename stem if not already set
                 if (!m_newAssetNameBuf[0]) {
-                    namespace fs = std::filesystem;
                     std::string stem = fs::path(szFile).stem().string();
-                    strncpy_s(m_newAssetNameBuf, stem.c_str(),
-                              sizeof(m_newAssetNameBuf) - 1);
+                    strncpy_s(m_newAssetNameBuf, stem.c_str(), sizeof(m_newAssetNameBuf) - 1);
                 }
             }
 #endif
         }
-        ImGui::TextDisabled("Source file");
-
-        ImGui::SetNextItemWidth(260.0f);
         ImGui::InputText("Asset ID", m_newAssetNameBuf, sizeof(m_newAssetNameBuf));
-        ImGui::TextDisabled("Copied to assets/textures/ on import");
-
-        ImGui::Separator();
-        bool canImport = m_newAssetNameBuf[0] && m_newAssetPathBuf[0];
-        if (!canImport) ImGui::BeginDisabled();
         if (ImGui::Button("Import", ImVec2(100, 0))) {
-            Assets::TextureManager::ImportTexture(m_newAssetPathBuf,
-                                                  m_newAssetNameBuf);
+            Assets::TextureManager::ImportTexture(m_newAssetPathBuf, m_newAssetNameBuf);
             ImGui::CloseCurrentPopup();
         }
-        if (!canImport) ImGui::EndDisabled();
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 0)))
-            ImGui::CloseCurrentPopup();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 
-    // ── Rename modal ─────────────────────────────────────────────────────────
-    if (!m_renamingAsset.empty())
-        ImGui::OpenPopup("##RenameAsset");
+    if (ImGui::BeginPopupModal("##NewAssetFolder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create Folder in: %s", m_currentAssetDir.c_str());
+        ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
+        if (ImGui::Button("Create", ImVec2(100, 0))) {
+            if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAssetDir) / m_newScriptFolderBuf, ec);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
 
-    if (ImGui::BeginPopupModal("##RenameAsset", nullptr,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
+    // ── Rename/Delete Modals ────────────────────────────────────────────────
+    if (!m_renamingAsset.empty()) ImGui::OpenPopup("##RenameAsset");
+    if (ImGui::BeginPopupModal("##RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Rename asset: %s", m_renamingAsset.c_str());
-        ImGui::Separator();
         ImGui::InputText("New ID", m_renameAssetBuf, sizeof(m_renameAssetBuf));
         if (ImGui::Button("Rename", ImVec2(100, 0))) {
             if (m_renameAssetBuf[0] && m_renameAssetBuf != m_renamingAsset) {
@@ -2037,21 +2229,13 @@ void EditorState::renderAssetBrowser() {
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
-            m_renamingAsset.clear();
-            ImGui::CloseCurrentPopup();
-        }
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_renamingAsset.clear(); ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
 
-    // ── Delete confirmation ───────────────────────────────────────────────────
-    if (!m_deletingAsset.empty())
-        ImGui::OpenPopup("##DeleteAsset");
-
-    if (ImGui::BeginPopupModal("##DeleteAsset", nullptr,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (!m_deletingAsset.empty()) ImGui::OpenPopup("##DeleteAsset");
+    if (ImGui::BeginPopupModal("##DeleteAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete '%s' from disk?", m_deletingAsset.c_str());
-        ImGui::TextDisabled("This permanently removes the file.");
         ImGui::Separator();
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
@@ -2061,94 +2245,181 @@ void EditorState::renderAssetBrowser() {
         }
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
-            m_deletingAsset.clear();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAsset.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // ── Rename folder modal ───────────────────────────────────────────────────
+    if (!m_renamingAssetDirPath.empty()) ImGui::OpenPopup("##RenameAssetDir");
+    if (ImGui::BeginPopupModal("##RenameAssetDir", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Rename folder: %s", fs::path(m_renamingAssetDirPath).filename().string().c_str());
+        ImGui::InputText("New name##adir", m_renameAssetDirBuf, sizeof(m_renameAssetDirBuf));
+        if (ImGui::Button("Rename", ImVec2(100, 0))) {
+            if (m_renameAssetDirBuf[0]) {
+                fs::path src(m_renamingAssetDirPath);
+                fs::rename(src, src.parent_path() / m_renameAssetDirBuf, ec);
+            }
+            m_renamingAssetDirPath.clear();
             ImGui::CloseCurrentPopup();
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_renamingAssetDirPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // ── Delete folder modal ───────────────────────────────────────────────────
+    if (!m_deletingAssetDirPath.empty()) ImGui::OpenPopup("##DeleteAssetDir");
+    if (ImGui::BeginPopupModal("##DeleteAssetDir", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Delete folder '%s' and all its contents?", fs::path(m_deletingAssetDirPath).filename().string().c_str());
+        ImGui::TextDisabled("This cannot be undone.");
+        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
+        if (ImGui::Button("Delete", ImVec2(100, 0))) {
+            fs::remove_all(fs::path(m_deletingAssetDirPath), ec);
+            if (m_currentAssetDir.find(m_deletingAssetDirPath) == 0)
+                m_currentAssetDir = assetsRoot.generic_string();
+            m_deletingAssetDirPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAssetDirPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // ── Move to folder modal ──────────────────────────────────────────────────
+    if (!m_movingAssetPath.empty()) ImGui::OpenPopup("##MoveAsset");
+    if (ImGui::BeginPopupModal("##MoveAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Move '%s' to:", fs::path(m_movingAssetPath).filename().string().c_str());
+        ImGui::Separator();
+        std::vector<std::string> assetFolders;
+        assetFolders.push_back("(root)");
+        for (const auto& entry : fs::recursive_directory_iterator(assetsRoot, ec))
+            if (entry.is_directory())
+                assetFolders.push_back(fs::relative(entry.path(), assetsRoot, ec).generic_string());
+        for (const auto& folder : assetFolders) {
+            if (ImGui::Selectable(folder.c_str())) {
+                fs::path destDir = (folder == "(root)") ? assetsRoot : assetsRoot / folder;
+                fs::path destFile = destDir / fs::path(m_movingAssetPath).filename();
+                if (!fs::exists(destFile)) fs::rename(fs::path(m_movingAssetPath), destFile, ec);
+                m_movingAssetPath.clear();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::Separator();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_movingAssetPath.clear(); ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
 
     ImGui::Separator();
 
-    auto names = Assets::TextureManager::GetLoadedTextureNames();
-    float thumbSize  = 64.0f;
-    float padding    = 8.0f;
-    float cellSize   = thumbSize + padding;
+    // ── Grid ────────────────────────────────────────────────────────────────
+    std::vector<fs::path> items;
+    for (const auto& entry : fs::directory_iterator(m_currentAssetDir, ec)) {
+        if (entry.is_directory()) {
+            items.push_back(entry.path());
+        } else {
+            std::string ext = entry.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
+                items.push_back(entry.path());
+        }
+    }
+    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
+        bool aDir = fs::is_directory(a), bDir = fs::is_directory(b);
+        if (aDir != bDir) return aDir;
+        return a.filename().string() < b.filename().string();
+    });
+
+    float thumbSize = 64.0f;
+    float padding = 8.0f;
+    float cellSize = thumbSize + padding;
     float panelWidth = ImGui::GetContentRegionAvail().x;
-    int   cols       = std::max(1, static_cast<int>(panelWidth / cellSize));
+    int cols = std::max(1, static_cast<int>(panelWidth / cellSize));
 
     if (ImGui::BeginTable("##TextureTbl", cols)) {
-        for (const auto& name : names) {
+        for (const auto& path : items) {
             ImGui::TableNextColumn();
-            ImGui::PushID(name.c_str());
+            std::string fname = path.filename().string();
+            std::string stem = path.stem().string();
+            bool isDir = fs::is_directory(path);
+            ImGui::PushID(fname.c_str());
 
-            auto tex = Assets::TextureManager::Get(name);
-            if (tex && tex->id() != 0) {
-                bool isSelected = (m_selectedAsset == name);
-                if (isSelected)
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+            if (isDir) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.1f, 1.0f));
+                ImGui::Button("##icon", ImVec2(thumbSize, thumbSize));
+                ImGui::PopStyleColor();
+                DrawFolderIcon();
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+                    m_currentAssetDir = path.generic_string();
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("TEXTURE_ASSET_FILE")) {
+                        fs::path src((const char*)payloadFile->Data);
+                        fs::rename(src, path / src.filename(), ec);
+                    } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+                        std::string srcPath = Assets::TextureManager::GetFilePath((const char*)payloadAsset->Data);
+                        if (!srcPath.empty()) {
+                            fs::path src(srcPath);
+                            fs::rename(src, path / src.filename(), ec);
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Rename")) {
+                        m_renamingAssetDirPath = path.string();
+                        strncpy_s(m_renameAssetDirBuf, fname.c_str(), sizeof(m_renameAssetDirBuf)-1);
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete")) m_deletingAssetDirPath = path.string();
+                    ImGui::EndPopup();
+                }
+            } else {
+                auto tex = Assets::TextureManager::Get(stem);
+                if (!tex || tex->id() == 0) {
+                    Assets::TextureManager::LoadTexture(stem, path.generic_string());
+                    tex = Assets::TextureManager::Get(stem);
+                }
 
-                if (ImGui::ImageButton("##tb",
-                        (ImTextureID)(intptr_t)tex->id(),
-                        ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0)))
-                    m_selectedAsset = name;
+                bool isSelected = (m_selectedAsset == stem);
+                if (isSelected) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+                if (ImGui::ImageButton("##tb", (ImTextureID)(intptr_t)(tex?tex->id():0), ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0)))
+                    m_selectedAsset = stem;
+                if (isSelected) ImGui::PopStyleColor();
 
-                if (isSelected)
-                    ImGui::PopStyleColor();
-
-                // Drag-drop source → viewport accepts it
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                    ImGui::SetDragDropPayload("TEXTURE_ASSET",
-                                             name.c_str(), name.size() + 1);
-                    ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32), ImVec2(0,1), ImVec2(1,0));
-                    ImGui::SameLine();
-                    ImGui::Text("%s", name.c_str());
+                if (ImGui::BeginDragDropSource()) {
+                    std::string pstr = path.generic_string();
+                    ImGui::SetDragDropPayload("TEXTURE_ASSET_FILE", pstr.c_str(), pstr.size() + 1);
+                    ImGui::SetDragDropPayload("TEXTURE_ASSET", stem.c_str(), stem.size() + 1);
+                    ImGui::Text("%s", stem.c_str());
                     ImGui::EndDragDropSource();
                 }
 
-                // Right-click context menu
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Apply to selected")) {
-                        if (auto* sr = m_scene.GetWorld()
-                                .getComponent<Components::SpriteRenderer>(m_selectedEntity))
-                            sr->textureId = name;
+                        if (auto* sr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(m_selectedEntity))
+                            sr->textureId = stem;
+                    }
+                    if (ImGui::MenuItem("Rename")) { m_renamingAsset = stem; strncpy_s(m_renameAssetBuf, stem.c_str(), sizeof(m_renameAssetBuf)-1); }
+                    if (ImGui::MenuItem("Move to...")) { m_movingAssetPath = path.string(); }
+                    if (ImGui::MenuItem("Duplicate")) {
+                        fs::path src = path;
+                        fs::path dst = src.parent_path() / (src.stem().string() + "_copy" + src.extension().string());
+                        int n = 1;
+                        while (fs::exists(dst))
+                            dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
+                        fs::copy_file(src, dst, ec);
                     }
                     ImGui::Separator();
-                    if (ImGui::MenuItem("Rename")) {
-                        m_renamingAsset = name;
-                        strncpy_s(m_renameAssetBuf, name.c_str(),
-                                  sizeof(m_renameAssetBuf) - 1);
-                    }
-                    if (ImGui::MenuItem("Unload"))
-                        Assets::TextureManager::Unload(name);
-                    ImGui::Separator();
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-                    if (ImGui::MenuItem("Delete from disk"))
-                        m_deletingAsset = name;
-                    ImGui::PopStyleColor();
+                    if (ImGui::MenuItem("Delete")) m_deletingAsset = stem;
                     ImGui::EndPopup();
                 }
-
-                // Tooltip: which entities use this texture
-                if (ImGui::IsItemHovered() &&
-                    !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {
-                    int count = 0;
-                    m_scene.GetWorld().each<Components::SpriteRenderer>(
-                        [&](ECS::Entity, Components::SpriteRenderer& sr) {
-                            if (sr.textureId == name) ++count;
-                        });
-                    ImGui::BeginTooltip();
-                    ImGui::Text("%s", name.c_str());
-                    ImGui::TextDisabled("Used by %d entities", count);
-                    ImGui::EndTooltip();
-                }
             }
-            ImGui::TextUnformatted(name.c_str());
+            ImGui::TextUnformatted(fname.c_str());
             ImGui::PopID();
         }
         ImGui::EndTable();
     }
-
     ImGui::End();
 }
 
@@ -2160,32 +2431,68 @@ void EditorState::renderScriptsBrowser() {
     ImGui::Begin("Scripts");
 
     namespace fs = std::filesystem;
+    std::error_code ec;
+    const fs::path scriptsRoot("assets/scripts");
+
+    // ── Navigation Bar ───────────────────────────────────────────────────────
+    if (m_currentScriptDir != scriptsRoot.generic_string()) {
+        if (ImGui::Button("<- Back")) {
+            m_currentScriptDir = fs::path(m_currentScriptDir).parent_path().generic_string();
+        }
+        ImGui::SameLine();
+    }
+    ImGui::Text("Location: %s", fs::relative(m_currentScriptDir, scriptsRoot, ec).generic_string().c_str());
+    ImGui::Separator();
 
     // ── Add Script button ────────────────────────────────────────────────────
     if (ImGui::Button("Add Script")) {
-        m_newScriptBuf[0] = '\0';
+        m_newScriptBuf[0]       = '\0';
+        m_newScriptFolderBuf[0] = '\0';
         ImGui::OpenPopup("##AddScript");
     }
+    ImGui::SameLine();
+    if (ImGui::Button("New Folder")) {
+        m_newScriptFolderBuf[0] = '\0';
+        ImGui::OpenPopup("##NewScriptFolder");
+    }
 
+    // Add Script popup
     if (ImGui::BeginPopupModal("##AddScript", nullptr,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Create New Script");
         ImGui::Separator();
-        ImGui::InputText("Name", m_newScriptBuf, sizeof(m_newScriptBuf));
-        ImGui::TextDisabled("'.lua' extension added automatically");
+        ImGui::InputText("Name##ns", m_newScriptBuf, sizeof(m_newScriptBuf));
+        ImGui::InputText("Folder (optional)##nsf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
+        ImGui::TextDisabled("Leave folder blank for root.  '.lua' added automatically.");
 
         if (ImGui::Button("Create", ImVec2(100, 0))) {
             if (m_newScriptBuf[0]) {
                 std::string fname = m_newScriptBuf;
-                if (fname.size() < 4 ||
-                    fname.substr(fname.size() - 4) != ".lua")
+                if (fname.size() < 4 || fname.substr(fname.size() - 4) != ".lua")
                     fname += ".lua";
-
-                fs::create_directories("assets/scripts");
-                std::string fullPath = "assets/scripts/" + fname;
+                std::string folder = m_newScriptFolderBuf;
+                fs::path destDir = folder.empty()
+                    ? scriptsRoot
+                    : scriptsRoot / folder;
+                fs::create_directories(destDir, ec);
+                fs::path fullPath = destDir / fname;
                 if (!fs::exists(fullPath)) {
-                    std::ofstream f(fullPath);
-                    f << "-- " << fname << "\n";
+                    std::ofstream f(fullPath.string());
+                    if (!folder.empty()) {
+                        // Scaffold a component-style script
+                        f << "Properties = {\n";
+                        f << "    -- { name = \"myField\", type = \"float\", default = 0.0, label = \"My Field\" },\n";
+                        f << "}\n\n";
+                        f << "function onStart(self, entity)\nend\n\n";
+                        f << "function onUpdate(self, entity, dt)\nend\n\n";
+                        f << "return { onStart = onStart, onUpdate = onUpdate }\n";
+                    } else {
+                        f << "-- " << fname << "\n\n";
+                        f << "local M = {}\n\n";
+                        f << "function M:onStart(entity)\nend\n\n";
+                        f << "function M:onUpdate(entity, dt)\nend\n\n";
+                        f << "return M\n";
+                    }
                 }
             }
             ImGui::CloseCurrentPopup();
@@ -2193,7 +2500,24 @@ void EditorState::renderScriptsBrowser() {
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0)))
             ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
 
+    // New Folder popup
+    if (ImGui::BeginPopupModal("##NewScriptFolder", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create Folder");
+        ImGui::Separator();
+        ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
+        if (ImGui::Button("Create", ImVec2(100, 0))) {
+            if (m_newScriptFolderBuf[0]) {
+                fs::create_directories(scriptsRoot / m_newScriptFolderBuf, ec);
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0)))
+            ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 
@@ -2206,7 +2530,7 @@ void EditorState::renderScriptsBrowser() {
         fs::path renamePath(m_renamingScriptPath);
         ImGui::Text("Rename: %s", renamePath.filename().string().c_str());
         ImGui::Separator();
-        ImGui::InputText("New name", m_renameScriptBuf, sizeof(m_renameScriptBuf));
+        ImGui::InputText("New name##rn", m_renameScriptBuf, sizeof(m_renameScriptBuf));
         ImGui::TextDisabled("'.lua' extension added automatically");
         if (ImGui::Button("Rename", ImVec2(100, 0))) {
             if (m_renameScriptBuf[0]) {
@@ -2223,6 +2547,50 @@ void EditorState::renderScriptsBrowser() {
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) {
             m_renamingScriptPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // ── Move to folder modal ──────────────────────────────────────────────────
+    if (!m_movingScriptPath.empty())
+        ImGui::OpenPopup("##MoveScript");
+
+    if (ImGui::BeginPopupModal("##MoveScript", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        fs::path movePath(m_movingScriptPath);
+        ImGui::Text("Move '%s' to folder:", movePath.filename().string().c_str());
+        ImGui::Separator();
+
+        // Collect available subdirectories
+        std::vector<std::string> folders;
+        folders.push_back("(root)");
+        for (const auto& entry : fs::recursive_directory_iterator(scriptsRoot, ec)) {
+            if (entry.is_directory()) {
+                auto rel = fs::relative(entry.path(), scriptsRoot, ec).generic_string();
+                if (!rel.empty() && rel != ".")
+                    folders.push_back(rel);
+            }
+        }
+
+        for (const auto& folder : folders) {
+            if (ImGui::Selectable(folder.c_str())) {
+                fs::path destDir = (folder == "(root)")
+                    ? scriptsRoot
+                    : scriptsRoot / folder;
+                fs::path destFile = destDir / movePath.filename();
+                if (!fs::exists(destFile)) {
+                    std::error_code ec2;
+                    fs::rename(movePath, destFile, ec2);
+                }
+                m_movingScriptPath.clear();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_movingScriptPath.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -2256,169 +2624,127 @@ void EditorState::renderScriptsBrowser() {
 
     ImGui::Separator();
 
-    // ── Script file grid ─────────────────────────────────────────────────────
-    std::error_code ec;
-    std::vector<fs::path> scripts;
-    for (const auto& entry : fs::directory_iterator("assets/scripts", ec)) {
-        if (entry.path().extension() == ".lua")
-            scripts.push_back(entry.path());
+    // ── Collect items in current directory ──────────────────────────────────
+    std::vector<fs::path> items;
+    for (const auto& entry : fs::directory_iterator(m_currentScriptDir, ec)) {
+        if (entry.is_directory() || entry.path().extension() == ".lua")
+            items.push_back(entry.path());
     }
 
-    if (scripts.empty()) {
-        ImGui::TextDisabled("No scripts found in assets/scripts/");
-        ImGui::End();
-        return;
-    }
+    // Sort: directories first, then files
+    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
+        bool aDir = fs::is_directory(a);
+        bool bDir = fs::is_directory(b);
+        if (aDir != bDir) return aDir;
+        return a.filename().string() < b.filename().string();
+    });
 
-    constexpr float kIconW   = 64.0f;
-    constexpr float kIconH   = 72.0f;
+    constexpr float kIconW = 64.0f;
+    constexpr float kIconH = 72.0f;
     constexpr float kMinCell = kIconW + 20.0f;
     float panelW = ImGui::GetContentRegionAvail().x;
-    int   cols   = std::max(1, static_cast<int>(panelW / kMinCell));
+    int cols = std::max(1, static_cast<int>(panelW / kMinCell));
 
-    // SizingStretchSame distributes all columns equally across the panel width
-    if (ImGui::BeginTable("##ScriptsTbl", cols,
-                          ImGuiTableFlags_SizingStretchSame)) {
-        for (const auto& path : scripts) {
+    if (ImGui::BeginTable("##ScriptsTbl", cols, ImGuiTableFlags_SizingStretchSame)) {
+        for (const auto& path : items) {
             ImGui::TableNextColumn();
+            bool isDir = fs::is_directory(path);
             std::string fname = path.filename().string();
-            std::string stem  = path.stem().string();
-            ImGui::PushID(fname.c_str());
-
-            // Centre the icon within the (equally-wide) column cell
-            float colW   = ImGui::GetContentRegionAvail().x;
+            std::string relPath = fs::relative(path, scriptsRoot, ec).generic_string();
+            
+            ImGui::PushID(relPath.c_str());
+            float colW = ImGui::GetContentRegionAvail().x;
             float iconOX = (colW - kIconW) * 0.5f;
-            if (iconOX > 0.0f)
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
+            if (iconOX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
 
-            // ── File icon button ─────────────────────────────────────────────
-            ImGui::PushStyleColor(ImGuiCol_Button,
-                ImVec4(0.14f, 0.16f, 0.32f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                ImVec4(0.22f, 0.28f, 0.55f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,
-                ImVec4(0.10f, 0.12f, 0.22f, 1.0f));
+            // ── Icon button ──────────────────────────────────────────────
+            bool isComp = relPath.find("components") != std::string::npos;
+            ImVec4 btnBase = isDir ? ImVec4(0.3f, 0.3f, 0.1f, 1.0f) : (isComp ? ImVec4(0.10f, 0.22f, 0.12f, 1.0f) : ImVec4(0.14f, 0.16f, 0.32f, 1.0f));
+            ImVec4 btnHov  = isDir ? ImVec4(0.4f, 0.4f, 0.15f, 1.0f) : (isComp ? ImVec4(0.16f, 0.34f, 0.20f, 1.0f) : ImVec4(0.22f, 0.28f, 0.55f, 1.0f));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, btnBase);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, btnHov);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
-
+            
             ImGui::Button("##icon", ImVec2(kIconW, kIconH));
-
+            
             ImGui::PopStyleVar();
-            ImGui::PopStyleColor(3);
+            ImGui::PopStyleColor(2);
 
-            // Drag-drop source → LuaScript inspector accepts it
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                ImGui::SetDragDropPayload("SCRIPT_ASSET", fname.c_str(), fname.size() + 1);
-                ImGui::TextUnformatted(fname.c_str());
-                ImGui::EndDragDropSource();
+            if (isDir) {
+                DrawFolderIcon();
+            } else {
+                DrawScriptIcon(isComp);
             }
 
-            // Double-click → open in VS Code (no terminal window)
-            if (ImGui::IsItemHovered() &&
-                ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                std::string absPath = fs::absolute(path, ec).string();
-#ifdef _WIN32
-                std::string cmdLine = "cmd /c code \"" + absPath + "\"";
-                STARTUPINFOA si{};
-                si.cb = sizeof(si);
-                PROCESS_INFORMATION pi{};
-                CreateProcessA(nullptr, &cmdLine[0],
-                               nullptr, nullptr, FALSE,
-                               CREATE_NO_WINDOW,
-                               nullptr, nullptr, &si, &pi);
-                CloseHandle(pi.hProcess);
-                CloseHandle(pi.hThread);
-#else
-                system(("code \"" + absPath + "\"").c_str());
-#endif
-            }
-
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Double-click to open: %s", fname.c_str());
-
-            // ── Right-click context menu ─────────────────────────────────────
-            if (ImGui::BeginPopupContextItem("##ScriptCtx")) {
-                if (ImGui::MenuItem("Open in VS Code")) {
-                    std::string absPath = fs::absolute(path, ec).string();
-#ifdef _WIN32
-                    std::string cmdLine = "cmd /c code \"" + absPath + "\"";
-                    STARTUPINFOA si2{};
-                    si2.cb = sizeof(si2);
-                    PROCESS_INFORMATION pi2{};
-                    CreateProcessA(nullptr, &cmdLine[0],
-                                   nullptr, nullptr, FALSE,
-                                   CREATE_NO_WINDOW,
-                                   nullptr, nullptr, &si2, &pi2);
-                    CloseHandle(pi2.hProcess);
-                    CloseHandle(pi2.hThread);
-#else
-                    system(("code \"" + absPath + "\"").c_str());
-#endif
+            // Drag-drop
+            if (!isDir) {
+                if (ImGui::BeginDragDropSource()) {
+                    ImGui::SetDragDropPayload("SCRIPT_ASSET", relPath.c_str(), relPath.size() + 1);
+                    ImGui::TextUnformatted(relPath.c_str());
+                    ImGui::EndDragDropSource();
                 }
-                ImGui::Separator();
+            } else {
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCRIPT_ASSET")) {
+                        std::string sourceRel = (const char*)payload->Data;
+                        fs::path sourcePath = scriptsRoot / sourceRel;
+                        fs::path destPath = path / sourcePath.filename();
+                        if (!fs::exists(destPath)) {
+                            fs::rename(sourcePath, destPath, ec);
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
+            // Navigation / Opening
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                if (isDir) {
+                    m_currentScriptDir = path.generic_string();
+                } else {
+                    OpenInVSCode(fs::absolute(path).string());
+                }
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", isDir ? "Double-click to open folder" : "Double-click to edit");
+
+            // Label
+            std::string label = fname;
+            if (!isDir && label.size() > 4 && label.substr(label.size()-4) == ".lua")
+                label = label.substr(0, label.size()-4);
+            if (label.size() > 9) label = label.substr(0, 7) + "..";
+
+            float textW = ImGui::CalcTextSize(label.c_str()).x;
+            float textOX = (colW - textW) * 0.5f;
+            if (textOX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOX);
+            ImGui::TextUnformatted(label.c_str());
+
+            // Context Menu
+            if (ImGui::BeginPopupContextItem("##Ctx")) {
+                if (!isDir && ImGui::MenuItem("Open in VS Code")) {
+                    OpenInVSCode(fs::absolute(path).string());
+                }
                 if (ImGui::MenuItem("Rename")) {
                     m_renamingScriptPath = path.string();
-                    strncpy_s(m_renameScriptBuf, stem.c_str(),
-                              sizeof(m_renameScriptBuf) - 1);
+                    strncpy_s(m_renameScriptBuf, fname.c_str(), sizeof(m_renameScriptBuf)-1);
                 }
-                if (ImGui::MenuItem("Duplicate")) {
-                    std::string newName = stem + "_copy.lua";
-                    fs::path    newPath = path.parent_path() / newName;
-                    // Avoid collision
-                    int n = 2;
-                    while (fs::exists(newPath)) {
-                        newName = stem + "_copy" + std::to_string(n++) + ".lua";
-                        newPath = path.parent_path() / newName;
+                if (!isDir && ImGui::MenuItem("Move to...")) {
+                    m_movingScriptPath = path.string();
+                    m_newScriptFolderBuf[0] = '\0';
+                }
+                if (!isDir && ImGui::MenuItem("Duplicate")) {
+                    fs::path src = path;
+                    fs::path dst = src.parent_path() / (src.stem().string() + "_copy" + src.extension().string());
+                    int n = 1;
+                    while (fs::exists(dst)) {
+                        dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
                     }
-                    std::error_code ec2;
-                    fs::copy(path, newPath, ec2);
+                    fs::copy_file(src, dst, ec);
                 }
                 ImGui::Separator();
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-                if (ImGui::MenuItem("Delete"))
-                    m_deletingScriptPath = path.string();
-                ImGui::PopStyleColor();
+                if (ImGui::MenuItem("Delete")) { m_deletingScriptPath = path.string(); }
                 ImGui::EndPopup();
             }
-
-            // ── Custom draw: page + fold corner + "LUA" label ───────────────
-            {
-                ImVec2 btnMin = ImGui::GetItemRectMin();
-                ImVec2 btnMax = ImGui::GetItemRectMax();
-                ImDrawList* dl = ImGui::GetWindowDrawList();
-
-                constexpr float fold = 12.0f;
-                ImVec2 p0 = { btnMin.x + 6.0f,          btnMin.y + 6.0f };
-                ImVec2 p1 = { btnMax.x - 6.0f - fold,   btnMin.y + 6.0f };
-                ImVec2 p3 = { btnMax.x - 6.0f,          btnMax.y - 6.0f };
-                ImVec2 p4 = { btnMin.x + 6.0f,          btnMax.y - 6.0f };
-                ImVec2 c1 = { btnMax.x - 6.0f - fold,   btnMin.y + 6.0f };
-                dl->AddQuadFilled(p0, p1, p3, p4, IM_COL32(60, 80, 180, 120));
-                dl->AddTriangleFilled(c1,
-                    { c1.x + fold, c1.y },
-                    { c1.x, c1.y + fold },
-                    IM_COL32(30, 40, 100, 200));
-
-                const char* lbl  = "LUA";
-                ImVec2      tsz  = ImGui::CalcTextSize(lbl);
-                ImVec2      tpos = {
-                    btnMin.x + (btnMax.x - btnMin.x - tsz.x) * 0.5f,
-                    btnMin.y + (btnMax.y - btnMin.y - tsz.y) * 0.5f + 6.0f
-                };
-                dl->AddText(tpos, IM_COL32(160, 200, 255, 255), lbl);
-            }
-
-            // ── Filename label centred below the icon ────────────────────────
-            std::string label = stem;
-            if (label.size() > 9)
-                label = label.substr(0, 7) + "..";
-
-            float textW  = ImGui::CalcTextSize(label.c_str()).x;
-            float textOX = (colW - textW) * 0.5f;
-            if (textOX > 0.0f)
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOX);
-            ImGui::TextUnformatted(label.c_str());
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("%s", fname.c_str());
 
             ImGui::PopID();
         }
@@ -2436,227 +2762,260 @@ void EditorState::renderAudioBrowser() {
     ImGui::Begin("Audio");
 
     namespace fs = std::filesystem;
+    std::error_code ec;
+    const fs::path audioRoot("assets/audio");
 
-    // ── Import button ────────────────────────────────────────────────────────
+    if (!fs::exists(audioRoot)) fs::create_directories(audioRoot, ec);
+
+    // ── Navigation Bar ───────────────────────────────────────────────────────
+    if (m_currentAudioDir != audioRoot.generic_string()) {
+        if (ImGui::Button("<- Back##audio")) {
+            m_currentAudioDir = fs::path(m_currentAudioDir).parent_path().generic_string();
+        }
+        ImGui::SameLine();
+    }
+    ImGui::Text("Location: %s", fs::relative(m_currentAudioDir, audioRoot, ec).generic_string().c_str());
+    ImGui::Separator();
+
     if (ImGui::Button("Import Audio")) {
-        m_newAudioNameBuf[0] = '\0';
-        m_newAudioPathBuf[0] = '\0';
-        m_newAudioLoop   = false;
-        m_newAudioStream = false;
-        m_newAudioIs3D   = false;
-        m_newAudioVolume = 1.0f;
-        m_newAudioPitch  = 1.0f;
-        m_newAudioIsBGM  = false;
+        m_newAudioNameBuf[0] = '\0'; m_newAudioPathBuf[0] = '\0';
+        m_newAudioLoop = false; m_newAudioStream = false; m_newAudioIs3D = false;
+        m_newAudioVolume = 1.0f; m_newAudioPitch = 1.0f; m_newAudioIsBGM = false;
         ImGui::OpenPopup("##ImportAudio");
     }
+    ImGui::SameLine();
+    if (ImGui::Button("New Folder##audio")) {
+        m_newScriptFolderBuf[0] = '\0';
+        ImGui::OpenPopup("##NewAudioFolder");
+    }
 
-    // ── Import modal ─────────────────────────────────────────────────────────
-    if (ImGui::BeginPopupModal("##ImportAudio", nullptr,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::BeginPopupModal("##ImportAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Import Audio File");
-        ImGui::Separator();
-
-        ImGui::InputText("Name##audio",  m_newAudioNameBuf, sizeof(m_newAudioNameBuf));
-        ImGui::InputText("Source path",  m_newAudioPathBuf, sizeof(m_newAudioPathBuf));
-
+        ImGui::InputText("Name##audio", m_newAudioNameBuf, sizeof(m_newAudioNameBuf));
+        ImGui::InputText("Source path", m_newAudioPathBuf, sizeof(m_newAudioPathBuf));
 #ifdef _WIN32
         ImGui::SameLine();
         if (ImGui::Button("Browse##audio")) {
-            OPENFILENAMEA ofn{};
-            char fileBuf[MAX_PATH]{};
-            ofn.lStructSize = sizeof(ofn);
-            ofn.lpstrFilter = "Audio Files\0*.wav;*.mp3;*.ogg;*.flac\0All Files\0*.*\0";
-            ofn.lpstrFile   = fileBuf;
-            ofn.nMaxFile    = MAX_PATH;
-            ofn.Flags       = OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-            if (GetOpenFileNameA(&ofn))
-                strncpy_s(m_newAudioPathBuf, fileBuf, sizeof(m_newAudioPathBuf) - 1);
+            OPENFILENAMEA ofn{}; char fileBuf[MAX_PATH]{};
+            ofn.lStructSize = sizeof(ofn); ofn.lpstrFilter = "Audio Files\0*.wav;*.mp3;*.ogg;*.flac\0All Files\0*.*\0";
+            ofn.lpstrFile = fileBuf; ofn.nMaxFile = MAX_PATH; ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+            if (GetOpenFileNameA(&ofn)) strncpy_s(m_newAudioPathBuf, fileBuf, sizeof(m_newAudioPathBuf) - 1);
         }
 #endif
-
-        ImGui::Separator();
-        ImGui::Checkbox("Loop",   &m_newAudioLoop);
-        ImGui::SameLine();
-        ImGui::Checkbox("Stream", &m_newAudioStream);
-        ImGui::SameLine();
-        ImGui::Checkbox("3D",     &m_newAudioIs3D);
-        ImGui::Checkbox("BGM (unchecked = SFX)", &m_newAudioIsBGM);
+        ImGui::Checkbox("Loop", &m_newAudioLoop); ImGui::SameLine();
+        ImGui::Checkbox("Stream", &m_newAudioStream); ImGui::SameLine();
+        ImGui::Checkbox("3D", &m_newAudioIs3D);
+        ImGui::Checkbox("BGM", &m_newAudioIsBGM);
         ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 1.0f);
-        ImGui::SliderFloat("Pitch",  &m_newAudioPitch,  0.1f, 3.0f);
-
-        ImGui::Separator();
-        bool canImport = m_newAudioNameBuf[0] != '\0' && m_newAudioPathBuf[0] != '\0';
-        if (!canImport) ImGui::BeginDisabled();
         if (ImGui::Button("Import", ImVec2(100, 0))) {
-            Assets::SoundConfig cfg;
-            cfg.name   = m_newAudioNameBuf;
-            cfg.path   = m_newAudioPathBuf;
-            cfg.loop   = m_newAudioLoop;
-            cfg.stream = m_newAudioStream;
-            cfg.is3D   = m_newAudioIs3D;
-            cfg.volume = m_newAudioVolume;
-            cfg.pitch  = m_newAudioPitch;
-            cfg.group  = m_newAudioIsBGM ? "BGM" : "SFX";
+            Assets::SoundConfig cfg; cfg.name = m_newAudioNameBuf; cfg.path = m_newAudioPathBuf;
+            cfg.loop = m_newAudioLoop; cfg.stream = m_newAudioStream; cfg.is3D = m_newAudioIs3D;
+            cfg.volume = m_newAudioVolume; cfg.group = m_newAudioIsBGM ? "BGM" : "SFX";
             Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg);
             ImGui::CloseCurrentPopup();
         }
-        if (!canImport) ImGui::EndDisabled();
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 0)))
-            ImGui::CloseCurrentPopup();
-
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 
-    // ── Delete confirmation ───────────────────────────────────────────────────
-    if (!m_deletingAudio.empty())
-        ImGui::OpenPopup("##DeleteAudio");
+    if (ImGui::BeginPopupModal("##NewAudioFolder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Create Folder in: %s", m_currentAudioDir.c_str());
+        ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
+        if (ImGui::Button("Create", ImVec2(100, 0))) {
+            if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAudioDir) / m_newScriptFolderBuf, ec);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
 
-    if (ImGui::BeginPopupModal("##DeleteAudio", nullptr,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (!m_deletingAudio.empty()) ImGui::OpenPopup("##DeleteAudio");
+    if (ImGui::BeginPopupModal("##DeleteAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete '%s'?", m_deletingAudio.c_str());
-        ImGui::TextDisabled("Removes from memory, config, and disk.");
-        ImGui::Separator();
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
             Assets::SoundManager::DeleteFromDisk(m_deletingAudio);
             m_deletingAudio.clear();
             ImGui::CloseCurrentPopup();
         }
-        ImGui::PopStyleColor();
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
-            m_deletingAudio.clear();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAudio.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // ── Rename modal ──────────────────────────────────────────────────────────
+    if (!m_renamingAudioPath.empty()) ImGui::OpenPopup("##RenameAudio");
+    if (ImGui::BeginPopupModal("##RenameAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        fs::path renamePath(m_renamingAudioPath);
+        bool isAudioDir = fs::is_directory(renamePath);
+        ImGui::Text("Rename %s: %s", isAudioDir ? "folder" : "file", renamePath.filename().string().c_str());
+        ImGui::InputText("New name##ra", m_renameAudioBuf, sizeof(m_renameAudioBuf));
+        if (ImGui::Button("Rename", ImVec2(100, 0))) {
+            if (m_renameAudioBuf[0]) {
+                fs::path dst = renamePath.parent_path() / m_renameAudioBuf;
+                if (!isAudioDir) dst.replace_extension(renamePath.extension());
+                fs::rename(renamePath, dst, ec);
+            }
+            m_renamingAudioPath.clear();
             ImGui::CloseCurrentPopup();
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_renamingAudioPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // ── Delete folder modal ───────────────────────────────────────────────────
+    if (!m_deletingAudioPath.empty()) ImGui::OpenPopup("##DeleteAudioDir");
+    if (ImGui::BeginPopupModal("##DeleteAudioDir", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Delete folder '%s' and all its contents?", fs::path(m_deletingAudioPath).filename().string().c_str());
+        ImGui::TextDisabled("This cannot be undone.");
+        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
+        if (ImGui::Button("Delete", ImVec2(100, 0))) {
+            fs::remove_all(fs::path(m_deletingAudioPath), ec);
+            if (m_currentAudioDir.find(m_deletingAudioPath) == 0)
+                m_currentAudioDir = audioRoot.generic_string();
+            m_deletingAudioPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAudioPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // ── Move to folder modal ──────────────────────────────────────────────────
+    if (!m_movingAudioPath.empty()) ImGui::OpenPopup("##MoveAudio");
+    if (ImGui::BeginPopupModal("##MoveAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Move '%s' to:", fs::path(m_movingAudioPath).filename().string().c_str());
+        ImGui::Separator();
+        std::vector<std::string> audioFolders;
+        audioFolders.push_back("(root)");
+        for (const auto& entry : fs::recursive_directory_iterator(audioRoot, ec))
+            if (entry.is_directory())
+                audioFolders.push_back(fs::relative(entry.path(), audioRoot, ec).generic_string());
+        for (const auto& folder : audioFolders) {
+            if (ImGui::Selectable(folder.c_str())) {
+                fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
+                fs::path destFile = destDir / fs::path(m_movingAudioPath).filename();
+                if (!fs::exists(destFile)) fs::rename(fs::path(m_movingAudioPath), destFile, ec);
+                m_movingAudioPath.clear();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::Separator();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_movingAudioPath.clear(); ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
 
     ImGui::Separator();
 
-    // ── Sound grid ───────────────────────────────────────────────────────────
-    auto names = Assets::SoundManager::GetLoadedSoundNames();
-    if (names.empty()) {
-        ImGui::TextDisabled("No audio loaded. Use 'Import Audio' or check sounds.json.");
-        ImGui::End();
-        return;
+    // ── Grid ────────────────────────────────────────────────────────────────
+    std::vector<fs::path> items;
+    for (const auto& entry : fs::directory_iterator(m_currentAudioDir, ec)) {
+        if (entry.is_directory()) {
+            items.push_back(entry.path());
+        } else {
+            std::string ext = entry.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            if (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac")
+                items.push_back(entry.path());
+        }
     }
+    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
+        bool aDir = fs::is_directory(a), bDir = fs::is_directory(b);
+        if (aDir != bDir) return aDir;
+        return a.filename().string() < b.filename().string();
+    });
 
-    constexpr float kIconW   = 64.0f;
-    constexpr float kIconH   = 72.0f;
-    constexpr float kMinCell = kIconW + 20.0f;
+    constexpr float kIconW = 64.0f, kIconH = 72.0f;
     float panelW = ImGui::GetContentRegionAvail().x;
-    int   cols   = std::max(1, static_cast<int>(panelW / kMinCell));
+    int cols = std::max(1, static_cast<int>(panelW / (kIconW + 20.0f)));
 
-    if (ImGui::BeginTable("##AudioTbl", cols, ImGuiTableFlags_SizingStretchSame)) {
-        for (const auto& soundName : names) {
+    if (ImGui::BeginTable("##AudioTbl", cols)) {
+        for (const auto& path : items) {
             ImGui::TableNextColumn();
-            ImGui::PushID(soundName.c_str());
+            std::string fname = path.filename().string();
+            std::string stem = path.stem().string();
+            bool isDir = fs::is_directory(path);
+            ImGui::PushID(fname.c_str());
 
-            float colW   = ImGui::GetContentRegionAvail().x;
+            float colW = ImGui::GetContentRegionAvail().x;
             float iconOX = (colW - kIconW) * 0.5f;
-            if (iconOX > 0.0f)
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
+            if (iconOX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
 
-            // ── Icon button ───────────────────────────────────────────────────
-            ImGui::PushStyleColor(ImGuiCol_Button,
-                ImVec4(0.12f, 0.25f, 0.18f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                ImVec4(0.20f, 0.42f, 0.28f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,
-                ImVec4(0.08f, 0.18f, 0.12f, 1.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
-
-            ImGui::Button("##icon", ImVec2(kIconW, kIconH));
-
-            ImGui::PopStyleVar();
-            ImGui::PopStyleColor(3);
-
-            // Drag-drop source → AudioSource inspector accepts it
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                ImGui::SetDragDropPayload("AUDIO_ASSET", soundName.c_str(), soundName.size() + 1);
-                ImGui::TextUnformatted(soundName.c_str());
-                ImGui::EndDragDropSource();
-            }
-
-            // Double-click → play
-            if (ImGui::IsItemHovered() &&
-                ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                Assets::SoundManager::Play(soundName);
-            }
-
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Double-click to play: %s", soundName.c_str());
-
-            // ── Right-click context menu ──────────────────────────────────────
-            if (ImGui::BeginPopupContextItem("##AudioCtx")) {
-                if (Assets::SoundManager::IsPlaying(soundName)) {
-                    if (ImGui::MenuItem("Stop"))
-                        Assets::SoundManager::Stop(soundName);
-                } else {
-                    if (ImGui::MenuItem("Play"))
-                        Assets::SoundManager::Play(soundName);
-                }
-                ImGui::Separator();
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-                if (ImGui::MenuItem("Delete"))
-                    m_deletingAudio = soundName;
+            if (isDir) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.1f, 1.0f));
+                ImGui::Button("##icon", ImVec2(kIconW, kIconH));
                 ImGui::PopStyleColor();
-                ImGui::EndPopup();
+                DrawFolderIcon();
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+                    m_currentAudioDir = path.generic_string();
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("AUDIO_ASSET_FILE")) {
+                        fs::path src((const char*)payloadFile->Data);
+                        fs::rename(src, path / src.filename(), ec);
+                    } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
+                        std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data);
+                        if (!srcPath.empty()) {
+                            fs::path src(srcPath);
+                            fs::rename(src, path / src.filename(), ec);
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Rename")) {
+                        m_renamingAudioPath = path.string();
+                        strncpy_s(m_renameAudioBuf, fname.c_str(), sizeof(m_renameAudioBuf)-1);
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete")) m_deletingAudioPath = path.string();
+                    ImGui::EndPopup();
+                }
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.25f, 0.18f, 1.0f));
+                ImGui::Button("##icon", ImVec2(kIconW, kIconH));
+                ImGui::PopStyleColor();
+                DrawAudioIcon();
+
+                if (ImGui::BeginDragDropSource()) {
+                    std::string pstr = path.generic_string();
+                    ImGui::SetDragDropPayload("AUDIO_ASSET_FILE", pstr.c_str(), pstr.size() + 1);
+                    ImGui::SetDragDropPayload("AUDIO_ASSET", stem.c_str(), stem.size() + 1);
+                    ImGui::Text("%s", stem.c_str());
+                    ImGui::EndDragDropSource();
+                }
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) Assets::SoundManager::Play(stem);
+
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Play")) Assets::SoundManager::Play(stem);
+                    if (ImGui::MenuItem("Stop")) Assets::SoundManager::Stop(stem);
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Rename")) {
+                        m_renamingAudioPath = path.string();
+                        strncpy_s(m_renameAudioBuf, stem.c_str(), sizeof(m_renameAudioBuf)-1);
+                    }
+                    if (ImGui::MenuItem("Move to...")) { m_movingAudioPath = path.string(); }
+                    if (ImGui::MenuItem("Duplicate")) {
+                        fs::path src = path;
+                        fs::path dst = src.parent_path() / (src.stem().string() + "_copy" + src.extension().string());
+                        int n = 1;
+                        while (fs::exists(dst))
+                            dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
+                        fs::copy_file(src, dst, ec);
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete")) m_deletingAudio = stem;
+                    ImGui::EndPopup();
+                }
             }
-
-            // ── Draw speaker icon ─────────────────────────────────────────────
-            {
-                ImVec2 btnMin = ImGui::GetItemRectMin();
-                ImVec2 btnMax = ImGui::GetItemRectMax();
-                ImDrawList* dl = ImGui::GetWindowDrawList();
-
-                float cx = (btnMin.x + btnMax.x) * 0.5f;
-                float cy = (btnMin.y + btnMax.y) * 0.5f - 4.0f;
-                // Speaker body
-                dl->AddRectFilled({ cx - 10.0f, cy - 6.0f },
-                                  { cx - 2.0f,  cy + 6.0f },
-                                  IM_COL32(100, 220, 140, 200));
-                // Cone
-                dl->AddTriangleFilled(
-                    { cx - 2.0f,  cy - 6.0f },
-                    { cx - 2.0f,  cy + 6.0f },
-                    { cx + 10.0f, cy + 12.0f },
-                    IM_COL32(100, 220, 140, 200));
-                dl->AddTriangleFilled(
-                    { cx - 2.0f,  cy - 6.0f },
-                    { cx + 10.0f, cy - 12.0f },
-                    { cx + 10.0f, cy + 12.0f },
-                    IM_COL32(100, 220, 140, 200));
-
-                // "SFX" label inside icon
-                const char* lbl = "SFX";
-                ImVec2 tsz  = ImGui::CalcTextSize(lbl);
-                ImVec2 tpos = {
-                    btnMin.x + (btnMax.x - btnMin.x - tsz.x) * 0.5f,
-                    btnMin.y + (btnMax.y - btnMin.y - tsz.y) * 0.5f + 8.0f
-                };
-                dl->AddText(tpos, IM_COL32(160, 255, 180, 255), lbl);
-            }
-
-            // ── Name label centred below icon ─────────────────────────────────
-            std::string label = soundName;
-            if (label.size() > 9)
-                label = label.substr(0, 7) + "..";
-
-            float textW  = ImGui::CalcTextSize(label.c_str()).x;
-            float textOX = (colW - textW) * 0.5f;
-            if (textOX > 0.0f)
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOX);
-            ImGui::TextUnformatted(label.c_str());
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("%s", soundName.c_str());
-
+            ImGui::TextUnformatted(fname.c_str());
             ImGui::PopID();
         }
         ImGui::EndTable();
     }
-
     ImGui::End();
 }
 
@@ -2779,8 +3138,22 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
         comps["audioSource"] = {{"soundId", au->soundId}, {"volume", au->volume},
                                  {"loop", au->loop}, {"playOnStart", au->playOnStart}};
 
-    if (auto* ls = world.getComponent<Components::LuaScript>(entity))
-        comps["luaScript"] = {{"scriptPath", ls->scriptPath}, {"enabled", ls->enabled}};
+    if (auto* ls = world.getComponent<Components::LuaScript>(entity)) {
+        json arr = json::array();
+        for (auto& entry : ls->scripts) {
+            json lsj;
+            lsj["scriptPath"] = entry.scriptPath;
+            lsj["enabled"]    = entry.enabled;
+            if (!entry.properties.empty()) {
+                json propsJ = json::object();
+                for (auto& [key, val] : entry.properties)
+                    std::visit([&](auto&& v) { propsJ[key] = v; }, val);
+                lsj["properties"] = propsJ;
+            }
+            arr.push_back(lsj);
+        }
+        comps["luaScript"] = arr;
+    }
 
     if (auto* sa = world.getComponent<Components::SpriteAnimator>(entity))
         comps["spriteAnimator"] = {{"filename", sa->filename},
@@ -2897,8 +3270,29 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
 
     if (c.contains("luaScript")) {
         Components::LuaScript ls;
-        ls.scriptPath = c["luaScript"].value("scriptPath", "");
-        ls.enabled    = c["luaScript"].value("enabled", true);
+        auto& lsData = c["luaScript"];
+        auto deserEntry = [](const json& lsj) {
+            Components::LuaScriptEntry entry;
+            entry.scriptPath = lsj.value("scriptPath", "");
+            entry.enabled    = lsj.value("enabled", true);
+            if (lsj.contains("properties") && !entry.scriptPath.empty()) {
+                auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
+                for (auto& def : propDefs) {
+                    if (!lsj["properties"].contains(def.name)) continue;
+                    auto& jv = lsj["properties"][def.name];
+                    if      (def.type == "float")  entry.properties[def.name] = jv.get<float>();
+                    else if (def.type == "int")    entry.properties[def.name] = jv.get<int>();
+                    else if (def.type == "bool")   entry.properties[def.name] = jv.get<bool>();
+                    else if (def.type == "string") entry.properties[def.name] = jv.get<std::string>();
+                }
+            }
+            return entry;
+        };
+        if (lsData.is_array()) {
+            for (auto& item : lsData) ls.scripts.push_back(deserEntry(item));
+        } else {
+            ls.scripts.push_back(deserEntry(lsData)); // backward compat
+        }
         world.addComponent(entity, ls);
     }
 
@@ -3344,6 +3738,58 @@ void EditorState::renderTilePalette() {
         ImGui::TextDisabled("No tile selected");
 
     ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// Texture hot-reload
+// ---------------------------------------------------------------------------
+
+void EditorState::initTextureFilePaths() {
+    m_textureFilePaths.clear();
+    m_assetFileTimestamps.clear();
+
+    const std::string configPath = "assets/configs/Textures.json";
+    std::ifstream file(configPath);
+    if (!file.is_open())
+        return;
+
+    try {
+        nlohmann::json j;
+        file >> j;
+        if (j.contains("textures") && j["textures"].is_array()) {
+            for (const auto& item : j["textures"]) {
+                if (item.contains("name") && item.contains("path")) {
+                    std::string name = item["name"].get<std::string>();
+                    std::string path = item["path"].get<std::string>();
+                    m_textureFilePaths[name] = path;
+                    if (std::filesystem::exists(path))
+                        m_assetFileTimestamps[name] = std::filesystem::last_write_time(path);
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        Core::Engine::Get().logger().warn(
+            std::string("[Editor] Failed to parse texture config for hot-reload: ") + e.what());
+    }
+}
+
+void EditorState::checkAssetHotReload() {
+    if (!m_hotReloadEnabled)
+        return;
+
+    for (auto& [name, path] : m_textureFilePaths) {
+        if (!std::filesystem::exists(path))
+            continue;
+
+        auto currentTime = std::filesystem::last_write_time(path);
+        auto it = m_assetFileTimestamps.find(name);
+        if (it != m_assetFileTimestamps.end() && currentTime != it->second) {
+            Assets::TextureManager::Unload(name);
+            Assets::TextureManager::LoadTexture(name, path);
+            it->second = currentTime;
+            Core::Engine::Get().logger().info("[Editor] Hot-reloaded texture: " + name);
+        }
+    }
 }
 
 } // namespace Runtime

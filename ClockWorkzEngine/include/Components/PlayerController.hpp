@@ -142,7 +142,7 @@ struct PlayerController {
     auto *luaScript = world.getComponent<LuaScript>(entity);
 
     if (vel && trans) {
-      if (luaScript && luaScript->enabled) {
+      if (luaScript && !luaScript->scripts.empty() && luaScript->scripts[0].enabled) {
         // --- Lua handles movement; infer animation state from velocity ---
         float velMag = std::sqrt(vel->velocity.x * vel->velocity.x +
                                  vel->velocity.y * vel->velocity.y);

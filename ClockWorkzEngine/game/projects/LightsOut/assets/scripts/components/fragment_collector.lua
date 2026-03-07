@@ -1,0 +1,22 @@
+Properties = {
+    { name = "requiredFragments", type = "int",   default = 0,    label = "Required Fragments" },
+    { name = "collectedCount",    type = "int",   default = 0,    label = "Collected Count" },
+    { name = "pickupRadius",      type = "float", default = 50.0, label = "Pickup Radius" },
+}
+
+function onUpdate(self, entity, dt)
+    World.eachByTag("Fragment", function(frag)
+        if World.getScriptProp(frag.id, "collected") then return end
+        local diff = frag.position - entity.position
+        local dist = diff:length()
+        if dist <= self.pickupRadius then
+            World.setScriptProp(frag.id, "collected", true)
+            self.collectedCount = self.collectedCount + 1
+            Audio.playOneShot("fragment_pickup")
+        end
+    end)
+end
+
+return {
+    onUpdate = onUpdate,
+}

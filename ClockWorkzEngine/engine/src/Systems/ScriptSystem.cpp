@@ -17,6 +17,7 @@ reserved.
 #include "Core/Engine.hpp"
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
+#include "Scripting/ScriptPropertyReader.hpp"
 // Game-specific components for World query helpers (known engine/game coupling)
 #include "Components/Battery.hpp"
 #include "Components/Torch.hpp"
@@ -27,6 +28,24 @@ reserved.
 #include "Components/LightExposure.hpp"
 #include <filesystem>
 #include <iostream>
+
+// Helper: push C++ ScriptPropValue into a sol table key
+static void pushPropToLua(sol::table& tbl, const std::string& key,
+                          const Components::ScriptPropValue& val) {
+    std::visit([&](auto&& v) { tbl[key] = v; }, val);
+}
+
+// Helper: pull a sol table key back into a C++ ScriptPropValue
+static void pullPropFromLua(const sol::table& tbl, const std::string& key,
+                             Components::ScriptPropValue& val) {
+    sol::object obj = tbl[key];
+    if (!obj.valid()) return;
+    std::visit([&](auto&& v) {
+        using T = std::decay_t<decltype(v)>;
+        auto opt = obj.as<sol::optional<T>>();
+        if (opt) val = *opt;
+    }, val);
+}
 
 namespace Systems {
 
@@ -109,52 +128,102 @@ void ScriptSystem::update(ECS::World &world, double dt) {
           });
         });
 
+    // getScriptProp(entityId, key) → searches all script slots, returns first match
+    worldTable.set_function("getScriptProp",
+        [&world](uint32_t entityId, const std::string& key) -> sol::object {
+          sol::state& luaRef = Core::Engine::Get().lua().GetState();
+          sol::object found  = sol::make_object(luaRef, sol::nil);
+          world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
+            if (e.id != entityId) return;
+            for (auto& entry : ls.scripts) {
+              auto it = entry.properties.find(key);
+              if (it != entry.properties.end()) {
+                found = std::visit([&luaRef](auto&& v) -> sol::object {
+                    return sol::make_object(luaRef, v);
+                }, it->second);
+                return;
+              }
+            }
+          });
+          return found;
+        });
+
+    // setScriptProp(entityId, key, value) → sets in first slot that declares the key
+    worldTable.set_function("setScriptProp",
+        [&world](uint32_t entityId, const std::string& key, sol::object val) {
+          world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
+            if (e.id != entityId) return;
+            for (auto& entry : ls.scripts) {
+              auto it = entry.properties.find(key);
+              if (it == entry.properties.end()) continue;
+              std::visit([&](auto&& existing) {
+                  using T = std::decay_t<decltype(existing)>;
+                  auto opt = val.as<sol::optional<T>>();
+                  if (opt) it->second = *opt;
+              }, it->second);
+              return;
+            }
+          });
+        });
+
     lua["World"] = worldTable;
   }
 
   world.each<Components::LuaScript>(
-      [&](ECS::Entity entity, Components::LuaScript &script) {
-        if (!script.enabled || script.scriptPath.empty())
-          return;
-
+      [&](ECS::Entity entity, Components::LuaScript &luaScript) {
         uint32_t id = entity.id;
+        auto& states = m_states[id];
+        states.resize(luaScript.scripts.size());
 
-        // Load script on first encounter or path change
-        auto it = m_states.find(id);
-        if (it == m_states.end() || it->second.loadedPath != script.scriptPath) {
+        for (size_t i = 0; i < luaScript.scripts.size(); ++i) {
+          Components::LuaScriptEntry& script = luaScript.scripts[i];
+          if (!script.enabled || script.scriptPath.empty()) continue;
 
-          if (!loadScript(entity, script.scriptPath)) {
-            return;
-          }
+          ScriptState& state = states[i];
 
-          it = m_states.find(id);
+          // Load/reload if path changed
+          if (state.loadedPath != script.scriptPath) {
+            if (!loadScript(entity, i, script.scriptPath)) continue;
 
-        }
-
-        ScriptState &state = it->second;
-
-        // onStart
-        if (!state.started) {
-          if (state.onStart.valid()) {
-            Scripting::EntityRef ref(entity, &world);
-            try {
-              state.onStart(state.scriptTable, ref);
-            } catch (const sol::error &e) {
-              std::cerr << "[ScriptSystem] onStart error (entity " << id
-                        << "): " << e.what() << std::endl;
+            // Seed missing properties from declared defaults
+            const auto& propDefs = Scripting::ScriptPropertyReader::read(script.scriptPath);
+            for (const auto& def : propDefs) {
+              if (!script.properties.count(def.name))
+                script.properties[def.name] = def.defaultValue;
             }
           }
-          state.started = true;
-        }
 
-        // onUpdate
-        if (state.onUpdate.valid()) {
-          Scripting::EntityRef ref(entity, &world);
-          try {
-            state.onUpdate(state.scriptTable, ref, fDt);
-          } catch (const sol::error &e) {
-            std::cerr << "[ScriptSystem] onUpdate error (entity " << id
-                      << "): " << e.what() << std::endl;
+          // Inject C++ property values → Lua self table
+          for (auto& [key, val] : script.properties)
+            pushPropToLua(state.scriptTable, key, val);
+
+          // onStart
+          if (!state.started) {
+            if (state.onStart.valid()) {
+              Scripting::EntityRef ref(entity, &world);
+              try {
+                state.onStart(state.scriptTable, ref);
+              } catch (const sol::error &e) {
+                std::cerr << "[ScriptSystem] onStart error (entity " << id
+                          << " slot " << i << "): " << e.what() << std::endl;
+              }
+            }
+            state.started = true;
+            for (auto& [key, val] : script.properties)
+              pullPropFromLua(state.scriptTable, key, val);
+          }
+
+          // onUpdate
+          if (state.onUpdate.valid()) {
+            Scripting::EntityRef ref(entity, &world);
+            try {
+              state.onUpdate(state.scriptTable, ref, fDt);
+            } catch (const sol::error &e) {
+              std::cerr << "[ScriptSystem] onUpdate error (entity " << id
+                        << " slot " << i << "): " << e.what() << std::endl;
+            }
+            for (auto& [key, val] : script.properties)
+              pullPropFromLua(state.scriptTable, key, val);
           }
         }
       });
@@ -167,7 +236,7 @@ void ScriptSystem::clear() {
 
 // Private
 
-bool ScriptSystem::loadScript(ECS::Entity entity,
+bool ScriptSystem::loadScript(ECS::Entity entity, size_t idx,
                               const std::string &scriptPath) {
   std::string fullPath = "assets/scripts/" + scriptPath;
 
@@ -199,8 +268,8 @@ bool ScriptSystem::loadScript(ECS::Entity entity,
 
   sol::table scriptTable = retVal.as<sol::table>();
 
-  // Cache callbacks
-  ScriptState &state = m_states[entity.id];
+  // Cache callbacks into the correct slot
+  ScriptState &state = m_states[entity.id][idx];
   state.env = std::move(env);
   state.scriptTable = scriptTable;
   state.onStart = scriptTable["onStart"];

@@ -59,16 +59,13 @@ private:
     std::string loadedPath;  // Last loaded script path (for change detection).
   };
 
-  // @brief Map from entity-id to its cached script state.
-  std::unordered_map<uint32_t, ScriptState> m_states;
+  // @brief Map from entity-id to its per-slot script states.
+  std::unordered_map<uint32_t, std::vector<ScriptState>> m_states;
 
   /**
-   * @brief Load (or reload) a script file for the given entity.
-   * @param entity     The entity handle.
-   * @param scriptPath Relative path under assets/scripts/.
-   * @return True if the script loaded and returned a valid table.
+   * @brief Load (or reload) a script file into slot [idx] for the given entity.
    */
-  bool loadScript(ECS::Entity entity, const std::string &scriptPath);
+  bool loadScript(ECS::Entity entity, size_t idx, const std::string &scriptPath);
 };
 
 } // namespace Systems

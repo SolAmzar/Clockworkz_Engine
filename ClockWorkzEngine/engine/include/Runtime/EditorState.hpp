@@ -17,8 +17,10 @@ reserved.
 #include "ECS/Entity.hpp"
 #include "Math/Vec2.hpp"
 #include <glm/vec2.hpp>
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace Platform { class InputManager; }
@@ -122,7 +124,7 @@ private:
     // ----- Grid -----
     bool                    m_showGrid{true};
     float                   m_gridSize{100.0f};
-    bool                    m_snapToGrid{true};
+    bool                    m_snapToGrid{false};
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
@@ -178,10 +180,18 @@ private:
     ECS::Entity             m_renamingEntity{0, 0};
     char                    m_renameBuffer[256]{};
 
-    // ----- Asset browser -----
+    // ----- Assets (Texture) browser -----
+    std::string             m_currentAssetDir{"assets/textures"};
     std::string             m_selectedAsset;
     char                    m_newAssetNameBuf[128]{};
-    char                    m_newAssetPathBuf[256]{};
+    char                    m_newAssetPathBuf[512]{};
+    std::string             m_renamingAsset;
+    char                    m_renameAssetBuf[128]{};
+    std::string             m_deletingAsset;
+    std::string             m_movingAssetPath;
+    std::string             m_renamingAssetDirPath;
+    char                    m_renameAssetDirBuf[128]{};
+    std::string             m_deletingAssetDirPath;
 
     // ----- Dockspace -----
     bool                    m_dockLayoutInitialized{false};
@@ -201,20 +211,28 @@ private:
     std::string             m_pendingLoadPath;
     char                    m_newSceneBuf[128]{};
 
-    // ----- Asset rename/delete -----
-    std::string             m_renamingAsset;
-    char                    m_renameAssetBuf[128]{};
-    std::string             m_deletingAsset;
+    // ----- Texture hot-reload -----
+    void        initTextureFilePaths();
+    void        checkAssetHotReload();
+    std::unordered_map<std::string, std::string>                       m_textureFilePaths;
+    std::unordered_map<std::string, std::filesystem::file_time_type>   m_assetFileTimestamps;
+    bool        m_hotReloadEnabled{true};
+    float       m_hotReloadTimer{0.f};
+    static constexpr float HOT_RELOAD_INTERVAL = 1.0f;
 
     // ----- Scripts browser -----
+    std::string             m_currentScriptDir{"assets/scripts"};
     char                    m_newScriptBuf[128]{};
+    char                    m_newScriptFolderBuf[64]{};   // subfolder for new script
     std::string             m_renamingScriptPath;
     char                    m_renameScriptBuf[256]{};
     std::string             m_deletingScriptPath;
+    std::string             m_movingScriptPath;           // script being moved to a folder
 
     // ----- Audio browser -----
+    std::string             m_currentAudioDir{"assets/audio"};
     char                    m_newAudioNameBuf[128]{};
-    char                    m_newAudioPathBuf[256]{};
+    char                    m_newAudioPathBuf[512]{};
     bool                    m_newAudioLoop{false};
     bool                    m_newAudioStream{false};
     bool                    m_newAudioIs3D{false};
@@ -222,6 +240,10 @@ private:
     float                   m_newAudioPitch{1.0f};
     bool                    m_newAudioIsBGM{false};
     std::string             m_deletingAudio;
+    std::string             m_renamingAudioPath;
+    char                    m_renameAudioBuf[128]{};
+    std::string             m_movingAudioPath;
+    std::string             m_deletingAudioPath;
 };
 
 } // namespace Runtime

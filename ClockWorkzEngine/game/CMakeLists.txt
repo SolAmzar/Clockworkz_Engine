@@ -59,7 +59,7 @@ if(EXISTS "${ACTIVE_ASSETS_DIR}")
   add_custom_command(TARGET LightsOut POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${ACTIVE_ASSETS_DIR}"
-      "$<TARGET_FILE_DIR:LightsOut>/assets"
+      "$<TARGET_FILE_DIR:LightsOut>/assets" 
   )
   add_custom_command(TARGET LightsOut POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
