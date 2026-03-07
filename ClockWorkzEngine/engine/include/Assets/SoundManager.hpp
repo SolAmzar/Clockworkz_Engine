@@ -54,6 +54,12 @@ public:
   // Manual override
   static int Play(const std::string &name, float volume, float pitch = 1.0f);
 
+  // Stop a currently playing sound by name
+  static void Stop(const std::string &name);
+
+  // Returns true if the sound is currently playing
+  static bool IsPlaying(const std::string &name);
+
   // Unload one sound
   static void Unload(const std::string &name);
 

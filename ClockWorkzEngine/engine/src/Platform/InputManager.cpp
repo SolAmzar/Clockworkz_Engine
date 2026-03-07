@@ -76,6 +76,7 @@ bool InputManager::init(WindowManager &wm) {
   trackKey(GLFW_KEY_SPACE);     trackKey(GLFW_KEY_ENTER);
   trackKey(GLFW_KEY_KP_ENTER);  trackKey(GLFW_KEY_ESCAPE);
   trackKey(GLFW_KEY_TAB);       trackKey(GLFW_KEY_BACKSPACE);
+  trackKey(GLFW_KEY_DELETE);
 
   // Punctuation
   trackKey(GLFW_KEY_APOSTROPHE);   trackKey(GLFW_KEY_COMMA);

@@ -85,6 +85,15 @@ int SoundManager::Play(const std::string &name, float volume, float pitch) {
   return s_audio->play(name, volume, pitch);
 }
 
+void SoundManager::Stop(const std::string &name) {
+  if (s_audio)
+    s_audio->stop(name);
+}
+
+bool SoundManager::IsPlaying(const std::string &name) {
+  return s_audio && s_audio->isPlaying(name);
+}
+
 void SoundManager::Unload(const std::string &name) {
   if (s_audio) {
     s_audio->stop(name);

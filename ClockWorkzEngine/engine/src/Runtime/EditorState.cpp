@@ -33,6 +33,7 @@ reserved.
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/ImGuiManager.hpp"
 #include "Platform/InputManager.hpp"
+#include "Platform/WindowManager.hpp"
 #include "IMGUI/imgui.h"
 #include "IMGUI/imgui_internal.h"
 
@@ -42,6 +43,9 @@ reserved.
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
 #include <fstream>
+#pragma warning(push, 0)
+#include "Core/json.hpp"
+#pragma warning(pop)
 #ifdef _WIN32
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
@@ -71,8 +75,9 @@ namespace Runtime {
 // ---------------------------------------------------------------------------
 
 static vec2 snapToGrid(const vec2& pos, float gridSize) {
-    return { std::round(pos.x / gridSize) * gridSize,
-             std::round(pos.y / gridSize) * gridSize };
+    float half = gridSize * 0.5f;
+    return { std::round((pos.x - half) / gridSize) * gridSize + half,
+             std::round((pos.y - half) / gridSize) * gridSize + half };
 }
 
 static vec2 worldToScreen(const vec2& worldPos, const vec2& camPos,
@@ -164,6 +169,11 @@ void EditorState::onEnter() {
 
     m_scene.Init();
 
+    loadAvailablePrefabs();
+    m_layerVisible.assign(m_numLayers, true);
+    for (int i = 0; i < m_numLayers; ++i)
+        m_scene.setLayerEnabled(i, true);
+
     // Defer the initial scene load to the first update() tick, so all
     // engine systems (audio, etc.) are running before Clear()/Deserialize.
     if (!m_sceneFilePath.empty())
@@ -204,6 +214,19 @@ void EditorState::onExit() {
     m_isRenaming            = false;
     m_dockLayoutInitialized = false;
     m_pendingLoadPath.clear();
+
+    // Tilemap / prefab browser state
+    m_tilemap.clear();
+    m_entityGroups.clear();
+    m_availablePrefabs.clear();
+    m_layerVisible.clear();
+    m_tileMapMode        = false;
+    m_showTilePalette    = false;
+    m_selectedTilePrefab.clear();
+    m_paintedThisFrame   = false;
+    m_currentLayer       = 0;
+    m_numLayers          = 3;
+    m_selectedPrefabIndex = -1;
 }
 
 // ---------------------------------------------------------------------------
@@ -306,20 +329,34 @@ void EditorState::update(double dt) {
         }
     }
 
-    // Delete key: delete selected entity
-    if (m_viewportFocused && m_input.wasKeyTriggered(GLFW_KEY_DELETE)) {
+    // Delete key: delete all selected entities
+    // Block only when a text field is active (e.g. renaming), allow everywhere else
+    if (m_input.wasKeyTriggered(GLFW_KEY_DELETE)) {
+        auto& log = Core::Engine::Get().logger();
+        log.info("[Editor] DELETE key detected. WantTextInput=" +
+                 std::string(ImGui::GetIO().WantTextInput ? "true" : "false") +
+                 " | selectedCount=" + std::to_string(m_selectedEntities.size()) +
+                 " | viewportFocused=" + std::string(m_viewportFocused ? "true" : "false"));
+    }
+    if (!ImGui::GetIO().WantTextInput && m_input.wasKeyTriggered(GLFW_KEY_DELETE)) {
         auto& world = m_scene.GetWorld();
-        if (world.isValid(m_selectedEntity)) {
-            executeCommand(std::make_unique<DeleteEntityCmd>(world, m_selectedEntity));
-            m_selectedEntities.erase(
-                std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
-                    [&](ECS::Entity e){
-                        return e.id == m_selectedEntity.id &&
-                               e.generation == m_selectedEntity.generation;
-                    }),
-                m_selectedEntities.end());
-            m_selectedEntity = {0, 0};
+        for (auto e : m_selectedEntities) {
+            if (!world.isValid(e)) continue;
+            // If this entity is a tilemap tile, clean up tile data too
+            auto tileIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+                [&](const TileData& t) {
+                    return t.entity.id == e.id && t.entity.generation == e.generation;
+                });
+            if (tileIt != m_tilemap.end()) {
+                removeEntityFromGroups(e);
+                world.destroyEntity(e);
+                m_tilemap.erase(tileIt);
+            } else {
+                executeCommand(std::make_unique<DeleteEntityCmd>(world, e));
+            }
         }
+        m_selectedEntities.clear();
+        m_selectedEntity = {0, 0};
     }
 }
 
@@ -431,6 +468,8 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderDockWindow("Assets",                 centerBot);
         ImGui::DockBuilderDockWindow("Scripts",                centerBot);
         ImGui::DockBuilderDockWindow("Audio",                  centerBot);
+        ImGui::DockBuilderDockWindow("Prefabs",                centerBot);
+        ImGui::DockBuilderDockWindow("Tile Palette",           left);
         ImGui::DockBuilderDockWindow("Inspector",              rightTop);
         ImGui::DockBuilderDockWindow("Stats",                  rightTop);
 
@@ -446,6 +485,8 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderStatsWindow();
     renderScriptsBrowser();
     renderAudioBrowser();
+    renderPrefabBrowser();
+    renderTilePalette();
 
     Core::Engine::Get().imguiManager().endDockspace();
 }
@@ -459,6 +500,17 @@ void EditorState::renderToolbar() {
 
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) m_pendingSave = true;
+        ImGui::Separator();
+        if (ImGui::BeginMenu("Tilemap")) {
+            ImGui::SetNextItemWidth(200.0f);
+            ImGui::InputText("##TilemapPath", m_tilemapPathBuf, sizeof(m_tilemapPathBuf));
+            if (ImGui::Button("Save Tilemap"))  saveTilemap(m_tilemapPathBuf);
+            ImGui::SameLine();
+            if (ImGui::Button("Load Tilemap"))  loadTilemap(m_tilemapPathBuf);
+            ImGui::SameLine();
+            if (ImGui::Button("Clear"))         clearTilemap();
+            ImGui::EndMenu();
+        }
         ImGui::Separator();
         if (ImGui::MenuItem("Return to Hub"))        m_pendingReturnToHub = true;
         ImGui::EndMenu();
@@ -516,6 +568,62 @@ void EditorState::renderToolbar() {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid size");
         ImGui::SameLine();
         ImGui::Checkbox("Snap", &m_snapToGrid);
+    }
+
+    ImGui::Separator(); ImGui::SameLine();
+
+    // Tilemap mode
+    if (ImGui::Checkbox("Tilemap", &m_tileMapMode)) {
+        if (m_tileMapMode) {
+            m_selectedEntities.clear();
+            m_selectedEntity = {0, 0};
+            m_showTilePalette = true;
+        } else {
+            m_showTilePalette = false;
+        }
+    }
+    if (m_tileMapMode) {
+        ImGui::SameLine();
+        ImGui::Separator(); ImGui::SameLine();
+        if (ImGui::RadioButton("Paint",  m_paintMode == PaintMode::Paint))
+            m_paintMode = PaintMode::Paint;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Erase",  m_paintMode == PaintMode::Erase))
+            m_paintMode = PaintMode::Erase;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Select", m_paintMode == PaintMode::Select))
+            m_paintMode = PaintMode::Select;
+
+        ImGui::SameLine();
+        ImGui::Separator(); ImGui::SameLine();
+        ImGui::Text("Layer:");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(60.0f);
+        ImGui::SliderInt("##Layer", &m_currentLayer, 0, m_numLayers - 1);
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+")) {
+            ++m_numLayers;
+            m_layerVisible.push_back(true);
+            m_scene.setLayerEnabled(m_numLayers - 1, true);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-") && m_numLayers > 1) {
+            --m_numLayers;
+            m_layerVisible.resize(m_numLayers, true);
+            if (m_currentLayer >= m_numLayers) m_currentLayer = m_numLayers - 1;
+        }
+        ImGui::SameLine();
+        ImGui::Separator(); ImGui::SameLine();
+        for (int i = 0; i < m_numLayers; ++i) {
+            char lbl[16];
+            std::snprintf(lbl, sizeof(lbl), "L%d", i);
+            bool vis = (i < (int)m_layerVisible.size()) ? m_layerVisible[i] : true;
+            if (ImGui::Checkbox(lbl, &vis)) {
+                if (i < (int)m_layerVisible.size()) m_layerVisible[i] = vis;
+                m_scene.setLayerEnabled(i, vis);
+            }
+            if (i + 1 < m_numLayers) ImGui::SameLine();
+        }
     }
 
     ImGui::Separator(); ImGui::SameLine();
@@ -1053,7 +1161,7 @@ void EditorState::renderInspector() {
             // Show texture thumbnail if loaded
             auto tex = Assets::TextureManager::Get(sr->textureId);
             if (tex && tex->id() != 0) {
-                ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(48, 48));
+                ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(48, 48), ImVec2(0,1), ImVec2(1,0));
                 ImGui::SameLine();
             }
 
@@ -1281,10 +1389,16 @@ void EditorState::renderViewport() {
     vec2  camP  = {cam.position().x, cam.position().y};
     auto& ecs   = m_scene.GetWorld();
 
+    // ----- Tilemap input (when in tilemap mode) -----
+    if (m_tileMapMode)
+        handleTileMapInput(vpMin);
+
     // ----- Entity picking (left-click) -----
     // Skip if gizmo handle is active OR was hovered last frame (user is clicking handle)
+    // Also skip when tilemap mode is active (tilemap mode handles its own input)
     if (m_viewportHovered &&
         ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+        !m_tileMapMode &&
         m_gizmoActiveAxis == -1 &&
         !m_gizmoHoveredHandle) {
         ImVec2 mp       = ImGui::GetMousePos();
@@ -1465,7 +1579,7 @@ void EditorState::renderViewport() {
         }
     }
 
-    // ----- Drag-drop: texture from Asset Browser → spawn entity -----
+    // ----- Drag-drop: texture / prefab from browsers → spawn entity -----
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
             const char* texName = static_cast<const char*>(pl->Data);
@@ -1486,6 +1600,23 @@ void EditorState::renderViewport() {
             m_selectedEntities.clear();
             m_selectedEntity = raw->createdEntity();
             m_selectedEntities.push_back(m_selectedEntity);
+        }
+        if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
+            const char* prefabName = static_cast<const char*>(pl->Data);
+            ImVec2 mp = ImGui::GetMousePos();
+            vec2   wPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+            if (m_snapToGrid) wPos = snapToGrid(wPos, m_gridSize);
+            ECS::Entity e = spawnPrefab(prefabName, wPos);
+            if (m_scene.GetWorld().isValid(e)) {
+                // Record in tilemap data so it participates in save/load
+                m_tilemap.push_back({prefabName, wPos, m_currentLayer, e});
+                if (auto* spr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(e))
+                    spr->sortOrder = m_currentLayer;
+                getOrCreateLayerGroup(m_currentLayer)->entities.push_back(e);
+                m_selectedEntities.clear();
+                m_selectedEntity = e;
+                m_selectedEntities.push_back(e);
+            }
         }
         ImGui::EndDragDropTarget();
     }
@@ -1806,6 +1937,25 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
 void EditorState::renderAssetBrowser() {
     ImGui::Begin("Assets");
 
+    // ── Handle file drops from Windows Explorer ───────────────────────────────
+    // Note: IsWindowHovered() is false during OS drag, so consume unconditionally.
+    {
+        auto dropped = Core::Engine::Get().window().consumeDroppedFiles();
+        for (const auto& filePath : dropped) {
+            namespace fs = std::filesystem;
+            std::string ext = fs::path(filePath).extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            static const char* kImgExts[] = {".png", ".jpg", ".jpeg", ".bmp", ".tga"};
+            for (auto e : kImgExts) {
+                if (ext == e) {
+                    std::string stem = fs::path(filePath).stem().string();
+                    Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
+                    break;
+                }
+            }
+        }
+    }
+
     if (ImGui::Button("Add Texture")) {
         m_newAssetNameBuf[0] = '\0';
         m_newAssetPathBuf[0] = '\0';
@@ -1940,7 +2090,7 @@ void EditorState::renderAssetBrowser() {
 
                 if (ImGui::ImageButton("##tb",
                         (ImTextureID)(intptr_t)tex->id(),
-                        ImVec2(thumbSize, thumbSize)))
+                        ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0)))
                     m_selectedAsset = name;
 
                 if (isSelected)
@@ -1950,7 +2100,7 @@ void EditorState::renderAssetBrowser() {
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                     ImGui::SetDragDropPayload("TEXTURE_ASSET",
                                              name.c_str(), name.size() + 1);
-                    ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32));
+                    ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(32, 32), ImVec2(0,1), ImVec2(1,0));
                     ImGui::SameLine();
                     ImGui::Text("%s", name.c_str());
                     ImGui::EndDragDropSource();
@@ -2440,8 +2590,13 @@ void EditorState::renderAudioBrowser() {
 
             // ── Right-click context menu ──────────────────────────────────────
             if (ImGui::BeginPopupContextItem("##AudioCtx")) {
-                if (ImGui::MenuItem("Play"))
-                    Assets::SoundManager::Play(soundName);
+                if (Assets::SoundManager::IsPlaying(soundName)) {
+                    if (ImGui::MenuItem("Stop"))
+                        Assets::SoundManager::Stop(soundName);
+                } else {
+                    if (ImGui::MenuItem("Play"))
+                        Assets::SoundManager::Play(soundName);
+                }
                 ImGui::Separator();
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
                 if (ImGui::MenuItem("Delete"))
@@ -2558,6 +2713,637 @@ void EditorState::redo() {
     m_redoStack.pop_back();
     cmd->execute();
     m_undoStack.push_back(std::move(cmd));
+}
+
+// ---------------------------------------------------------------------------
+// Prefab helpers
+// ---------------------------------------------------------------------------
+
+void EditorState::loadAvailablePrefabs() {
+    namespace fs = std::filesystem;
+    m_availablePrefabs.clear();
+    std::string dir = "assets/prefabs/";
+    if (fs::exists(dir) && fs::is_directory(dir)) {
+        for (const auto& entry : fs::directory_iterator(dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".json")
+                m_availablePrefabs.push_back(entry.path().stem().string());
+        }
+    }
+}
+
+void EditorState::savePrefabFromEntity(ECS::Entity entity,
+                                        const std::string& name,
+                                        const std::string& category) {
+    using json = nlohmann::json;
+    auto& world = m_scene.GetWorld();
+
+    json prefabJson;
+    prefabJson["name"]       = name;
+    prefabJson["category"]   = category;
+    prefabJson["components"] = json::object();
+    auto& comps = prefabJson["components"];
+
+    if (auto* t = world.getComponent<Components::Transform>(entity))
+        comps["transform"] = {
+            {"position", {{"x", t->position.x}, {"y", t->position.y}}},
+            {"rotation", t->rotation},
+            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}}};
+
+    if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity))
+        comps["spriteRenderer"] = {
+            {"textureId", sr->textureId},
+            {"size",  {{"x", sr->size.x},  {"y", sr->size.y}}},
+            {"color", {{"r", sr->color.r}, {"g", sr->color.g},
+                       {"b", sr->color.b}, {"a", sr->color.a}}},
+            {"sortOrder", sr->sortOrder}};
+
+    if (auto* c = world.getComponent<Components::Collider>(entity))
+        comps["collider"] = {
+            {"shape",    static_cast<int>(c->shape)},
+            {"width",    c->size.x}, {"height",  c->size.y},
+            {"radius",   c->radius},
+            {"isSolid",  c->isSolid},  {"isTrigger",   c->isTrigger},
+            {"blocksLight", c->blocksLight}, {"moveable", c->moveable},
+            {"mass",     c->mass},
+            {"collisionCategory", c->collisionCategory},
+            {"collisionMask",     c->collisionMask}};
+
+    if (auto* tag = world.getComponent<Components::Tag>(entity))
+        comps["tag"] = {{"tag", tag->tag}};
+
+    if (auto* vel = world.getComponent<Components::Velocity>(entity))
+        comps["velocity"] = {{"x", vel->velocity.x}, {"y", vel->velocity.y},
+                              {"moveSpeed", vel->moveSpeed}};
+
+    if (auto* au = world.getComponent<Components::AudioSource>(entity))
+        comps["audioSource"] = {{"soundId", au->soundId}, {"volume", au->volume},
+                                 {"loop", au->loop}, {"playOnStart", au->playOnStart}};
+
+    if (auto* ls = world.getComponent<Components::LuaScript>(entity))
+        comps["luaScript"] = {{"scriptPath", ls->scriptPath}, {"enabled", ls->enabled}};
+
+    if (auto* sa = world.getComponent<Components::SpriteAnimator>(entity))
+        comps["spriteAnimator"] = {{"filename", sa->filename},
+                                    {"currentClip", sa->currentClip}};
+
+    if (auto* sm = world.getComponent<Components::StateMachine>(entity))
+        comps["stateMachine"] = {{"currentState", sm->currentState}};
+
+    if (auto* tr = world.getComponent<Components::TextRenderer>(entity))
+        comps["textRenderer"] = {{"text", tr->text}, {"fontId", tr->fontId},
+                                  {"fontSize", tr->fontSize},
+                                  {"color", {{"r", tr->color.r}, {"g", tr->color.g}, {"b", tr->color.b}}},
+                                  {"visible", tr->visible},
+                                  {"alignment", static_cast<int>(tr->alignment)}};
+
+    namespace fs = std::filesystem;
+    std::string filepath = "assets/prefabs/" + name + ".json";
+    fs::create_directories(fs::path(filepath).parent_path());
+    std::ofstream out(filepath);
+    if (out) {
+        out << prefabJson.dump(4);
+        out.close();
+        std::cout << "[Editor] Saved prefab: " << filepath << "\n";
+        loadAvailablePrefabs();
+    } else {
+        std::cerr << "[Editor] Failed to save prefab: " << filepath << "\n";
+    }
+}
+
+ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 position) {
+    using json = nlohmann::json;
+    std::string filepath = "assets/prefabs/" + prefabName + ".json";
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[Editor] Failed to open prefab: " << filepath << "\n";
+        return {0, 0};
+    }
+
+    json pj;
+    file >> pj;
+    file.close();
+
+    auto& world  = m_scene.GetWorld();
+    auto  entity = world.createEntity();
+
+    world.addComponent(entity, Components::Tag{prefabName});
+
+    if (!pj.contains("components")) return entity;
+    const auto& c = pj["components"];
+
+    if (c.contains("transform")) {
+        Components::Transform t;
+        t.position = position;
+        t.rotation = c["transform"].value("rotation", 0.f);
+        if (c["transform"].contains("scale")) {
+            t.scale.x = c["transform"]["scale"].value("x", 1.f);
+            t.scale.y = c["transform"]["scale"].value("y", 1.f);
+        }
+        world.addComponent(entity, t);
+    } else {
+        Components::Transform t; t.position = position;
+        world.addComponent(entity, t);
+    }
+
+    if (c.contains("spriteRenderer")) {
+        Components::SpriteRenderer sr;
+        sr.textureId = c["spriteRenderer"].value("textureId", "");
+        if (c["spriteRenderer"].contains("size")) {
+            sr.size.x = c["spriteRenderer"]["size"].value("x", 50.f);
+            sr.size.y = c["spriteRenderer"]["size"].value("y", 50.f);
+        }
+        if (c["spriteRenderer"].contains("color")) {
+            sr.color.r = c["spriteRenderer"]["color"].value("r", 1.f);
+            sr.color.g = c["spriteRenderer"]["color"].value("g", 1.f);
+            sr.color.b = c["spriteRenderer"]["color"].value("b", 1.f);
+            sr.color.a = c["spriteRenderer"]["color"].value("a", 1.f);
+        }
+        sr.sortOrder = c["spriteRenderer"].value("sortOrder", 0);
+        world.addComponent(entity, sr);
+    }
+
+    if (c.contains("collider")) {
+        Components::Collider col;
+        col.shape   = static_cast<Components::Collider::Shape>(c["collider"].value("shape", 0));
+        col.size.x  = c["collider"].value("width",  50.f);
+        col.size.y  = c["collider"].value("height", 50.f);
+        col.radius  = c["collider"].value("radius", 25.f);
+        col.isSolid     = c["collider"].value("isSolid",     true);
+        col.isTrigger   = c["collider"].value("isTrigger",   false);
+        col.blocksLight = c["collider"].value("blocksLight",  false);
+        col.moveable    = c["collider"].value("moveable",    false);
+        col.mass        = c["collider"].value("mass",        1.f);
+        col.collisionCategory = c["collider"].value("collisionCategory", 1);
+        col.collisionMask     = c["collider"].value("collisionMask",     0xFFFFFFFF);
+        world.addComponent(entity, col);
+    }
+
+    if (c.contains("velocity")) {
+        Components::Velocity vel;
+        vel.velocity.x = c["velocity"].value("x", 0.f);
+        vel.velocity.y = c["velocity"].value("y", 0.f);
+        vel.moveSpeed  = c["velocity"].value("moveSpeed", 100.f);
+        world.addComponent(entity, vel);
+    }
+
+    if (c.contains("audioSource")) {
+        Components::AudioSource au;
+        au.soundId     = c["audioSource"].value("soundId", "");
+        au.volume      = c["audioSource"].value("volume", 1.f);
+        au.loop        = c["audioSource"].value("loop", false);
+        au.playOnStart = c["audioSource"].value("playOnStart", false);
+        world.addComponent(entity, au);
+    }
+
+    if (c.contains("luaScript")) {
+        Components::LuaScript ls;
+        ls.scriptPath = c["luaScript"].value("scriptPath", "");
+        ls.enabled    = c["luaScript"].value("enabled", true);
+        world.addComponent(entity, ls);
+    }
+
+    if (c.contains("spriteAnimator")) {
+        Components::SpriteAnimator sa;
+        sa.filename    = c["spriteAnimator"].value("filename", "");
+        sa.currentClip = c["spriteAnimator"].value("currentClip", "");
+        if (!sa.filename.empty())
+            sa.loadFromPath("assets/animations/" + sa.filename);
+        world.addComponent(entity, sa);
+    }
+
+    if (c.contains("stateMachine")) {
+        Components::StateMachine sm;
+        sm.currentState = c["stateMachine"].value("currentState", "idle");
+        world.addComponent(entity, sm);
+    }
+
+    if (c.contains("textRenderer")) {
+        Components::TextRenderer tr;
+        tr.text      = c["textRenderer"].value("text", "");
+        tr.fontId    = c["textRenderer"].value("fontId", "Debug");
+        tr.fontSize  = c["textRenderer"].value("fontSize", 1.f);
+        tr.visible   = c["textRenderer"].value("visible", true);
+        tr.alignment = static_cast<Components::TextAlignment>(
+            c["textRenderer"].value("alignment", 0));
+        if (c["textRenderer"].contains("color")) {
+            tr.color.r = c["textRenderer"]["color"].value("r", 1.f);
+            tr.color.g = c["textRenderer"]["color"].value("g", 1.f);
+            tr.color.b = c["textRenderer"]["color"].value("b", 1.f);
+        }
+        world.addComponent(entity, tr);
+    }
+
+    return entity;
+}
+
+void EditorState::deletePrefab(const std::string& prefabName) {
+    std::error_code ec;
+    std::filesystem::remove("assets/prefabs/" + prefabName + ".json", ec);
+    loadAvailablePrefabs();
+}
+
+// ---------------------------------------------------------------------------
+// Tilemap helpers
+// ---------------------------------------------------------------------------
+
+bool EditorState::isCellOccupied(vec2 worldPos, int layer) const {
+    auto& world = m_scene.GetWorld();
+    for (const auto& tile : m_tilemap) {
+        if (tile.layer == layer &&
+            world.isValid(tile.entity) &&
+            magnitude(tile.position - worldPos) < m_gridSize * 0.1f)
+            return true;
+    }
+    return false;
+}
+
+EditorState::EntityGroup* EditorState::getOrCreateLayerGroup(int layer) {
+    char name[32];
+    snprintf(name, sizeof(name), "Layer %d", layer);
+    for (auto& g : m_entityGroups)
+        if (g.name == name) return &g;
+    m_entityGroups.push_back({name, {}});
+    return &m_entityGroups.back();
+}
+
+void EditorState::removeEntityFromGroups(ECS::Entity entity) {
+    for (auto& g : m_entityGroups) {
+        auto it = std::remove_if(g.entities.begin(), g.entities.end(),
+            [&](ECS::Entity e) {
+                return e.id == entity.id && e.generation == entity.generation;
+            });
+        if (it != g.entities.end()) {
+            g.entities.erase(it, g.entities.end());
+            return;
+        }
+    }
+}
+
+void EditorState::clearTilemap() {
+    auto& world = m_scene.GetWorld();
+    for (auto& tile : m_tilemap) {
+        if (world.isValid(tile.entity))
+            world.destroyEntity(tile.entity);
+    }
+    m_tilemap.clear();
+    m_entityGroups.clear();
+    m_selectedEntity     = {0, 0};
+    m_selectedEntities.clear();
+    m_gizmoActiveAxis    = -1;
+    m_pendingEntityDrag  = false;
+    m_isDraggingEntity   = false;
+}
+
+void EditorState::saveTilemap(const std::string& filepath) {
+    using json = nlohmann::json;
+    json j;
+    j["gridSize"]  = m_gridSize;
+    j["numLayers"] = m_numLayers;
+    j["tiles"]     = json::array();
+    for (const auto& tile : m_tilemap) {
+        json t;
+        t["prefab"]    = tile.prefabName;
+        t["position"]  = {{"x", tile.position.x}, {"y", tile.position.y}};
+        t["layer"]     = tile.layer;
+        j["tiles"].push_back(t);
+    }
+    namespace fs = std::filesystem;
+    fs::create_directories(fs::path(filepath).parent_path());
+    std::ofstream out(filepath);
+    if (out) { out << j.dump(4); std::cout << "[Editor] Saved tilemap: " << filepath << "\n"; }
+    else       std::cerr << "[Editor] Failed to save tilemap: " << filepath << "\n";
+}
+
+void EditorState::loadTilemap(const std::string& filepath) {
+    using json = nlohmann::json;
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[Editor] Failed to open tilemap: " << filepath << "\n";
+        return;
+    }
+    json j; file >> j; file.close();
+
+    clearTilemap();
+    m_gridSize  = j.value("gridSize",  m_gridSize);
+    m_numLayers = j.value("numLayers", m_numLayers);
+    m_layerVisible.assign(m_numLayers, true);
+    for (int i = 0; i < m_numLayers; ++i)
+        m_scene.setLayerEnabled(i, true);
+
+    if (!j.contains("tiles")) return;
+    auto& world = m_scene.GetWorld();
+    for (const auto& t : j["tiles"]) {
+        std::string name = t.value("prefab", "");
+        vec2 pos{t["position"].value("x", 0.f), t["position"].value("y", 0.f)};
+        int  layer = t.value("layer", 0);
+        ECS::Entity entity = spawnPrefab(name, pos);
+        if (world.isValid(entity)) {
+            if (auto* spr = world.getComponent<Components::SpriteRenderer>(entity))
+                spr->sortOrder = layer;
+            m_tilemap.push_back({name, pos, layer, entity});
+            getOrCreateLayerGroup(layer)->entities.push_back(entity);
+        }
+    }
+    std::cout << "[Editor] Loaded tilemap: " << filepath << "\n";
+}
+
+void EditorState::handleTileMapInput(const vec2& viewportMin) {
+    if (m_selectedTilePrefab.empty() && m_paintMode == PaintMode::Paint) return;
+
+    auto& world  = m_scene.GetWorld();
+    auto& cam    = Core::Engine::Get().camera();
+    vec2  camP   = {cam.position().x, cam.position().y};
+
+    ImVec2 mp = ImGui::GetMousePos();
+    vec2   mouseScreen{mp.x, mp.y};
+    vec2   worldPos = screenToWorld(mouseScreen, camP, m_editorCamZoom,
+                                    viewportMin, m_viewportSize);
+    worldPos = snapToGrid(worldPos, m_gridSize);
+
+    m_paintedThisFrame = false;
+
+    if (m_paintMode != PaintMode::Select && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) return;
+
+    if (m_paintMode == PaintMode::Paint) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            // If clicking an existing tile, select it instead of painting over
+            for (auto& tile : m_tilemap) {
+                if (tile.layer == m_currentLayer &&
+                    world.isValid(tile.entity) &&
+                    magnitude(tile.position - worldPos) < m_gridSize * 0.5f) {
+                    m_selectedEntities.clear();
+                    m_selectedEntity = tile.entity;
+                    m_selectedEntities.push_back(tile.entity);
+                    m_paintedThisFrame = true;
+                    return;
+                }
+            }
+        }
+        // Paint on held mouse (allows drag-painting)
+        if (!isCellOccupied(worldPos, m_currentLayer)) {
+            ECS::Entity entity = spawnPrefab(m_selectedTilePrefab, worldPos);
+            if (world.isValid(entity)) {
+                if (auto* spr = world.getComponent<Components::SpriteRenderer>(entity))
+                    spr->sortOrder = m_currentLayer;
+                m_tilemap.push_back({m_selectedTilePrefab, worldPos, m_currentLayer, entity});
+                getOrCreateLayerGroup(m_currentLayer)->entities.push_back(entity);
+                m_paintedThisFrame = true;
+            }
+        }
+    } else if (m_paintMode == PaintMode::Erase) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            for (auto it = m_tilemap.begin(); it != m_tilemap.end(); ++it) {
+                if (it->layer == m_currentLayer &&
+                    world.isValid(it->entity) &&
+                    magnitude(it->position - worldPos) < m_gridSize * 0.5f) {
+                    removeEntityFromGroups(it->entity);
+                    world.destroyEntity(it->entity);
+                    m_tilemap.erase(it);
+                    m_paintedThisFrame = true;
+                    break;
+                }
+            }
+        }
+    } else if (m_paintMode == PaintMode::Select) {
+        auto& cam2   = Core::Engine::Get().camera();
+        vec2  camP2  = {cam2.position().x, cam2.position().y};
+        bool  shift  = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
+                       ImGui::IsKeyDown(ImGuiKey_RightShift);
+
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            bool hitTile = false;
+            for (auto& tile : m_tilemap) {
+                if (tile.layer == m_currentLayer &&
+                    world.isValid(tile.entity) &&
+                    magnitude(tile.position - worldPos) < m_gridSize * 0.5f) {
+                    if (shift) {
+                        // Shift+click: toggle tile in selection
+                        auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                            [&](ECS::Entity e){ return e.id == tile.entity.id && e.generation == tile.entity.generation; });
+                        if (it != m_selectedEntities.end())
+                            m_selectedEntities.erase(it);
+                        else
+                            m_selectedEntities.push_back(tile.entity);
+                    } else {
+                        // Plain click: select this tile, start drag
+                        m_selectedEntities.clear();
+                        m_selectedEntity = tile.entity;
+                        m_selectedEntities.push_back(tile.entity);
+                        m_pendingEntityDrag = true;
+                        m_isDraggingEntity  = false;
+                        m_dragStartMousePos = mouseScreen;
+                        m_dragClickWorldPos = worldPos;
+                        m_gizmoGroupOriginalPos.clear();
+                        if (auto* t = world.getComponent<Components::Transform>(tile.entity))
+                            m_gizmoGroupOriginalPos.push_back({tile.entity, {t->position.x, t->position.y}});
+                    }
+                    if (!m_selectedEntities.empty())
+                        m_selectedEntity = m_selectedEntities.front();
+                    hitTile = true;
+                    m_paintedThisFrame = true;
+                    break;
+                }
+            }
+            if (!hitTile) {
+                // Clicked empty space: start box selection
+                if (!shift) {
+                    m_selectedEntities.clear();
+                    m_selectedEntity = {0, 0};
+                }
+                m_isBoxSelecting = true;
+                m_boxSelectStart = mouseScreen;
+                m_boxSelectEnd   = mouseScreen;
+            }
+        }
+
+        // Box selection update & finalize
+        if (m_isBoxSelecting) {
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                m_boxSelectEnd = mouseScreen;
+                ImVec2 a = {std::min(m_boxSelectStart.x, m_boxSelectEnd.x),
+                            std::min(m_boxSelectStart.y, m_boxSelectEnd.y)};
+                ImVec2 b = {std::max(m_boxSelectStart.x, m_boxSelectEnd.x),
+                            std::max(m_boxSelectStart.y, m_boxSelectEnd.y)};
+                ImGui::GetWindowDrawList()->AddRectFilled(a, b, IM_COL32(100, 160, 255, 35));
+                ImGui::GetWindowDrawList()->AddRect      (a, b, IM_COL32(100, 160, 255, 220), 0.f, 0, 1.5f);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                m_isBoxSelecting = false;
+                float minSX = std::min(m_boxSelectStart.x, m_boxSelectEnd.x);
+                float maxSX = std::max(m_boxSelectStart.x, m_boxSelectEnd.x);
+                float minSY = std::min(m_boxSelectStart.y, m_boxSelectEnd.y);
+                float maxSY = std::max(m_boxSelectStart.y, m_boxSelectEnd.y);
+                constexpr float kMinBox = 4.0f;
+                if ((maxSX - minSX) > kMinBox || (maxSY - minSY) > kMinBox) {
+                    if (!shift) {
+                        m_selectedEntities.clear();
+                        m_selectedEntity = {0, 0};
+                    }
+                    for (auto& tile : m_tilemap) {
+                        if (!world.isValid(tile.entity)) continue;
+                        vec2 sc = worldToScreen(tile.position, camP2, m_editorCamZoom,
+                                               viewportMin, m_viewportSize);
+                        if (sc.x >= minSX && sc.x <= maxSX &&
+                            sc.y >= minSY && sc.y <= maxSY) {
+                            bool already = std::any_of(m_selectedEntities.begin(), m_selectedEntities.end(),
+                                [&](ECS::Entity e){ return e.id == tile.entity.id && e.generation == tile.entity.generation; });
+                            if (!already)
+                                m_selectedEntities.push_back(tile.entity);
+                        }
+                    }
+                    if (!m_selectedEntities.empty())
+                        m_selectedEntity = m_selectedEntities.front();
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// renderPrefabBrowser
+// ---------------------------------------------------------------------------
+
+void EditorState::renderPrefabBrowser() {
+    using json = nlohmann::json;
+    ImGui::Begin("Prefabs");
+
+    auto& world = m_scene.GetWorld();
+
+    // --- Save as Prefab ---
+    if (ImGui::CollapsingHeader("Save as Prefab", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (world.isValid(m_selectedEntity)) {
+            std::string tagName = "Entity";
+            if (auto* tag = world.getComponent<Components::Tag>(m_selectedEntity))
+                tagName = tag->tag;
+            ImGui::TextDisabled("Selected: %s", tagName.c_str());
+        } else {
+            ImGui::TextDisabled("No entity selected");
+        }
+        ImGui::SetNextItemWidth(-1.f);
+        ImGui::InputText("Name##prefabname",     m_savePrefabNameBuf,     sizeof(m_savePrefabNameBuf));
+        ImGui::SetNextItemWidth(-1.f);
+        ImGui::InputText("Category##prefabcat",  m_savePrefabCategoryBuf, sizeof(m_savePrefabCategoryBuf));
+
+        bool canSave = world.isValid(m_selectedEntity) && m_savePrefabNameBuf[0] != '\0';
+        if (!canSave) ImGui::BeginDisabled();
+        if (ImGui::Button("Save Prefab##save", ImVec2(-1, 0)))
+            savePrefabFromEntity(m_selectedEntity, m_savePrefabNameBuf, m_savePrefabCategoryBuf);
+        if (!canSave) ImGui::EndDisabled();
+    }
+
+    ImGui::Separator();
+
+    // --- Prefab Library ---
+    if (ImGui::CollapsingHeader("Prefab Library", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Refresh##prefabrefresh")) loadAvailablePrefabs();
+        ImGui::SameLine();
+        ImGui::TextDisabled("%zu prefabs", m_availablePrefabs.size());
+
+        float thumbSize  = 64.f;
+        float padding    = 8.f;
+        float cellSize   = thumbSize + padding;
+        float panelWidth = ImGui::GetContentRegionAvail().x;
+        int   cols       = std::max(1, static_cast<int>(panelWidth / cellSize));
+
+        ImGui::BeginChild("##prefablist", ImVec2(0, 260), true);
+        if (ImGui::BeginTable("##prefabgrid", cols)) {
+            for (int i = 0; i < static_cast<int>(m_availablePrefabs.size()); ++i) {
+                ImGui::TableNextColumn();
+                ImGui::PushID(i);
+                const auto& pname = m_availablePrefabs[i];
+                bool isSelected = (m_selectedPrefabIndex == i);
+
+                // Read texture from prefab JSON for thumbnail
+                std::string texId;
+                {
+                    std::ifstream pf("assets/prefabs/" + pname + ".json");
+                    if (pf.is_open()) {
+                        try {
+                            json pj; pf >> pj;
+                            if (pj.contains("components") &&
+                                pj["components"].contains("spriteRenderer") &&
+                                pj["components"]["spriteRenderer"].contains("textureId"))
+                                texId = pj["components"]["spriteRenderer"]["textureId"].get<std::string>();
+                        } catch (...) {}
+                    }
+                }
+
+                auto tex = texId.empty() ? nullptr : Assets::TextureManager::Get(texId);
+                bool clicked = false;
+                if (tex && tex->id() != 0)
+                    clicked = ImGui::ImageButton("##thumb", (ImTextureID)(intptr_t)tex->id(),
+                                                 ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0));
+                else {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.f));
+                    clicked = ImGui::Button("##fallback", ImVec2(thumbSize, thumbSize));
+                    ImGui::PopStyleColor();
+                }
+                if (clicked) {
+                    m_selectedPrefabIndex = i;
+                    m_selectedTilePrefab  = pname;
+                }
+
+                // Selection highlight
+                if (isSelected) {
+                    ImVec2 rmin = ImGui::GetItemRectMin();
+                    ImVec2 rmax = ImGui::GetItemRectMax();
+                    ImGui::GetWindowDrawList()->AddRect(rmin, rmax,
+                        IM_COL32(255, 200, 0, 255), 0.f, 0, 2.f);
+                }
+
+                // Drag source
+                if (ImGui::BeginDragDropSource()) {
+                    ImGui::SetDragDropPayload("PREFAB_NAME", pname.c_str(), pname.size() + 1);
+                    ImGui::Text("Drag: %s", pname.c_str());
+                    ImGui::EndDragDropSource();
+                }
+
+                // Right-click context menu
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Spawn at Origin"))
+                        spawnPrefab(pname, {0.f, 0.f});
+                    if (ImGui::MenuItem("Delete Prefab"))
+                        deletePrefab(pname);
+                    ImGui::EndPopup();
+                }
+
+                ImGui::TextWrapped("%s", pname.c_str());
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+        }
+        ImGui::EndChild();
+    }
+
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderTilePalette
+// ---------------------------------------------------------------------------
+
+void EditorState::renderTilePalette() {
+    if (!m_showTilePalette || !m_tileMapMode) return;
+
+    ImGui::Begin("Tile Palette", &m_showTilePalette);
+
+    for (int i = 0; i < static_cast<int>(m_availablePrefabs.size()); ++i) {
+        const auto& pname = m_availablePrefabs[i];
+        bool isSelected = (pname == m_selectedTilePrefab);
+        if (ImGui::Selectable(pname.c_str(), isSelected)) {
+            m_selectedTilePrefab = pname;
+            m_selectedPrefabIndex = i;
+            m_paintMode = PaintMode::Paint;
+        }
+    }
+
+    ImGui::Separator();
+    if (!m_selectedTilePrefab.empty())
+        ImGui::TextColored(ImVec4(0.4f, 1.f, 0.4f, 1.f), "Active: %s", m_selectedTilePrefab.c_str());
+    else
+        ImGui::TextDisabled("No tile selected");
+
+    ImGui::End();
 }
 
 } // namespace Runtime

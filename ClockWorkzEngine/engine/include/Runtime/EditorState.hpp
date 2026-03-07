@@ -52,12 +52,42 @@ private:
     void renderStatsWindow();
     void renderScriptsBrowser();
     void renderAudioBrowser();
+    void renderPrefabBrowser();
+    void renderTilePalette();
 
     // ----- Scene helpers -----
     void renderGrid();
     void renderGizmos(const vec2& viewportMin);
     void loadScene(const std::string& path);
     void saveScene();
+
+    // ----- Prefab helpers -----
+    void        loadAvailablePrefabs();
+    void        savePrefabFromEntity(ECS::Entity entity, const std::string& name, const std::string& category);
+    ECS::Entity spawnPrefab(const std::string& prefabName, vec2 position);
+    void        deletePrefab(const std::string& prefabName);
+
+    // ----- Tilemap types (declared here so method signatures can use them) -----
+    struct TileData {
+        std::string prefabName;
+        vec2        position{};
+        int         layer{0};
+        ECS::Entity entity{0, 0};
+    };
+    struct EntityGroup {
+        std::string              name;
+        std::vector<ECS::Entity> entities;
+    };
+    enum class PaintMode { Paint, Erase, Select };
+
+    // ----- Tilemap helpers -----
+    void         handleTileMapInput(const vec2& viewportMin);
+    void         saveTilemap(const std::string& filepath);
+    void         loadTilemap(const std::string& filepath);
+    void         clearTilemap();
+    bool         isCellOccupied(vec2 worldPos, int layer) const;
+    EntityGroup* getOrCreateLayerGroup(int layer);
+    void         removeEntityFromGroups(ECS::Entity entity);
 
     // ----- Undo/redo -----
     void executeCommand(std::unique_ptr<IEditorCommand> cmd);
@@ -96,6 +126,25 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+
+    // ----- Prefab Browser -----
+    std::vector<std::string> m_availablePrefabs;
+    int                      m_selectedPrefabIndex{-1};
+    char                     m_savePrefabNameBuf[128]{};
+    char                     m_savePrefabCategoryBuf[64]{"Custom"};
+
+    // ----- Tilemap -----
+    std::vector<TileData>    m_tilemap;
+    std::vector<EntityGroup> m_entityGroups;
+    bool                     m_tileMapMode{false};
+    bool                     m_showTilePalette{false};
+    bool                     m_paintedThisFrame{false};
+    std::string              m_selectedTilePrefab;
+    PaintMode                m_paintMode{PaintMode::Paint};
+    int                      m_currentLayer{0};
+    int                      m_numLayers{3};
+    std::vector<bool>        m_layerVisible;
+    char                     m_tilemapPathBuf[256]{"assets/scenes/tilemap.json"};
 
     // ----- Gizmos -----
     enum class GizmoMode { None, Translation, Rotation, Scale };
