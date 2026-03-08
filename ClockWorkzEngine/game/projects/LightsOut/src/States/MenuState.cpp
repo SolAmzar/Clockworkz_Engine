@@ -50,7 +50,6 @@ reserved.
 using Assets::ResourceManager;
 using Graphics::Shader;
 using namespace Gameplay;
-#include "States/Level1State.hpp"
 #include "States/TestLevelState.hpp"
 
 namespace Runtime {
@@ -178,10 +177,6 @@ void MenuState::select() {
   const std::string &choice = m_items[m_selected];
 
   if (choice == "Start Game") {
-#if 1
-    //*** DO NOT REMOVE! Working on SwitchTo GSM*****
-    // m_gsm.switchTo(std::make_shared<Level1State>(m_input, m_gsm));
-    // m_gsm.push(std::make_shared<Level1State>(m_input, m_gsm));
     m_gsm.switchTo(std::make_shared<TestLevelState>(m_input, m_gsm));
 
     // m_audio.stop(m_audio.findChannel("menu_bgm"));
@@ -191,9 +186,6 @@ void MenuState::select() {
     m_bgmChannel = 0;
     m_bgmPaused = true;
 
-    // m_gsm.push(std::make_shared<PlayState>("Level_01", m_input, m_gsm));
-#endif
-    // std::cout << "PlayState is currently disabled for refactoring.\n";
     return;
   }
   if (choice == "Exit Game") {

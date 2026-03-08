@@ -16,7 +16,7 @@
 #include "Components/Transform.hpp"
 #include "Graphics/RenderingManager.hpp"
 // Game-specific components
-#include "Systems/LightRenderSystem.hpp"
+#include "Systems/LightRenderSystem.hpp" // engine
 #include "Components/ActivationZone.hpp"
 #include "Components/Battery.hpp"
 #include "Components/Door.hpp"
@@ -33,6 +33,7 @@
 #include "Systems/PlayerSystem.hpp"
 #include "Systems/AISystem.hpp"
 #include <iostream>
+#include <memory>
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
 #include <cstdlib>
@@ -48,9 +49,16 @@ int main()
 {
 	std::cout << "[Main] Booting ClockWorkz Engine...\n";
 #ifdef _DEBUG
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	// Use ALLOC_MEM_DF only — don't auto-dump at exit.
+	// We call _CrtDumpMemoryLeaks() explicitly after engine shutdown so that
+	// all C++ objects (including std::filesystem thread-local caches and
+	// ResourceManager static maps) are fully destroyed first, avoiding the
+	// false-positive wstring leaks that LEAK_CHECK_DF reports at CRT teardown.
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF);
 #endif
 
+	int _result;
+	{
 	Core::Engine engine;
 
 	// Game component registrar: called by every Scene::Init() so game-specific
@@ -273,17 +281,20 @@ int main()
 
 	// Scene setup: called after Scene::Init() to attach game-specific callbacks
 	// (particle update/render, player spawn reset, death/portal/respawn logic).
-	engine.setSceneSetup([](Runtime::Scene& scene) {
+	// Systems are shared_ptrs captured by the lambda so they are destroyed when
+	// the engine goes out of scope, not as static locals at process exit.
+	auto playerSystemPtr = std::make_shared<Systems::PlayerSystem>();
+	auto aiSystemPtr     = std::make_shared<Systems::AISystem>();
+
+	engine.setSceneSetup([playerSystemPtr, aiSystemPtr](Runtime::Scene& scene) {
 		scene.setGameCallbacks(
 			// onUpdate: particles + collision death + portal transitions
-			[](ECS::World& world, double dt, Systems::CollisionSystem& cols, Runtime::Scene& scene) {
+			[playerSystemPtr, aiSystemPtr](ECS::World& world, double dt, Systems::CollisionSystem& cols, Runtime::Scene& scene) {
 				// PlayerSystem: input, animation, torch, battery, footsteps
-				static Systems::PlayerSystem playerSystem;
-				playerSystem.update(world, dt, Core::Engine::Get().input(), nullptr);
+				playerSystemPtr->update(world, dt, Core::Engine::Get().input(), nullptr);
 
 				// AISystem: enemy state machine (uses enemy_ai.lua internally)
-				static Systems::AISystem aiSystem;
-				aiSystem.update(world, dt, nullptr);
+				aiSystemPtr->update(world, dt, nullptr);
 
 				// Particle emitter update
 				world.each<Components::Transform, Components::ParticleEmitter>(
@@ -391,5 +402,10 @@ int main()
 		return std::make_shared<Runtime::EditorHubState>(e.gsm(), e.input());
 	});
 
-	return engine.Run();
+	_result = engine.Run();
+	} // engine + all owned states/systems destroyed here
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks(); // report after all C++ objects are gone
+#endif
+	return _result;
 }

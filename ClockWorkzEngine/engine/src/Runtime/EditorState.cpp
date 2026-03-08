@@ -71,6 +71,7 @@ reserved.
 #include "Components/TextRenderer.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
+#include "Systems/LightRenderSystem.hpp"
 
 namespace Runtime {
 
@@ -182,7 +183,10 @@ static void OpenInVSCode(const std::string& absPath) {
                    CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
     CloseHandle(pi.hProcess); CloseHandle(pi.hThread);
 #else
-    system(("code \"" + absPath + "\"").c_str());
+    // Sanitize path: reject if it contains shell metacharacters
+    static const std::string kBadChars = ";&|`$<>\n\r";
+    if (absPath.find_first_of(kBadChars) == std::string::npos)
+        system(("code \"" + absPath + "\"").c_str());
 #endif
 }
 
@@ -386,7 +390,6 @@ void EditorState::update(double dt) {
         camera.setZoom(m_editorCamZoom);
     }
 
-    static double lastMouseX = 0.0, lastMouseY = 0.0;
     double cx = 0.0, cy = 0.0;
     m_input.getMousePosition(cx, cy);
 
@@ -394,15 +397,15 @@ void EditorState::update(double dt) {
                    (m_input.isMouseDown(GLFW_MOUSE_BUTTON_MIDDLE) ||
                     m_input.isMouseDown(GLFW_MOUSE_BUTTON_RIGHT));
     if (panning) {
-        float dx = static_cast<float>(cx - lastMouseX);
-        float dy = static_cast<float>(cy - lastMouseY);
+        float dx = static_cast<float>(cx - m_lastMouseX);
+        float dy = static_cast<float>(cy - m_lastMouseY);
         float ps = 1.0f / m_editorCamZoom;
         m_editorCamPos.x -= dx * ps;
         m_editorCamPos.y += dy * ps;
         camera.setPosition(m_editorCamPos);
     }
-    lastMouseX = cx;
-    lastMouseY = cy;
+    m_lastMouseX = cx;
+    m_lastMouseY = cy;
 
     if (m_viewportFocused && m_input.isKeyDown(GLFW_KEY_SPACE)) {
         float sp = 500.0f / m_editorCamZoom * static_cast<float>(dt);
@@ -474,6 +477,8 @@ void EditorState::render(Core::Time* timer) {
     renderer.beginScenePass(camera.viewProj(), glm::vec4(1.0f));
     m_scene.Render(renderer);
     renderer.endScenePass();
+
+    Systems::renderLightPass(m_scene.GetWorld(), renderer);
 
     // Grid + collider outlines (debug pass, drawn on top of scene)
     if (m_showGrid || m_showColliders) {
@@ -828,15 +833,13 @@ void EditorState::renderStatsWindow() {
     }
 
     // History graph
-    static float s_history[128] = {};
-    static int   s_offset       = 0;
-    s_history[s_offset] = static_cast<float>(agg.usedBytes) / 1024.0f;
-    s_offset = (s_offset + 1) % 128;
+    m_statsHistory[m_statsHistoryOffset] = static_cast<float>(agg.usedBytes) / 1024.0f;
+    m_statsHistoryOffset = (m_statsHistoryOffset + 1) % 128;
 
     ImGui::Spacing();
     float graphMax = (agg.totalBytes > 0)
         ? static_cast<float>(agg.totalBytes) / 1024.0f : 1.0f;
-    ImGui::PlotLines("##memhist", s_history, 128, s_offset,
+    ImGui::PlotLines("##memhist", m_statsHistory, 128, m_statsHistoryOffset,
                      nullptr, 0.0f, graphMax, ImVec2(-1.0f, 60.0f));
 
     // Per-pool table
@@ -1594,8 +1597,8 @@ void EditorState::renderViewport() {
         vec2   worldPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
 
         // Pick the topmost entity under the cursor.
-        // Among entities whose bounds contain worldPos, prefer lowest sortOrder
-        // (lower sortOrder = rendered last = visually on top).
+        // Among entities whose bounds contain worldPos, prefer highest sortOrder
+        // (higher sortOrder = rendered last = visually on top).
         // Fall back to closest-center distance for entities without a SpriteRenderer.
         ECS::Entity bestEnt{0, 0};
         int   bestSort  = std::numeric_limits<int>::min();
@@ -2014,7 +2017,6 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
     }
     else if (m_gizmoMode == GizmoMode::Rotation) {
         float radius = kLen * 0.8f;
-        dl->AddCircle(origin, radius, colZ, 64, kThick * 0.5f);
 
         float dist = std::sqrt((mousePos.x - origin.x) * (mousePos.x - origin.x) +
                                (mousePos.y - origin.y) * (mousePos.y - origin.y));
@@ -2459,7 +2461,7 @@ void EditorState::renderAssetBrowser() {
 }
 
 // ---------------------------------------------------------------------------
-// renderScriptsBrowser
+// renderAnimationsBrowser
 // ---------------------------------------------------------------------------
 
 void EditorState::renderAnimationsBrowser() {
@@ -3530,7 +3532,7 @@ bool EditorState::isCellOccupied(vec2 worldPos, int layer) const {
     for (const auto& tile : m_tilemap) {
         if (tile.layer == layer &&
             world.isValid(tile.entity) &&
-            magnitude(tile.position - worldPos) < m_gridSize * 0.1f)
+            magnitude(tile.position - worldPos) < m_gridSize * 0.5f)
             return true;
     }
     return false;
@@ -3684,8 +3686,6 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
             }
         }
     } else if (m_paintMode == PaintMode::Select) {
-        auto& cam2   = Core::Engine::Get().camera();
-        vec2  camP2  = {cam2.position().x, cam2.position().y};
         bool  shift  = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
                        ImGui::IsKeyDown(ImGuiKey_RightShift);
 
@@ -3760,7 +3760,7 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                     }
                     for (auto& tile : m_tilemap) {
                         if (!world.isValid(tile.entity)) continue;
-                        vec2 sc = worldToScreen(tile.position, camP2, m_editorCamZoom,
+                        vec2 sc = worldToScreen(tile.position, camP, m_editorCamZoom,
                                                viewportMin, m_viewportSize);
                         if (sc.x >= minSX && sc.x <= maxSX &&
                             sc.y >= minSY && sc.y <= maxSY) {

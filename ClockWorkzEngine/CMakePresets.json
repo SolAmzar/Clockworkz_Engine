@@ -1,0 +1,58 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "LightsOut-Debug",
+      "displayName": "LightsOut (Debug)",
+      "description": "Build only the LightsOut project in Debug mode",
+      "binaryDir": "${sourceDir}/out/build/LightsOut-Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ACTIVE_PROJECT": "LightsOut"
+      }
+    },
+    {
+      "name": "LightsOut-Release",
+      "displayName": "LightsOut (Release)",
+      "description": "Build only the LightsOut project in Release mode",
+      "binaryDir": "${sourceDir}/out/build/LightsOut-Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ACTIVE_PROJECT": "LightsOut"
+      }
+    },
+    {
+      "name": "All-Debug",
+      "displayName": "All Projects (Debug)",
+      "description": "Build all projects under game/projects/ in Debug mode",
+      "binaryDir": "${sourceDir}/out/build/All-Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ACTIVE_PROJECT": ""
+      }
+    },
+    {
+      "name": "All-Release",
+      "displayName": "All Projects (Release)",
+      "description": "Build all projects under game/projects/ in Release mode",
+      "binaryDir": "${sourceDir}/out/build/All-Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ACTIVE_PROJECT": ""
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "LightsOut-Debug",
+      "configurePreset": "LightsOut-Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "LightsOut-Release",
+      "configurePreset": "LightsOut-Release",
+      "configuration": "Release"
+    }
+  ]
+}

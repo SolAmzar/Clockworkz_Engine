@@ -19,7 +19,7 @@
                         0.125
                     ]
                 },
-                "torch": {
+                "light": {
                     "active": true,
                     "angle": 60.0,
                     "color": {

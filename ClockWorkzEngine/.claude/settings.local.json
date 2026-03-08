@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(perl:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)"
     ]
   }
 }

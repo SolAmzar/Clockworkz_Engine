@@ -121,6 +121,8 @@ private:
     // ----- Editor camera -----
     glm::vec2               m_editorCamPos{0.0f, 0.0f};
     float                   m_editorCamZoom{1.0f};
+    double                  m_lastMouseX{0.0};
+    double                  m_lastMouseY{0.0};
 
     // ----- Grid -----
     bool                    m_showGrid{true};
@@ -129,6 +131,10 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+
+    // ----- Stats memory graph -----
+    float                   m_statsHistory[128]{};
+    int                     m_statsHistoryOffset{0};
 
     // ----- Asset browser -----
     std::string             m_selectedAsset;

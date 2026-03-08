@@ -125,7 +125,7 @@
                     ],
                     "visible": true
                 },
-                "torch": {
+                "light": {
                     "active": false,
                     "angle": 60.0,
                     "color": {

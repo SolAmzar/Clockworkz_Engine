@@ -417,8 +417,8 @@ void RenderingManager::beginLightPass(
                   glm::normalize(glm::vec2(cos(playerRotationAngle),
                                            sin(playerRotationAngle))));
   shader->setFloat("uAngle", glm::radians(lightAngle)); // cone width ~60° total
-  shader->setFloat("uRadius", 300.0f);
-  shader->setVec3("uLightColor", glm::vec3(1.0f, 0.9f, 0.6f));
+  shader->setFloat("uRadius", radius);
+  shader->setVec3("uLightColor", color);
 
   // Clamped visual battery so it doesn't get too dim to see
   float visualBattery = std::max(batteryFactor, 0.35f);
@@ -435,8 +435,6 @@ void RenderingManager::beginLightPass(
   }
 
   shader->setFloat("uFlicker", flicker);
-  (void)radius;
-  (void)color;
 }
 
 void RenderingManager::endLightPass() {
