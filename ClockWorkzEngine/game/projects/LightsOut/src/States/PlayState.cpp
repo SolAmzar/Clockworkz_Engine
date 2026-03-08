@@ -53,7 +53,8 @@ reserved.
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <Assets/TextureManager.hpp>
-#include <Components/PlayerController.hpp>
+#include <Components/Collider.hpp>
+#include <Components/Tag.hpp>
 #include <Core/Engine.hpp>
 #include <Core/Time.hpp>
 #include <GL/glew.h>
@@ -511,7 +512,6 @@ void PlayState::update(double dt) {
       m_lightSystem.update(world, dt);
       m_fragmentSystem.update(world, dt);
       m_aiSystem.update(world, dt);
-      m_playerSystem.update(world, dt, m_input, layerFlags);
       m_doorSystem.update(world, dt);
       m_doorSwingSystem.update(world, dt);
     }
@@ -519,9 +519,10 @@ void PlayState::update(double dt) {
     // ---- CAMERA FOLLOW (ECS Based) ----
     // This ensures camera tracks player even if "m_player" GameObject pointer
     // is stale
-    scene->GetWorld().each<Components::PlayerController, Components::Transform>(
-        [&](ECS::Entity, Components::PlayerController &,
+    scene->GetWorld().each<Components::Tag, Components::Transform>(
+        [&](ECS::Entity, Components::Tag &tag,
             Components::Transform &t) {
+          if (tag.tag != "Player") return;
           auto &camera = Core::Engine::Get().camera();
           camera.setPosition(glm::vec2(t.position.x, t.position.y));
         });

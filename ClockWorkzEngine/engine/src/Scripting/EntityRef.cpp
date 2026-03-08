@@ -26,6 +26,7 @@ reserved.
 #include "Components/Door.hpp"
 #include "Components/DoorSwing.hpp"
 #include "Components/LightExposure.hpp"
+#include "Components/SpriteAnimator.hpp"
 
 namespace Scripting {
 
@@ -156,6 +157,8 @@ float EntityRef::getLightRadius() const { auto* t = m_world ? m_world->getCompon
 float EntityRef::getLightAngle() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->angle : 0.f; }
 float EntityRef::getLightOffsetX() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.x : 0.f; }
 float EntityRef::getLightOffsetY() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.y : 0.f; }
+void  EntityRef::setLightOffsetX(float x) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.x = x; }
+void  EntityRef::setLightOffsetY(float y) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.y = y; }
 
 // --- Fragment ---
 bool  EntityRef::hasFragment() const { return m_world && m_world->hasComponent<Components::Fragment>(m_entity); }
@@ -224,6 +227,14 @@ void EntityRef::setColliderMoveable(bool v) { auto* c = m_world ? m_world->getCo
 // --- Tag ---
 bool        EntityRef::hasTag() const { return m_world && m_world->hasComponent<Components::Tag>(m_entity); }
 std::string EntityRef::getTagValue() const { auto* t = m_world ? m_world->getComponent<Components::Tag>(m_entity) : nullptr; return t ? t->tag : ""; }
+
+// --- SpriteAnimator ---
+bool EntityRef::hasSpriteAnimator() const { return m_world && m_world->hasComponent<Components::SpriteAnimator>(m_entity); }
+void EntityRef::playAnimation(const std::string& name, bool force) { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; if (a) a->play(name, force); }
+std::string EntityRef::getCurrentAnimationClip() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->currentClip : std::string{}; }
+bool EntityRef::isAnimationPlaying() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a && a->playing; }
+float EntityRef::getAnimationPlaybackSpeed() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->playbackSpeed : 1.f; }
+void  EntityRef::setAnimationPlaybackSpeed(float s) { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; if (a) a->playbackSpeed = s; }
 
 // --- Generic script property access ---
 

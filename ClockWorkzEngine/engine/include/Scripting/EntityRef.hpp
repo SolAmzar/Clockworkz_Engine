@@ -94,6 +94,8 @@ public:
   float getLightAngle() const;
   float getLightOffsetX() const;
   float getLightOffsetY() const;
+  void  setLightOffsetX(float x);
+  void  setLightOffsetY(float y);
 
   // --- Fragment ---
   bool  hasFragment() const;
@@ -162,6 +164,14 @@ public:
   // --- Tag ---
   bool        hasTag() const;
   std::string getTagValue() const;
+
+  // --- SpriteAnimator ---
+  bool        hasSpriteAnimator() const;
+  void        playAnimation(const std::string& clipName, bool force = false);
+  std::string getCurrentAnimationClip() const;
+  bool        isAnimationPlaying() const;
+  float       getAnimationPlaybackSpeed() const;
+  void        setAnimationPlaybackSpeed(float speed);
 
   // --- Generic script property access (Unity-like: game components as pure Lua) ---
   bool hasScript(const std::string& scriptPath) const;

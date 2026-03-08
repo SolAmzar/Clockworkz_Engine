@@ -29,9 +29,14 @@
                     "shape": 1,
                     "width": 30.0
                 },
-                "playerController": {
-                    "sprintMultiplier": 2.0,
-                    "walkMultiplier": 1.0
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "player_controller.lua"
+                    }
+                ],
+                "tag": {
+                    "tag": "Player"
                 },
                 "spriteAnimator": {
                     "filename": "player.json"

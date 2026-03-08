@@ -17,7 +17,7 @@ reserved.
 #include "Components/Health.hpp" // Added
 #include "Components/Layer.hpp"
 #include "Components/LightExposure.hpp"
-#include "Components/PlayerController.hpp"
+#include "Components/Tag.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
@@ -60,9 +60,10 @@ void AISystem::update(ECS::World &world, double dt,
   bool playerFound = false;
   bool playerDead = false;
 
-  world.each<Components::PlayerController, Components::Transform>(
-      [&](ECS::Entity e, Components::PlayerController &,
+  world.each<Components::Tag, Components::Transform>(
+      [&](ECS::Entity e, Components::Tag &tag,
           Components::Transform &t) {
+        if (tag.tag != "Player") return;
         playerPos = t.position;
         playerFound = true;
         if (auto *anim = world.getComponent<Components::SpriteAnimator>(e)) {

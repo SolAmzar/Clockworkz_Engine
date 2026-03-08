@@ -97,9 +97,14 @@
                     "pickupRadius": 50.0,
                     "requiredFragments": 10
                 },
-                "playerController": {
-                    "sprintMultiplier": 2.0,
-                    "walkMultiplier": 1.0
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "player_controller.lua"
+                    }
+                ],
+                "tag": {
+                    "tag": "Player"
                 },
                 "spriteAnimator": {
                     "filename": "player.json"

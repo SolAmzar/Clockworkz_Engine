@@ -15,12 +15,16 @@
                     {
                         "enabled": true,
                         "scriptPath": "player_controller.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "player_movement.lua"
                     }
                 ],
+                "tag": {
+                    "tag": "Player"
+                },
+                "velocity": {
+                    "moveSpeed": 1.0,
+                    "x": 0.0,
+                    "y": 0.0
+                },
                 "spriteAnimator": {
                     "filename": "player.json"
                 },

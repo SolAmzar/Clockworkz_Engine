@@ -3,9 +3,14 @@
         {
             "active": true,
             "components": {
-                "playerController": {
-                    "sprintMultiplier": 2.0,
-                    "walkMultiplier": 1.0
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "player_controller.lua"
+                    }
+                ],
+                "tag": {
+                    "tag": "Player"
                 },
                 "spriteAnimator": {
                     "filename": "player.json"

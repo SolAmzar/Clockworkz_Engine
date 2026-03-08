@@ -7,7 +7,7 @@
 # target is created. Asset/FMOD copy commands live in each project's own
 # CMakeLists.txt. GAME_SHARED_ASSETS_DIR is passed so projects can reference
 # the shared game/assets/ (shaders, fonts) without a hardcoded relative path.
-
+ 
 set(ACTIVE_PROJECT "" CACHE STRING
   "Build only this project subfolder under game/projects/ (empty = build all)")
 

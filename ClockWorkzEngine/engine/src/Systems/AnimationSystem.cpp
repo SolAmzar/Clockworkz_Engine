@@ -41,8 +41,8 @@ void AnimationSystem::update(ECS::World &world, double dt) {
           anim.frameIndex = 0;
         }
 
-        // Update timer
-        anim.timer += static_cast<float>(dt);
+        // Update timer (scaled by playback speed)
+        anim.timer += static_cast<float>(dt) * anim.playbackSpeed;
 
         // Check frame duration
         float duration = clip.frames[anim.frameIndex].duration;

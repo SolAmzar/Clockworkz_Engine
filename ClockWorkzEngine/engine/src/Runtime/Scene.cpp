@@ -21,6 +21,7 @@
 #include "Components/Tag.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
+#include "Components/UIButton.hpp"
 #include "Components/Velocity.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <cmath>
@@ -83,6 +84,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::LuaScript>();
   m_world.registerComponent<Components::Layer>();
   m_world.registerComponent<Components::Light>();
+  m_world.registerComponent<Components::UIButton>();
 
   // Let the game register its own component types (set via Engine::setComponentRegistrar).
   Core::Engine::Get().invokeComponentRegistrar(m_world);

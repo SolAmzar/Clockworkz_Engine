@@ -27,6 +27,7 @@ reserved.
 #include "Components/Tag.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
+#include "Components/UIButton.hpp"
 #include "Components/Velocity.hpp"
 
 #pragma warning(push, 0)
@@ -180,6 +181,16 @@ static json SerializeWorld(ECS::World &world,
           {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
           {"color",  {{"r", lt->color.r},  {"g", lt->color.g},  {"b", lt->color.b}}},
           {"radius", lt->radius}, {"angle", lt->angle}, {"intensity", lt->intensity}};
+    }
+
+    // UIButton
+    if (auto *ub = world.getComponent<Components::UIButton>(entity)) {
+      obj["components"]["uiButton"] = {
+          {"action",       ub->action},
+          {"interactable", ub->interactable},
+          {"normalColor",  {{"r", ub->normalColor.r}, {"g", ub->normalColor.g}, {"b", ub->normalColor.b}}},
+          {"hoverColor",   {{"r", ub->hoverColor.r},  {"g", ub->hoverColor.g},  {"b", ub->hoverColor.b}}}
+      };
     }
 
     // Game-specific components (registered via SceneSerializer::setExtensions)
@@ -424,6 +435,25 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         lt.radius = lc.value("radius", 300.f); lt.angle = lc.value("angle", 60.f);
         lt.intensity = lc.value("intensity", 1.f);
         world.addComponent(entity, lt);
+      }
+
+      // UIButton
+      if (components.contains("uiButton")) {
+        auto &ub = components["uiButton"];
+        Components::UIButton btn;
+        btn.action      = ub.value("action", "");
+        btn.interactable = ub.value("interactable", true);
+        if (ub.contains("normalColor")) {
+          btn.normalColor = {ub["normalColor"].value("r", 1.f),
+                             ub["normalColor"].value("g", 1.f),
+                             ub["normalColor"].value("b", 1.f)};
+        }
+        if (ub.contains("hoverColor")) {
+          btn.hoverColor = {ub["hoverColor"].value("r", 1.f),
+                            ub["hoverColor"].value("g", 0.8f),
+                            ub["hoverColor"].value("b", 0.f)};
+        }
+        world.addComponent(entity, btn);
       }
 
       // Game-specific components (registered via SceneSerializer::setExtensions)

@@ -69,6 +69,7 @@ reserved.
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
+#include "Components/UIButton.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Systems/LightRenderSystem.hpp"
@@ -1187,6 +1188,10 @@ void EditorState::renderInspector() {
             addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world);
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("UI")) {
+            addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Scripting")) {
             // LuaScript: always available — adds a new script slot each click
             if (ImGui::MenuItem("LuaScript")) {
@@ -1539,6 +1544,25 @@ void EditorState::renderInspector() {
             ImGui::SliderFloat("Intensity##lt", &lt->intensity, 0.0f, 1.0f);
         }
         if (rm) world.removeComponent<Components::Light>(m_selectedEntity);
+    }
+
+    // ── UIButton ─────────────────────────────────────────────────────────────
+    if (world.hasComponent<Components::UIButton>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("UIButton##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##ruib")) rm = true;
+        if (open) {
+            auto *btn = world.getComponent<Components::UIButton>(m_selectedEntity);
+            char abuf[256]; snprintf(abuf, sizeof(abuf), "%s", btn->action.c_str());
+            if (ImGui::InputText("Action##uib", abuf, sizeof(abuf)))
+                btn->action = abuf;
+            ImGui::Checkbox("Interactable##uib", &btn->interactable);
+            ImGui::ColorEdit3("Normal Color##uib", glm::value_ptr(btn->normalColor));
+            ImGui::ColorEdit3("Hover Color##uib",  glm::value_ptr(btn->hoverColor));
+        }
+        if (rm) world.removeComponent<Components::UIButton>(m_selectedEntity);
     }
 
     ImGui::End();

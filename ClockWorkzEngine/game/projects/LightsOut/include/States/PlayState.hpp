@@ -33,7 +33,6 @@ reserved.
 #include "Systems/DoorSystem.hpp"
 #include "Systems/FragmentSystem.hpp"
 #include "Systems/LightExposureSystem.hpp"
-#include "Systems/PlayerSystem.hpp"
 #include <map>
 #include <memory>
 #include <string>
@@ -160,7 +159,6 @@ private:
   void syncEnemyTransforms();
 
   // Game-specific ECS systems (removed from Scene, owned by PlayState)
-  Systems::PlayerSystem m_playerSystem;
   Systems::AISystem m_aiSystem;
   Systems::BatterySystem m_batterySystem;
   Systems::FragmentSystem m_fragmentSystem;

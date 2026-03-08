@@ -429,6 +429,49 @@ namespace Scripting {
     }
 
     //-------------------------------------------------------------------------
+    // EntityRef Binding — static helpers (no heap allocation, no closures)
+    //-------------------------------------------------------------------------
+
+    // playAnimation with optional force parameter
+    static void playAnimation1(Scripting::EntityRef& ref, const std::string& name)
+        { ref.playAnimation(name, false); }
+    static void playAnimation2(Scripting::EntityRef& ref, const std::string& name, bool force)
+        { ref.playAnimation(name, force); }
+
+    // getScriptProp / setScriptProp (sol::this_state injection works in free fns too)
+    static sol::object getScriptPropFn(Scripting::EntityRef& ref,
+                                       const std::string& scriptPath,
+                                       const std::string& key,
+                                       sol::this_state ts)
+    {
+        sol::state_view sv(ts);
+        auto* entry = ref.findScriptEntry(scriptPath);
+        if (!entry) return sol::make_object(sv, sol::nil);
+        auto it = entry->properties.find(key);
+        if (it == entry->properties.end())
+            return sol::make_object(sv, sol::nil);
+        return std::visit([&sv](auto&& v) -> sol::object {
+            return sol::make_object(sv, v);
+        }, it->second);
+    }
+
+    static void setScriptPropFn(Scripting::EntityRef& ref,
+                                const std::string& scriptPath,
+                                const std::string& key,
+                                sol::object val)
+    {
+        auto* entry = ref.findScriptEntry(scriptPath);
+        if (!entry) return;
+        auto it = entry->properties.find(key);
+        if (it == entry->properties.end()) return;
+        std::visit([&](auto&& existing) {
+            using T = std::decay_t<decltype(existing)>;
+            auto opt = val.as<sol::optional<T>>();
+            if (opt) it->second = *opt;
+        }, it->second);
+    }
+
+    //-------------------------------------------------------------------------
     // EntityRef Binding
     //-------------------------------------------------------------------------
     void RegisterEntityRef(sol::state& lua) {
@@ -494,6 +537,8 @@ namespace Scripting {
             "getLightAngle",  &Scripting::EntityRef::getLightAngle,
             "getLightOffsetX",&Scripting::EntityRef::getLightOffsetX,
             "getLightOffsetY",&Scripting::EntityRef::getLightOffsetY,
+            "setLightOffsetX",&Scripting::EntityRef::setLightOffsetX,
+            "setLightOffsetY",&Scripting::EntityRef::setLightOffsetY,
 
             // Fragment
             "hasFragment",              &Scripting::EntityRef::hasFragment,
@@ -563,36 +608,18 @@ namespace Scripting {
             "hasTag",    &Scripting::EntityRef::hasTag,
             "getTagValue",&Scripting::EntityRef::getTagValue,
 
+            // SpriteAnimator
+            "hasSpriteAnimator", &Scripting::EntityRef::hasSpriteAnimator,
+            "playAnimation", sol::overload(&playAnimation1, &playAnimation2),
+            "getCurrentClip",    &Scripting::EntityRef::getCurrentAnimationClip,
+            "isAnimationPlaying",      &Scripting::EntityRef::isAnimationPlaying,
+            "getAnimationPlaybackSpeed",&Scripting::EntityRef::getAnimationPlaybackSpeed,
+            "setAnimationPlaybackSpeed",&Scripting::EntityRef::setAnimationPlaybackSpeed,
+
             // Generic script property access (Unity-like: game components as pure Lua)
             "hasScript", &Scripting::EntityRef::hasScript,
-            "getScriptProp", [](Scripting::EntityRef& ref,
-                                const std::string& scriptPath,
-                                const std::string& key,
-                                sol::this_state ts) -> sol::object {
-                sol::state_view sv(ts);
-                auto* entry = ref.findScriptEntry(scriptPath);
-                if (!entry) return sol::make_object(sv, sol::nil);
-                auto it = entry->properties.find(key);
-                if (it == entry->properties.end())
-                    return sol::make_object(sv, sol::nil);
-                return std::visit([&sv](auto&& v) -> sol::object {
-                    return sol::make_object(sv, v);
-                }, it->second);
-            },
-            "setScriptProp", [](Scripting::EntityRef& ref,
-                                const std::string& scriptPath,
-                                const std::string& key,
-                                sol::object val) {
-                auto* entry = ref.findScriptEntry(scriptPath);
-                if (!entry) return;
-                auto it = entry->properties.find(key);
-                if (it == entry->properties.end()) return;
-                std::visit([&](auto&& existing) {
-                    using T = std::decay_t<decltype(existing)>;
-                    auto opt = val.as<sol::optional<T>>();
-                    if (opt) it->second = *opt;
-                }, it->second);
-            }
+            "getScriptProp", &getScriptPropFn,
+            "setScriptProp", &setScriptPropFn
         );
     }
 

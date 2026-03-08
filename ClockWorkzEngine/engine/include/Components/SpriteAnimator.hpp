@@ -49,6 +49,7 @@ struct SpriteAnimator {
 
   bool playing{false};
   bool paused{false};
+  float playbackSpeed{1.0f}; // Multiplier applied to frame timer (1 = authored speed)
 
   std::string filename; // Path to loaded animation file
 

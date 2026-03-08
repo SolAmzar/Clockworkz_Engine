@@ -1,4 +1,9 @@
+#include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
 #include "Core/Engine.hpp"
+#include "Assets/SoundManager.hpp"
+#include "Assets/TextureManager.hpp"
+#include "Graphics/Shader.hpp"
 #include "Runtime/EditorHubState.hpp"
 #include "Runtime/EditorState.hpp"
 #include "Runtime/EditorPlayState.hpp"
@@ -403,6 +408,18 @@ int main()
 	});
 
 	_result = engine.Run();
+
+	// Clear ResourceManager caches while the GL context is still alive.
+	// ResourceManager<T>::resources are non-local statics — their destructors
+	// run AFTER main() returns, which is AFTER _CrtDumpMemoryLeaks() below.
+	// Clearing them here (before the engine block closes) ensures the leak
+	// checker sees empty maps rather than false-positive leak reports for
+	// loaded fonts, shaders, and other cached assets.
+	Assets::ResourceManager<Assets::FontManager>::Clear();
+	Assets::ResourceManager<Graphics::Shader>::Clear();
+	Assets::TextureManager::Clear(); // clears Texture2D map + loadedTextures vector
+	Assets::SoundManager::Clear();   // clears AudioClip map + s_configs + s_loadedNames
+
 	} // engine + all owned states/systems destroyed here
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks(); // report after all C++ objects are gone

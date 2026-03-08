@@ -107,10 +107,35 @@
                     "pickupRadius": 50.0,
                     "requiredFragments": 10
                 },
-                "playerController": {
-                    "sprintMultiplier": 2.0,
-                    "walkMultiplier": 1.0
+                "light": {
+                    "active": false,
+                    "angle": 60.0,
+                    "color": {
+                        "b": 0.6000000238418579,
+                        "g": 0.8999999761581421,
+                        "r": 1.0
+                    },
+                    "intensity": 1.0,
+                    "offset": {
+                        "x": 35.0,
+                        "y": -20.0
+                    },
+                    "radius": 300.0
                 },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "baseWalkSpeed": 10.0,
+                            "bobAmount": 4.0,
+                            "bobSpeed": 6.0,
+                            "footstepInterval": 0.6000000238418579,
+                            "sprintMultiplier": 2.0,
+                            "walkSpeed": 10.0
+                        },
+                        "scriptPath": "player_controller.lua"
+                    }
+                ],
                 "spriteAnimator": {
                     "filename": "player.json"
                 },
@@ -135,21 +160,6 @@
                         0.125
                     ],
                     "visible": true
-                },
-                "light": {
-                    "active": false,
-                    "angle": 60.0,
-                    "color": {
-                        "b": 0.6000000238418579,
-                        "g": 0.8999999761581421,
-                        "r": 1.0
-                    },
-                    "intensity": 1.0,
-                    "offset": {
-                        "x": 35.0,
-                        "y": -20.0
-                    },
-                    "radius": 300.0
                 },
                 "transform": {
                     "pivot": {

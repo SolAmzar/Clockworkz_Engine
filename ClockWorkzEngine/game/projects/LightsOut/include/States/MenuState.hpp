@@ -3,29 +3,25 @@
 \file           MenuState.hpp
 \project        Lights Out
 \author(s)      [Lebon], 70%, [Amirul Syafiq] 30%
-\brief          Declares MenuState, the state representing the game�s main menu.
+\brief          Declares MenuState, the state representing the game's main menu.
                 Responsibilities include:
-                - Displaying menu options such as Start, Options, Credits, Exit
-                - Handling keyboard and mouse input for menu navigation
-                - Triggering state transitions (e.g., moving from menu to
-PlayState)
-                - Rendering UI text using FontManager and Shader resources
+                - Loading MainMenu.json scene (authored in level editor)
+                - Handling keyboard and mouse input for menu navigation via UIButton components
+                - Triggering state transitions (e.g., moving from menu to PlayState)
+                - Scaling the view to any window size via camera zoom
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 #pragma once
-#include "Gameplay/GameObject.hpp"
 #include "Runtime/GameState.hpp"
-#include <functional>
+#include "Runtime/Scene.hpp"
+#include "Systems/TextRenderSystem.hpp"
+#include "ECS/World.hpp"
 #include <memory>
 #include <string>
 #include <vector>
-
-namespace ClockWorkz::Assets {
-class FontManager;
-}
 
 namespace Platform {
 class InputManager;
@@ -47,14 +43,8 @@ class Camera2D;
 
 namespace Runtime {
 
-struct MenuPosition {
-  float centerX, centerY, scale;
-};
-
 class MenuState final : public GameState {
 public:
-  // quitFn is called when "Exit Game" is selected (Engine sets a flag / stops
-  // loop)
   MenuState(GameStateManager &gsm, Platform::InputManager &input,
             Platform::WindowManager &window, Audio::AudioManager &audio);
 
@@ -63,41 +53,34 @@ public:
   void onExit() override;
   void update(double dt) override;
   void render(Core::Time *timer) override;
-
   void renderImGui(Core::Time *timer) override;
 
 private:
-  void printMenu();
-  void moveUp();
-  void moveDown();
-  void select();
-
-  GameStateManager &m_gsm;
-  Platform::InputManager &m_input;
-  Platform::WindowManager &m_window;
-  Audio::AudioManager &m_audio;
-  // SceneManager m_scenes;
-  Graphics::RenderingManager *m_renderer{nullptr};
-  Graphics::Camera2D *m_cam{nullptr};
-  // std::function<void()>   m_quitFn;
-
-  Gameplay::GameObject m_background;
-  Gameplay::GameObject m_howToPlayScreen;
-  Gameplay::GameObject m_logo;
-
-  std::vector<std::string> m_items{"Start Game", "Load Game", "Option",
-                                   "How to Play", "Exit Game"};
-
-  int m_selected{0};
-  bool m_dirty{true};
-  bool m_showingHowToPlay{false};
-  bool m_debug{false};
-  int m_bgmChannel = 0;
-  bool m_bgmPaused = false;
-  float m_bgmVol = 1.4f;
-  bool m_loaded = false;
-  MenuPosition m_positions[5] = {0, 0, 0, 0, 0};
   void updateLayout(int w, int h);
+  void handleAction(const std::string &action);
+  void collectButtons();     // gathers UIButton entities in scene order
+  void applyHoverColors();   // writes normalColor/hoverColor to SpriteRenderer each frame
+
+  GameStateManager         &m_gsm;
+  Platform::InputManager   &m_input;
+  Platform::WindowManager  &m_window;
+  Audio::AudioManager      &m_audio;
+
+  Graphics::RenderingManager *m_renderer{nullptr};
+  Graphics::Camera2D         *m_cam{nullptr};
+
+  Runtime::Scene             m_menuScene;
+  Systems::TextRenderSystem  m_textRenderSystem;
+
+  // Ordered list of button entities (filled from world.each<UIButton> at load)
+  std::vector<ECS::Entity>   m_buttonEntities;
+  int                        m_selected{0};       // keyboard-nav index into m_buttonEntities
+  bool                       m_showingHowToPlay{false};
+  bool                       m_debug{false};
+
+  int   m_bgmChannel{0};
+  bool  m_bgmPaused{false};
+  float m_bgmVol{1.4f};
 };
 
 } // namespace Runtime

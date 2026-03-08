@@ -40,9 +40,14 @@
           "collectedCount": 0,
           "pickupRadius": 80.0
         },
-        "luaScript": {
-          "scriptPath": "assets/scripts/player_controller.lua",
-          "enabled": true
+        "luaScript": [
+          {
+            "enabled": true,
+            "scriptPath": "player_controller.lua"
+          }
+        ],
+        "tag": {
+          "tag": "Player"
         }
       },
       "name": "Player",

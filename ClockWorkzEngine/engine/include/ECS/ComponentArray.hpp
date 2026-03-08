@@ -43,6 +43,7 @@ reserved.
 #include <climits>    // UINT32_MAX
 #include <cstddef>
 #include <typeinfo>   // typeid
+#include <utility>    // std::move
 
 namespace ECS {
 
@@ -182,11 +183,16 @@ public:
         size_t lastIdx    = m_size - 1;
 
         if (removedIdx != lastIdx && m_size > 0) {
-            m_components[removedIdx] = m_components[lastIdx];
+            m_components[removedIdx] = std::move(m_components[lastIdx]);
             uint32_t movedId         = m_dense[lastIdx];
             m_dense[removedIdx]      = movedId;
             m_sparse[movedId]        = static_cast<uint32_t>(removedIdx);
         }
+
+        // Reset the tail slot so heap buffers inside T (e.g. std::string members
+        // in Tag, TextRenderer, UIButton) are released immediately rather than
+        // staying alive until the entire ComponentArray is destroyed.
+        m_components[lastIdx] = T{};
 
         m_sparse[entity.id] = INVALID_INDEX;
         m_dense[lastIdx]    = INVALID_ID;
