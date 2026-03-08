@@ -76,16 +76,6 @@ public:
   bool hasVelocity() const;
   bool hasHealth() const;
 
-  // --- Battery ---
-  bool hasBattery() const;
-  float getBatteryCharge() const;
-  void  setBatteryCharge(float c);
-  float getBatteryMaxCharge() const;
-  float getBatteryDrainRate() const;
-  float getBatteryChargeRate() const;
-  bool  isBatteryCharging() const;
-  void  setBatteryCharging(bool v);
-
   // --- Light ---
   bool  hasLight() const;
   bool  isLightActive() const;
@@ -96,54 +86,6 @@ public:
   float getLightOffsetY() const;
   void  setLightOffsetX(float x);
   void  setLightOffsetY(float y);
-
-  // --- Fragment ---
-  bool  hasFragment() const;
-  bool  isFragmentCollected() const;
-  void  setFragmentCollected(bool v);
-  float getFragmentBobSpeed() const;
-  float getFragmentBobAmount() const;
-  float getFragmentAnimTimer() const;
-  void  setFragmentAnimTimer(float t);
-  float getFragmentAlpha() const;
-  void  setFragmentAlpha(float a);
-  bool  getFragmentRequiresLight() const;
-
-  // --- FragmentCollector ---
-  bool  hasFragmentCollector() const;
-  int   getCollectedCount() const;
-  void  setCollectedCount(int n);
-  int   getRequiredFragments() const;
-  float getPickupRadius() const;
-
-  // --- Door ---
-  bool        hasDoor() const;
-  bool        isDoorOpen() const;
-  void        setDoorOpen(bool v);
-  int         getDoorRequiredFragments() const;
-  std::string getDoorOpenTexture() const;
-  std::string getDoorClosedTexture() const;
-
-  // --- DoorSwing ---
-  bool  hasDoorSwing() const;
-  bool  isDoorSwingOpen() const;
-  void  setDoorSwingOpen(bool v);
-  bool  isDoorSwingInitialized() const;
-  void  setDoorSwingInitialized(bool v);
-  float getDoorSwingInitialRotation() const;
-  void  setDoorSwingInitialRotation(float r);
-  float getDoorSwingAngle() const;
-  bool  isDoorSwingClockwise() const;
-  float getDoorSwingSpeed() const;
-
-  // --- LightExposure ---
-  bool  hasLightExposure() const;
-  float getLightExposureTime() const;
-  void  setLightExposureTime(float t);
-  float getMaxLightExposureTime() const;
-  bool  isInLight() const;
-  void  setInLight(bool v);
-  bool  isExposureDangerous() const;
 
   // --- SpriteRenderer ---
   bool        hasSpriteRenderer() const;
@@ -177,6 +119,11 @@ public:
   bool hasScript(const std::string& scriptPath) const;
   Components::LuaScriptEntry*       findScriptEntry(const std::string& scriptPath);
   const Components::LuaScriptEntry* findScriptEntry(const std::string& scriptPath) const;
+
+  // Raw ECS accessors — for game-side Lua extension lambdas that need to reach
+  // game-specific components without coupling the engine to them.
+  ECS::Entity  getEntity() const { return m_entity; }
+  ECS::World*  getWorld()  const { return m_world; }
 
 private:
   ECS::Entity m_entity;

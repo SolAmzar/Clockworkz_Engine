@@ -83,6 +83,13 @@ namespace Core {
 		void setSceneSetup(SceneSetupFn fn);
 		void invokeSceneSetup(Runtime::Scene& scene) const;
 
+		// Register game-specific Lua bindings.  Called once right after the engine
+		// runs RegisterAllBindings(), before any scripts are loaded.  Use this to
+		// extend EntityRef (or register new usertypes) with game-specific components
+		// without putting game code inside the engine's LuaBindings.cpp.
+		using LuaExtensionFn = std::function<void(Scripting::LuaManager&)>;
+		void setLuaExtensionRegistrar(LuaExtensionFn fn);
+
 		Runtime::GameStateManager& gsm() { return *m_gsm; }
 
 		// Read the configured start state name — only valid after Run() has started init.
@@ -168,5 +175,6 @@ namespace Core {
 		PlayFactory          m_playFactory;
 		ComponentRegistrar   m_componentRegistrar;
 		SceneSetupFn         m_sceneSetup;
+		LuaExtensionFn       m_luaExtensionFn;
 	};
 }

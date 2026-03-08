@@ -430,14 +430,15 @@ void EditorState::update(double dt) {
 
     // Delete key: delete all selected entities
     // Block only when a text field is active (e.g. renaming), allow everywhere else
-    if (m_input.wasKeyTriggered(GLFW_KEY_DELETE)) {
+    if (m_input.wasKeyTriggered(GLFW_KEY_DELETE) || m_input.wasKeyTriggered(GLFW_KEY_BACKSPACE)) {
         auto& log = Core::Engine::Get().logger();
-        log.info("[Editor] DELETE key detected. WantTextInput=" +
+        log.info("[Editor] DELETE/BACKSPACE key detected. WantTextInput=" +
                  std::string(ImGui::GetIO().WantTextInput ? "true" : "false") +
                  " | selectedCount=" + std::to_string(m_selectedEntities.size()) +
                  " | viewportFocused=" + std::string(m_viewportFocused ? "true" : "false"));
     }
-    if (!ImGui::GetIO().WantTextInput && m_input.wasKeyTriggered(GLFW_KEY_DELETE)) {
+    if (!ImGui::GetIO().WantTextInput &&
+        (m_input.wasKeyTriggered(GLFW_KEY_DELETE) || m_input.wasKeyTriggered(GLFW_KEY_BACKSPACE))) {
         auto& world = m_scene.GetWorld();
         for (auto e : m_selectedEntities) {
             if (!world.isValid(e)) continue;
@@ -581,8 +582,8 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderSystemsWindow();
     renderHierarchy();
     renderLoadSceneWindow();
-    renderInspector();
     renderViewport();
+    renderInspector();
     renderAssetBrowser();
     renderStatsWindow();
     renderScriptsBrowser();
@@ -1072,6 +1073,8 @@ void EditorState::renderHierarchy() {
 
         if (ImGui::Selectable(row.displayName.c_str(), selected,
                               ImGuiSelectableFlags_AllowDoubleClick)) {
+            // Clear any active text-field so Delete works immediately after selecting an entity
+            ImGui::ClearActiveID();
             bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
                          ImGui::IsKeyDown(ImGuiKey_RightShift);
             if (shift) {
@@ -1617,6 +1620,8 @@ void EditorState::renderViewport() {
         !m_tileMapMode &&
         m_gizmoActiveAxis == -1 &&
         !m_gizmoHoveredHandle) {
+        // Clear any active text-field focus so Delete key works immediately after clicking an entity
+        ImGui::ClearActiveID();
         ImVec2 mp       = ImGui::GetMousePos();
         vec2   worldPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
 

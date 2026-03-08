@@ -18,13 +18,7 @@ reserved.
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
-#include "Components/Battery.hpp"
 #include "Components/Light.hpp"
-#include "Components/Fragment.hpp"
-#include "Components/FragmentCollector.hpp"
-#include "Components/Door.hpp"
-#include "Components/DoorSwing.hpp"
-#include "Components/LightExposure.hpp"
 #include <filesystem>
 #include <iostream>
 
@@ -70,36 +64,8 @@ namespace Systems {
       });
   }
 
-  static void LuaWorldEachFragment(ECS::World& world, sol::function fn) {
-      world.each<Components::Fragment>([&](ECS::Entity e, Components::Fragment&) {
-          Scripting::EntityRef ref(e, &world);
-          fn(ref);
-      });
-  }
-
   static void LuaWorldEachLight(ECS::World& world, sol::function fn) {
       world.each<Components::Light>([&](ECS::Entity e, Components::Light&) {
-          Scripting::EntityRef ref(e, &world);
-          fn(ref);
-      });
-  }
-
-  static void LuaWorldEachDoor(ECS::World& world, sol::function fn) {
-      world.each<Components::Door>([&](ECS::Entity e, Components::Door&) {
-          Scripting::EntityRef ref(e, &world);
-          fn(ref);
-      });
-  }
-
-  static void LuaWorldEachDoorSwing(ECS::World& world, sol::function fn) {
-      world.each<Components::DoorSwing>([&](ECS::Entity e, Components::DoorSwing&) {
-          Scripting::EntityRef ref(e, &world);
-          fn(ref);
-      });
-  }
-
-  static void LuaWorldEachLightExposure(ECS::World& world, sol::function fn) {
-      world.each<Components::LightExposure>([&](ECS::Entity e, Components::LightExposure&) {
           Scripting::EntityRef ref(e, &world);
           fn(ref);
       });
@@ -151,7 +117,12 @@ namespace Systems {
       });
   }
 
-void ScriptSystem::update(ECS::World &world, double dt) {
+void ScriptSystem::setWorldTableExtension(WorldTableExtensionFn fn) {
+  m_worldTableExtensionFn = std::move(fn);
+}
+
+void ScriptSystem::update(ECS::World& world, double dt,
+                          const std::vector<std::pair<ECS::Entity, ECS::Entity>>& collisions) {
   float fDt = static_cast<float>(dt);
 
   // Set up the World Lua global so any script can query cross-entity data.
@@ -164,16 +135,16 @@ void ScriptSystem::update(ECS::World &world, double dt) {
 
     worldTable.set_function("findByTag", [&world](const std::string& tag) { return LuaWorldFindByTag(world, tag); });
     worldTable.set_function("eachByTag", [&world](const std::string& tag, sol::function fn) { LuaWorldEachByTag(world, tag, fn); });
-    worldTable.set_function("eachFragment", [&world](sol::function fn) { LuaWorldEachFragment(world, fn); });
     worldTable.set_function("eachLight", [&world](sol::function fn) { LuaWorldEachLight(world, fn); });
-    worldTable.set_function("eachDoor", [&world](sol::function fn) { LuaWorldEachDoor(world, fn); });
-    worldTable.set_function("eachDoorSwing", [&world](sol::function fn) { LuaWorldEachDoorSwing(world, fn); });
-    worldTable.set_function("eachLightExposure", [&world](sol::function fn) { LuaWorldEachLightExposure(world, fn); });
     worldTable.set_function("eachWithScript", [&world](const std::string& path, sol::function fn) { LuaWorldEachWithScript(world, path, fn); });
     worldTable.set_function("getScriptProp", [&world](uint32_t id, const std::string& key) { return LuaWorldGetScriptProp(world, id, key); });
     worldTable.set_function("setScriptProp", [&world](uint32_t id, const std::string& key, sol::object val) { LuaWorldSetScriptProp(world, id, key, val); });
 
     lua["World"] = worldTable;
+
+    // Let game code inject additional World.eachXxx() functions without touching engine code.
+    if (m_worldTableExtensionFn)
+      m_worldTableExtensionFn(world, worldTable);
   }
 
   world.each<Components::LuaScript>(
@@ -234,10 +205,72 @@ void ScriptSystem::update(ECS::World &world, double dt) {
           }
         }
       });
+
+  // --- Collision event dispatch ---
+  // Build current-frame pair map (canonical key → full entity pair).
+  std::unordered_map<uint64_t, std::pair<ECS::Entity, ECS::Entity>> currPairs;
+  currPairs.reserve(collisions.size());
+  for (const auto& p : collisions)
+    currPairs.emplace(collisionKey(p.first, p.second), p);
+
+  // onTriggerEnter / onCollisionEnter: fire for pairs that are NEW this frame.
+  for (const auto& [key, pair] : currPairs) {
+    if (m_prevCollisionPairs.count(key)) continue;
+    auto dispatchEnter = [&](ECS::Entity self, ECS::Entity other) {
+      auto it = m_states.find(self.id);
+      if (it == m_states.end()) return;
+      for (auto& state : it->second) {
+        if (!state.started) continue;
+        Scripting::EntityRef selfRef(self, &world);
+        Scripting::EntityRef otherRef(other, &world);
+        if (state.onTriggerEnter.valid()) {
+          try { state.onTriggerEnter(state.scriptTable, selfRef, otherRef); }
+          catch (const sol::error& e) {
+            std::cerr << "[ScriptSystem] onTriggerEnter error (entity "
+                      << self.id << "): " << e.what() << std::endl;
+          }
+        }
+        if (state.onCollisionEnter.valid()) {
+          try { state.onCollisionEnter(state.scriptTable, selfRef, otherRef); }
+          catch (const sol::error& e) {
+            std::cerr << "[ScriptSystem] onCollisionEnter error (entity "
+                      << self.id << "): " << e.what() << std::endl;
+          }
+        }
+      }
+    };
+    dispatchEnter(pair.first, pair.second);
+    dispatchEnter(pair.second, pair.first);
+  }
+
+  // onTriggerExit: fire for pairs that existed last frame but are gone this frame.
+  for (const auto& [key, pair] : m_prevCollisionPairs) {
+    if (currPairs.count(key)) continue;
+    auto dispatchExit = [&](ECS::Entity self, ECS::Entity other) {
+      auto it = m_states.find(self.id);
+      if (it == m_states.end()) return;
+      for (auto& state : it->second) {
+        if (!state.started || !state.onTriggerExit.valid()) continue;
+        Scripting::EntityRef selfRef(self, &world);
+        Scripting::EntityRef otherRef(other, &world);
+        try { state.onTriggerExit(state.scriptTable, selfRef, otherRef); }
+        catch (const sol::error& e) {
+          std::cerr << "[ScriptSystem] onTriggerExit error (entity "
+                    << self.id << "): " << e.what() << std::endl;
+        }
+      }
+    };
+    dispatchExit(pair.first, pair.second);
+    dispatchExit(pair.second, pair.first);
+  }
+
+  m_prevCollisionPairs = std::move(currPairs);
 }
 
 void ScriptSystem::clear() {
   m_states.clear();
+  m_prevCollisionPairs.clear();
+  m_worldTableExtensionFn = nullptr;
   // Release the World table so its lambdas (which capture world&) are freed
   // while the ECS world is still alive. Prevents dangling-reference UB and
   // the associated sol::function leak reported by the CRT leak detector.
@@ -285,8 +318,11 @@ bool ScriptSystem::loadScript(ECS::Entity entity, size_t idx,
   ScriptState &state = m_states[entity.id][idx];
   state.env = std::move(env);
   state.scriptTable = scriptTable;
-  state.onStart = scriptTable["onStart"];
-  state.onUpdate = scriptTable["onUpdate"];
+  state.onStart          = scriptTable["onStart"];
+  state.onUpdate         = scriptTable["onUpdate"];
+  state.onTriggerEnter   = scriptTable["onTriggerEnter"];
+  state.onTriggerExit    = scriptTable["onTriggerExit"];
+  state.onCollisionEnter = scriptTable["onCollisionEnter"];
   state.started = false;
   state.loadedPath = scriptPath;
 

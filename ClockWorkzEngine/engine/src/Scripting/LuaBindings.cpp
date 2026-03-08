@@ -150,7 +150,6 @@ namespace Scripting {
                 {"Unknown", Gameplay::GameObjectType::Unknown},
                 {"Ball", Gameplay::GameObjectType::Ball},
                 {"Box", Gameplay::GameObjectType::Box},
-                {"Fragment", Gameplay::GameObjectType::Fragment}
             }
         );
     }
@@ -519,16 +518,6 @@ namespace Scripting {
             "hasVelocity",  &Scripting::EntityRef::hasVelocity,
             "hasHealth",    &Scripting::EntityRef::hasHealth,
 
-            // Battery
-            "hasBattery",        &Scripting::EntityRef::hasBattery,
-            "getBatteryCharge",  &Scripting::EntityRef::getBatteryCharge,
-            "setBatteryCharge",  &Scripting::EntityRef::setBatteryCharge,
-            "getBatteryMaxCharge", &Scripting::EntityRef::getBatteryMaxCharge,
-            "getBatteryDrainRate", &Scripting::EntityRef::getBatteryDrainRate,
-            "getBatteryChargeRate",&Scripting::EntityRef::getBatteryChargeRate,
-            "isBatteryCharging", &Scripting::EntityRef::isBatteryCharging,
-            "setBatteryCharging",&Scripting::EntityRef::setBatteryCharging,
-
             // Light
             "hasLight",       &Scripting::EntityRef::hasLight,
             "isLightActive",  &Scripting::EntityRef::isLightActive,
@@ -539,54 +528,6 @@ namespace Scripting {
             "getLightOffsetY",&Scripting::EntityRef::getLightOffsetY,
             "setLightOffsetX",&Scripting::EntityRef::setLightOffsetX,
             "setLightOffsetY",&Scripting::EntityRef::setLightOffsetY,
-
-            // Fragment
-            "hasFragment",              &Scripting::EntityRef::hasFragment,
-            "isFragmentCollected",      &Scripting::EntityRef::isFragmentCollected,
-            "setFragmentCollected",     &Scripting::EntityRef::setFragmentCollected,
-            "getFragmentBobSpeed",      &Scripting::EntityRef::getFragmentBobSpeed,
-            "getFragmentBobAmount",     &Scripting::EntityRef::getFragmentBobAmount,
-            "getFragmentAnimTimer",     &Scripting::EntityRef::getFragmentAnimTimer,
-            "setFragmentAnimTimer",     &Scripting::EntityRef::setFragmentAnimTimer,
-            "getFragmentAlpha",         &Scripting::EntityRef::getFragmentAlpha,
-            "setFragmentAlpha",         &Scripting::EntityRef::setFragmentAlpha,
-            "getFragmentRequiresLight", &Scripting::EntityRef::getFragmentRequiresLight,
-
-            // FragmentCollector
-            "hasFragmentCollector", &Scripting::EntityRef::hasFragmentCollector,
-            "getCollectedCount",    &Scripting::EntityRef::getCollectedCount,
-            "setCollectedCount",    &Scripting::EntityRef::setCollectedCount,
-            "getRequiredFragments", &Scripting::EntityRef::getRequiredFragments,
-            "getPickupRadius",      &Scripting::EntityRef::getPickupRadius,
-
-            // Door
-            "hasDoor",               &Scripting::EntityRef::hasDoor,
-            "isDoorOpen",            &Scripting::EntityRef::isDoorOpen,
-            "setDoorOpen",           &Scripting::EntityRef::setDoorOpen,
-            "getDoorRequiredFragments", &Scripting::EntityRef::getDoorRequiredFragments,
-            "getDoorOpenTexture",    &Scripting::EntityRef::getDoorOpenTexture,
-            "getDoorClosedTexture",  &Scripting::EntityRef::getDoorClosedTexture,
-
-            // DoorSwing
-            "hasDoorSwing",               &Scripting::EntityRef::hasDoorSwing,
-            "isDoorSwingOpen",            &Scripting::EntityRef::isDoorSwingOpen,
-            "setDoorSwingOpen",           &Scripting::EntityRef::setDoorSwingOpen,
-            "isDoorSwingInitialized",     &Scripting::EntityRef::isDoorSwingInitialized,
-            "setDoorSwingInitialized",    &Scripting::EntityRef::setDoorSwingInitialized,
-            "getDoorSwingInitialRotation",&Scripting::EntityRef::getDoorSwingInitialRotation,
-            "setDoorSwingInitialRotation",&Scripting::EntityRef::setDoorSwingInitialRotation,
-            "getDoorSwingAngle",          &Scripting::EntityRef::getDoorSwingAngle,
-            "isDoorSwingClockwise",       &Scripting::EntityRef::isDoorSwingClockwise,
-            "getDoorSwingSpeed",          &Scripting::EntityRef::getDoorSwingSpeed,
-
-            // LightExposure
-            "hasLightExposure",      &Scripting::EntityRef::hasLightExposure,
-            "getLightExposureTime",  &Scripting::EntityRef::getLightExposureTime,
-            "setLightExposureTime",  &Scripting::EntityRef::setLightExposureTime,
-            "getMaxLightExposureTime",&Scripting::EntityRef::getMaxLightExposureTime,
-            "isInLight",             &Scripting::EntityRef::isInLight,
-            "setInLight",            &Scripting::EntityRef::setInLight,
-            "isExposureDangerous",   &Scripting::EntityRef::isExposureDangerous,
 
             // SpriteRenderer
             "hasSpriteRenderer",  &Scripting::EntityRef::hasSpriteRenderer,

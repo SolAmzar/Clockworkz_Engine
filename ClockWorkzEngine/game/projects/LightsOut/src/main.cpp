@@ -11,6 +11,7 @@
 #include "Runtime/SceneSerializer.hpp"
 #include "Gameplay/Prefab.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
+#include "Scripting/GameLuaBindings.hpp"
 #include "ECS/World.hpp"
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -94,6 +95,11 @@ int main()
 		world.registerComponent<Gameplay::SurfaceComponent>();
 	});
 
+	// Game-specific Lua bindings: extends EntityRef with LightsOut component
+	// accessors (Battery, Fragment, Door, etc.) after the engine registers its
+	// own bindings, keeping game code out of the engine's LuaBindings.cpp.
+	engine.setLuaExtensionRegistrar(Scripting::RegisterGameBindings);
+
 	// Scene serializer extensions: teach the engine serializer how to
 	// read/write game-specific components without the engine knowing about them.
 	Runtime::SceneSerializer::setExtensions(
@@ -128,9 +134,8 @@ int main()
 				comps["enemyAI"] = {{"detectionRadius", ai->detectionRadius},
 				                    {"chaseSpeed", ai->chaseSpeed}, {"patrolSpeed", ai->patrolSpeed}};
 
-			if (auto* pc = world.getComponent<Components::PlayerController>(entity))
-				comps["playerController"] = {{"walkMultiplier", pc->walkMultiplier},
-				                             {"sprintMultiplier", pc->sprintMultiplier}};
+			if (world.hasComponent<Components::PlayerController>(entity))
+				comps["playerController"] = true;
 
 
 			if (auto* d = world.getComponent<Components::Door>(entity))
@@ -224,12 +229,8 @@ int main()
 				ai.patrolSpeed = c["enemyAI"].value("patrolSpeed", 50.f);
 				world.addComponent(entity, ai);
 			}
-			if (c.contains("playerController")) {
-				Components::PlayerController pc;
-				pc.walkMultiplier = c["playerController"].value("walkMultiplier", 1.0f);
-				pc.sprintMultiplier = c["playerController"].value("sprintMultiplier", 2.0f);
-				world.addComponent(entity, pc);
-			}
+			if (c.contains("playerController"))
+				world.addComponent(entity, Components::PlayerController{});
 			if (c.contains("door")) {
 				Components::Door d;
 				d.requiredFragments = c["door"].value("requiredFragments", 1);
@@ -302,6 +303,10 @@ int main()
 	auto aiSystemPtr     = std::make_shared<Systems::AISystem>();
 
 	engine.setSceneSetup([playerSystemPtr, aiSystemPtr](Runtime::Scene& scene) {
+		// Re-register game-specific World.eachXxx() queries so the engine's
+		// ScriptSystem stays free of LightsOut-specific component knowledge.
+		scene.setWorldTableExtension(Scripting::RegisterGameWorldExtensions);
+
 		scene.setGameCallbacks(
 			// onUpdate: particles + collision death + portal transitions
 			[playerSystemPtr, aiSystemPtr](ECS::World& world, double dt, Systems::CollisionSystem& cols, Runtime::Scene& scene) {

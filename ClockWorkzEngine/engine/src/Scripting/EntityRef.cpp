@@ -18,14 +18,7 @@ reserved.
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Tag.hpp"
-// Game-specific components (top-level include/ is on the engine path)
-#include "Components/Battery.hpp"
 #include "Components/Light.hpp"
-#include "Components/Fragment.hpp"
-#include "Components/FragmentCollector.hpp"
-#include "Components/Door.hpp"
-#include "Components/DoorSwing.hpp"
-#include "Components/LightExposure.hpp"
 #include "Components/SpriteAnimator.hpp"
 
 namespace Scripting {
@@ -139,16 +132,6 @@ bool EntityRef::hasHealth() const {
   return m_world && m_world->hasComponent<Components::Health>(m_entity);
 }
 
-// --- Battery ---
-bool EntityRef::hasBattery() const { return m_world && m_world->hasComponent<Components::Battery>(m_entity); }
-float EntityRef::getBatteryCharge() const { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; return b ? b->charge : 0.f; }
-void  EntityRef::setBatteryCharge(float c) { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; if (b) b->charge = c; }
-float EntityRef::getBatteryMaxCharge() const { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; return b ? b->maxCharge : 0.f; }
-float EntityRef::getBatteryDrainRate() const { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; return b ? b->drainRate : 0.f; }
-float EntityRef::getBatteryChargeRate() const { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; return b ? b->chargeRate : 0.f; }
-bool  EntityRef::isBatteryCharging() const { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; return b ? b->isCharging : false; }
-void  EntityRef::setBatteryCharging(bool v) { auto* b = m_world ? m_world->getComponent<Components::Battery>(m_entity) : nullptr; if (b) b->isCharging = v; }
-
 // --- Light ---
 bool  EntityRef::hasLight() const { return m_world && m_world->hasComponent<Components::Light>(m_entity); }
 bool  EntityRef::isLightActive() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->active : false; }
@@ -159,54 +142,6 @@ float EntityRef::getLightOffsetX() const { auto* t = m_world ? m_world->getCompo
 float EntityRef::getLightOffsetY() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.y : 0.f; }
 void  EntityRef::setLightOffsetX(float x) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.x = x; }
 void  EntityRef::setLightOffsetY(float y) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.y = y; }
-
-// --- Fragment ---
-bool  EntityRef::hasFragment() const { return m_world && m_world->hasComponent<Components::Fragment>(m_entity); }
-bool  EntityRef::isFragmentCollected() const { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; return f ? f->collected : false; }
-void  EntityRef::setFragmentCollected(bool v) { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; if (f) f->collected = v; }
-float EntityRef::getFragmentBobSpeed() const { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; return f ? f->bobSpeed : 0.f; }
-float EntityRef::getFragmentBobAmount() const { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; return f ? f->bobAmount : 0.f; }
-float EntityRef::getFragmentAnimTimer() const { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; return f ? f->animationTimer : 0.f; }
-void  EntityRef::setFragmentAnimTimer(float t) { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; if (f) f->animationTimer = t; }
-float EntityRef::getFragmentAlpha() const { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; return f ? f->currentAlpha : 0.f; }
-void  EntityRef::setFragmentAlpha(float a) { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; if (f) f->currentAlpha = a; }
-bool  EntityRef::getFragmentRequiresLight() const { auto* f = m_world ? m_world->getComponent<Components::Fragment>(m_entity) : nullptr; return f ? f->requiresLight : true; }
-
-// --- FragmentCollector ---
-bool  EntityRef::hasFragmentCollector() const { return m_world && m_world->hasComponent<Components::FragmentCollector>(m_entity); }
-int   EntityRef::getCollectedCount() const { auto* c = m_world ? m_world->getComponent<Components::FragmentCollector>(m_entity) : nullptr; return c ? c->collectedCount : 0; }
-void  EntityRef::setCollectedCount(int n) { auto* c = m_world ? m_world->getComponent<Components::FragmentCollector>(m_entity) : nullptr; if (c) c->collectedCount = n; }
-int   EntityRef::getRequiredFragments() const { auto* c = m_world ? m_world->getComponent<Components::FragmentCollector>(m_entity) : nullptr; return c ? c->requiredFragments : 0; }
-float EntityRef::getPickupRadius() const { auto* c = m_world ? m_world->getComponent<Components::FragmentCollector>(m_entity) : nullptr; return c ? c->pickupRadius : 50.f; }
-
-// --- Door ---
-bool        EntityRef::hasDoor() const { return m_world && m_world->hasComponent<Components::Door>(m_entity); }
-bool        EntityRef::isDoorOpen() const { auto* d = m_world ? m_world->getComponent<Components::Door>(m_entity) : nullptr; return d ? d->isOpen : false; }
-void        EntityRef::setDoorOpen(bool v) { auto* d = m_world ? m_world->getComponent<Components::Door>(m_entity) : nullptr; if (d) d->isOpen = v; }
-int         EntityRef::getDoorRequiredFragments() const { auto* d = m_world ? m_world->getComponent<Components::Door>(m_entity) : nullptr; return d ? d->requiredFragments : 1; }
-std::string EntityRef::getDoorOpenTexture() const { auto* d = m_world ? m_world->getComponent<Components::Door>(m_entity) : nullptr; return d ? d->openTexture : ""; }
-std::string EntityRef::getDoorClosedTexture() const { auto* d = m_world ? m_world->getComponent<Components::Door>(m_entity) : nullptr; return d ? d->closedTexture : ""; }
-
-// --- DoorSwing ---
-bool  EntityRef::hasDoorSwing() const { return m_world && m_world->hasComponent<Components::DoorSwing>(m_entity); }
-bool  EntityRef::isDoorSwingOpen() const { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; return d ? d->isOpen : false; }
-void  EntityRef::setDoorSwingOpen(bool v) { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; if (d) d->isOpen = v; }
-bool  EntityRef::isDoorSwingInitialized() const { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; return d ? d->initialized : false; }
-void  EntityRef::setDoorSwingInitialized(bool v) { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; if (d) d->initialized = v; }
-float EntityRef::getDoorSwingInitialRotation() const { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; return d ? d->initialRotation : 0.f; }
-void  EntityRef::setDoorSwingInitialRotation(float r) { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; if (d) d->initialRotation = r; }
-float EntityRef::getDoorSwingAngle() const { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; return d ? d->swingAngle : 90.f; }
-bool  EntityRef::isDoorSwingClockwise() const { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; return d ? d->clockwise : true; }
-float EntityRef::getDoorSwingSpeed() const { auto* d = m_world ? m_world->getComponent<Components::DoorSwing>(m_entity) : nullptr; return d ? d->speed : 90.f; }
-
-// --- LightExposure ---
-bool  EntityRef::hasLightExposure() const { return m_world && m_world->hasComponent<Components::LightExposure>(m_entity); }
-float EntityRef::getLightExposureTime() const { auto* l = m_world ? m_world->getComponent<Components::LightExposure>(m_entity) : nullptr; return l ? l->exposureTime : 0.f; }
-void  EntityRef::setLightExposureTime(float t) { auto* l = m_world ? m_world->getComponent<Components::LightExposure>(m_entity) : nullptr; if (l) l->exposureTime = t; }
-float EntityRef::getMaxLightExposureTime() const { auto* l = m_world ? m_world->getComponent<Components::LightExposure>(m_entity) : nullptr; return l ? l->maxExposureTime : 10.f; }
-bool  EntityRef::isInLight() const { auto* l = m_world ? m_world->getComponent<Components::LightExposure>(m_entity) : nullptr; return l ? l->inLight : false; }
-void  EntityRef::setInLight(bool v) { auto* l = m_world ? m_world->getComponent<Components::LightExposure>(m_entity) : nullptr; if (l) l->inLight = v; }
-bool  EntityRef::isExposureDangerous() const { auto* l = m_world ? m_world->getComponent<Components::LightExposure>(m_entity) : nullptr; return l ? l->isDangerous : false; }
 
 // --- SpriteRenderer ---
 bool        EntityRef::hasSpriteRenderer() const { return m_world && m_world->hasComponent<Components::SpriteRenderer>(m_entity); }

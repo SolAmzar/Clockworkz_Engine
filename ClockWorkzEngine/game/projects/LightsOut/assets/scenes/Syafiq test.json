@@ -11,15 +11,6 @@
         {
             "active": true,
             "components": {
-                "luaScript": [
-                    {
-                        "enabled": true,
-                        "scriptPath": "player_controller.lua"
-                    }
-                ],
-                "spriteAnimator": {
-                    "filename": "player.json"
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -57,11 +48,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": false
-                },
-                "velocity": {
-                    "moveSpeed": 1.0,
-                    "x": 0.0,
-                    "y": 0.0
                 }
             },
             "name": "player"

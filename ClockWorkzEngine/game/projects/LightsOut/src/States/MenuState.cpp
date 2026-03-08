@@ -33,9 +33,7 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "States/PlayState.hpp"
-#include "States/SandboxState.hpp"
 #include "States/SpriteEditorState.hpp"
-#include "States/TestLevelState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -124,10 +122,8 @@ void MenuState::applyHoverColors() {
 
 void MenuState::handleAction(const std::string &action) {
   if (action == "start_game") {
-    if (m_bgmChannel > 0) m_audio.fadeOutChannel(m_bgmChannel, 0.5f);
-    m_bgmChannel = 0;
-    m_bgmPaused  = true;
-    m_gsm.switchTo(std::make_shared<TestLevelState>(m_input, m_gsm));
+    // TODO: launch play state once scene manager is wired up
+    std::cout << "[MenuState] start_game: not yet implemented\n";
     return;
   }
   if (action == "exit") {
@@ -230,10 +226,6 @@ void MenuState::update(double /*dt*/) {
   }
   if (m_input.wasKeyTriggered(GLFW_KEY_M)) {
     m_gsm.push(std::make_shared<Runtime::SpriteEditorState>("SpriteEditor", m_input, m_gsm));
-  }
-  if (m_input.wasKeyTriggered(GLFW_KEY_F1)) {
-    m_audio.stopGroup(Audio::Group::BGM);
-    m_gsm.push(std::make_shared<SandboxState>(m_input, m_gsm));
   }
 #endif
 

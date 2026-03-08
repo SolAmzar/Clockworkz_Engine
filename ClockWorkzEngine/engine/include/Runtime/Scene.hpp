@@ -57,6 +57,10 @@ public:
                         SceneLoadFn    onLoad,
                         SceneRespawnFn onRespawn);
 
+  // Delegate to ScriptSystem: lets game code register custom World.eachXxx()
+  // functions without the engine needing game-specific includes.
+  void setWorldTableExtension(Systems::ScriptSystem::WorldTableExtensionFn fn);
+
   // Pending Level Accessors for Editor
   std::string GetPendingLevel() const { return m_pendingLevel; }
   void ClearPendingLevel() { m_pendingLevel.clear(); }

@@ -44,6 +44,10 @@ void Scene::setGameCallbacks(SceneUpdateFn  onUpdate,
   m_onRespawn = std::move(onRespawn);
 }
 
+void Scene::setWorldTableExtension(Systems::ScriptSystem::WorldTableExtensionFn fn) {
+  m_scriptSystem.setWorldTableExtension(std::move(fn));
+}
+
 void Scene::setSFXVolume(float volume) {
   m_sfxVolume = volume;
   Core::Engine::Get().audio().setGroupVolume(Audio::Group::SFX, volume);
@@ -164,8 +168,10 @@ void Scene::Update(double dt, Platform::InputManager &input) {
     m_physicsSystem.update(m_world, dt, layerFlags);
   if (m_collisionSystemEnabled)
     m_collisionSystem.update(m_world, layerFlags);
+  static const std::vector<std::pair<ECS::Entity, ECS::Entity>> s_emptyCollisions;
   if (m_scriptSystemEnabled)
-    m_scriptSystem.update(m_world, dt);
+    m_scriptSystem.update(m_world, dt,
+        m_collisionSystemEnabled ? m_collisionSystem.getCollisions() : s_emptyCollisions);
   if (m_audioSystemEnabled)
     m_audioSystem.update(m_world);
   if (m_animSystemEnabled)

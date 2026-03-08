@@ -112,6 +112,10 @@ void Engine::setSceneSetup(SceneSetupFn fn) {
   m_sceneSetup = std::move(fn);
 }
 
+void Engine::setLuaExtensionRegistrar(LuaExtensionFn fn) {
+  m_luaExtensionFn = std::move(fn);
+}
+
 void Engine::invokeSceneSetup(Runtime::Scene& scene) const {
   if (m_sceneSetup)
     m_sceneSetup(scene);
@@ -211,6 +215,7 @@ bool Engine::init() {
   m_camera->init((int)m_window->width(), (int)m_window->height());
 
   m_lua->Initialize();
+  if (m_luaExtensionFn) m_luaExtensionFn(*m_lua);
 
   m_gsm = std::make_unique<Runtime::GameStateManager>();
 
