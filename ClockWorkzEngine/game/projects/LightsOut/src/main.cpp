@@ -63,6 +63,13 @@ int main()
 	// ResourceManager static maps) are fully destroyed first, avoiding the
 	// false-positive wstring leaks that LEAK_CHECK_DF reports at CRT teardown.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF);
+
+	// Baseline snapshot: captures CRT-internal startup allocations (locale,
+	// iostream state, thread-local storage, etc.) that are freed by static
+	// destructors AFTER main() returns.  Used as fallback when the engine
+	// never reaches its post-Lua checkpoint.
+	_CrtMemState baseline;
+	_CrtMemCheckpoint(&baseline);
 #endif
 
 	int _result;
@@ -430,25 +437,32 @@ int main()
 
 	} // engine + all owned states/systems destroyed here
 #ifdef _DEBUG
-	// Destroy the Profiler pointer-singleton so its unordered_map sentinels
-	// and bucket arrays are freed before the leak dump (Meyers singletons
-	// and static members only destruct after main() returns, too late).
+	// Destroy the Profiler singleton before the snapshot so its internal
+	// maps are freed and don't appear as false positives.
 	Core::Profiler::Destroy();
 
-	// Report only allocations made AFTER LuaManager::Initialize() that weren't
-	// freed.  This excludes sol2's internal type-name strings ("sol.Scripting::
-	// EntityRef" etc.) which are allocated during Lua init and are intentionally
-	// never freed by sol2 — they are a known false positive, not real leaks.
-	if (const auto* luaSnap = static_cast<const _CrtMemState*>(Core::Engine::postLuaInitState())) {
-		_CrtMemState after, diff;
-		_CrtMemCheckpoint(&after);
-		if (_CrtMemDifference(&diff, luaSnap, &after)) {
-			_CrtMemDumpAllObjectsSince(luaSnap);
-		} else {
-			std::cout << "[Memory] No leaks detected.\n";
-		}
+	// Capture the heap state NOW — after the engine is fully destroyed and
+	// after Profiler is gone.  At this point the only live allocations are:
+	//   - sol2 type-name strings (allocated during Lua init AND during
+	//     LuaManager destruction for lazily-registered types; never freed)
+	//   - CRT startup blocks freed by static destructors after main() returns
+	// Using this post-destruction snapshot as the baseline means the diff
+	// against `after` (taken one line later) will be zero unless something
+	// actually leaked between here and the dump call.
+	Core::Engine::captureLeakCheckpoint();
+
+	_CrtMemState after, diff;
+	_CrtMemCheckpoint(&after);
+
+	const auto* snap = static_cast<const _CrtMemState*>(Core::Engine::postLuaInitState());
+	const _CrtMemState* useSnap = snap ? snap : &baseline;
+	const char* snapLabel = snap ? "post-engine" : "baseline";
+
+	if (_CrtMemDifference(&diff, useSnap, &after)) {
+		std::cout << "[Memory] Leaks detected (relative to " << snapLabel << " snapshot):\n";
+		_CrtMemDumpAllObjectsSince(useSnap);
 	} else {
-		_CrtDumpMemoryLeaks(); // fallback if engine never fully inited
+		std::cout << "[Memory] No leaks detected.\n";
 	}
 #endif
 	return _result;

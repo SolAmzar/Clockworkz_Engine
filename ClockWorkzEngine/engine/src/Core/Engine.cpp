@@ -71,6 +71,10 @@ Engine *Engine::s_instance = nullptr;
 const void* Engine::postLuaInitState() {
     return s_hasPostLuaInitState ? &s_postLuaInitState : nullptr;
 }
+void Engine::captureLeakCheckpoint() {
+    _CrtMemCheckpoint(&s_postLuaInitState);
+    s_hasPostLuaInitState = true;
+}
 #endif
 Engine::Engine() {
   s_instance = this; // register singleton instance
@@ -208,14 +212,6 @@ bool Engine::init() {
 
   m_lua->Initialize();
 
-#ifdef _DEBUG
-  // Take a heap snapshot after sol2 registers its type names.
-  // _CrtMemDumpAllObjectsSince() in main() uses this to exclude sol2's
-  // internal allocations ("sol.Scripting::EntityRef" etc.) from the report.
-  _CrtMemCheckpoint(&s_postLuaInitState);
-  s_hasPostLuaInitState = true;
-#endif
-
   m_gsm = std::make_unique<Runtime::GameStateManager>();
 
   /*
@@ -253,6 +249,8 @@ bool Engine::init() {
 }
 
 void Engine::shutdown() {
+  if (m_shutdownCalled) return;
+  m_shutdownCalled = true;
   std::cout << "Shutdown started" << std::endl;
   if (m_logger)
     m_logger->info("Engine shutdown.");

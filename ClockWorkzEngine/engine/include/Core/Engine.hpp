@@ -96,9 +96,12 @@ namespace Core {
 		static bool IsInitialized() { return s_instance != nullptr; }
 
 #ifdef _DEBUG
-		// Returns a pointer to the heap snapshot taken just after LuaManager::Initialize().
-		// Use with _CrtMemDumpAllObjectsSince() to exclude sol2 type-name false positives.
+		// Returns the heap snapshot captured by captureLeakCheckpoint().
 		static const void* postLuaInitState();
+		// Call this from main() AFTER the engine object is destroyed so that all
+		// sol2 lazy type-name strings (allocated during LuaManager destruction) are
+		// already live before we compare against the final heap state.
+		static void captureLeakCheckpoint();
 #endif
 
 		// Subsystem accessors
@@ -154,6 +157,7 @@ namespace Core {
 	private: // simple data member
 		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}
 		bool m_running{ false }; // Is the engine running?
+		bool m_shutdownCalled{ false }; // guard against double shutdown
 		static Engine* s_instance;
 		double m_accuml;
 		bool m_pausedByFocus;
