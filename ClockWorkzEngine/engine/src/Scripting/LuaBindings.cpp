@@ -561,7 +561,38 @@ namespace Scripting {
 
             // Tag
             "hasTag",    &Scripting::EntityRef::hasTag,
-            "getTagValue",&Scripting::EntityRef::getTagValue
+            "getTagValue",&Scripting::EntityRef::getTagValue,
+
+            // Generic script property access (Unity-like: game components as pure Lua)
+            "hasScript", &Scripting::EntityRef::hasScript,
+            "getScriptProp", [](Scripting::EntityRef& ref,
+                                const std::string& scriptPath,
+                                const std::string& key,
+                                sol::this_state ts) -> sol::object {
+                sol::state_view sv(ts);
+                auto* entry = ref.findScriptEntry(scriptPath);
+                if (!entry) return sol::make_object(sv, sol::nil);
+                auto it = entry->properties.find(key);
+                if (it == entry->properties.end())
+                    return sol::make_object(sv, sol::nil);
+                return std::visit([&sv](auto&& v) -> sol::object {
+                    return sol::make_object(sv, v);
+                }, it->second);
+            },
+            "setScriptProp", [](Scripting::EntityRef& ref,
+                                const std::string& scriptPath,
+                                const std::string& key,
+                                sol::object val) {
+                auto* entry = ref.findScriptEntry(scriptPath);
+                if (!entry) return;
+                auto it = entry->properties.find(key);
+                if (it == entry->properties.end()) return;
+                std::visit([&](auto&& existing) {
+                    using T = std::decay_t<decltype(existing)>;
+                    auto opt = val.as<sol::optional<T>>();
+                    if (opt) it->second = *opt;
+                }, it->second);
+            }
         );
     }
 

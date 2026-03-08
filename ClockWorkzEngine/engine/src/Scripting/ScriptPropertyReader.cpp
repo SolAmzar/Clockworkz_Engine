@@ -107,4 +107,8 @@ void ScriptPropertyReader::invalidate(const std::string& scriptPath) {
     s_cache.erase(scriptPath);
 }
 
+void ScriptPropertyReader::clearAll() {
+    s_cache.clear();
+}
+
 } // namespace Scripting

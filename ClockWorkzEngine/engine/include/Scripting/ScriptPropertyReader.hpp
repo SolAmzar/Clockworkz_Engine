@@ -40,6 +40,10 @@ public:
     // Call after hot-reload so stale cache is discarded.
     static void invalidate(const std::string& scriptPath);
 
+    // Call during engine shutdown to release all cached heap strings before
+    // _CrtDumpMemoryLeaks() runs (static destructor would run too late).
+    static void clearAll();
+
 private:
     struct CacheEntry {
         std::vector<ScriptProperty>      props;

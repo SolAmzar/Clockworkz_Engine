@@ -48,6 +48,7 @@ reserved.
 #include "Runtime/GameState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Scripting/LuaManager.hpp"
+#include "Scripting/ScriptPropertyReader.hpp"
 #include <GLFW/glfw3.h>
 #include <exception>
 #include <iostream>
@@ -289,6 +290,7 @@ void Engine::shutdown() {
   }
 
   // 10. Lua Shutdown
+  Scripting::ScriptPropertyReader::clearAll();
   if (m_lua) {
     m_lua.reset();
   }

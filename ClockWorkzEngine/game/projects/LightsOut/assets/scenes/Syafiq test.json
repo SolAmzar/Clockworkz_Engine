@@ -11,9 +11,18 @@
         {
             "active": true,
             "components": {
-                "luaScript": {
-                    "enabled": true,
-                    "scriptPath": "player_controller.lua"
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "player_controller.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "player_movement.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "player.json"
                 },
                 "spriteRenderer": {
                     "color": {
@@ -50,13 +59,71 @@
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
-                    }
+                    },
+                    "snapToGrid": false
                 }
             },
-            "name": "Sprite"
+            "name": "player"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "pot",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": true
+                }
+            },
+            "name": "pot"
         }
     ],
     "sfxVolume": 1.0,
+    "soundVolumes": {
+        "enemy_death_1": 0.1889999955892563,
+        "enemy_death_2": 0.15800000727176666,
+        "enemy_death_3": 0.20499999821186066,
+        "fs_concrete_1": 0.05400000140070915,
+        "fs_concrete_2": 0.06300000101327896,
+        "fs_concrete_4": 0.06300000101327896,
+        "fs_tile_1": 0.029999999329447746,
+        "fs_tile_2": 0.05299999937415123,
+        "fs_tile_3": 0.04899999871850014,
+        "level_bgm": 0.2669999897480011,
+        "menu_bgm": 0.7720000147819519
+    },
     "spawnPoint": {
         "x": 0.0,
         "y": 0.0

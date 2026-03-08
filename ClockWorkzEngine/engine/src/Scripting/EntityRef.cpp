@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 
 #include "Scripting/EntityRef.hpp"
+#include "Components/LuaScript.hpp"
 #include "Components/Health.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
@@ -223,5 +224,31 @@ void EntityRef::setColliderMoveable(bool v) { auto* c = m_world ? m_world->getCo
 // --- Tag ---
 bool        EntityRef::hasTag() const { return m_world && m_world->hasComponent<Components::Tag>(m_entity); }
 std::string EntityRef::getTagValue() const { auto* t = m_world ? m_world->getComponent<Components::Tag>(m_entity) : nullptr; return t ? t->tag : ""; }
+
+// --- Generic script property access ---
+
+bool EntityRef::hasScript(const std::string& scriptPath) const {
+  auto* ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity) : nullptr;
+  if (!ls) return false;
+  for (const auto& entry : ls->scripts)
+    if (entry.scriptPath == scriptPath && entry.enabled) return true;
+  return false;
+}
+
+Components::LuaScriptEntry* EntityRef::findScriptEntry(const std::string& scriptPath) {
+  auto* ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity) : nullptr;
+  if (!ls) return nullptr;
+  for (auto& entry : ls->scripts)
+    if (entry.scriptPath == scriptPath) return &entry;
+  return nullptr;
+}
+
+const Components::LuaScriptEntry* EntityRef::findScriptEntry(const std::string& scriptPath) const {
+  auto* ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity) : nullptr;
+  if (!ls) return nullptr;
+  for (const auto& entry : ls->scripts)
+    if (entry.scriptPath == scriptPath) return &entry;
+  return nullptr;
+}
 
 } // namespace Scripting

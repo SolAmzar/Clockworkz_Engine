@@ -36,6 +36,8 @@ namespace Systems {
  */
 class ScriptSystem {
 public:
+  ~ScriptSystem() { clear(); }
+
   /**
    * @brief Update all entities that have a LuaScript component.
    * @param world The ECS world.
@@ -45,6 +47,7 @@ public:
 
   /**
    * @brief Clear all cached script state (call on scene transitions).
+   * Also nils out the Lua World global to release world-capturing lambdas.
    */
   void clear();
 

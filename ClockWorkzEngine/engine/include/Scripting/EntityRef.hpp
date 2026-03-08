@@ -15,6 +15,7 @@ reserved.
 /******************************************************************************/
 
 #pragma once
+#include "Components/LuaScript.hpp"
 #include "ECS/Entity.hpp"
 #include "ECS/World.hpp"
 #include "Math/Vec2.hpp"
@@ -161,6 +162,11 @@ public:
   // --- Tag ---
   bool        hasTag() const;
   std::string getTagValue() const;
+
+  // --- Generic script property access (Unity-like: game components as pure Lua) ---
+  bool hasScript(const std::string& scriptPath) const;
+  Components::LuaScriptEntry*       findScriptEntry(const std::string& scriptPath);
+  const Components::LuaScriptEntry* findScriptEntry(const std::string& scriptPath) const;
 
 private:
   ECS::Entity m_entity;

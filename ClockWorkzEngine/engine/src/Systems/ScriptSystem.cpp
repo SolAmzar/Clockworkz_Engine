@@ -127,6 +127,21 @@ void ScriptSystem::update(ECS::World &world, double dt) {
           });
         });
 
+    // eachWithScript(scriptPath, fn) — generic: iterate entities with a specific Lua script slot.
+    // Replaces the hardcoded eachFragment/eachDoor/eachLightExposure for new game components.
+    worldTable.set_function("eachWithScript",
+        [&world](const std::string& scriptPath, sol::function fn) {
+          world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
+            for (auto& entry : ls.scripts) {
+              if (entry.scriptPath == scriptPath && entry.enabled) {
+                Scripting::EntityRef ref(e, &world);
+                fn(ref);
+                break;
+              }
+            }
+          });
+        });
+
     // getScriptProp(entityId, key) → searches all script slots, returns first match
     worldTable.set_function("getScriptProp",
         [&world](uint32_t entityId, const std::string& key) -> sol::object {
@@ -230,6 +245,12 @@ void ScriptSystem::update(ECS::World &world, double dt) {
 
 void ScriptSystem::clear() {
   m_states.clear();
+  // Release the World table so its lambdas (which capture world&) are freed
+  // while the ECS world is still alive. Prevents dangling-reference UB and
+  // the associated sol::function leak reported by the CRT leak detector.
+  if (Core::Engine::IsInitialized()) {
+    Core::Engine::Get().lua().GetState()["World"] = sol::nil;
+  }
   std::cout << "[ScriptSystem] Cleared all script states" << std::endl;
 }
 
