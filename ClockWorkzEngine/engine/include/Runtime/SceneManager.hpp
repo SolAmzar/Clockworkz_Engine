@@ -39,6 +39,7 @@ class Scene;
 class SceneManager {
 public:
   SceneManager() = default;
+  virtual ~SceneManager();
 
   // Load or switch to an already cached scene (creates & loads if not present)
   bool loadScene(const std::string &id);

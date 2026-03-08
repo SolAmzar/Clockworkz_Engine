@@ -78,7 +78,7 @@ public:
     for (auto &kv : resources) {
       kv.second->Unload(); // free GPU resources
     }
-    resources.clear();
+    resources = {}; // Completely free map, including buckets
   }
 
 private:

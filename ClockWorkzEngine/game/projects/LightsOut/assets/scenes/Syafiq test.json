@@ -17,14 +17,6 @@
                         "scriptPath": "player_controller.lua"
                     }
                 ],
-                "tag": {
-                    "tag": "Player"
-                },
-                "velocity": {
-                    "moveSpeed": 1.0,
-                    "x": 0.0,
-                    "y": 0.0
-                },
                 "spriteAnimator": {
                     "filename": "player.json"
                 },
@@ -65,53 +57,14 @@
                         "y": 1.0
                     },
                     "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 1.0,
+                    "x": 0.0,
+                    "y": 0.0
                 }
             },
             "name": "player"
-        },
-        {
-            "active": true,
-            "components": {
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 0,
-                    "textureId": "pot",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 150.0,
-                        "y": -50.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "pot"
         }
     ],
     "sfxVolume": 1.0,

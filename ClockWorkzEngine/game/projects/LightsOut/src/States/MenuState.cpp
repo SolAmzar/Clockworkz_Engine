@@ -148,7 +148,6 @@ void MenuState::handleAction(const std::string &action) {
 }
 
 void MenuState::update(double /*dt*/) {
-  Core::Engine &engine = Core::Engine::Get();
   int w = m_window.width();
   int h = m_window.height();
 

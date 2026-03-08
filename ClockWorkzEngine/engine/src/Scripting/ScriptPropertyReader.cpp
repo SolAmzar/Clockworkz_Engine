@@ -20,7 +20,7 @@ reserved.
 
 namespace Scripting {
 
-std::unordered_map<std::string, ScriptPropertyReader::CacheEntry> ScriptPropertyReader::s_cache;
+std::unordered_map<std::string, ScriptPropertyReader::CacheEntry>* ScriptPropertyReader::s_cache = nullptr;
 
 const std::vector<ScriptProperty>& ScriptPropertyReader::read(const std::string& scriptPath) {
     static const std::vector<ScriptProperty> s_empty;
@@ -34,8 +34,10 @@ const std::vector<ScriptProperty>& ScriptPropertyReader::read(const std::string&
 
     fs::file_time_type mtime = fs::last_write_time(fullPath);
 
-    auto it = s_cache.find(scriptPath);
-    if (it != s_cache.end() && it->second.timestamp == mtime) {
+    if (!s_cache) s_cache = new std::unordered_map<std::string, CacheEntry>();
+
+    auto it = s_cache->find(scriptPath);
+    if (it != s_cache->end() && it->second.timestamp == mtime) {
         return it->second.props;
     }
 
@@ -50,15 +52,15 @@ const std::vector<ScriptProperty>& ScriptPropertyReader::read(const std::string&
         std::cerr << "[ScriptPropertyReader] Error loading '" << fullPath
                   << "': " << err.what() << "\n";
         // Cache empty entry so we don't retry every frame
-        s_cache[scriptPath] = {s_empty, mtime};
-        return s_cache[scriptPath].props;
+        (*s_cache)[scriptPath] = {s_empty, mtime};
+        return (*s_cache)[scriptPath].props;
     }
 
     // Look for a top-level Properties table
     sol::optional<sol::table> propTableOpt = lua["Properties"];
     if (!propTableOpt || !propTableOpt->valid()) {
-        s_cache[scriptPath] = {s_empty, mtime};
-        return s_cache[scriptPath].props;
+        (*s_cache)[scriptPath] = {s_empty, mtime};
+        return (*s_cache)[scriptPath].props;
     }
 
     sol::table propTable = *propTableOpt;
@@ -99,16 +101,17 @@ const std::vector<ScriptProperty>& ScriptPropertyReader::read(const std::string&
         props.push_back({name, type, label, defVal});
     }
 
-    s_cache[scriptPath] = {std::move(props), mtime};
-    return s_cache[scriptPath].props;
+    (*s_cache)[scriptPath] = {std::move(props), mtime};
+    return (*s_cache)[scriptPath].props;
 }
 
 void ScriptPropertyReader::invalidate(const std::string& scriptPath) {
-    s_cache.erase(scriptPath);
+    if (s_cache) s_cache->erase(scriptPath);
 }
 
 void ScriptPropertyReader::clearAll() {
-    s_cache.clear();
+    delete s_cache;
+    s_cache = nullptr;
 }
 
 } // namespace Scripting

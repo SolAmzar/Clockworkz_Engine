@@ -121,6 +121,10 @@ public:
     \brief  Destructor — explicitly destroys and frees every ComponentArray.
     */
     ~World() {
+        // Ensure all entities are destroyed so component sizes become zero
+        // and any heap resources in components are released before unregistering.
+        destroyAll();
+
         for (size_t i = 0; i < m_componentTypeCount; ++i) {
             // Unregister from the debug registry before destruction so the
             // registry can record the final used-block count (leak detection).

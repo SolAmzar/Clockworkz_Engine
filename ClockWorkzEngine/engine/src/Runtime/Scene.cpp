@@ -118,6 +118,17 @@ void Scene::Clear() {
 
   // Destroy all entities in the world
   m_world.destroyAll();
+
+  // Clear legacy GameObjects
+  m_gameObjects.clear();
+
+  // Reset Scene settings
+  m_soundVolumeOverrides.clear();
+  std::fill(m_layerEnabled.begin(), m_layerEnabled.end(), true);
+  m_enableDarkness = false;
+  m_darknessIntensity = 0.8f;
+  m_darknessColor = glm::vec3(0.7f, 0.7f, 0.9f);
+  m_bgm.clear();
 }
 
 bool Scene::LoadFromFile(const std::string &path) {

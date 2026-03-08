@@ -49,6 +49,108 @@ static void pullPropFromLua(const sol::table& tbl, const std::string& key,
 namespace Systems {
 
 
+  // ---------------------------------------------------------------------------
+  // Static Helper Functions for World table (avoid closures capturing world&)
+  // ---------------------------------------------------------------------------
+  static sol::optional<Scripting::EntityRef> LuaWorldFindByTag(ECS::World& world, const std::string& tag) {
+      sol::optional<Scripting::EntityRef> result;
+      world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& t) {
+          if (!result && t.tag == tag)
+              result = Scripting::EntityRef(e, &world);
+      });
+      return result;
+  }
+
+  static void LuaWorldEachByTag(ECS::World& world, const std::string& tag, sol::function fn) {
+      world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& t) {
+          if (t.tag == tag) {
+              Scripting::EntityRef ref(e, &world);
+              fn(ref);
+          }
+      });
+  }
+
+  static void LuaWorldEachFragment(ECS::World& world, sol::function fn) {
+      world.each<Components::Fragment>([&](ECS::Entity e, Components::Fragment&) {
+          Scripting::EntityRef ref(e, &world);
+          fn(ref);
+      });
+  }
+
+  static void LuaWorldEachLight(ECS::World& world, sol::function fn) {
+      world.each<Components::Light>([&](ECS::Entity e, Components::Light&) {
+          Scripting::EntityRef ref(e, &world);
+          fn(ref);
+      });
+  }
+
+  static void LuaWorldEachDoor(ECS::World& world, sol::function fn) {
+      world.each<Components::Door>([&](ECS::Entity e, Components::Door&) {
+          Scripting::EntityRef ref(e, &world);
+          fn(ref);
+      });
+  }
+
+  static void LuaWorldEachDoorSwing(ECS::World& world, sol::function fn) {
+      world.each<Components::DoorSwing>([&](ECS::Entity e, Components::DoorSwing&) {
+          Scripting::EntityRef ref(e, &world);
+          fn(ref);
+      });
+  }
+
+  static void LuaWorldEachLightExposure(ECS::World& world, sol::function fn) {
+      world.each<Components::LightExposure>([&](ECS::Entity e, Components::LightExposure&) {
+          Scripting::EntityRef ref(e, &world);
+          fn(ref);
+      });
+  }
+
+  static void LuaWorldEachWithScript(ECS::World& world, const std::string& scriptPath, sol::function fn) {
+      world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
+          for (auto& entry : ls.scripts) {
+              if (entry.scriptPath == scriptPath && entry.enabled) {
+                  Scripting::EntityRef ref(e, &world);
+                  fn(ref);
+                  break;
+              }
+          }
+      });
+  }
+
+  static sol::object LuaWorldGetScriptProp(ECS::World& world, uint32_t entityId, const std::string& key) {
+      sol::state& luaRef = Core::Engine::Get().lua().GetState();
+      sol::object found = sol::make_object(luaRef, sol::nil);
+      world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
+          if (e.id != entityId) return;
+          for (auto& entry : ls.scripts) {
+              auto it = entry.properties.find(key);
+              if (it != entry.properties.end()) {
+                  found = std::visit([&luaRef](auto&& v) -> sol::object {
+                      return sol::make_object(luaRef, v);
+                  }, it->second);
+                  return;
+              }
+          }
+      });
+      return found;
+  }
+
+  static void LuaWorldSetScriptProp(ECS::World& world, uint32_t entityId, const std::string& key, sol::object val) {
+      world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
+          if (e.id != entityId) return;
+          for (auto& entry : ls.scripts) {
+              auto it = entry.properties.find(key);
+              if (it == entry.properties.end()) continue;
+              std::visit([&](auto&& existing) {
+                  using T = std::decay_t<decltype(existing)>;
+                  auto opt = val.as<sol::optional<T>>();
+                  if (opt) it->second = *opt;
+              }, it->second);
+              return;
+          }
+      });
+  }
+
 void ScriptSystem::update(ECS::World &world, double dt) {
   float fDt = static_cast<float>(dt);
 
@@ -60,125 +162,16 @@ void ScriptSystem::update(ECS::World &world, double dt) {
 
     sol::table worldTable = lua.create_table();
 
-    // findByTag(tag) -> EntityRef or nil
-    worldTable.set_function("findByTag",
-        [&world](const std::string &tag) -> sol::optional<Scripting::EntityRef> {
-          sol::optional<Scripting::EntityRef> result;
-          world.each<Components::Tag>([&](ECS::Entity e, Components::Tag &t) {
-            if (!result && t.tag == tag)
-              result = Scripting::EntityRef(e, &world);
-          });
-          return result;
-        });
-
-    // eachByTag(tag, fn) - iterate entities matching a tag
-    worldTable.set_function("eachByTag",
-        [&world](const std::string &tag, sol::function fn) {
-          world.each<Components::Tag>([&](ECS::Entity e, Components::Tag &t) {
-            if (t.tag == tag) {
-              Scripting::EntityRef ref(e, &world);
-              fn(ref);
-            }
-          });
-        });
-
-    // eachFragment(fn)
-    worldTable.set_function("eachFragment",
-        [&world](sol::function fn) {
-          world.each<Components::Fragment>([&](ECS::Entity e, Components::Fragment &) {
-            Scripting::EntityRef ref(e, &world);
-            fn(ref);
-          });
-        });
-
-    // eachLight(fn)
-    worldTable.set_function("eachLight",
-        [&world](sol::function fn) {
-          world.each<Components::Light>([&](ECS::Entity e, Components::Light &) {
-            Scripting::EntityRef ref(e, &world);
-            fn(ref);
-          });
-        });
-
-    // eachDoor(fn)
-    worldTable.set_function("eachDoor",
-        [&world](sol::function fn) {
-          world.each<Components::Door>([&](ECS::Entity e, Components::Door &) {
-            Scripting::EntityRef ref(e, &world);
-            fn(ref);
-          });
-        });
-
-    // eachDoorSwing(fn)
-    worldTable.set_function("eachDoorSwing",
-        [&world](sol::function fn) {
-          world.each<Components::DoorSwing>([&](ECS::Entity e, Components::DoorSwing &) {
-            Scripting::EntityRef ref(e, &world);
-            fn(ref);
-          });
-        });
-
-    // eachLightExposure(fn)
-    worldTable.set_function("eachLightExposure",
-        [&world](sol::function fn) {
-          world.each<Components::LightExposure>([&](ECS::Entity e, Components::LightExposure &) {
-            Scripting::EntityRef ref(e, &world);
-            fn(ref);
-          });
-        });
-
-    // eachWithScript(scriptPath, fn) — generic: iterate entities with a specific Lua script slot.
-    // Replaces the hardcoded eachFragment/eachDoor/eachLightExposure for new game components.
-    worldTable.set_function("eachWithScript",
-        [&world](const std::string& scriptPath, sol::function fn) {
-          world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
-            for (auto& entry : ls.scripts) {
-              if (entry.scriptPath == scriptPath && entry.enabled) {
-                Scripting::EntityRef ref(e, &world);
-                fn(ref);
-                break;
-              }
-            }
-          });
-        });
-
-    // getScriptProp(entityId, key) → searches all script slots, returns first match
-    worldTable.set_function("getScriptProp",
-        [&world](uint32_t entityId, const std::string& key) -> sol::object {
-          sol::state& luaRef = Core::Engine::Get().lua().GetState();
-          sol::object found  = sol::make_object(luaRef, sol::nil);
-          world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
-            if (e.id != entityId) return;
-            for (auto& entry : ls.scripts) {
-              auto it = entry.properties.find(key);
-              if (it != entry.properties.end()) {
-                found = std::visit([&luaRef](auto&& v) -> sol::object {
-                    return sol::make_object(luaRef, v);
-                }, it->second);
-                return;
-              }
-            }
-          });
-          return found;
-        });
-
-    // setScriptProp(entityId, key, value) → sets in first slot that declares the key
-    worldTable.set_function("setScriptProp",
-        [&world](uint32_t entityId, const std::string& key, sol::object val) {
-          world.each<Components::LuaScript>([&](ECS::Entity e, Components::LuaScript& ls) {
-            if (e.id != entityId) return;
-            for (auto& entry : ls.scripts) {
-              auto it = entry.properties.find(key);
-              if (it == entry.properties.end()) continue;
-              std::visit([&](auto&& existing) {
-                  using T = std::decay_t<decltype(existing)>;
-                  auto opt = val.as<sol::optional<T>>();
-                  if (opt) it->second = *opt;
-              }, it->second);
-              return;
-            }
-          });
-        });
+    worldTable.set_function("findByTag", [&world](const std::string& tag) { return LuaWorldFindByTag(world, tag); });
+    worldTable.set_function("eachByTag", [&world](const std::string& tag, sol::function fn) { LuaWorldEachByTag(world, tag, fn); });
+    worldTable.set_function("eachFragment", [&world](sol::function fn) { LuaWorldEachFragment(world, fn); });
+    worldTable.set_function("eachLight", [&world](sol::function fn) { LuaWorldEachLight(world, fn); });
+    worldTable.set_function("eachDoor", [&world](sol::function fn) { LuaWorldEachDoor(world, fn); });
+    worldTable.set_function("eachDoorSwing", [&world](sol::function fn) { LuaWorldEachDoorSwing(world, fn); });
+    worldTable.set_function("eachLightExposure", [&world](sol::function fn) { LuaWorldEachLightExposure(world, fn); });
+    worldTable.set_function("eachWithScript", [&world](const std::string& path, sol::function fn) { LuaWorldEachWithScript(world, path, fn); });
+    worldTable.set_function("getScriptProp", [&world](uint32_t id, const std::string& key) { return LuaWorldGetScriptProp(world, id, key); });
+    worldTable.set_function("setScriptProp", [&world](uint32_t id, const std::string& key, sol::object val) { LuaWorldSetScriptProp(world, id, key, val); });
 
     lua["World"] = worldTable;
   }

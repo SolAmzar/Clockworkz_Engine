@@ -57,6 +57,9 @@ namespace Gameplay
 		// In PrefabFactory class
 		void updatePrefabFromGameObject(const std::string& prefabName, const GameObject& obj);
 
+		// Clear all registered prefabs
+		void clear();
+
 	private:
 		std::map<std::string, PrefabData> prefabs_;
 	};

@@ -624,11 +624,11 @@ namespace Scripting {
     }
 
     //-------------------------------------------------------------------------
-    // Input Global Binding  (string-key API for Lua scripts)
+    // Input Global Binding — Helpers
     //-------------------------------------------------------------------------
-    void RegisterInputGlobal(sol::state& lua) {
-        // Static lookup tables — built once, shared by all lambda invocations.
-        static const std::unordered_map<std::string, int> s_keyMap = {
+    static int ensureKey(const std::string& name) {
+        // Key constants lookup table (not static to avoid teardown "leaks")
+        const std::unordered_map<std::string, int> keyMap = {
             {"A",GLFW_KEY_A},{"B",GLFW_KEY_B},{"C",GLFW_KEY_C},{"D",GLFW_KEY_D},
             {"E",GLFW_KEY_E},{"F",GLFW_KEY_F},{"G",GLFW_KEY_G},{"H",GLFW_KEY_H},
             {"I",GLFW_KEY_I},{"J",GLFW_KEY_J},{"K",GLFW_KEY_K},{"L",GLFW_KEY_L},
@@ -643,9 +643,9 @@ namespace Scripting {
             {"ESCAPE",GLFW_KEY_ESCAPE},{"TAB",GLFW_KEY_TAB},
             {"BACKSPACE",GLFW_KEY_BACKSPACE},
             {"LEFT_SHIFT",GLFW_KEY_LEFT_SHIFT},{"RIGHT_SHIFT",GLFW_KEY_RIGHT_SHIFT},
-            {"SHIFT",GLFW_KEY_LEFT_SHIFT},         // friendly alias
+            {"SHIFT",GLFW_KEY_LEFT_SHIFT},
             {"LEFT_CTRL",GLFW_KEY_LEFT_CONTROL},{"RIGHT_CTRL",GLFW_KEY_RIGHT_CONTROL},
-            {"CTRL",GLFW_KEY_LEFT_CONTROL},         // friendly alias
+            {"CTRL",GLFW_KEY_LEFT_CONTROL},
             {"LEFT_ALT",GLFW_KEY_LEFT_ALT},{"RIGHT_ALT",GLFW_KEY_RIGHT_ALT},
             {"UP",GLFW_KEY_UP},{"DOWN",GLFW_KEY_DOWN},
             {"LEFT",GLFW_KEY_LEFT},{"RIGHT",GLFW_KEY_RIGHT},
@@ -653,116 +653,126 @@ namespace Scripting {
             {"F4",GLFW_KEY_F4},{"F5",GLFW_KEY_F5},{"F6",GLFW_KEY_F6},
             {"F7",GLFW_KEY_F7},{"F8",GLFW_KEY_F8},{"F9",GLFW_KEY_F9},
             {"F10",GLFW_KEY_F10},{"F11",GLFW_KEY_F11},{"F12",GLFW_KEY_F12},
-            // Punctuation
-            {"APOSTROPHE",    GLFW_KEY_APOSTROPHE},    // '
-            {"COMMA",         GLFW_KEY_COMMA},          // ,
-            {"MINUS",         GLFW_KEY_MINUS},          // -
-            {"PERIOD",        GLFW_KEY_PERIOD},         // .
-            {"SLASH",         GLFW_KEY_SLASH},          // /
-            {"SEMICOLON",     GLFW_KEY_SEMICOLON},      // ;
-            {"EQUAL",         GLFW_KEY_EQUAL},          // =
-            {"LEFT_BRACKET",  GLFW_KEY_LEFT_BRACKET},   // [
-            {"BACKSLASH",     GLFW_KEY_BACKSLASH},      // '\'
-            {"RIGHT_BRACKET", GLFW_KEY_RIGHT_BRACKET},  // ]
-            {"GRAVE_ACCENT",  GLFW_KEY_GRAVE_ACCENT},   // `
+            {"APOSTROPHE",    GLFW_KEY_APOSTROPHE},
+            {"COMMA",         GLFW_KEY_COMMA},
+            {"MINUS",         GLFW_KEY_MINUS},
+            {"PERIOD",        GLFW_KEY_PERIOD},
+            {"SLASH",         GLFW_KEY_SLASH},
+            {"SEMICOLON",     GLFW_KEY_SEMICOLON},
+            {"EQUAL",         GLFW_KEY_EQUAL},
+            {"LEFT_BRACKET",  GLFW_KEY_LEFT_BRACKET},
+            {"BACKSLASH",     GLFW_KEY_BACKSLASH},
+            {"RIGHT_BRACKET", GLFW_KEY_RIGHT_BRACKET},
+            {"GRAVE_ACCENT",  GLFW_KEY_GRAVE_ACCENT},
         };
-        static const std::unordered_map<std::string, int> s_mouseMap = {
+
+        auto it = keyMap.find(name);
+        if (it == keyMap.end()) return -1;
+        auto& inp = Core::Engine::Get().input();
+        if (!inp.isKeyTracked(it->second))
+            inp.trackKey(it->second);
+        return it->second;
+    }
+
+    static int ensureMouse(const std::string& name) {
+        // Mouse button lookup table (not static to avoid teardown "leaks")
+        const std::unordered_map<std::string, int> mouseMap = {
             {"LEFT",  GLFW_MOUSE_BUTTON_LEFT},
             {"RIGHT", GLFW_MOUSE_BUTTON_RIGHT},
             {"MIDDLE",GLFW_MOUSE_BUTTON_MIDDLE},
         };
 
-        // Helper: resolve key name and lazy-track it if not already tracked.
-        // Common keys are pre-tracked in InputManager::init() so they have
-        // zero frame delay. Custom keys (not in init) auto-register here on
-        // first use — they will be correct from the very next frame onward.
-        auto ensureKey = [](const std::string& name) -> int {
-            auto it = s_keyMap.find(name);
-            if (it == s_keyMap.end()) return -1;
-            auto& inp = Core::Engine::Get().input();
-            if (!inp.isKeyTracked(it->second))
-                inp.trackKey(it->second);
-            return it->second;
-        };
-        auto ensureMouse = [](const std::string& name) -> int {
-            auto it = s_mouseMap.find(name);
-            if (it == s_mouseMap.end()) return -1;
-            auto& inp = Core::Engine::Get().input();
-            if (!inp.isMouseButtonTracked(it->second))
-                inp.trackMouseButton(it->second);
-            return it->second;
-        };
+        auto it = mouseMap.find(name);
+        if (it == mouseMap.end()) return -1;
+        auto& inp = Core::Engine::Get().input();
+        if (!inp.isMouseButtonTracked(it->second))
+            inp.trackMouseButton(it->second);
+        return it->second;
+    }
 
+    static bool LuaIsKeyDown(const std::string& name) {
+        int k = ensureKey(name);
+        return k != -1 && Core::Engine::Get().input().isKeyDown(k);
+    }
+    static bool LuaWasKeyPressed(const std::string& name) {
+        int k = ensureKey(name);
+        return k != -1 && Core::Engine::Get().input().wasKeyPressed(k);
+    }
+    static bool LuaWasKeyReleased(const std::string& name) {
+        int k = ensureKey(name);
+        return k != -1 && Core::Engine::Get().input().wasKeyReleased(k);
+    }
+    static bool LuaIsMouseDown(const std::string& name) {
+        int b = ensureMouse(name);
+        return b != -1 && Core::Engine::Get().input().isMouseDown(b);
+    }
+    static bool LuaWasMousePressed(const std::string& name) {
+        int b = ensureMouse(name);
+        return b != -1 && Core::Engine::Get().input().wasMousePressed(b);
+    }
+    static vec2 LuaGetMousePos() {
+        return Core::Engine::Get().input().mousePosition();
+    }
+    static vec2 LuaGetMouseWorldPos() {
+        auto& eng = Core::Engine::Get();
+        return eng.input().getMouseWorldPos(eng.camera(),
+            static_cast<float>(eng.window().width()),
+            static_cast<float>(eng.window().height()));
+    }
+
+    void RegisterInputGlobal(sol::state& lua) {
         sol::table t = lua.create_table();
-
-        t.set_function("isKeyDown", [ensureKey](const std::string& name) -> bool {
-            int k = ensureKey(name);
-            return k != -1 && Core::Engine::Get().input().isKeyDown(k);
-        });
-        t.set_function("wasKeyPressed", [ensureKey](const std::string& name) -> bool {
-            int k = ensureKey(name);
-            return k != -1 && Core::Engine::Get().input().wasKeyPressed(k);
-        });
-        t.set_function("wasKeyReleased", [ensureKey](const std::string& name) -> bool {
-            int k = ensureKey(name);
-            return k != -1 && Core::Engine::Get().input().wasKeyReleased(k);
-        });
-
-        t.set_function("isMouseDown", [ensureMouse](const std::string& name) -> bool {
-            int b = ensureMouse(name);
-            return b != -1 && Core::Engine::Get().input().isMouseDown(b);
-        });
-        t.set_function("wasMousePressed", [ensureMouse](const std::string& name) -> bool {
-            int b = ensureMouse(name);
-            return b != -1 && Core::Engine::Get().input().wasMousePressed(b);
-        });
-
-        // Mouse position helpers
-        t.set_function("getMousePos", []() -> vec2 {
-            return Core::Engine::Get().input().mousePosition();
-        });
-        t.set_function("getMouseWorldPos", []() -> vec2 {
-            auto& eng = Core::Engine::Get();
-            return eng.input().getMouseWorldPos(eng.camera(),
-                static_cast<float>(eng.window().width()),
-                static_cast<float>(eng.window().height()));
-        });
-
+        t.set_function("isKeyDown", &LuaIsKeyDown);
+        t.set_function("wasKeyPressed", &LuaWasKeyPressed);
+        t.set_function("wasKeyReleased", &LuaWasKeyReleased);
+        t.set_function("isMouseDown", &LuaIsMouseDown);
+        t.set_function("wasMousePressed", &LuaWasMousePressed);
+        t.set_function("getMousePos", &LuaGetMousePos);
+        t.set_function("getMouseWorldPos", &LuaGetMouseWorldPos);
         lua["Input"] = t;
     }
 
     //-------------------------------------------------------------------------
-    // Audio Global Binding  (sound playback API for Lua scripts)
+    // Audio Global Binding — Static helpers (avoid closures)
     //-------------------------------------------------------------------------
+    static void LuaAudioPlay(const std::string& name) {
+        Core::Engine::Get().audio().play(name);
+    }
+    static void LuaAudioPlayOneShot(const std::string& name) {
+        Core::Engine::Get().audio().playOneShot(name);
+    }
+    static void LuaAudioStop(const std::string& name) {
+        Core::Engine::Get().audio().stop(name);
+    }
+    static bool LuaAudioIsPlaying(const std::string& name) {
+        return Core::Engine::Get().audio().isPlaying(name);
+    }
+
     void RegisterAudioGlobal(sol::state& lua) {
         sol::table t = lua.create_table();
-
-        // play(name) — play by sound profile (honours loop/volume/pitch from config)
-        t.set_function("play", [](const std::string& name) {
-            Core::Engine::Get().audio().play(name);
-        });
-
-        // playOneShot(name) — fire-and-forget SFX with no channel tracking
-        t.set_function("playOneShot", [](const std::string& name) {
-            Core::Engine::Get().audio().playOneShot(name);
-        });
-
-        // stop(name) — stop a sound by its profile name
-        t.set_function("stop", [](const std::string& name) {
-            Core::Engine::Get().audio().stop(name);
-        });
-
-        // isPlaying(name) — returns true if that sound is currently active
-        t.set_function("isPlaying", [](const std::string& name) -> bool {
-            return Core::Engine::Get().audio().isPlaying(name);
-        });
-
+        t.set_function("play", &LuaAudioPlay);
+        t.set_function("playOneShot", &LuaAudioPlayOneShot);
+        t.set_function("stop", &LuaAudioStop);
+        t.set_function("isPlaying", &LuaAudioIsPlaying);
         lua["Audio"] = t;
     }
 
     //-------------------------------------------------------------------------
-    // Master Registration
+    // Master Registration — Static helpers (avoid closures)
     //-------------------------------------------------------------------------
+    static Platform::InputManager& LuaGetInput() {
+        return Core::Engine::Get().input();
+    }
+    static vec2 LuaGetMouseWorldPosGlobal() {
+        auto& eng = Core::Engine::Get();
+        auto& input = eng.input();
+        auto& cam = eng.camera();
+        auto& window = eng.window();
+        return input.getMouseWorldPos(cam,
+            static_cast<float>(window.width()),
+            static_cast<float>(window.height()));
+    }
+
     void RegisterAllBindings(sol::state& lua) {
         std::cout << "[LuaBindings] Registering engine types..." << std::endl;
 
@@ -796,18 +806,8 @@ namespace Scripting {
 
         // Create Engine global table for accessing engine services
         sol::table engine = lua.create_table();
-        engine.set_function("input", []() -> Platform::InputManager& {
-            return Core::Engine::Get().input();
-        });
-        engine.set_function("mouseWorldPos", []() -> vec2 {
-            auto& eng = Core::Engine::Get();
-            auto& input = eng.input();
-            auto& cam = eng.camera();
-            auto& window = eng.window();
-            return input.getMouseWorldPos(cam,
-                static_cast<float>(window.width()),
-                static_cast<float>(window.height()));
-        });
+        engine.set_function("input", &LuaGetInput);
+        engine.set_function("mouseWorldPos", &LuaGetMouseWorldPosGlobal);
         lua["Engine"] = engine;
         std::cout << "[LuaBindings] Registered Engine global table" << std::endl;
 

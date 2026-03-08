@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           Profiler.hpp
 \project        Lights Out
@@ -7,7 +7,7 @@
 
                 Currently outputs to the console
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content  2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #pragma once
@@ -18,6 +18,7 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <cassert>
 
 namespace Core {
 
@@ -39,11 +40,18 @@ namespace Core {
     class Profiler {
     public:
         static Profiler& Get() {
-            static Profiler instance;
-            return instance;
+            if (!s_instance) s_instance = new Profiler();
+            return *s_instance;
+        }
+
+        // Call before _CrtDumpMemoryLeaks() to free internal map allocations.
+        static void Destroy() {
+            delete s_instance;
+            s_instance = nullptr;
         }
 
         void begin(const std::string& name) {
+            if (!m_enabled) return;
             m_startTimes[name] = std::chrono::high_resolution_clock::now();
 
             if (!m_scopeStack.empty()) {
@@ -53,6 +61,7 @@ namespace Core {
         }
 
         void end(const std::string& name) {
+            if (!m_enabled) return;
             auto endTime = std::chrono::high_resolution_clock::now();
             auto it = m_startTimes.find(name);
             if (it != m_startTimes.end()) {
@@ -66,6 +75,7 @@ namespace Core {
         }
 
         void print() {
+            if (!m_enabled) return;
             std::cout << "\n";
             std::cout << "========================================\n";
             std::cout << "PERFORMANCE PROFILE\n";
@@ -127,12 +137,20 @@ namespace Core {
         const std::unordered_map<std::string, ProfileData>& data() const { return m_data; }
 
         void reset() {
-            m_data.clear();
-            m_startTimes.clear();
-            m_scopeStack.clear();
+            m_enabled = false;
+            m_data = {};
+            m_startTimes = {};
+            m_scopeStack = {};
         }
 
+        void setEnabled(bool enabled) { m_enabled = enabled; }
+
     private:
+        Profiler() = default;
+
+        inline static Profiler* s_instance = nullptr;
+
+        bool m_enabled = true;
         std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> m_startTimes;
         std::unordered_map<std::string, ProfileData> m_data;
         std::vector<std::string> m_scopeStack;

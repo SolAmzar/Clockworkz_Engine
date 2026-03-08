@@ -95,6 +95,12 @@ namespace Core {
 		static Engine& Get();  // Singleton accessor
 		static bool IsInitialized() { return s_instance != nullptr; }
 
+#ifdef _DEBUG
+		// Returns a pointer to the heap snapshot taken just after LuaManager::Initialize().
+		// Use with _CrtMemDumpAllObjectsSince() to exclude sol2 type-name false positives.
+		static const void* postLuaInitState();
+#endif
+
 		// Subsystem accessors
 		EventBus& events() { return m_events; }
 		Graphics::RenderingManager& rendering() { return *m_renderer; }

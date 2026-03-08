@@ -111,8 +111,8 @@ void SoundManager::Unload(const std::string &name) {
 
 void SoundManager::Clear() {
   ResourceManager<Audio::AudioClip>::Clear();
-  s_loadedNames.clear();
-  s_configs.clear();
+  s_loadedNames = {};
+  s_configs = {};
   s_audio = nullptr;
 }
 

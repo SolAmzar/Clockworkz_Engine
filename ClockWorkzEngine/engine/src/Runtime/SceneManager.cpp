@@ -26,7 +26,19 @@ reserved.
 
 using namespace Runtime;
 
+SceneManager::~SceneManager() {
+  for (auto &pair : m_cache) {
+    if (pair.second) {
+      pair.second->unload();
+    }
+  }
+  m_cache.clear();
+}
+
 bool SceneManager::loadScene(const std::string &id) {
+  // Unload the current scene before switching to a new one
+  unloadCurrent();
+
   // If not cached, create & load
   auto it = m_cache.find(id);
   if (it == m_cache.end()) {
@@ -38,8 +50,9 @@ bool SceneManager::loadScene(const std::string &id) {
   } else {
     // If already cached, switch
     m_current = it->second;
-    // If you unload when leaving, you might want to re-load here. For now,
-    // assume still loaded.
+    // Clear and reload the cached scene to ensure it starts fresh
+    m_current->unload();
+    m_current->load();
   }
   std::cout << "[SceneManager] Current = " << id << "\n";
   return true;

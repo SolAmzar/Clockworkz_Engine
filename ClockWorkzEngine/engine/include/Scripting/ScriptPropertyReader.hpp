@@ -49,7 +49,7 @@ private:
         std::vector<ScriptProperty>      props;
         std::filesystem::file_time_type  timestamp;
     };
-    static std::unordered_map<std::string, CacheEntry> s_cache;
+    static std::unordered_map<std::string, CacheEntry>* s_cache;
 };
 
 } // namespace Scripting

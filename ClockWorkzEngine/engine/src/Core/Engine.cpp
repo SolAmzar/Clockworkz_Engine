@@ -23,6 +23,13 @@ reserved.
 */
 /******************************************************************************/
 #include "Core/Engine.hpp"
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <cstdlib>
+#include <crtdbg.h>
+static _CrtMemState s_postLuaInitState;
+static bool s_hasPostLuaInitState = false;
+#endif
 #include "ECS/World.hpp"
 #include "Runtime/Scene.hpp"
 #include "Assets/SoundManager.hpp"
@@ -59,6 +66,12 @@ using namespace Core;
 
 namespace Core {
 Engine *Engine::s_instance = nullptr;
+
+#ifdef _DEBUG
+const void* Engine::postLuaInitState() {
+    return s_hasPostLuaInitState ? &s_postLuaInitState : nullptr;
+}
+#endif
 Engine::Engine() {
   s_instance = this; // register singleton instance
   m_accuml = 0.0;
@@ -195,6 +208,14 @@ bool Engine::init() {
 
   m_lua->Initialize();
 
+#ifdef _DEBUG
+  // Take a heap snapshot after sol2 registers its type names.
+  // _CrtMemDumpAllObjectsSince() in main() uses this to exclude sol2's
+  // internal allocations ("sol.Scripting::EntityRef" etc.) from the report.
+  _CrtMemCheckpoint(&s_postLuaInitState);
+  s_hasPostLuaInitState = true;
+#endif
+
   m_gsm = std::make_unique<Runtime::GameStateManager>();
 
   /*
@@ -295,10 +316,22 @@ void Engine::shutdown() {
     m_lua.reset();
   }
 
-  // 11. TextureManager cleanup
+  // 11. Global Caches and Factories
   Assets::TextureManager::Clear();
+  Gameplay::PrefabFactory::get().clear();
 
-  // 12. Basic engine services (safe anywhere below)
+  // 12. Explicitly clear callback lambdas to release any captured shared_ptrs
+  m_bootstrap = nullptr;
+  m_editorFactory = nullptr;
+  m_playFactory = nullptr;
+  m_componentRegistrar = nullptr;
+  m_sceneSetup = nullptr;
+
+  // 13. Destroy Profiler — deletes the singleton so its unordered_map memory
+  //     is freed before _CrtDumpMemoryLeaks() runs in main().
+  Core::Profiler::Destroy();
+
+  // 14. Basic engine services (safe anywhere below)
   m_time.reset();
   m_logger.reset();
   m_config.reset();

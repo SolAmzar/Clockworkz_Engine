@@ -27,7 +27,11 @@ namespace Scripting {
 
 LuaManager::LuaManager() {}
 
-LuaManager::~LuaManager() {}
+LuaManager::~LuaManager() {
+    if (m_Initialized) {
+        m_LuaState.collect_garbage();
+    }
+}
 
 void LuaManager::Initialize() {
   if (m_Initialized) {
@@ -88,30 +92,36 @@ bool LuaManager::ExecuteString(const std::string &script) {
   }
 }
 
+  // ---------------------------------------------------------------------------
+  // Static Helper Functions for Lua (avoid closures for core functions)
+  // ---------------------------------------------------------------------------
+  static void LuaLog(const std::string& message) {
+      std::cout << "[Lua] " << message << std::endl;
+  }
+  static void LuaLogWarning(const std::string& message) {
+      std::cout << "[Lua Warning] " << message << std::endl;
+  }
+  static void LuaLogError(const std::string& message) {
+      std::cerr << "[Lua Error] " << message << std::endl;
+  }
+  static float LuaClamp(float value, float min, float max) {
+      if (value < min) return min;
+      if (value > max) return max;
+      return value;
+  }
+  static float LuaLerp(float a, float b, float t) {
+      return a + (b - a) * t;
+  }
+
 void LuaManager::RegisterEngineFunctions() {
   // Register basic logging functions
-  m_LuaState.set_function("Log", [](const std::string& message) {
-    std::cout << "[Lua] " << message << std::endl;
- });
-
-  m_LuaState.set_function("LogWarning", [](const std::string& message) {
-    std::cout << "[Lua Warning] " << message << std::endl;
-  });
-
-  m_LuaState.set_function("LogError", [](const std::string& message) {
-     std::cerr << "[Lua Error] " << message << std::endl;
-  });
+  m_LuaState.set_function("Log", &LuaLog);
+  m_LuaState.set_function("LogWarning", &LuaLogWarning);
+  m_LuaState.set_function("LogError", &LuaLogError);
 
   // Register math helper functions
-  m_LuaState.set_function("Clamp", [](float value, float min, float max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  });
-
-  m_LuaState.set_function("Lerp", [](float a, float b, float t) {
-    return a + (b - a) * t;
-  });
+  m_LuaState.set_function("Clamp", &LuaClamp);
+  m_LuaState.set_function("Lerp", &LuaLerp);
 
   // Register all engine type bindings (vec2, Transform2D, GameObject, Components, Input)
   RegisterAllBindings(m_LuaState);

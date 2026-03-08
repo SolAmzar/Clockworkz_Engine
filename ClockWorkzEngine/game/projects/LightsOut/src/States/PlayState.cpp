@@ -504,8 +504,6 @@ void PlayState::update(double dt) {
     {
       auto &world = scene->GetWorld();
       auto &collisions = scene->GetCollisionSystem();
-      const std::vector<bool> *layerFlags =
-          scene->m_layerEnabled.empty() ? nullptr : &scene->m_layerEnabled;
 
       m_activationSystem.update(world, collisions);
       m_batterySystem.update(world, dt);

@@ -1,6 +1,7 @@
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Core/Engine.hpp"
+#include "Core/Profiler.hpp"
 #include "Assets/SoundManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Graphics/Shader.hpp"
@@ -8,6 +9,8 @@
 #include "Runtime/EditorState.hpp"
 #include "Runtime/EditorPlayState.hpp"
 #include "Runtime/SceneSerializer.hpp"
+#include "Gameplay/Prefab.hpp"
+#include "Scripting/ScriptPropertyReader.hpp"
 #include "ECS/World.hpp"
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -420,9 +423,33 @@ int main()
 	Assets::TextureManager::Clear(); // clears Texture2D map + loadedTextures vector
 	Assets::SoundManager::Clear();   // clears AudioClip map + s_configs + s_loadedNames
 
+	// Clear SceneSerializer static extensions, PrefabFactory, and ScriptPropertyReader cache.
+	Runtime::SceneSerializer::setExtensions(nullptr, nullptr);
+	Gameplay::PrefabFactory::get().clear();
+	Scripting::ScriptPropertyReader::clearAll();
+
 	} // engine + all owned states/systems destroyed here
 #ifdef _DEBUG
-	_CrtDumpMemoryLeaks(); // report after all C++ objects are gone
+	// Destroy the Profiler pointer-singleton so its unordered_map sentinels
+	// and bucket arrays are freed before the leak dump (Meyers singletons
+	// and static members only destruct after main() returns, too late).
+	Core::Profiler::Destroy();
+
+	// Report only allocations made AFTER LuaManager::Initialize() that weren't
+	// freed.  This excludes sol2's internal type-name strings ("sol.Scripting::
+	// EntityRef" etc.) which are allocated during Lua init and are intentionally
+	// never freed by sol2 — they are a known false positive, not real leaks.
+	if (const auto* luaSnap = static_cast<const _CrtMemState*>(Core::Engine::postLuaInitState())) {
+		_CrtMemState after, diff;
+		_CrtMemCheckpoint(&after);
+		if (_CrtMemDifference(&diff, luaSnap, &after)) {
+			_CrtMemDumpAllObjectsSince(luaSnap);
+		} else {
+			std::cout << "[Memory] No leaks detected.\n";
+		}
+	} else {
+		_CrtDumpMemoryLeaks(); // fallback if engine never fully inited
+	}
 #endif
 	return _result;
 }

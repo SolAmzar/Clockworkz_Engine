@@ -24,17 +24,22 @@ namespace Audio {
     class AudioClip {
     public:
         AudioClip() = default;
-        ~AudioClip() = default;
+        ~AudioClip() { Unload(); }
 
         AudioClip(const AudioClip&) = delete;
         AudioClip& operator=(const AudioClip&) = delete;
 
-        AudioClip(AudioClip&& o) noexcept : m_sound(o.m_sound) { o.m_sound = nullptr; }
+        AudioClip(AudioClip&& o) noexcept : m_sound(o.m_sound), m_system(o.m_system) { 
+            o.m_sound = nullptr; 
+            o.m_system = nullptr;
+        }
         AudioClip& operator=(AudioClip&& o) noexcept {
             if (this != &o) {
                 Unload();
                 m_sound = o.m_sound;
+                m_system = o.m_system;
                 o.m_sound = nullptr;
+                o.m_system = nullptr;
             }
             return *this;
         }
@@ -48,7 +53,7 @@ namespace Audio {
                     << file.path << "'\n";
                 return false;
             }
-			m_system = system;
+    m_system = system;
             FMOD_MODE mode = FMOD_DEFAULT;
             if (file.loop)   mode |= FMOD_LOOP_NORMAL; else mode |= FMOD_LOOP_OFF;
             if (file.stream) mode |= FMOD_CREATESTREAM; else mode |= FMOD_CREATESAMPLE;
@@ -66,7 +71,10 @@ namespace Audio {
 
         // Free FMOD resources if loaded
         inline void Unload() {
-            m_sound = nullptr;
+            if (m_sound) {
+                m_sound->release();
+                m_sound = nullptr;
+            }
             m_system = nullptr;
         }
 
