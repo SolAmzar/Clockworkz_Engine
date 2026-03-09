@@ -93,6 +93,9 @@ void Scene::Init() {
   // Let the game register its own component types (set via Engine::setComponentRegistrar).
   Core::Engine::Get().invokeComponentRegistrar(m_world);
 
+  // Wire level-loading so scripts can call World.loadLevel(name)
+  m_scriptSystem.setLoadLevelFn([this](const std::string& name) { SetPendingLevel(name); });
+
   // Initialize layer enabled flags (all enabled by default)
   m_layerEnabled.resize(MAX_LAYERS, true);
 }

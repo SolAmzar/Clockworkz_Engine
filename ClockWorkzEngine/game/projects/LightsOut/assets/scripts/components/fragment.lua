@@ -7,6 +7,7 @@ Properties = {
     { name = "fadeSpeed",     type = "float", default = 5.0,   label = "Fade Speed" },
     { name = "_baseY",        type = "float", default = 0.0,   label = "" },
     { name = "_timer",        type = "float", default = 0.0,   label = "" },
+    { name = "_alpha",        type = "float", default = 1.0,   label = "" },
     { name = "_initialized",  type = "bool",  default = false,  label = "" },
 }
 

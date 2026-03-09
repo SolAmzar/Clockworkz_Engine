@@ -121,6 +121,10 @@ void ScriptSystem::setWorldTableExtension(WorldTableExtensionFn fn) {
   m_worldTableExtensionFn = std::move(fn);
 }
 
+void ScriptSystem::setLoadLevelFn(LoadLevelFn fn) {
+  m_loadLevelFn = std::move(fn);
+}
+
 void ScriptSystem::update(ECS::World& world, double dt,
                           const std::vector<std::pair<ECS::Entity, ECS::Entity>>& collisions) {
   float fDt = static_cast<float>(dt);
@@ -139,6 +143,9 @@ void ScriptSystem::update(ECS::World& world, double dt,
     worldTable.set_function("eachWithScript", [&world](const std::string& path, sol::function fn) { LuaWorldEachWithScript(world, path, fn); });
     worldTable.set_function("getScriptProp", [&world](uint32_t id, const std::string& key) { return LuaWorldGetScriptProp(world, id, key); });
     worldTable.set_function("setScriptProp", [&world](uint32_t id, const std::string& key, sol::object val) { LuaWorldSetScriptProp(world, id, key, val); });
+    worldTable.set_function("loadLevel", [this](const std::string& name) {
+        if (m_loadLevelFn) m_loadLevelFn(name);
+    });
 
     lua["World"] = worldTable;
 
@@ -271,6 +278,7 @@ void ScriptSystem::clear() {
   m_states.clear();
   m_prevCollisionPairs.clear();
   m_worldTableExtensionFn = nullptr;
+  m_loadLevelFn = nullptr;
   // Release the World table so its lambdas (which capture world&) are freed
   // while the ECS world is still alive. Prevents dangling-reference UB and
   // the associated sol::function leak reported by the CRT leak detector.

@@ -4,7 +4,9 @@
       "Bash(perl:*)",
       "Bash(sed:*)",
       "Bash(cp:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)"
     ]
   }
 }

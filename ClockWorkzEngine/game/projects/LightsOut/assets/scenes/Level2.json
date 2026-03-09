@@ -1,205 +1,239 @@
 {
-    "objects": [
-        {
-            "active": true,
-            "components": {
-                "luaScript": [
-                    {
-                        "enabled": true,
-                        "scriptPath": "player_controller.lua"
-                    }
-                ],
-                "tag": {
-                    "tag": "Player"
-                },
-                "spriteAnimator": {
-                    "filename": "player.json"
-                },
-                "spriteRenderer": {
-                    "textureId": "player_texture",
-                    "uv": [
-                        0.125,
-                        0.0,
-                        0.125,
-                        0.125
-                    ]
-                },
-                "light": {
-                    "active": true,
-                    "angle": 60.0,
-                    "color": {
-                        "b": 0.6000000238418579,
-                        "g": 0.8999999761581421,
-                        "r": 1.0
-                    },
-                    "intensity": 1.0,
-                    "offset": {
-                        "x": 35.0,
-                        "y": -20.0
-                    },
-                    "radius": 300.0
-                },
-                "transform": {
-                    "position": {
-                        "x": -409.5199890136719,
-                        "y": 268.5296630859375
-                    },
-                    "rotation": 2.557771921157837,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    }
-                },
-                "velocity": {
-                    "moveSpeed": 20.0,
-                    "x": 0.0,
-                    "y": 0.0
-                }
-            },
-            "name": "Entity_2"
+  "objects": [
+    {
+      "active": true,
+      "components": {
+        "luaScript": [
+          {
+            "enabled": true,
+            "scriptPath": "player_controller.lua"
+          }
+        ],
+        "tag": {
+          "tag": "Player"
         },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 50.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "moveable": true,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "width": 50.0
-                },
-                "enemyAI": {
-                    "chaseSpeed": 150.0,
-                    "detectionRadius": 100.0,
-                    "patrolSpeed": 50.0
-                },
-                "particleEmitter": {
-                    "acceleration": {
-                        "x": 0.0,
-                        "y": -200.0
-                    },
-                    "active": true,
-                    "colorEnd": {
-                        "a": 0.0,
-                        "b": 0.3872291147708893,
-                        "g": 0.3872291147708893,
-                        "r": 0.9715302586555481
-                    },
-                    "colorStart": {
-                        "a": 1.0,
-                        "b": 0.2971086800098419,
-                        "g": 0.2971086800098419,
-                        "r": 0.32740211486816406
-                    },
-                    "direction": {
-                        "x": -0.970487117767334,
-                        "y": 0.2411527931690216
-                    },
-                    "lifeMax": 0.4000000059604645,
-                    "lifeMin": 0.05000000074505806,
-                    "localOffset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "looping": true,
-                    "rate": 16.0,
-                    "sizeEnd": 0.4000000059604645,
-                    "sizeStart": 7.349999904632568,
-                    "speedMax": 306.0,
-                    "speedMin": 132.0,
-                    "spreadDeg": 180.0,
-                    "worldSpace": true
-                },
-                "spriteAnimator": {
-                    "filename": "enemy.json"
-                },
-                "spriteRenderer": {
-                    "textureId": "monster_texture",
-                    "uv": [
-                        0.75,
-                        0.5,
-                        0.25,
-                        0.25
-                    ]
-                },
-                "transform": {
-                    "position": {
-                        "x": 633.1342163085938,
-                        "y": 273.5289611816406
-                    },
-                    "rotation": -6.182765483856201,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    }
-                },
-                "velocity": {
-                    "moveSpeed": 50.0,
-                    "x": -0.18898625671863556,
-                    "y": -0.9819797277450562
-                }
-            },
-            "name": "Entity_3"
+        "spriteAnimator": {
+          "filename": "player.json"
         },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 50.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "moveable": true,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "width": 50.0
-                },
-                "enemyAI": {
-                    "chaseSpeed": 150.0,
-                    "detectionRadius": 300.0,
-                    "patrolSpeed": 50.0
-                },
-                "spriteAnimator": {
-                    "filename": "enemy.json"
-                },
-                "spriteRenderer": {
-                    "textureId": "monster_texture",
-                    "uv": [
-                        0.75,
-                        0.5,
-                        0.25,
-                        0.25
-                    ]
-                },
-                "transform": {
-                    "position": {
-                        "x": -261.7607727050781,
-                        "y": -144.00900268554688
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    }
-                },
-                "velocity": {
-                    "moveSpeed": 150.0,
-                    "x": -0.2342701256275177,
-                    "y": 0.9721714854240417
-                }
-            },
-            "name": "Entity_1"
+        "spriteRenderer": {
+          "textureId": "player_texture",
+          "uv": [
+            0.125,
+            0.0,
+            0.125,
+            0.125
+          ]
+        },
+        "light": {
+          "active": true,
+          "angle": 60.0,
+          "color": {
+            "b": 0.6000000238418579,
+            "g": 0.8999999761581421,
+            "r": 1.0
+          },
+          "intensity": 1.0,
+          "offset": {
+            "x": 35.0,
+            "y": -20.0
+          },
+          "radius": 300.0
+        },
+        "transform": {
+          "position": {
+            "x": -409.5199890136719,
+            "y": 268.5296630859375
+          },
+          "rotation": 2.557771921157837,
+          "scale": {
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        "velocity": {
+          "moveSpeed": 20.0,
+          "x": 0.0,
+          "y": 0.0
         }
-    ]
+      },
+      "name": "Entity_2"
+    },
+    {
+      "active": true,
+      "components": {
+        "collider": {
+          "collisionCategory": 1,
+          "collisionMask": 4294967295,
+          "height": 50.0,
+          "isHazard": false,
+          "isSolid": true,
+          "isTrigger": false,
+          "moveable": true,
+          "offset": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "width": 50.0
+        },
+        "enemyAI": {
+          "chaseSpeed": 150.0,
+          "detectionRadius": 100.0,
+          "patrolSpeed": 50.0
+        },
+        "particleEmitter": {
+          "acceleration": {
+            "x": 0.0,
+            "y": -200.0
+          },
+          "active": true,
+          "colorEnd": {
+            "a": 0.0,
+            "b": 0.3872291147708893,
+            "g": 0.3872291147708893,
+            "r": 0.9715302586555481
+          },
+          "colorStart": {
+            "a": 1.0,
+            "b": 0.2971086800098419,
+            "g": 0.2971086800098419,
+            "r": 0.32740211486816406
+          },
+          "direction": {
+            "x": -0.970487117767334,
+            "y": 0.2411527931690216
+          },
+          "lifeMax": 0.4000000059604645,
+          "lifeMin": 0.05000000074505806,
+          "localOffset": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "looping": true,
+          "rate": 16.0,
+          "sizeEnd": 0.4000000059604645,
+          "sizeStart": 7.349999904632568,
+          "speedMax": 306.0,
+          "speedMin": 132.0,
+          "spreadDeg": 180.0,
+          "worldSpace": true
+        },
+        "spriteAnimator": {
+          "filename": "enemy.json"
+        },
+        "spriteRenderer": {
+          "textureId": "monster_texture",
+          "uv": [
+            0.75,
+            0.5,
+            0.25,
+            0.25
+          ]
+        },
+        "transform": {
+          "position": {
+            "x": 633.1342163085938,
+            "y": 273.5289611816406
+          },
+          "rotation": -6.182765483856201,
+          "scale": {
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        "velocity": {
+          "moveSpeed": 50.0,
+          "x": -0.18898625671863556,
+          "y": -0.9819797277450562
+        },
+        "luaScript": [
+          {
+            "scriptPath": "components/enemy_ai.lua",
+            "enabled": true,
+            "properties": {
+              "detectionRadius": 100.0,
+              "chaseSpeed": 150.0,
+              "patrolSpeed": 50.0,
+              "state": "Patrol",
+              "alertDuration": 3.0,
+              "lightSensitivity": 0.3,
+              "wanderInterval": 2.0,
+              "_stateTimer": 0.0,
+              "_wanderTimer": 0.0
+            }
+          }
+        ]
+      },
+      "name": "Entity_3"
+    },
+    {
+      "active": true,
+      "components": {
+        "collider": {
+          "collisionCategory": 1,
+          "collisionMask": 4294967295,
+          "height": 50.0,
+          "isHazard": false,
+          "isSolid": true,
+          "isTrigger": false,
+          "moveable": true,
+          "offset": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "width": 50.0
+        },
+        "enemyAI": {
+          "chaseSpeed": 150.0,
+          "detectionRadius": 300.0,
+          "patrolSpeed": 50.0
+        },
+        "spriteAnimator": {
+          "filename": "enemy.json"
+        },
+        "spriteRenderer": {
+          "textureId": "monster_texture",
+          "uv": [
+            0.75,
+            0.5,
+            0.25,
+            0.25
+          ]
+        },
+        "transform": {
+          "position": {
+            "x": -261.7607727050781,
+            "y": -144.00900268554688
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        "velocity": {
+          "moveSpeed": 150.0,
+          "x": -0.2342701256275177,
+          "y": 0.9721714854240417
+        },
+        "luaScript": [
+          {
+            "scriptPath": "components/enemy_ai.lua",
+            "enabled": true,
+            "properties": {
+              "detectionRadius": 300.0,
+              "chaseSpeed": 150.0,
+              "patrolSpeed": 50.0,
+              "state": "Patrol",
+              "alertDuration": 3.0,
+              "lightSensitivity": 0.3,
+              "wanderInterval": 2.0,
+              "_stateTimer": 0.0,
+              "_wanderTimer": 0.0
+            }
+          }
+        ]
+      },
+      "name": "Entity_1"
+    }
+  ]
 }

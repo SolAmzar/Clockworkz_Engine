@@ -13,9 +13,11 @@ reserved.
 /******************************************************************************/
 
 #include "States/MenuState.hpp"
+#include "States/GamePlayState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/SoundManager.hpp"
+#include "Assets/TextureManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
@@ -71,6 +73,9 @@ void MenuState::onEnter() {
   // Start BGM
   m_bgmChannel = Assets::SoundManager::Play("menu_bgm");
 
+  // Load all textures from config (required for the background sprite to resolve its textureId)
+  Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
+
   // Initialise and load the menu scene authored in the editor
   m_menuScene.Init();
   m_menuScene.LoadFromFile("assets/scenes/MainMenu.json");
@@ -122,8 +127,7 @@ void MenuState::applyHoverColors() {
 
 void MenuState::handleAction(const std::string &action) {
   if (action == "start_game") {
-    // TODO: launch play state once scene manager is wired up
-    std::cout << "[MenuState] start_game: not yet implemented\n";
+    m_gsm.switchTo(std::make_shared<GamePlayState>(m_gsm, m_input, m_window));
     return;
   }
   if (action == "exit") {

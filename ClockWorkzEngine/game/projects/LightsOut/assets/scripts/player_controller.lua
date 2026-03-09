@@ -177,4 +177,13 @@ function PlayerController:onUpdate(entity, dt)
     end
 end
 
+function PlayerController:onCollisionEnter(entity, other)
+    if other:getTagValue() == "Enemy" then
+        if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
+            entity:playAnimation("death")
+            entity:setColliderSolid(false)
+        end
+    end
+end
+
 return PlayerController

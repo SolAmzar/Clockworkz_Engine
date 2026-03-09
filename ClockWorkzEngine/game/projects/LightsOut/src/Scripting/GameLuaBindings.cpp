@@ -3,10 +3,9 @@
 \file           GameLuaBindings.cpp
 \project        Lights Out
 \author(s)      [Syafiq]
-\brief          Extends the engine's EntityRef Lua usertype with LightsOut-
-                specific component accessors.  The engine knows nothing about
-                these components; they are wired in via the LuaExtensionFn
-                callback registered in main.cpp.
+\brief          Extends EntityRef with game component accessors backed by Lua
+                script properties (components/battery.lua, fragment.lua, etc.)
+                instead of C++ component structs. Engine remains clean.
 
 All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reserved.
 */
@@ -20,243 +19,128 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Scripting/LuaManager.hpp"
 #include "Scripting/EntityRef.hpp"
-#include "ECS/World.hpp"
-
-// LightsOut game components
-#include "Components/Battery.hpp"
-#include "Components/Fragment.hpp"
-#include "Components/FragmentCollector.hpp"
-#include "Components/Door.hpp"
-#include "Components/DoorSwing.hpp"
-#include "Components/LightExposure.hpp"
-#include "Components/PlayerController.hpp"
+#include "Components/LuaScript.hpp"
 
 namespace Scripting {
 
-void RegisterGameBindings(LuaManager& luaMgr) {
-    sol::state& lua = luaMgr.GetState();
-
-    // Extend EntityRef with LightsOut-specific component accessors.
-    // sol2 allows adding methods to an already-registered usertype table.
-    sol::usertype<EntityRef> er = lua["EntityRef"];
-
-    // --- Battery ---
-    er["hasBattery"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::Battery>(e.getEntity());
-    };
-    er["getBatteryCharge"] = [](EntityRef& e) -> float {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        return b ? b->charge : 0.f;
-    };
-    er["setBatteryCharge"] = [](EntityRef& e, float c) {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        if (b) b->charge = c;
-    };
-    er["getBatteryMaxCharge"] = [](EntityRef& e) -> float {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        return b ? b->maxCharge : 0.f;
-    };
-    er["getBatteryDrainRate"] = [](EntityRef& e) -> float {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        return b ? b->drainRate : 0.f;
-    };
-    er["getBatteryChargeRate"] = [](EntityRef& e) -> float {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        return b ? b->chargeRate : 0.f;
-    };
-    er["isBatteryCharging"] = [](EntityRef& e) -> bool {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        return b ? b->isCharging : false;
-    };
-    er["setBatteryCharging"] = [](EntityRef& e, bool v) {
-        auto* b = e.getWorld() ? e.getWorld()->getComponent<Components::Battery>(e.getEntity()) : nullptr;
-        if (b) b->isCharging = v;
-    };
-
-    // --- Fragment ---
-    er["hasFragment"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::Fragment>(e.getEntity());
-    };
-    er["isFragmentCollected"] = [](EntityRef& e) -> bool {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        return f ? f->collected : false;
-    };
-    er["setFragmentCollected"] = [](EntityRef& e, bool v) {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        if (f) f->collected = v;
-    };
-    er["getFragmentBobSpeed"] = [](EntityRef& e) -> float {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        return f ? f->bobSpeed : 0.f;
-    };
-    er["getFragmentBobAmount"] = [](EntityRef& e) -> float {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        return f ? f->bobAmount : 0.f;
-    };
-    er["getFragmentAnimTimer"] = [](EntityRef& e) -> float {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        return f ? f->animationTimer : 0.f;
-    };
-    er["setFragmentAnimTimer"] = [](EntityRef& e, float t) {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        if (f) f->animationTimer = t;
-    };
-    er["getFragmentAlpha"] = [](EntityRef& e) -> float {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        return f ? f->currentAlpha : 0.f;
-    };
-    er["setFragmentAlpha"] = [](EntityRef& e, float a) {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        if (f) f->currentAlpha = a;
-    };
-    er["getFragmentRequiresLight"] = [](EntityRef& e) -> bool {
-        auto* f = e.getWorld() ? e.getWorld()->getComponent<Components::Fragment>(e.getEntity()) : nullptr;
-        return f ? f->requiresLight : true;
-    };
-
-    // --- FragmentCollector ---
-    er["hasFragmentCollector"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::FragmentCollector>(e.getEntity());
-    };
-    er["getCollectedCount"] = [](EntityRef& e) -> int {
-        auto* c = e.getWorld() ? e.getWorld()->getComponent<Components::FragmentCollector>(e.getEntity()) : nullptr;
-        return c ? c->collectedCount : 0;
-    };
-    er["setCollectedCount"] = [](EntityRef& e, int n) {
-        auto* c = e.getWorld() ? e.getWorld()->getComponent<Components::FragmentCollector>(e.getEntity()) : nullptr;
-        if (c) c->collectedCount = n;
-    };
-    er["getRequiredFragments"] = [](EntityRef& e) -> int {
-        auto* c = e.getWorld() ? e.getWorld()->getComponent<Components::FragmentCollector>(e.getEntity()) : nullptr;
-        return c ? c->requiredFragments : 0;
-    };
-    er["getPickupRadius"] = [](EntityRef& e) -> float {
-        auto* c = e.getWorld() ? e.getWorld()->getComponent<Components::FragmentCollector>(e.getEntity()) : nullptr;
-        return c ? c->pickupRadius : 50.f;
-    };
-
-    // --- Door ---
-    er["hasDoor"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::Door>(e.getEntity());
-    };
-    er["isDoorOpen"] = [](EntityRef& e) -> bool {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::Door>(e.getEntity()) : nullptr;
-        return d ? d->isOpen : false;
-    };
-    er["setDoorOpen"] = [](EntityRef& e, bool v) {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::Door>(e.getEntity()) : nullptr;
-        if (d) d->isOpen = v;
-    };
-    er["getDoorRequiredFragments"] = [](EntityRef& e) -> int {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::Door>(e.getEntity()) : nullptr;
-        return d ? d->requiredFragments : 1;
-    };
-    er["getDoorOpenTexture"] = [](EntityRef& e) -> std::string {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::Door>(e.getEntity()) : nullptr;
-        return d ? d->openTexture : "";
-    };
-    er["getDoorClosedTexture"] = [](EntityRef& e) -> std::string {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::Door>(e.getEntity()) : nullptr;
-        return d ? d->closedTexture : "";
-    };
-
-    // --- DoorSwing ---
-    er["hasDoorSwing"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::DoorSwing>(e.getEntity());
-    };
-    er["isDoorSwingOpen"] = [](EntityRef& e) -> bool {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        return d ? d->isOpen : false;
-    };
-    er["setDoorSwingOpen"] = [](EntityRef& e, bool v) {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        if (d) d->isOpen = v;
-    };
-    er["isDoorSwingInitialized"] = [](EntityRef& e) -> bool {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        return d ? d->initialized : false;
-    };
-    er["setDoorSwingInitialized"] = [](EntityRef& e, bool v) {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        if (d) d->initialized = v;
-    };
-    er["getDoorSwingInitialRotation"] = [](EntityRef& e) -> float {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        return d ? d->initialRotation : 0.f;
-    };
-    er["setDoorSwingInitialRotation"] = [](EntityRef& e, float r) {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        if (d) d->initialRotation = r;
-    };
-    er["getDoorSwingAngle"] = [](EntityRef& e) -> float {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        return d ? d->swingAngle : 90.f;
-    };
-    er["isDoorSwingClockwise"] = [](EntityRef& e) -> bool {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        return d ? d->clockwise : true;
-    };
-    er["getDoorSwingSpeed"] = [](EntityRef& e) -> float {
-        auto* d = e.getWorld() ? e.getWorld()->getComponent<Components::DoorSwing>(e.getEntity()) : nullptr;
-        return d ? d->speed : 90.f;
-    };
-
-    // --- LightExposure ---
-    er["hasLightExposure"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::LightExposure>(e.getEntity());
-    };
-    er["getLightExposureTime"] = [](EntityRef& e) -> float {
-        auto* l = e.getWorld() ? e.getWorld()->getComponent<Components::LightExposure>(e.getEntity()) : nullptr;
-        return l ? l->exposureTime : 0.f;
-    };
-    er["setLightExposureTime"] = [](EntityRef& e, float t) {
-        auto* l = e.getWorld() ? e.getWorld()->getComponent<Components::LightExposure>(e.getEntity()) : nullptr;
-        if (l) l->exposureTime = t;
-    };
-    er["getMaxLightExposureTime"] = [](EntityRef& e) -> float {
-        auto* l = e.getWorld() ? e.getWorld()->getComponent<Components::LightExposure>(e.getEntity()) : nullptr;
-        return l ? l->maxExposureTime : 10.f;
-    };
-    er["isInLight"] = [](EntityRef& e) -> bool {
-        auto* l = e.getWorld() ? e.getWorld()->getComponent<Components::LightExposure>(e.getEntity()) : nullptr;
-        return l ? l->inLight : false;
-    };
-    er["setInLight"] = [](EntityRef& e, bool v) {
-        auto* l = e.getWorld() ? e.getWorld()->getComponent<Components::LightExposure>(e.getEntity()) : nullptr;
-        if (l) l->inLight = v;
-    };
-    er["isExposureDangerous"] = [](EntityRef& e) -> bool {
-        auto* l = e.getWorld() ? e.getWorld()->getComponent<Components::LightExposure>(e.getEntity()) : nullptr;
-        return l ? l->isDangerous : false;
-    };
-
-    // --- PlayerController (tag check only) ---
-    er["hasPlayerController"] = [](EntityRef& e) -> bool {
-        auto* w = e.getWorld(); return w && w->hasComponent<Components::PlayerController>(e.getEntity());
-    };
+// ---------------------------------------------------------------------------
+// Property accessor helpers — read/write typed values from a script entry
+// ---------------------------------------------------------------------------
+static float getPropF(EntityRef& e, const char* path, const char* key, float def = 0.f) {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return def;
+    auto it = entry->properties.find(key);
+    if (it == entry->properties.end()) return def;
+    if (auto* v = std::get_if<float>(&it->second)) return *v;
+    return def;
+}
+static void setPropF(EntityRef& e, const char* path, const char* key, float val) {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return;
+    auto it = entry->properties.find(key);
+    if (it != entry->properties.end() && std::get_if<float>(&it->second)) it->second = val;
+}
+static bool getPropB(EntityRef& e, const char* path, const char* key, bool def = false) {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return def;
+    auto it = entry->properties.find(key);
+    if (it == entry->properties.end()) return def;
+    if (auto* v = std::get_if<bool>(&it->second)) return *v;
+    return def;
+}
+static void setPropB(EntityRef& e, const char* path, const char* key, bool val) {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return;
+    auto it = entry->properties.find(key);
+    if (it != entry->properties.end() && std::get_if<bool>(&it->second)) it->second = val;
+}
+static int getPropI(EntityRef& e, const char* path, const char* key, int def = 0) {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return def;
+    auto it = entry->properties.find(key);
+    if (it == entry->properties.end()) return def;
+    if (auto* v = std::get_if<int>(&it->second)) return *v;
+    return def;
+}
+static void setPropI(EntityRef& e, const char* path, const char* key, int val) {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return;
+    auto it = entry->properties.find(key);
+    if (it != entry->properties.end() && std::get_if<int>(&it->second)) it->second = val;
+}
+static std::string getPropS(EntityRef& e, const char* path, const char* key, const std::string& def = "") {
+    auto* entry = e.findScriptEntry(path);
+    if (!entry) return def;
+    auto it = entry->properties.find(key);
+    if (it == entry->properties.end()) return def;
+    if (auto* v = std::get_if<std::string>(&it->second)) return *v;
+    return def;
 }
 
-void RegisterGameWorldExtensions(ECS::World& world, sol::table& worldTable) {
-    worldTable.set_function("eachFragment", [&world](sol::function fn) {
-        world.each<Components::Fragment>([&](ECS::Entity e, Components::Fragment&) {
-            fn(Scripting::EntityRef(e, &world));
-        });
-    });
-    worldTable.set_function("eachDoor", [&world](sol::function fn) {
-        world.each<Components::Door>([&](ECS::Entity e, Components::Door&) {
-            fn(Scripting::EntityRef(e, &world));
-        });
-    });
-    worldTable.set_function("eachDoorSwing", [&world](sol::function fn) {
-        world.each<Components::DoorSwing>([&](ECS::Entity e, Components::DoorSwing&) {
-            fn(Scripting::EntityRef(e, &world));
-        });
-    });
-    worldTable.set_function("eachLightExposure", [&world](sol::function fn) {
-        world.each<Components::LightExposure>([&](ECS::Entity e, Components::LightExposure&) {
-            fn(Scripting::EntityRef(e, &world));
-        });
-    });
+void RegisterGameBindings(LuaManager& luaMgr) {
+    sol::state& lua = luaMgr.GetState();
+    sol::usertype<EntityRef> er = lua["EntityRef"];
+
+    // --- Battery (components/battery.lua) ---
+    er["hasBattery"]          = [](EntityRef& e) { return e.hasScript("components/battery.lua"); };
+    er["getBatteryCharge"]    = [](EntityRef& e) { return getPropF(e, "components/battery.lua", "charge"); };
+    er["setBatteryCharge"]    = [](EntityRef& e, float v) { setPropF(e, "components/battery.lua", "charge", v); };
+    er["getBatteryMaxCharge"] = [](EntityRef& e) { return getPropF(e, "components/battery.lua", "maxCharge", 100.f); };
+    er["getBatteryDrainRate"] = [](EntityRef& e) { return getPropF(e, "components/battery.lua", "drainRate", 5.f); };
+    er["getBatteryChargeRate"]= [](EntityRef& e) { return getPropF(e, "components/battery.lua", "chargeRate", 20.f); };
+    er["isBatteryCharging"]   = [](EntityRef& e) { return getPropB(e, "components/battery.lua", "isCharging"); };
+    er["setBatteryCharging"]  = [](EntityRef& e, bool v) { setPropB(e, "components/battery.lua", "isCharging", v); };
+
+    // --- Fragment (components/fragment.lua) ---
+    er["hasFragment"]            = [](EntityRef& e) { return e.hasScript("components/fragment.lua"); };
+    er["isFragmentCollected"]    = [](EntityRef& e) { return getPropB(e, "components/fragment.lua", "collected"); };
+    er["setFragmentCollected"]   = [](EntityRef& e, bool v) { setPropB(e, "components/fragment.lua", "collected", v); };
+    er["getFragmentBobSpeed"]    = [](EntityRef& e) { return getPropF(e, "components/fragment.lua", "bobSpeed", 2.f); };
+    er["getFragmentBobAmount"]   = [](EntityRef& e) { return getPropF(e, "components/fragment.lua", "bobAmount", 10.f); };
+    er["getFragmentAnimTimer"]   = [](EntityRef& e) { return getPropF(e, "components/fragment.lua", "_timer"); };
+    er["setFragmentAnimTimer"]   = [](EntityRef& e, float v) { setPropF(e, "components/fragment.lua", "_timer", v); };
+    er["getFragmentAlpha"]       = [](EntityRef& e) { return getPropF(e, "components/fragment.lua", "_alpha", 1.f); };
+    er["setFragmentAlpha"]       = [](EntityRef& e, float v) { setPropF(e, "components/fragment.lua", "_alpha", v); };
+    er["getFragmentRequiresLight"]= [](EntityRef& e) { return getPropB(e, "components/fragment.lua", "requiresLight", true); };
+
+    // --- FragmentCollector (components/fragment_collector.lua) ---
+    er["hasFragmentCollector"]  = [](EntityRef& e) { return e.hasScript("components/fragment_collector.lua"); };
+    er["getCollectedCount"]     = [](EntityRef& e) { return getPropI(e, "components/fragment_collector.lua", "collectedCount"); };
+    er["setCollectedCount"]     = [](EntityRef& e, int v) { setPropI(e, "components/fragment_collector.lua", "collectedCount", v); };
+    er["getRequiredFragments"]  = [](EntityRef& e) { return getPropI(e, "components/fragment_collector.lua", "requiredFragments"); };
+    er["getPickupRadius"]       = [](EntityRef& e) { return getPropF(e, "components/fragment_collector.lua", "pickupRadius", 50.f); };
+
+    // --- Door (components/door.lua) ---
+    er["hasDoor"]               = [](EntityRef& e) { return e.hasScript("components/door.lua"); };
+    er["isDoorOpen"]            = [](EntityRef& e) { return getPropB(e, "components/door.lua", "isOpen"); };
+    er["setDoorOpen"]           = [](EntityRef& e, bool v) { setPropB(e, "components/door.lua", "isOpen", v); };
+    er["getDoorRequiredFragments"]= [](EntityRef& e) { return getPropI(e, "components/door.lua", "requiredFragments", 1); };
+    er["getDoorOpenTexture"]    = [](EntityRef& e) { return getPropS(e, "components/door.lua", "openTexture", "door_open"); };
+    er["getDoorClosedTexture"]  = [](EntityRef& e) { return getPropS(e, "components/door.lua", "closedTexture", "door_close"); };
+
+    // --- DoorSwing (components/door_swing.lua) ---
+    er["hasDoorSwing"]              = [](EntityRef& e) { return e.hasScript("components/door_swing.lua"); };
+    er["isDoorSwingOpen"]           = [](EntityRef& e) { return getPropB(e, "components/door_swing.lua", "isOpen"); };
+    er["setDoorSwingOpen"]          = [](EntityRef& e, bool v) { setPropB(e, "components/door_swing.lua", "isOpen", v); };
+    er["isDoorSwingInitialized"]    = [](EntityRef& e) { return getPropB(e, "components/door_swing.lua", "_initialized"); };
+    er["setDoorSwingInitialized"]   = [](EntityRef& e, bool v) { setPropB(e, "components/door_swing.lua", "_initialized", v); };
+    er["getDoorSwingInitialRotation"]= [](EntityRef& e) { return getPropF(e, "components/door_swing.lua", "initialRotation"); };
+    er["setDoorSwingInitialRotation"]= [](EntityRef& e, float v) { setPropF(e, "components/door_swing.lua", "initialRotation", v); };
+    er["getDoorSwingAngle"]         = [](EntityRef& e) { return getPropF(e, "components/door_swing.lua", "swingAngle", 90.f); };
+    er["isDoorSwingClockwise"]      = [](EntityRef& e) { return getPropB(e, "components/door_swing.lua", "clockwise", true); };
+    er["getDoorSwingSpeed"]         = [](EntityRef& e) { return getPropF(e, "components/door_swing.lua", "speed", 90.f); };
+
+    // --- LightExposure (components/light_exposure.lua) ---
+    er["hasLightExposure"]      = [](EntityRef& e) { return e.hasScript("components/light_exposure.lua"); };
+    er["getLightExposureTime"]  = [](EntityRef& e) { return getPropF(e, "components/light_exposure.lua", "exposureTime"); };
+    er["setLightExposureTime"]  = [](EntityRef& e, float v) { setPropF(e, "components/light_exposure.lua", "exposureTime", v); };
+    er["getMaxLightExposureTime"]= [](EntityRef& e) { return getPropF(e, "components/light_exposure.lua", "maxExposureTime", 10.f); };
+    er["isInLight"]             = [](EntityRef& e) { return getPropB(e, "components/light_exposure.lua", "inLight"); };
+    er["setInLight"]            = [](EntityRef& e, bool v) { setPropB(e, "components/light_exposure.lua", "inLight", v); };
+    er["isExposureDangerous"]   = [](EntityRef& e) { return getPropB(e, "components/light_exposure.lua", "isDangerous"); };
+
+    // --- PlayerController — tag-based check (player_controller.lua) ---
+    er["hasPlayerController"]   = [](EntityRef& e) { return e.hasScript("player_controller.lua"); };
 }
 
 } // namespace Scripting

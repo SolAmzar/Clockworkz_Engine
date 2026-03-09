@@ -41,4 +41,4 @@ add_subdirectory(engine)
 add_subdirectory(game)
 
 # --- Default startup project in Visual Studio ---
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT LightsOut)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT CWZEditor)

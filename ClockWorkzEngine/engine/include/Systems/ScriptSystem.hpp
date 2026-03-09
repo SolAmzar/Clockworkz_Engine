@@ -47,6 +47,9 @@ public:
   using WorldTableExtensionFn = std::function<void(ECS::World&, sol::table&)>;
   void setWorldTableExtension(WorldTableExtensionFn fn);
 
+  using LoadLevelFn = std::function<void(const std::string&)>;
+  void setLoadLevelFn(LoadLevelFn fn);
+
   /**
    * @brief Update all entities that have a LuaScript component.
    * @param world      The ECS world.
@@ -85,6 +88,9 @@ private:
 
   // @brief Optional game-side extension injected into the World Lua table each frame.
   WorldTableExtensionFn m_worldTableExtensionFn;
+
+  // @brief Optional callback to trigger a level transition from Lua (World.loadLevel).
+  LoadLevelFn m_loadLevelFn;
 
   // @brief Canonical collision pair key: order-independent, id-based.
   static uint64_t collisionKey(ECS::Entity a, ECS::Entity b) noexcept {

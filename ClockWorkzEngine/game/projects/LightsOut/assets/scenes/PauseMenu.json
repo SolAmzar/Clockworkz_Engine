@@ -1,0 +1,157 @@
+{
+  "bgm": "",
+  "darknessColor": {
+    "b": 0.0,
+    "g": 0.0,
+    "r": 0.0
+  },
+  "darknessIntensity": 0.0,
+  "enableDarkness": false,
+  "sfxVolume": 1.0,
+  "spawnPoint": {
+    "x": 0.0,
+    "y": 0.0
+  },
+  "objects": [
+    {
+      "active": true,
+      "name": "PausePanel",
+      "components": {
+        "transform": {
+          "pivot": { "x": 0.0, "y": 0.0 },
+          "position": { "x": 0.0, "y": 0.0 },
+          "rotation": 0.0,
+          "scale": { "x": 1.0, "y": 1.0 },
+          "snapToGrid": false
+        },
+        "spriteRenderer": {
+          "color": { "a": 0.85, "b": 0.05, "g": 0.03, "r": 0.03 },
+          "size": { "x": 600.0, "y": 500.0 },
+          "sortOrder": 0,
+          "textureId": "",
+          "unlit": true,
+          "uv": [ 0.0, 0.0, 1.0, 1.0 ],
+          "visible": true
+        }
+      }
+    },
+    {
+      "active": true,
+      "name": "PauseBorder",
+      "components": {
+        "transform": {
+          "pivot": { "x": 0.0, "y": 0.0 },
+          "position": { "x": 0.0, "y": 0.0 },
+          "rotation": 0.0,
+          "scale": { "x": 1.0, "y": 1.0 },
+          "snapToGrid": false
+        },
+        "spriteRenderer": {
+          "color": { "a": 0.6, "b": 0.5, "g": 0.3, "r": 0.8 },
+          "size": { "x": 612.0, "y": 512.0 },
+          "sortOrder": -1,
+          "textureId": "",
+          "unlit": true,
+          "uv": [ 0.0, 0.0, 1.0, 1.0 ],
+          "visible": true
+        }
+      }
+    },
+    {
+      "active": true,
+      "name": "PauseTitleText",
+      "components": {
+        "transform": {
+          "pivot": { "x": 0.0, "y": 0.0 },
+          "position": { "x": -150.0, "y": 160.0 },
+          "rotation": 0.0,
+          "scale": { "x": 1.0, "y": 1.0 },
+          "snapToGrid": false
+        },
+        "textRenderer": {
+          "alignment": 1,
+          "boxSize": { "x": 300.0, "y": 80.0 },
+          "color": { "b": 0.7, "g": 0.7, "r": 1.0 },
+          "fontId": "PauseMenu",
+          "fontSize": 1.8,
+          "text": "PAUSED",
+          "visible": true
+        }
+      }
+    },
+    {
+      "active": true,
+      "name": "Btn_Resume",
+      "components": {
+        "transform": {
+          "pivot": { "x": 0.0, "y": 0.0 },
+          "position": { "x": 0.0, "y": 30.0 },
+          "rotation": 0.0,
+          "scale": { "x": 1.0, "y": 1.0 },
+          "snapToGrid": false
+        },
+        "spriteRenderer": {
+          "color": { "a": 1.0, "b": 0.25, "g": 0.15, "r": 0.1 },
+          "size": { "x": 350.0, "y": 70.0 },
+          "sortOrder": 1,
+          "textureId": "",
+          "unlit": true,
+          "uv": [ 0.0, 0.0, 1.0, 1.0 ],
+          "visible": true
+        },
+        "textRenderer": {
+          "alignment": 1,
+          "boxSize": { "x": 350.0, "y": 70.0 },
+          "color": { "b": 1.0, "g": 1.0, "r": 1.0 },
+          "fontId": "PauseMenu",
+          "fontSize": 1.0,
+          "text": "RESUME",
+          "visible": true
+        },
+        "uiButton": {
+          "action": "resume",
+          "hoverColor": { "b": 0.0, "g": 0.8, "r": 1.0 },
+          "interactable": true,
+          "normalColor": { "b": 1.0, "g": 1.0, "r": 1.0 }
+        }
+      }
+    },
+    {
+      "active": true,
+      "name": "Btn_MainMenu",
+      "components": {
+        "transform": {
+          "pivot": { "x": 0.0, "y": 0.0 },
+          "position": { "x": 0.0, "y": -100.0 },
+          "rotation": 0.0,
+          "scale": { "x": 1.0, "y": 1.0 },
+          "snapToGrid": false
+        },
+        "spriteRenderer": {
+          "color": { "a": 1.0, "b": 0.25, "g": 0.15, "r": 0.1 },
+          "size": { "x": 350.0, "y": 70.0 },
+          "sortOrder": 1,
+          "textureId": "",
+          "unlit": true,
+          "uv": [ 0.0, 0.0, 1.0, 1.0 ],
+          "visible": true
+        },
+        "textRenderer": {
+          "alignment": 1,
+          "boxSize": { "x": 350.0, "y": 70.0 },
+          "color": { "b": 1.0, "g": 1.0, "r": 1.0 },
+          "fontId": "PauseMenu",
+          "fontSize": 1.0,
+          "text": "MAIN MENU",
+          "visible": true
+        },
+        "uiButton": {
+          "action": "main_menu",
+          "hoverColor": { "b": 0.0, "g": 0.8, "r": 1.0 },
+          "interactable": true,
+          "normalColor": { "b": 1.0, "g": 1.0, "r": 1.0 }
+        }
+      }
+    }
+  ]
+}

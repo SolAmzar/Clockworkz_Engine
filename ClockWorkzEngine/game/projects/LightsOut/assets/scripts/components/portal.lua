@@ -2,10 +2,13 @@ Properties = {
     { name = "levelName", type = "string", default = "", label = "Level Name" },
 }
 
--- Portal just holds data; transition is triggered externally by the C++ collision/trigger system.
-function onUpdate(self, entity, dt)
+function onTriggerEnter(self, entity, other)
+    if self.levelName == "" then return end
+    if other:getTagValue() == "Player" then
+        World.loadLevel(self.levelName)
+    end
 end
 
 return {
-    onUpdate = onUpdate,
+    onTriggerEnter = onTriggerEnter,
 }

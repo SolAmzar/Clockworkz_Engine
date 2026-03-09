@@ -1,4 +1,4 @@
-# engine/CMakeLists.txt — ClockWorkzEngine static library
+# engine/CMakeLists.txt — CWZEngine static library
 #
 # All engine sources live in engine/src/ and engine/include/.
 # The top-level include/ is still on the include path because a small number of
@@ -18,14 +18,14 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
 )
 
 # --- Static library target ---
-add_library(ClockWorkzEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+add_library(CWZEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
 # --- Lua / Sol2 ---
-import_lua(ClockWorkzEngine)
+import_lua(CWZEngine)
 
 # --- Optional FMOD ---
 if(ENGINE_ENABLE_FMOD)
-  import_fmod(ClockWorkzEngine)
+  import_fmod(CWZEngine)
   # Promote DLL paths to CACHE so game/CMakeLists.txt can read them
   # (macro variables don't cross subdirectory boundaries)
   set(FMOD_DLL_DEBUG   "${FMOD_DLL_DEBUG}"   CACHE INTERNAL "FMOD debug DLL path"   FORCE)
@@ -34,24 +34,24 @@ endif()
 
 # --- MSVC compile options ---
 if(MSVC)
-  target_compile_options(ClockWorkzEngine PRIVATE
+  target_compile_options(CWZEngine PRIVATE
     /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj
   )
-  target_compile_options(ClockWorkzEngine PRIVATE
+  target_compile_options(CWZEngine PRIVATE
     $<$<CONFIG:Debug>:/Od>
   )
   # PUBLIC so consumers (game) also get these definitions
-  target_compile_definitions(ClockWorkzEngine PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN)
+  target_compile_definitions(CWZEngine PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN)
 endif()
 
 # --- Non-MSVC warnings ---
 if(NOT MSVC)
-  target_compile_options(ClockWorkzEngine PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(CWZEngine PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 # --- Include directories ---
 # SYSTEM PUBLIC: game inherits these; SYSTEM suppresses 3rd-party warnings
-target_include_directories(ClockWorkzEngine
+target_include_directories(CWZEngine
   SYSTEM PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_SOURCE_DIR}/include"   # kept: engine files reference game headers here (known coupling)
@@ -61,17 +61,17 @@ target_include_directories(ClockWorkzEngine
 
 # --- Link libraries (PUBLIC so the game executable inherits them) ---
 if(WIN32)
-  target_link_libraries(ClockWorkzEngine PUBLIC
+  target_link_libraries(CWZEngine PUBLIC
     glfw libglew_static glm::glm freetype
     opengl32 user32 gdi32 shell32
   )
 elseif(APPLE)
-  target_link_libraries(ClockWorkzEngine PUBLIC
+  target_link_libraries(CWZEngine PUBLIC
     glfw libglew_static glm::glm freetype
     "-framework OpenGL"
   )
 else()
-  target_link_libraries(ClockWorkzEngine PUBLIC
+  target_link_libraries(CWZEngine PUBLIC
     glfw libglew_static glm::glm freetype GL
   )
 endif()

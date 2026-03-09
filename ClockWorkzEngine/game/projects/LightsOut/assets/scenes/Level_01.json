@@ -44,6 +44,15 @@
           {
             "enabled": true,
             "scriptPath": "player_controller.lua"
+          },
+          {
+            "scriptPath": "components/fragment_collector.lua",
+            "enabled": true,
+            "properties": {
+              "requiredFragments": 1,
+              "collectedCount": 0,
+              "pickupRadius": 80.0
+            }
           }
         ],
         "tag": {
@@ -54,7 +63,7 @@
       "type": 2
     },
     {
-      "name": "Fragment_1",
+      "name": "Fragment",
       "active": true,
       "type": 8,
       "components": {
@@ -81,7 +90,25 @@
         "fragment": {
           "fragmentId": "fragment_1",
           "value": 1
-        }
+        },
+        "luaScript": [
+          {
+            "scriptPath": "components/fragment.lua",
+            "enabled": true,
+            "properties": {
+              "fragmentId": 1,
+              "collected": false,
+              "requiresLight": true,
+              "bobSpeed": 2.0,
+              "bobAmount": 10.0,
+              "fadeSpeed": 5.0,
+              "_baseY": 0.0,
+              "_timer": 0.0,
+              "_alpha": 1.0,
+              "_initialized": false
+            }
+          }
+        ]
       }
     },
     {
@@ -108,7 +135,7 @@
         "transform": {
           "position": {
             "x": 279.391357421875,
-            "y": -83.51321411132813
+            "y": -83.51321411132812
           },
           "rotation": 0.0,
           "scale": {
@@ -4750,7 +4777,20 @@
             "x": 100.0,
             "y": 100.0
           }
-        }
+        },
+        "luaScript": [
+          {
+            "scriptPath": "components/health.lua",
+            "enabled": true,
+            "properties": {
+              "hp": 3.0,
+              "maxHp": 10.0,
+              "regenRate": 0.0,
+              "invulnerable": false,
+              "isDead": false
+            }
+          }
+        ]
       },
       "name": "Enemy",
       "prefab": "Enemy",
@@ -4796,7 +4836,20 @@
             "x": 100.0,
             "y": 100.0
           }
-        }
+        },
+        "luaScript": [
+          {
+            "scriptPath": "components/health.lua",
+            "enabled": true,
+            "properties": {
+              "hp": 3.0,
+              "maxHp": 10.0,
+              "regenRate": 0.0,
+              "invulnerable": false,
+              "isDead": false
+            }
+          }
+        ]
       },
       "name": "Enemy",
       "prefab": "Enemy",
@@ -4842,7 +4895,20 @@
             "x": 100.0,
             "y": 100.0
           }
-        }
+        },
+        "luaScript": [
+          {
+            "scriptPath": "components/health.lua",
+            "enabled": true,
+            "properties": {
+              "hp": 3.0,
+              "maxHp": 10.0,
+              "regenRate": 0.0,
+              "invulnerable": false,
+              "isDead": false
+            }
+          }
+        ]
       },
       "name": "Enemy",
       "prefab": "Enemy",
