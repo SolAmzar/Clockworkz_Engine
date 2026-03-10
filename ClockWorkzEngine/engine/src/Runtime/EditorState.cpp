@@ -207,6 +207,7 @@ EditorState::EditorState(Platform::InputManager& input,
 
 void EditorState::onEnter() {
     m_framebuffer.create(800, 600);
+    m_animPreviewFB.create(192, 192);
 
     m_undoStack.clear();
     m_redoStack.clear();
@@ -363,6 +364,24 @@ void EditorState::update(double dt) {
     if (m_pendingSave) {
         m_pendingSave = false;
         saveScene();
+    }
+
+    // Animation editor preview playback
+    if (m_animEditorOpen && m_animEdPlaying && !m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
+            if (!clip->frames.empty()) {
+                if (m_animEdFrame < 0) m_animEdFrame = 0;
+                m_animEdTimer += static_cast<float>(dt);
+                while (m_animEdTimer >= clip->frames[m_animEdFrame].duration) {
+                    m_animEdTimer -= clip->frames[m_animEdFrame].duration;
+                    ++m_animEdFrame;
+                    if (m_animEdFrame >= static_cast<int>(clip->frames.size())) {
+                        if (m_animEdLoop) m_animEdFrame = 0;
+                        else { m_animEdFrame = static_cast<int>(clip->frames.size()) - 1; m_animEdPlaying = false; }
+                    }
+                }
+            }
+        }
     }
 
     // Texture hot-reload
@@ -534,6 +553,30 @@ void EditorState::render(Core::Time* timer) {
     }
 
     m_framebuffer.unbind();
+
+    // Animation editor preview — render current frame into m_animPreviewFB
+    if (m_animEditorOpen && !m_animEdTexture.empty() && !m_animEdClip.empty()) {
+        auto* clip = m_animEditorAnim.getClip(m_animEdClip);
+        if (clip && !clip->frames.empty()) {
+            int fi = (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size()))
+                     ? m_animEdFrame : 0;
+            auto tex = Assets::TextureManager::Get(m_animEdTexture);
+            if (tex) {
+                m_animPreviewFB.bind();
+                glClearColor(0.12f, 0.12f, 0.12f, 1.f);
+                glClear(GL_COLOR_BUFFER_BIT);
+                // Simple square ortho: world unit [0,1]^2 fills the FB
+                glm::mat4 vp = glm::ortho(0.f, 1.f, 0.f, 1.f, -1.f, 1.f);
+                renderer.beginScenePass(vp, glm::vec4(1.f));
+                renderer.drawSprite(tex->id(),
+                                    {0.5f, 0.5f}, {1.f, 1.f},
+                                    0.f, clip->frames[fi].uv,
+                                    glm::vec4(1.f), false);
+                renderer.endScenePass();
+                m_animPreviewFB.unbind();
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -593,6 +636,7 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderStatsWindow();
     renderScriptsBrowser();
     renderAnimationsBrowser();
+    renderAnimationEditor();
     renderAudioBrowser();
     renderFontBrowser();
     renderPrefabBrowser();
@@ -2564,6 +2608,37 @@ void EditorState::renderAnimationsBrowser() {
         m_newScriptFolderBuf[0] = '\0';
         ImGui::OpenPopup("##NewAnimFolder");
     }
+    ImGui::SameLine();
+    if (ImGui::Button("New Animation")) {
+        memset(m_newAnimNameBuf, 0, sizeof(m_newAnimNameBuf));
+        m_newAnimModalOpen = true;
+    }
+
+    if (m_newAnimModalOpen) ImGui::OpenPopup("##NewAnimFile");
+    if (ImGui::BeginPopupModal("##NewAnimFile", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Animation name:");
+        ImGui::InputText("##animfilename", m_newAnimNameBuf, sizeof(m_newAnimNameBuf));
+        if (ImGui::Button("Create", ImVec2(100, 0)) && m_newAnimNameBuf[0] != '\0') {
+            namespace fs = std::filesystem;
+            std::error_code ec2;
+            std::string newPath = (fs::path(m_currentAnimDir) / (std::string(m_newAnimNameBuf) + ".json")).string();
+            std::ofstream f(newPath);
+            f << "{\"animations\":[]}";
+            f.close();
+            m_newAnimModalOpen = false;
+            m_editingAnimPath    = newPath;
+            m_editingAnimRelPath = fs::relative(newPath, "assets/animations", ec2).string();
+            m_animEditorAnim.clearAll();
+            m_animEdClip  = "";
+            m_animEdFrame = -1;
+            m_animEdPlaying = false;
+            m_animEditorOpen = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_newAnimModalOpen = false; ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
 
     if (ImGui::BeginPopupModal("##NewAnimFolder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Create Folder in: %s", m_currentAnimDir.c_str());
@@ -2676,6 +2751,17 @@ void EditorState::renderAnimationsBrowser() {
                 }
 
                 if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Edit")) {
+                        std::error_code ec2;
+                        m_editingAnimPath    = path.string();
+                        m_editingAnimRelPath = std::filesystem::relative(path, "assets/animations", ec2).string();
+                        m_animEditorAnim.clearAll();
+                        m_animEditorAnim.loadFromPath(m_editingAnimPath);
+                        m_animEdClip  = m_animEditorAnim.clips.empty() ? "" : m_animEditorAnim.clips.begin()->first;
+                        m_animEdFrame = -1;
+                        m_animEdPlaying = false;
+                        m_animEditorOpen = true;
+                    }
                     if (ImGui::MenuItem("Rename")) { m_renamingAnimPath = path.string(); strncpy_s(m_renameAnimBuf, fname.c_str(), sizeof(m_renameAnimBuf)-1); }
                     if (ImGui::MenuItem("Delete")) m_deletingAnimPath = path.string();
                     ImGui::EndPopup();
@@ -2686,6 +2772,211 @@ void EditorState::renderAnimationsBrowser() {
         }
         ImGui::EndTable();
     }
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderAnimationEditor
+// ---------------------------------------------------------------------------
+
+void EditorState::renderAnimationEditor() {
+    if (!m_animEditorOpen) return;
+
+    ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Animation Editor", &m_animEditorOpen)) { ImGui::End(); return; }
+
+    // ── Top row: texture picker (left) + preview image (right) ──────────────
+    ImGui::BeginGroup();
+    ImGui::Text("File: %s", m_editingAnimRelPath.c_str());
+
+    // Texture combo
+    {
+        auto texNames = Assets::TextureManager::GetLoadedTextureNames();
+        if (ImGui::BeginCombo("Texture##aned", m_animEdTexture.empty() ? "(none)" : m_animEdTexture.c_str())) {
+            for (auto& n : texNames) {
+                if (ImGui::Selectable(n.c_str(), n == m_animEdTexture))
+                    m_animEdTexture = n;
+            }
+            ImGui::EndCombo();
+        }
+    }
+    ImGui::EndGroup();
+
+    // Preview image — top-right corner, same line as the group above
+    ImGui::SameLine(ImGui::GetWindowWidth() - 148.f);
+    if (m_animPreviewFB.getTextureID() != 0) {
+        ImGui::Image(reinterpret_cast<void*>(static_cast<uint64_t>(
+                         m_animPreviewFB.getTextureID())),
+                     ImVec2(140.f, 140.f), ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+    } else {
+        ImGui::Dummy(ImVec2(140.f, 140.f));
+    }
+
+    ImGui::Separator();
+
+    // ── Clip selection ───────────────────────────────────────────────────────
+    {
+        std::vector<std::string> clipNames;
+        for (auto& [k, _] : m_animEditorAnim.clips) clipNames.push_back(k);
+        std::sort(clipNames.begin(), clipNames.end());
+
+        if (ImGui::BeginCombo("Clip##aned", m_animEdClip.c_str())) {
+            for (auto& n : clipNames) {
+                if (ImGui::Selectable(n.c_str(), n == m_animEdClip)) {
+                    m_animEdClip = n;
+                    m_animEdFrame = -1;
+                    m_animEdPlaying = false;
+                    m_animEdTimer = 0.f;
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+
+    ImGui::InputText("##newclipname", m_animEdNewClipName, sizeof(m_animEdNewClipName));
+    ImGui::SameLine();
+    if (ImGui::Button("Add Clip") && m_animEdNewClipName[0] != '\0') {
+        m_animEditorAnim.createClip(std::string(m_animEdNewClipName), m_animEdLoop);
+        m_animEdClip = std::string(m_animEdNewClipName);
+        m_animEdNewClipName[0] = '\0';
+        m_animEdFrame = -1;
+        m_animEdPlaying = false;
+    }
+    if (!m_animEdClip.empty()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Delete Clip")) {
+            m_animEditorAnim.removeClip(m_animEdClip);
+            m_animEdClip  = m_animEditorAnim.clips.empty() ? "" : m_animEditorAnim.clips.begin()->first;
+            m_animEdFrame = -1;
+            m_animEdPlaying = false;
+        }
+    }
+
+    // ── Playback controls ────────────────────────────────────────────────────
+    ImGui::Separator();
+    ImGui::Checkbox("Loop##aned", &m_animEdLoop);
+    ImGui::SameLine();
+    if (ImGui::Button(m_animEdPlaying ? "Pause##aned" : "Play##aned")) m_animEdPlaying = !m_animEdPlaying;
+    ImGui::SameLine();
+    if (ImGui::Button("Reset##aned")) { m_animEdFrame = 0; m_animEdTimer = 0.f; m_animEdPlaying = false; }
+
+    // Show current frame index
+    if (!m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
+            int total = static_cast<int>(clip->frames.size());
+            int disp  = (m_animEdFrame >= 0 && total > 0) ? m_animEdFrame : 0;
+            ImGui::SameLine();
+            ImGui::Text("Frame: %d / %d", disp, total);
+        }
+    }
+
+    // ── Frame list ───────────────────────────────────────────────────────────
+    ImGui::Separator();
+    if (!m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
+            if (ImGui::Button("Add Frame##aned")) {
+                Components::FrameData fd{};
+                fd.duration = 0.1f;
+                clip->frames.push_back(fd);
+            }
+            ImGui::SameLine();
+            if (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size())) {
+                if (ImGui::Button("Remove Frame##aned")) {
+                    clip->frames.erase(clip->frames.begin() + m_animEdFrame);
+                    m_animEdFrame = static_cast<int>(clip->frames.size()) > 0
+                                    ? std::min(m_animEdFrame, static_cast<int>(clip->frames.size()) - 1)
+                                    : -1;
+                }
+            }
+
+            ImGui::BeginChild("FrameList##aned", ImVec2(0, 120), true);
+            for (int i = 0; i < static_cast<int>(clip->frames.size()); ++i) {
+                char label[32];
+                snprintf(label, sizeof(label), "Frame %d (%.2fs)", i, clip->frames[i].duration);
+                if (ImGui::Selectable(label, m_animEdFrame == i))
+                    m_animEdFrame = i;
+            }
+            ImGui::EndChild();
+
+            // ── Selected frame editor ────────────────────────────────────────
+            if (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size())) {
+                auto& fd = clip->frames[m_animEdFrame];
+                ImGui::Separator();
+                ImGui::Text("Frame %d", m_animEdFrame);
+                ImGui::DragFloat("U##aned",        &fd.uv.x,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("V##aned",        &fd.uv.y,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("W##aned",        &fd.uv.z,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("H##aned",        &fd.uv.w,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("Duration##aned", &fd.duration, 0.01f, 0.01f, 5.f, "%.3f s");
+
+                // Preview: show UV rect as a coloured indicator
+                ImGui::Text("UV: (%.3f, %.3f)  Size: (%.3f, %.3f)", fd.uv.x, fd.uv.y, fd.uv.z, fd.uv.w);
+            }
+        }
+    }
+
+    // ── Grid generator ───────────────────────────────────────────────────────
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("Grid Generator##aned")) {
+        ImGui::InputInt("Sheet W##aned", &m_animEdSheetW);
+        ImGui::InputInt("Sheet H##aned", &m_animEdSheetH);
+        ImGui::InputInt("Cell W##aned",  &m_animEdCellW);
+        ImGui::InputInt("Cell H##aned",  &m_animEdCellH);
+        ImGui::InputInt("Start Frame##aned", &m_animEdStartF);
+        ImGui::InputInt("End Frame##aned",   &m_animEdEndF);
+
+        // Guard against zero/negative values
+        m_animEdSheetW = std::max(m_animEdSheetW, 1);
+        m_animEdSheetH = std::max(m_animEdSheetH, 1);
+        m_animEdCellW  = std::max(m_animEdCellW,  1);
+        m_animEdCellH  = std::max(m_animEdCellH,  1);
+        m_animEdStartF = std::max(m_animEdStartF, 0);
+        m_animEdEndF   = std::max(m_animEdEndF,   m_animEdStartF);
+
+        if (ImGui::Button("Generate Frames##aned") && !m_animEdClip.empty()) {
+            auto* clip = m_animEditorAnim.getClip(m_animEdClip);
+            if (!clip) {
+                m_animEditorAnim.createClip(m_animEdClip, m_animEdLoop);
+                clip = m_animEditorAnim.getClip(m_animEdClip);
+            }
+            clip->frames.clear();
+            int   cols = m_animEdSheetW / m_animEdCellW;
+            float uw   = static_cast<float>(m_animEdCellW) / static_cast<float>(m_animEdSheetW);
+            float uh   = static_cast<float>(m_animEdCellH) / static_cast<float>(m_animEdSheetH);
+            for (int fi = m_animEdStartF; fi <= m_animEdEndF; ++fi) {
+                int col = fi % cols;
+                int row = fi / cols;
+                Components::FrameData fd{};
+                fd.uv       = { col * uw, row * uh, uw, uh };
+                fd.duration = 0.1f;
+                clip->frames.push_back(fd);
+            }
+            m_animEdFrame = 0;
+        }
+    }
+
+    // ── Bulk duration ────────────────────────────────────────────────────────
+    if (!m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip); clip && !clip->frames.empty()) {
+            ImGui::Separator();
+            static float bulkDuration = 0.1f;
+            ImGui::DragFloat("Bulk Duration##aned", &bulkDuration, 0.01f, 0.01f, 5.f, "%.3f s");
+            ImGui::SameLine();
+            if (ImGui::Button("Apply to All##aned")) {
+                for (auto& fd : clip->frames) fd.duration = bulkDuration;
+            }
+        }
+    }
+
+    // ── Save ─────────────────────────────────────────────────────────────────
+    ImGui::Separator();
+    if (ImGui::Button("Save##aned") && !m_editingAnimPath.empty()) {
+        nlohmann::json j = m_animEditorAnim.serialize(m_editingAnimPath);
+        std::ofstream outf(m_editingAnimPath);
+        if (outf.is_open())
+            outf << j.dump(2);
+    }
+
     ImGui::End();
 }
 

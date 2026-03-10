@@ -16,6 +16,7 @@ reserved.
 #include "Graphics/FrameBuffer.hpp"
 #include "ECS/Entity.hpp"
 #include "Math/Vec2.hpp"
+#include "Components/SpriteAnimator.hpp"
 #include <glm/vec2.hpp>
 #include <filesystem>
 #include <memory>
@@ -54,6 +55,7 @@ private:
     void renderStatsWindow();
     void renderScriptsBrowser();
     void renderAnimationsBrowser();
+    void renderAnimationEditor();
     void renderAudioBrowser();
     void renderPrefabBrowser();
     void renderTilePalette();
@@ -193,6 +195,28 @@ private:
     std::string             m_renamingAnimPath;
     char                    m_renameAnimBuf[256]{};
     std::string             m_deletingAnimPath;
+
+    // ----- Animation editor panel -----
+    bool                        m_animEditorOpen{false};
+    std::string                 m_editingAnimPath{};
+    std::string                 m_editingAnimRelPath{};
+    Components::SpriteAnimator  m_animEditorAnim{};
+    std::string                 m_animEdClip{};
+    int                         m_animEdFrame{-1};
+    bool                        m_animEdPlaying{false};
+    bool                        m_animEdLoop{true};
+    float                       m_animEdTimer{0.f};
+    int                         m_animEdSheetW{512};
+    int                         m_animEdSheetH{512};
+    int                         m_animEdCellW{64};
+    int                         m_animEdCellH{64};
+    int                         m_animEdStartF{0};
+    int                         m_animEdEndF{7};
+    char                        m_animEdNewClipName[128]{};
+    bool                        m_newAnimModalOpen{false};
+    char                        m_newAnimNameBuf[128]{};
+    std::string                 m_animEdTexture{};       // selected texture for preview
+    Graphics::FrameBuffer       m_animPreviewFB{};
 
     // ----- Audio browser -----
     char                    m_newAudioNameBuf[128]{};

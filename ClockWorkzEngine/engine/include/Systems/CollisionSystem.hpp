@@ -3,7 +3,7 @@
 \file           CollisionSystem.hpp
 \project        ClockWorkz Engine
 \author(s)      [Lebon]
-\brief          CollisionSystem - detects AABB overlaps.
+\brief          CollisionSystem - detects OBB/Circle overlaps.
 
                 Third system in Phase 3. Queries entities with Transform and
                 Collider components and checks for intersection.
@@ -15,7 +15,7 @@ reserved.
 
 #pragma once
 #include "ECS/World.hpp"
-#include <glm/vec2.hpp>
+#include "Math/Vec2.hpp"
 #include <utility>
 #include <vector>
 
@@ -30,8 +30,8 @@ namespace Systems {
 /**
  * @brief CollisionSystem - collision detection logic
  *
- * Detects Axis-Aligned Bounding Box (AABB) overlaps between entities.
- * Current implementation provides detection only (no resolution).
+ * Detects OBB and Circle overlaps between entities using SAT.
+ * Current implementation provides detection and resolution.
  */
 class CollisionSystem {
 public:
@@ -57,23 +57,22 @@ private:
   std::vector<std::pair<ECS::Entity, ECS::Entity>> m_collisions;
   float m_cellSize{64.0f};
 
-  // Helper for AABB intersection
   bool checkAABB(const Components::Transform &tA,
                  const Components::Collider &cA,
                  const Components::Transform &tB,
-                 const Components::Collider &cB, glm::vec2 &penetration);
+                 const Components::Collider &cB, vec2 &penetration);
 
   bool checkCircleCircle(const Components::Transform &tA,
                          const Components::Collider &cA,
                          const Components::Transform &tB,
                          const Components::Collider &cB,
-                         glm::vec2 &penetration);
+                         vec2 &penetration);
 
   bool checkAABBCircle(const Components::Transform &tBox,
                        const Components::Collider &cBox,
                        const Components::Transform &tCirc,
                        const Components::Collider &cCirc,
-                       glm::vec2 &penetration);
+                       vec2 &penetration);
 };
 
 } // namespace Systems
