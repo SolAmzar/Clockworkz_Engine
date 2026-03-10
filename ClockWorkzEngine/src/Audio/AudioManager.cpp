@@ -13,7 +13,7 @@
 pausing
                                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -23,7 +23,9 @@ reserved.
 #include <algorithm>
 #include <cassert>
 #include <fmod.hpp>
+#include <fmod_dsp_effects.h>
 #include <fmod_errors.h>
+#include <cmath>
 #include <iostream>
 
 using namespace Audio;
@@ -44,6 +46,14 @@ static bool isChannelAlive(FMOD::Channel *ch) {
   if (ch->isPlaying(&playing) != FMOD_OK)
     return false;
   return playing;
+}
+
+float AudioManager::smoothTowards(float current, float target, float smoothing,
+                                  float dt) {
+  if (dt <= 0.0f)
+    return current;
+  const float alpha = 1.0f - std::exp(-std::max(0.0f, smoothing) * dt);
+  return current + (target - current) * alpha;
 }
 
 int AudioManager::findChannel(const std::string &id) {
@@ -109,12 +119,62 @@ bool AudioManager::init(int maxChannels) {
     m_masterGroup->addGroup(m_bgmGroup);
     m_masterGroup->addGroup(m_sfxGroup);
   }
+
+  if (m_system && m_masterGroup) {
+    if (FMOD_CHECK(m_system->createDSPByType(FMOD_DSP_TYPE_LOWPASS_SIMPLE,
+                                             &m_masterLowpass),
+                   "createDSP lowpass") &&
+        m_masterLowpass) {
+      m_masterLowpass->setParameterFloat(FMOD_DSP_LOWPASS_SIMPLE_CUTOFF,
+                                         m_lowpassCurrentHz);
+      m_masterGroup->addDSP(0, m_masterLowpass);
+    }
+  }
+
+  if (m_system && m_sfxGroup) {
+    if (FMOD_CHECK(m_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB,
+                                             &m_sfxReverb),
+                   "createDSP sfxreverb") &&
+        m_sfxReverb) {
+      m_sfxReverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, 1800.0f);
+      m_sfxReverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, 12000.0f);
+      m_sfxReverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, 0.0f);
+      m_sfxReverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL,
+                                     m_reverbWetCurrentDb);
+      m_sfxGroup->addDSP(0, m_sfxReverb);
+    }
+
+    if (FMOD_CHECK(m_system->createDSPByType(FMOD_DSP_TYPE_ECHO, &m_sfxEcho),
+                   "createDSP echo") &&
+        m_sfxEcho) {
+      m_sfxEcho->setParameterFloat(FMOD_DSP_ECHO_DELAY, 140.0f);
+      m_sfxEcho->setParameterFloat(FMOD_DSP_ECHO_FEEDBACK, 18.0f);
+      m_sfxEcho->setParameterFloat(FMOD_DSP_ECHO_DRYLEVEL, 0.0f);
+      m_sfxEcho->setParameterFloat(FMOD_DSP_ECHO_WETLEVEL, m_echoWetCurrentDb);
+      m_sfxGroup->addDSP(1, m_sfxEcho);
+    }
+  }
+
+  setAudioMood(AudioMood::Normal, 0.05f);
   return true;
 }
 
 void AudioManager::shutdown() {
   std::cout << "[DEBUG] AudioManager::shutdown called\n";
   unloadAll();
+
+  if (m_masterLowpass) {
+    m_masterLowpass->release();
+    m_masterLowpass = nullptr;
+  }
+  if (m_sfxReverb) {
+    m_sfxReverb->release();
+    m_sfxReverb = nullptr;
+  }
+  if (m_sfxEcho) {
+    m_sfxEcho->release();
+    m_sfxEcho = nullptr;
+  }
   if (m_bgmGroup) {
     m_bgmGroup->release();
     m_bgmGroup = nullptr;
@@ -136,6 +196,26 @@ void AudioManager::shutdown() {
 void AudioManager::update(double dt) {
   if (m_system)
     m_system->update();
+
+  const float dtf = static_cast<float>(dt);
+  m_lowpassCurrentHz =
+      smoothTowards(m_lowpassCurrentHz, m_lowpassTargetHz, m_dspSmoothing, dtf);
+  m_reverbWetCurrentDb = smoothTowards(m_reverbWetCurrentDb, m_reverbWetTargetDb,
+                                       m_dspSmoothing, dtf);
+  m_echoWetCurrentDb =
+      smoothTowards(m_echoWetCurrentDb, m_echoWetTargetDb, m_dspSmoothing, dtf);
+
+  if (m_masterLowpass) {
+    m_masterLowpass->setParameterFloat(FMOD_DSP_LOWPASS_SIMPLE_CUTOFF,
+                                       m_lowpassCurrentHz);
+  }
+  if (m_sfxReverb) {
+    m_sfxReverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL,
+                                   m_reverbWetCurrentDb);
+  }
+  if (m_sfxEcho) {
+    m_sfxEcho->setParameterFloat(FMOD_DSP_ECHO_WETLEVEL, m_echoWetCurrentDb);
+  }
   // Process fade-outs
   for (auto it = m_fadeOuts.begin(); it != m_fadeOuts.end();) {
     auto chIt = m_channels.find(it->first);
@@ -443,6 +523,48 @@ void AudioManager::setGroupPaused(Group g, bool paused) {
     grp->setPaused(paused);
 }
 
+void AudioManager::setLowpassCutoff(float hz) {
+  m_lowpassTargetHz = std::clamp(hz, 20.0f, 22000.0f);
+}
+
+void AudioManager::setReverbWetLevelDb(float db) {
+  m_reverbWetTargetDb = std::clamp(db, -80.0f, 10.0f);
+}
+
+void AudioManager::setEchoWetLevelDb(float db) {
+  m_echoWetTargetDb = std::clamp(db, -80.0f, 10.0f);
+}
+
+void AudioManager::setAudioMood(AudioMood mood, float fadeSec) {
+  m_currentMood = mood;
+  const float safeFade = std::max(0.05f, fadeSec);
+  m_dspSmoothing = 4.0f / safeFade;
+
+  switch (mood) {
+  case AudioMood::Normal:
+    setLowpassCutoff(22000.0f);
+    setReverbWetLevelDb(-80.0f);
+    setEchoWetLevelDb(-80.0f);
+    setGroupVolume(Group::BGM, 1.0f);
+    setGroupVolume(Group::SFX, 1.0f);
+    break;
+  case AudioMood::Tension:
+    setLowpassCutoff(2800.0f);
+    setReverbWetLevelDb(-6.0f);
+    setEchoWetLevelDb(-10.0f);
+    setGroupVolume(Group::BGM, 0.85f);
+    setGroupVolume(Group::SFX, 1.0f);
+    break;
+  case AudioMood::Muffled:
+    setLowpassCutoff(700.0f);
+    setReverbWetLevelDb(-2.0f);
+    setEchoWetLevelDb(-80.0f);
+    setGroupVolume(Group::BGM, 0.70f);
+    setGroupVolume(Group::SFX, 0.85f);
+    break;
+  }
+}
+
 void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
                                const vec3 &forward, const vec3 &up) {
   if (!m_system)
@@ -522,5 +644,4 @@ void AudioManager::setChannel3DCone(int channelId, const vec3 &forward,
 //     m_channels[handle] = { ch };
 //     return handle;
 // }
-
 

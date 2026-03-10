@@ -15,7 +15,7 @@ Object Render not done yet)
                                 - Transitioning back to other states (e.g.,
 pause or menu)
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -206,7 +206,8 @@ void PlayState::onEnter() {
   // Initialize level editor
   Core::Engine &engine = Core::Engine::Get();
 
-  //auto &audio = engine.audio(); 
+  auto &audio = engine.audio();
+  audio.setAudioMood(Audio::AudioMood::Normal, 0.2f);
 
   // play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
   m_bgmChannel = Assets::SoundManager::Play("level_bgm");
@@ -355,8 +356,9 @@ void PlayState::onExit() {
   }
   m_loaded = false;
 
+  auto &audio = Core::Engine::Get().audio();
+  audio.setAudioMood(Audio::AudioMood::Normal, 0.2f);
   if (m_bgmPlaying) {
-    auto &audio = Core::Engine::Get().audio();
     audio.fadeOutChannel(m_bgmChannel, 0.5f);
     m_bgmPlaying = false;
   }
@@ -423,6 +425,46 @@ void PlayState::update(double dt) {
   Platform::WindowManager &window = engine.window();
   auto &audio = engine.audio();
   auto &steps = engine.surfaceAudio();
+  // Audio processing debug controls:
+  // 1 = Normal, 2 = Tension, 3 = Muffled, 0 = return to Auto mode.
+  if (m_input.wasKeyPressed(GLFW_KEY_1)) {
+    m_audioMoodOverride = 0;
+    std::cout << "[Audio] Mood override: Normal\n";
+  } else if (m_input.wasKeyPressed(GLFW_KEY_2)) {
+    m_audioMoodOverride = 1;
+    std::cout << "[Audio] Mood override: Tension\n";
+  } else if (m_input.wasKeyPressed(GLFW_KEY_3)) {
+    m_audioMoodOverride = 2;
+    std::cout << "[Audio] Mood override: Muffled\n";
+  } else if (m_input.wasKeyPressed(GLFW_KEY_0)) {
+    m_audioMoodOverride = -1;
+    std::cout << "[Audio] Mood override: Auto\n";
+  }
+
+  Audio::AudioMood desiredMood = Audio::AudioMood::Normal;
+  float batteryPct = 1.0f;
+  if (m_player) {
+    batteryPct = std::clamp(m_player->checkBatt() / 100.0f, 0.0f, 1.0f);
+  }
+
+  const bool lowBattery = batteryPct <= 0.25f;
+  const bool dangerState = m_playerDead || m_GameOver;
+  if (!m_flashlightOn || lowBattery) {
+    desiredMood = Audio::AudioMood::Muffled;
+  } else if (dangerState || m_input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+    desiredMood = Audio::AudioMood::Tension;
+  }
+
+  if (m_audioMoodOverride == 0) {
+    desiredMood = Audio::AudioMood::Normal;
+  } else if (m_audioMoodOverride == 1) {
+    desiredMood = Audio::AudioMood::Tension;
+  } else if (m_audioMoodOverride == 2) {
+    desiredMood = Audio::AudioMood::Muffled;
+  }
+
+  audio.setAudioMood(desiredMood, 0.20f);
+
   vec2 mouseWorld =
       m_input.getMouseWorldPos(cam, static_cast<float>(window.width()),
                                static_cast<float>(window.height()));
@@ -558,7 +600,7 @@ void PlayState::update(double dt) {
               m_timeSinceStep = 0.0f;
             }
           } else {
-            // not moving → reset so we don’t “owe” steps
+            // not moving -> reset so we dont owe steps
             m_distanceSinceStep = 0.0f;
             m_timeSinceStep = 0.0f;
             m_haveLastFootPos = false;
@@ -569,7 +611,7 @@ void PlayState::update(double dt) {
           // Skip C++ movement if Lua script handles it
           bool hasLuaScript = obj->getComponent<Scripting::LuaScriptComponent>() != nullptr;
           if (!hasLuaScript) {
-            // WASD input → movement vector
+            // WASD input -> movement vector
             if (m_input.isKeyDown(GLFW_KEY_W))
               move.y += 1;
             if (m_input.isKeyDown(GLFW_KEY_S))
@@ -690,7 +732,7 @@ void PlayState::update(double dt) {
             // Normalize direction
             dir = normalize(dir);
 
-            // Compute target angle in radians — atan2(y, x)
+            // Compute target angle in radians - atan2(y, x)
             float targetAngle = std::atan2(dir.y, dir.x);
             float currentAngle = obj->transform().rotationRad;
 
@@ -990,7 +1032,7 @@ void PlayState::updateLightExposure(double dt) {
   // lightPolyGLM[i].y << ")" << std::endl;
   //	}
   // }
-  //  ✓ Check enemies against light polygon
+  //  [OK] Check enemies against light polygon
   const float KILL_THRESHOLD = 3.0f;
   const float DECAY_RATE = 2.0f;
   auto audio = Core::Engine::Get().audio();
@@ -1633,7 +1675,7 @@ void PlayState::syncEnemyTransforms() {
 
 //					if (ImGui::Button("Apply New Layer")) {
 //						o->setLayer(bits[targetLayerIdx]);
-//// IMPORTANT: use setter so Scene’s callback re-buckets
+//// IMPORTANT: use setter so Scene's callback re-buckets
 //					}
 //				}
 
@@ -2084,3 +2126,4 @@ void Runtime::PlayState::renderTorchPass(Graphics::RenderingManager &renderer) {
       });
 }
 namespace Runtime {} // namespace Runtime
+

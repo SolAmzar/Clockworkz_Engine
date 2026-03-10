@@ -13,7 +13,7 @@
 pausing
                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -30,11 +30,13 @@ class System;
 class Sound;
 class Channel;
 class ChannelGroup;
+class DSP;
 } // namespace FMOD
 
 namespace Audio {
 
 enum class Group { Master, BGM, SFX };
+enum class AudioMood { Normal, Tension, Muffled };
 
 struct SoundDesc {
   std::string name; // unique id
@@ -79,6 +81,11 @@ public:
   // Groups
   void setGroupVolume(Group g, float volume);
   void setGroupPaused(Group g, bool paused);
+  void setLowpassCutoff(float hz);
+  void setReverbWetLevelDb(float db);
+  void setEchoWetLevelDb(float db);
+  void setAudioMood(AudioMood mood, float fadeSec = 0.5f);
+  AudioMood currentMood() const noexcept { return m_currentMood; }
 
   // Listener (for 3D if you want it)
   void setListener(const vec3 &pos, const vec3 &vel, const vec3 &forward,
@@ -135,6 +142,18 @@ private:
   FMOD::ChannelGroup *m_masterGroup = nullptr;
   FMOD::ChannelGroup *m_bgmGroup = nullptr;
   FMOD::ChannelGroup *m_sfxGroup = nullptr;
+  FMOD::DSP *m_masterLowpass = nullptr;
+  FMOD::DSP *m_sfxReverb = nullptr;
+  FMOD::DSP *m_sfxEcho = nullptr;
+
+  float m_lowpassCurrentHz = 22000.0f;
+  float m_lowpassTargetHz = 22000.0f;
+  float m_reverbWetCurrentDb = -80.0f;
+  float m_reverbWetTargetDb = -80.0f;
+  float m_echoWetCurrentDb = -80.0f;
+  float m_echoWetTargetDb = -80.0f;
+  float m_dspSmoothing = 8.0f;
+  AudioMood m_currentMood = AudioMood::Normal;
 
   std::unordered_map<std::string, SoundProfile> m_soundProfiles;
   std::unordered_map<std::string, FMOD::Sound *> m_sounds;
@@ -144,8 +163,8 @@ private:
 
   FMOD::ChannelGroup *groupHandle(Group g) const;
   bool createSound(SoundDesc const &desc, FMOD::Sound **out);
+  static float smoothTowards(float current, float target, float smoothing,
+                             float dt);
 };
 
 } // namespace Audio
-
-

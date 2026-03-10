@@ -125,6 +125,7 @@ private:
   float m_bgmVol{0.5f};
   float m_sfxVol{0.5f};
   bool m_bgmPlaying{false};
+  int m_audioMoodOverride{-1}; // -1 = auto, 0 = normal, 1 = tension, 2 = muffled
   const float m_deathDelay = 2.0f;
 
   // Fragment system
@@ -153,3 +154,4 @@ private:
 };
 
 } // namespace Runtime
+
