@@ -432,17 +432,14 @@ void MenuState::render(Core::Time *timer) {
     // subFont->RenderText("A Series of Unfortunate Events", w / 2.f - 650.f, h
     // - 450.0f, 1.0f, glm::vec3(0.8f, 0.8f, 1.0f), *shader);
   }
-#ifdef _DEBUG
-  // if (debugFont) {
-  //   if (timer) {
-  //     std::stringstream ss{};
-  //     ss << " screenW: " << m_window.width()
-  //        << " screenH: " << m_window.height() << " FPS: " << timer->fps();
-  //     debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f,
-  //                           glm::vec3(0.8f, 0.8f, 1.0f), *shader);
-  //   }
-  // }
-#endif
+  if (debugFont) {
+    if (timer) {
+      std::stringstream ss{};
+      ss << "FPS: " << timer->fps();
+      debugFont->RenderText(ss.str(), 10.f, h - 40.f, 1.0f,
+                            glm::vec3(0.8f, 0.8f, 1.0f), *shader);
+    }
+  }
 
   // Start: Syafiq
   if (selectFont) {

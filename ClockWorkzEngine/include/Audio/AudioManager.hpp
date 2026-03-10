@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           AudioManager.hpp
 \project        Lights Out
@@ -13,7 +13,7 @@
 pausing
                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -74,6 +74,7 @@ public:
   void stop(int channel);
   void setPaused(int channel, bool paused);
   void setVolume(int channel, float volume);
+  void setPitch(int channel, float pitch);
 
   // Groups
   void setGroupVolume(Group g, float volume);
@@ -83,7 +84,17 @@ public:
   void setListener(const vec3 &pos, const vec3 &vel, const vec3 &forward,
                    const vec3 &up);
 
+  // Set 3D attributes for a specific playing channel
+  void setChannel3DPosition(int channelId, const vec3 &pos,
+                            const vec3 &vel = vec3(0.0f, 0.0f, 0.0f));
+  void setChannel3DDistance(int channelId, float minDistance,
+                            float maxDistance);
+  void setChannel3DCone(int channelId, const vec3 &forward,
+                        float innerAngleDeg, float outerAngleDeg,
+                        float outerVolume);
+
   bool isReady() const noexcept { return m_system != nullptr; }
+  bool isChannelPlaying(int channel) const;
 
   FMOD::System *getSystem() const { return m_system; }
   static AudioManager &get();
@@ -136,3 +147,5 @@ private:
 };
 
 } // namespace Audio
+
+

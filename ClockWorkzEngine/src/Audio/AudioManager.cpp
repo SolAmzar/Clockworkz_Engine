@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
@@ -13,13 +13,14 @@
 pausing
                                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 
 #include "Audio/AudioManager.hpp"
 #include "Assets/SoundManager.hpp"
+#include <algorithm>
 #include <cassert>
 #include <fmod.hpp>
 #include <fmod_errors.h>
@@ -70,13 +71,17 @@ int AudioManager::findChannel(const std::string &id) {
   return 0;
 }
 
+bool AudioManager::isChannelPlaying(int channel) const {
+  auto it = m_channels.find(channel);
+  if (it == m_channels.end())
+    return false;
+  return isChannelAlive(it->second.ch);
+}
 bool AudioManager::isPlaying(const std::string &id) {
   return findChannel(id) != 0;
 }
 
-AudioManager::~AudioManager() {
-  shutdown();
-}
+AudioManager::~AudioManager() { shutdown(); }
 
 AudioManager &AudioManager::get() {
   static AudioManager instance; // <--- created once, destroyed once
@@ -421,6 +426,13 @@ void AudioManager::setVolume(int h, float volume) {
   }
 }
 
+void AudioManager::setPitch(int h, float pitch) {
+  auto it = m_channels.find(h);
+  if (it != m_channels.end() && it->second.ch) {
+    it->second.ch->setPitch(pitch);
+  }
+}
+
 void AudioManager::setGroupVolume(Group g, float volume) {
   if (auto *grp = groupHandle(g))
     grp->setVolume(volume);
@@ -442,6 +454,48 @@ void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
   m_system->set3DListenerAttributes(0, &p, &v, &f, &u);
 }
 
+void AudioManager::setChannel3DPosition(int channelId, const vec3 &pos,
+                                        const vec3 &vel) {
+  auto it = m_channels.find(channelId);
+  if (it != m_channels.end() && it->second.ch) {
+    FMOD_VECTOR p{pos.x, pos.y, pos.z};
+    FMOD_VECTOR v{vel.x, vel.y, vel.z};
+    it->second.ch->set3DAttributes(&p, &v);
+  }
+}
+
+
+void AudioManager::setChannel3DDistance(int channelId, float minDistance,
+                                        float maxDistance) {
+  auto it = m_channels.find(channelId);
+  if (it == m_channels.end() || !it->second.ch)
+    return;
+
+  const float safeMin = std::max(0.0f, minDistance);
+  const float safeMax = std::max(safeMin, maxDistance);
+  it->second.ch->set3DMinMaxDistance(safeMin, safeMax);
+}
+
+void AudioManager::setChannel3DCone(int channelId, const vec3 &forward,
+                                    float innerAngleDeg, float outerAngleDeg,
+                                    float outerVolume) {
+  auto it = m_channels.find(channelId);
+  if (it == m_channels.end() || !it->second.ch)
+    return;
+
+  vec3 dir = normalize(forward);
+  if (length_sq(dir) <= 0.0f) {
+    dir = vec3(1.0f, 0.0f, 0.0f);
+  }
+
+  const float safeInner = std::clamp(innerAngleDeg, 0.0f, 360.0f);
+  const float safeOuter = std::clamp(outerAngleDeg, safeInner, 360.0f);
+  const float safeOuterVolume = std::clamp(outerVolume, 0.0f, 1.0f);
+
+  FMOD_VECTOR orientation{dir.x, dir.y, dir.z};
+  it->second.ch->set3DConeOrientation(&orientation);
+  it->second.ch->set3DConeSettings(safeInner, safeOuter, safeOuterVolume);
+}
 // int AudioManager::play(const std::string& id, Group g, float volume, bool
 // paused) {
 //     auto it = m_sounds.find(id);
@@ -468,3 +522,5 @@ void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
 //     m_channels[handle] = { ch };
 //     return handle;
 // }
+
+

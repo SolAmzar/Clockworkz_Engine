@@ -45,6 +45,7 @@ reserved.
 #include "Components/Tag.hpp"
 #include "Components/Torch.hpp"
 #include "Components/Transform.hpp"
+#include "Components/Velocity.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Profiler.hpp"
 #include "Core/Time.hpp"
@@ -3972,7 +3973,7 @@ void SandboxState::renderComponentWindow() {
     }
   }
 
-  // AudioSource
+    // AudioSource
   if (ImGui::CollapsingHeader("AudioSource")) {
     auto *a = world.getComponent<Components::AudioSource>(entity);
     if (a) {
@@ -3988,10 +3989,65 @@ void SandboxState::renderComponentWindow() {
         }
         ImGui::EndCombo();
       }
+
+      ImGui::Checkbox("Playing", &a->playing);
+      ImGui::Checkbox("Play On Start", &a->playOnStart);
       ImGui::SliderFloat("Volume", &a->volume, 0.0f, 1.0f);
-      if (ImGui::Button("Play OneShot"))
-        Core::Engine::Get().audio().playOneShot(a->soundId, Audio::Group::SFX,
-                                                a->volume);
+      ImGui::SliderFloat("Pitch", &a->pitch, 0.25f, 3.0f);
+
+      ImGui::Checkbox("Spatial (3D)", &a->spatial);
+      if (a->spatial) {
+        ImGui::InputFloat("Min Distance", &a->minDistance, 1.0f, 10.0f, "%.2f");
+        ImGui::InputFloat("Max Distance", &a->maxDistance, 10.0f, 100.0f, "%.2f");
+        if (a->minDistance < 0.0f)
+          a->minDistance = 0.0f;
+        if (a->maxDistance < a->minDistance)
+          a->maxDistance = a->minDistance;
+
+        ImGui::InputFloat("Height (Z)", &a->height, 1.0f, 10.0f, "%.2f");
+        ImGui::Checkbox("Directional", &a->directional);
+
+        if (a->directional) {
+          ImGui::SliderFloat("Inner Cone (deg)", &a->innerConeAngleDeg, 0.0f,
+                             360.0f, "%.1f");
+          ImGui::SliderFloat("Outer Cone (deg)", &a->outerConeAngleDeg,
+                             a->innerConeAngleDeg, 360.0f, "%.1f");
+          ImGui::SliderFloat("Outer Cone Volume", &a->outerConeVolume, 0.0f,
+                             1.0f, "%.2f");
+        }
+
+        ImGui::TextDisabled("Note: Sound must be loaded as is3D=true in sounds.json");
+      }
+
+      if (ImGui::Button("Play OneShot")) {
+        int channel = Core::Engine::Get().audio().play(
+            a->soundId, Audio::Group::SFX, a->volume, false);
+        if (channel > 0 && a->spatial) {
+          vec3 emitterPos(0.0f, 0.0f, a->height);
+          vec3 emitterVel(0.0f, 0.0f, 0.0f);
+          vec3 forward(1.0f, 0.0f, 0.0f);
+
+          if (auto *t = world.getComponent<Components::Transform>(entity)) {
+            emitterPos.x = t->position.x;
+            emitterPos.y = t->position.y;
+            forward = vec3(std::cos(t->rotation), std::sin(t->rotation), 0.0f);
+          }
+
+          if (auto *v = world.getComponent<Components::Velocity>(entity)) {
+            emitterVel.x = v->velocity.x;
+            emitterVel.y = v->velocity.y;
+          }
+
+          auto &audioMgr = Core::Engine::Get().audio();
+          audioMgr.setChannel3DPosition(channel, emitterPos, emitterVel);
+          audioMgr.setChannel3DDistance(channel, a->minDistance, a->maxDistance);
+          if (a->directional) {
+            audioMgr.setChannel3DCone(channel, forward, a->innerConeAngleDeg,
+                                      a->outerConeAngleDeg, a->outerConeVolume);
+          }
+        }
+      }
+
       if (ImGui::Button("Remove AudioSource"))
         world.removeComponent<Components::AudioSource>(entity);
     } else {
@@ -7012,3 +7068,5 @@ void Runtime::SandboxState::renderGameOverOverlay() {
 //     std::cout << "[Sandbox] Failed to load level: " << path << "\n";
 //   }
 // }
+
+

@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 
 #include "Systems/AISystem.hpp"
+#include "Audio/AudioManager.hpp"
 #include "Assets/SoundManager.hpp"
 #include "Components/Collider.hpp"
 #include "Components/EnemyAI.hpp"
@@ -27,7 +28,6 @@ reserved.
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
-
 
 namespace Systems {
 
@@ -114,7 +114,8 @@ void AISystem::update(ECS::World &world, double dt,
           Components::Velocity &vel) {
         // Ensure enemy colliders are moveable so they get pushed out of walls
         if (auto *col = world.getComponent<Components::Collider>(e)) {
-          if (!col->moveable) col->moveable = true;
+          if (!col->moveable)
+            col->moveable = true;
         }
         // Skip entities on disabled layers
         if (!isLayerActive(e))
@@ -144,16 +145,30 @@ void AISystem::update(ECS::World &world, double dt,
         // Update previous state at the start/end of the loop
         ai.previousState = ai.state;
 
-        auto playDeathSfxIfNeeded = [&]() {
+                auto playDeathSfxIfNeeded = [&]() {
           if (ai.state != Components::AIState::Death ||
               prevState == Components::AIState::Death) {
             return;
           }
+
           static const std::array<const char *, 3> deathIds = {
               "enemy_death_1", "enemy_death_2", "enemy_death_3"};
           const char *id =
               deathIds[static_cast<size_t>(rand()) % deathIds.size()];
-          Assets::SoundManager::Play(id);
+
+          const int channel = Assets::SoundManager::Play(id);
+          if (channel <= 0) {
+            return;
+          }
+
+          auto &audio = Audio::AudioManager::get();
+          const vec3 deathPos(t.position.x, t.position.y, 0.0f);
+          const vec3 deathForward(std::cos(t.rotation), std::sin(t.rotation),
+                                  0.0f);
+
+          audio.setChannel3DPosition(channel, deathPos);
+          audio.setChannel3DDistance(channel, 90.0f, 900.0f);
+          audio.setChannel3DCone(channel, deathForward, 55.0f, 190.0f, 0.25f);
         };
 
         // Dead Check
@@ -369,3 +384,5 @@ void AISystem::update(ECS::World &world, double dt,
 }
 
 } // namespace Systems
+
+

@@ -116,7 +116,19 @@ static json SerializeWorld(ECS::World &world) {
     // AudioSource
     if (auto *ac = world.getComponent<Components::AudioSource>(entity)) {
       obj["components"]["audioSource"] = {
-          {"soundId", ac->soundId}, {"volume", ac->volume}, {"loop", ac->loop}};
+          {"soundId", ac->soundId},
+          {"volume", ac->volume},
+          {"loop", ac->loop},
+          {"playOnStart", ac->playOnStart},
+          {"pitch", ac->pitch},
+          {"spatial", ac->spatial},
+          {"directional", ac->directional},
+          {"minDistance", ac->minDistance},
+          {"maxDistance", ac->maxDistance},
+          {"innerConeAngleDeg", ac->innerConeAngleDeg},
+          {"outerConeAngleDeg", ac->outerConeAngleDeg},
+          {"outerConeVolume", ac->outerConeVolume},
+          {"height", ac->height}};
     }
 
     // SurfaceComponent (NEW)
@@ -439,6 +451,16 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         audio.soundId = ac.value("soundId", "default");
         audio.volume = ac.value("volume", 1.0f);
         audio.loop = ac.value("loop", false);
+        audio.playOnStart = ac.value("playOnStart", false);
+        audio.pitch = ac.value("pitch", 1.0f);
+        audio.spatial = ac.value("spatial", false);
+        audio.directional = ac.value("directional", false);
+        audio.minDistance = ac.value("minDistance", 100.0f);
+        audio.maxDistance = ac.value("maxDistance", 1000.0f);
+        audio.innerConeAngleDeg = ac.value("innerConeAngleDeg", 360.0f);
+        audio.outerConeAngleDeg = ac.value("outerConeAngleDeg", 360.0f);
+        audio.outerConeVolume = ac.value("outerConeVolume", 1.0f);
+        audio.height = ac.value("height", 0.0f);
         world.addComponent(entity, audio);
       }
 
@@ -787,3 +809,4 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
 }
 
 } // namespace Runtime
+

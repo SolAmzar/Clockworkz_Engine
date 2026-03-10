@@ -65,7 +65,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "enemy_death_1",
             "path": "assets/audio/sfx/enemy_death_1.wav",
@@ -74,7 +74,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "enemy_death_2",
             "path": "assets/audio/sfx/enemy_death_2.wav",
@@ -83,7 +83,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "enemy_death_3",
             "path": "assets/audio/sfx/enemy_death_3.wav",
