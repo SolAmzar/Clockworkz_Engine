@@ -23,10 +23,17 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 */
 /******************************************************************************/
 #include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
+#include "Core/json.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
+
+namespace fs = std::filesystem;
 
 namespace Assets
 {
@@ -331,5 +338,167 @@ namespace Assets
         glBindTexture(GL_TEXTURE_2D, 0);
         glDisable(GL_BLEND);
     }
+
+bool FontManager::LoadFromConfig(const std::string &configPath) {
+    std::ifstream file(configPath);
+    if (!file.is_open()) {
+        std::cerr << "[FontManager] Could not open config: " << configPath << "\n";
+        return false;
+    }
+
+    nlohmann::json j;
+    try { file >> j; }
+    catch (const std::exception &e) {
+        std::cerr << "[FontManager] JSON parse error in " << configPath << ": " << e.what() << "\n";
+        return false;
+    }
+
+    if (!j.contains("fonts") || !j["fonts"].is_array()) {
+        std::cerr << "[FontManager] Config missing 'fonts' array: " << configPath << "\n";
+        return false;
+    }
+
+    bool allOk = true;
+    for (const auto &entry : j["fonts"]) {
+        if (!entry.contains("name") || !entry.contains("path") || !entry.contains("size")) {
+            std::cerr << "[FontManager] Skipping entry missing name/path/size\n";
+            continue;
+        }
+        std::string name = entry["name"].get<std::string>();
+        std::string path = entry["path"].get<std::string>();
+        unsigned int size = entry["size"].get<unsigned int>();
+
+        // Resolve path relative to the config file's directory so it works
+        // regardless of the current working directory.
+        fs::path resolved = fs::path(configPath).parent_path() / path;
+        path = resolved.generic_string();
+
+        auto font = ResourceManager<FontManager>::Load(name, path, size);
+        if (!font) {
+            std::cerr << "[FontManager] Failed to load font: " << name << " from " << path << "\n";
+            allOk = false;
+        } else {
+            std::cout << "[FontManager] Loaded: " << name << " (" << path << ", " << size << "pt)\n";
+        }
+    }
+    return allOk;
+}
+
+bool FontManager::ImportFont(const std::string &sourcePath, const std::string &name,
+                             unsigned int size, const std::string &configPath) {
+    if (!fs::exists(sourcePath)) {
+        std::cerr << "[FontManager] Source file not found: " << sourcePath << "\n";
+        return false;
+    }
+
+    fs::create_directories("assets/fonts");
+    std::string filename = fs::path(sourcePath).filename().string();
+    std::string destPath = "assets/fonts/" + filename;
+    try {
+        fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
+    } catch (const fs::filesystem_error &e) {
+        std::cerr << "[FontManager] Failed to copy font file: " << e.what() << "\n";
+        return false;
+    }
+
+    // Add to JSON config
+    std::ifstream inFile(configPath);
+    nlohmann::json j;
+    if (inFile.is_open()) {
+        try { inFile >> j; } catch (...) { j = nlohmann::json::object(); }
+        inFile.close();
+    }
+    if (!j.contains("fonts") || !j["fonts"].is_array())
+        j["fonts"] = nlohmann::json::array();
+
+    for (const auto &entry : j["fonts"]) {
+        if (entry.value("name", "") == name) {
+            std::cerr << "[FontManager] Font name already exists: " << name << "\n";
+            return false;
+        }
+    }
+    nlohmann::json newEntry;
+    newEntry["name"] = name;
+    newEntry["path"] = destPath;
+    newEntry["size"] = size;
+    j["fonts"].push_back(newEntry);
+
+    std::ofstream outFile(configPath);
+    if (!outFile.is_open()) {
+        std::cerr << "[FontManager] Failed to write config: " << configPath << "\n";
+        return false;
+    }
+    outFile << std::setw(4) << j << "\n";
+    outFile.close();
+
+    // Load into memory
+    auto font = ResourceManager<FontManager>::Load(name, destPath, size);
+    if (!font) {
+        std::cerr << "[FontManager] Failed to load imported font: " << name << "\n";
+        return false;
+    }
+    std::cout << "[FontManager] Imported font: " << name << " from " << destPath << "\n";
+    return true;
+}
+
+std::string FontManager::GetFilePath(const std::string &name, const std::string &configPath) {
+    std::ifstream file(configPath);
+    if (!file.is_open()) return "";
+    nlohmann::json j;
+    try { file >> j; } catch (...) { return ""; }
+    if (!j.contains("fonts") || !j["fonts"].is_array()) return "";
+    for (const auto &entry : j["fonts"]) {
+        if (entry.value("name", "") == name)
+            return entry.value("path", "");
+    }
+    return "";
+}
+
+void FontManager::Unload(const std::string &name) {
+    ResourceManager<FontManager>::Unload(name);
+}
+
+bool FontManager::DeleteFont(const std::string &name, const std::string &configPath) {
+    std::string filePath = GetFilePath(name, configPath);
+
+    // Unload from memory
+    Unload(name);
+
+    // Remove from JSON config
+    std::ifstream inFile(configPath);
+    if (!inFile.is_open()) {
+        std::cerr << "[FontManager] Cannot open config for delete: " << configPath << "\n";
+        return false;
+    }
+    nlohmann::json j;
+    try { inFile >> j; } catch (...) { return false; }
+    inFile.close();
+
+    if (!j.contains("fonts") || !j["fonts"].is_array()) return false;
+    auto &arr = j["fonts"];
+    bool removed = false;
+    for (auto it = arr.begin(); it != arr.end();) {
+        if (it->value("name", "") == name) { it = arr.erase(it); removed = true; }
+        else ++it;
+    }
+    if (!removed) return false;
+
+    std::ofstream outFile(configPath);
+    if (!outFile.is_open()) return false;
+    outFile << std::setw(4) << j << "\n";
+    outFile.close();
+
+    // Delete physical file (only if it's in assets/fonts/ — never delete system fonts)
+    if (!filePath.empty()) {
+        fs::path p(filePath);
+        if (p.string().find("assets/fonts") != std::string::npos && fs::exists(p)) {
+            std::error_code ec;
+            fs::remove(p, ec);
+            if (ec) std::cerr << "[FontManager] Failed to delete file: " << ec.message() << "\n";
+        }
+    }
+    std::cout << "[FontManager] Deleted font: " << name << "\n";
+    return true;
+}
 
 } // namespace ClockWorkz::Assets

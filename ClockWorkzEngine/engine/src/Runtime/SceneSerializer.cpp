@@ -27,6 +27,7 @@ reserved.
 #include "Components/Tag.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
+#include "Components/CameraComponent.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/Velocity.hpp"
 
@@ -191,6 +192,14 @@ static json SerializeWorld(ECS::World &world,
           {"normalColor",  {{"r", ub->normalColor.r}, {"g", ub->normalColor.g}, {"b", ub->normalColor.b}}},
           {"hoverColor",   {{"r", ub->hoverColor.r},  {"g", ub->hoverColor.g},  {"b", ub->hoverColor.b}}}
       };
+    }
+
+    // CameraComponent
+    if (auto* cc = world.getComponent<Components::CameraComponent>(entity)) {
+      obj["components"]["cameraComponent"] = {
+          {"isMain", cc->isMain},
+          {"zoom",   cc->zoom},
+          {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}}};
     }
 
     // Game-specific components (registered via SceneSerializer::setExtensions)
@@ -454,6 +463,19 @@ bool SceneSerializer::Deserialize(ECS::World &world,
                             ub["hoverColor"].value("b", 0.f)};
         }
         world.addComponent(entity, btn);
+      }
+
+      // CameraComponent
+      if (components.contains("cameraComponent")) {
+        auto& cc = components["cameraComponent"];
+        Components::CameraComponent cam;
+        cam.isMain = cc.value("isMain", true);
+        cam.zoom   = cc.value("zoom", 1.0f);
+        if (cc.contains("offset")) {
+          cam.offset.x = cc["offset"].value("x", 0.0f);
+          cam.offset.y = cc["offset"].value("y", 0.0f);
+        }
+        world.addComponent(entity, cam);
       }
 
       // Game-specific components (registered via SceneSerializer::setExtensions)

@@ -23,7 +23,8 @@ add_executable(CWZEditor ${SHARED_SOURCES} ${HEADERS} src/main.cpp)
 add_executable(LightsOut ${SHARED_SOURCES} ${HEADERS} src/main_game.cpp)
 
 # ---------------------------------------------------------------------------
-# Helper macro: apply identical compile/link/asset settings to both targets
+# Helper macro: compile/link settings only (NO asset copies — kept out of the
+# macro to prevent parallel-build races when ninja builds both targets at once)
 # ---------------------------------------------------------------------------
 macro(configure_lightsout_target TARGET_NAME)
   target_include_directories(${TARGET_NAME} PRIVATE include src)
@@ -44,45 +45,86 @@ macro(configure_lightsout_target TARGET_NAME)
     RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_BINARY_DIR}/bin/Debug"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release"
   )
-
-  # Copy this project's runtime data (scenes, scripts, textures, audio)
-  add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-      "$<TARGET_FILE_DIR:${TARGET_NAME}>/projects/LightsOut"
-  )
-
-  # Copy shared engine assets (shaders, fonts) from game/assets/
-  if(DEFINED GAME_SHARED_ASSETS_DIR AND EXISTS "${GAME_SHARED_ASSETS_DIR}")
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${GAME_SHARED_ASSETS_DIR}"
-        "$<TARGET_FILE_DIR:${TARGET_NAME}>/assets"
-    )
-  endif()
-
-  # Copy FMOD directory
-  set(_fmod_dir "${CMAKE_SOURCE_DIR}/fmod")
-  if(EXISTS "${_fmod_dir}")
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${_fmod_dir}"
-        "${CMAKE_BINARY_DIR}/fmod"
-    )
-  endif()
-
-  # Copy FMOD runtime DLL
-  if(ENGINE_ENABLE_FMOD AND WIN32)
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
-        "$<TARGET_FILE_DIR:${TARGET_NAME}>/"
-    )
-  endif()
 endmacro()
+
+# ---------------------------------------------------------------------------
+# FMOD copies — single shared custom target to prevent parallel-build races.
+# Both executables output to the same bin/<Config>/ directory, so concurrent
+# POST_BUILD fmod copies would collide when ninja builds them simultaneously.
+# ---------------------------------------------------------------------------
+set(_fmod_dir "${CMAKE_SOURCE_DIR}/fmod")
+if(EXISTS "${_fmod_dir}")
+  add_custom_target(CopyFmod
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${_fmod_dir}"
+      "${CMAKE_BINARY_DIR}/fmod"
+    COMMENT "Copying FMOD directory"
+    VERBATIM
+  )
+  add_dependencies(CWZEditor CopyFmod)
+  add_dependencies(LightsOut CopyFmod)
+endif()
+
+if(ENGINE_ENABLE_FMOD AND WIN32)
+  add_custom_target(CopyFmodDll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
+      "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
+    COMMENT "Copying FMOD runtime DLL"
+    VERBATIM
+  )
+  add_dependencies(CWZEditor CopyFmodDll)
+  add_dependencies(LightsOut CopyFmodDll)
+endif()
 
 configure_lightsout_target(CWZEditor)
 configure_lightsout_target(LightsOut)
+
+# ---------------------------------------------------------------------------
+# Asset copies — done via a single custom target so they never run in parallel.
+# Both executables go to the same bin/Debug (or bin/Release) directory, so
+# concurrent copies of the same source trees would race.
+# ---------------------------------------------------------------------------
+
+# 1. Shared engine assets (shaders, fonts, engine_config, empty textures stub)
+#    → bin/<Config>/assets/
+if(DEFINED GAME_SHARED_ASSETS_DIR AND EXISTS "${GAME_SHARED_ASSETS_DIR}")
+  add_custom_target(CopySharedAssets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${GAME_SHARED_ASSETS_DIR}"
+      "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/assets"
+    COMMENT "Copying shared game assets"
+    VERBATIM
+  )
+  add_dependencies(CWZEditor CopySharedAssets)
+  add_dependencies(LightsOut CopySharedAssets)
+endif()
+
+# 2. LightsOut-specific assets — runs as a custom target that depends on
+#    CopySharedAssets, so game assets (Textures.json, scenes/, textures/, etc.)
+#    always overwrite the empty shared stubs regardless of which executable was
+#    built last.  Both CWZEditor and LightsOut depend on this target so the
+#    correct assets are always present in the shared bin/<Config>/ directory.
+add_custom_target(CopyLightsOutAssets
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+    "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/projects/LightsOut"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+    "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/assets"
+  # Mirror shared engine fonts into the project dir so the editor can resolve
+  # "assets/fonts/MANIC1.ttf" relative to projects/LightsOut/ without absolute paths.
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${GAME_SHARED_ASSETS_DIR}/fonts"
+    "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/projects/LightsOut/assets/fonts"
+  COMMENT "Copying LightsOut game assets"
+  VERBATIM
+)
+if(TARGET CopySharedAssets)
+  add_dependencies(CopyLightsOutAssets CopySharedAssets)
+endif()
+add_dependencies(CWZEditor CopyLightsOutAssets)
+add_dependencies(LightsOut CopyLightsOutAssets)
 
 # --- VS source groups ---
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"     PREFIX "Source Files" FILES ${ALL_SOURCES})

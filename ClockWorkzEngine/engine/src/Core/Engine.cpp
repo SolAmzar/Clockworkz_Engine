@@ -187,8 +187,9 @@ bool Engine::init() {
   Assets::SoundManager::Init(*m_audio);
 
   if (!Assets::TextureManager::LoadFromConfig("assets/configs/textures.json")) {
-    m_logger->fatal("Failed to load textures from config");
-    return false;
+    m_logger->error("Some textures failed to load from config. "
+                    "Game will still run; check log for details.");
+    // Do NOT return false here — missing textures are non-fatal.
   }
 
   if (!Assets::SoundManager::LoadFromConfig("assets/configs/sounds.json")) {

@@ -69,6 +69,7 @@ reserved.
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
+#include "Components/CameraComponent.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
@@ -245,8 +246,10 @@ void EditorState::onEnter() {
         "text",
         m_engineAssetsRoot + "/shaders/text.vert",
         m_engineAssetsRoot + "/shaders/text.frag");
-    Assets::ResourceManager<Assets::FontManager>::Load(
-        "Debug", m_engineAssetsRoot + "/fonts/MANIC1.ttf", 24);
+    // Load engine-level fonts (Debug, etc.) from shared assets config
+    Assets::FontManager::LoadFromConfig(m_engineAssetsRoot + "/configs/fonts.json");
+    // Load project-specific fonts (Title, Selection, BodyText, etc.) from project config
+    Assets::FontManager::LoadFromConfig("assets/configs/fonts.json");
 
     // Load project-specific assets (CWD is now the project root, so all
     // "assets/..." paths resolve to this project's assets/ folder).
@@ -479,6 +482,7 @@ void EditorState::render(Core::Time* timer) {
     renderer.beginScenePass(camera.viewProj(), glm::vec4(1.0f));
     m_scene.Render(renderer);
     renderer.endScenePass();
+    m_scene.RenderText(renderer);
 
     Systems::renderLightPass(m_scene.GetWorld(), renderer);
 
@@ -572,6 +576,7 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderDockWindow("Audio",                  centerBot);
         ImGui::DockBuilderDockWindow("Animations",             centerBot);
         ImGui::DockBuilderDockWindow("Prefabs",                centerBot);
+        ImGui::DockBuilderDockWindow("Fonts",                  centerBot);
         ImGui::DockBuilderDockWindow("Tile Palette",           left);
         ImGui::DockBuilderDockWindow("Inspector",              rightTop);
         ImGui::DockBuilderDockWindow("Stats",                  rightTop);
@@ -589,6 +594,7 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderScriptsBrowser();
     renderAnimationsBrowser();
     renderAudioBrowser();
+    renderFontBrowser();
     renderPrefabBrowser();
     renderTilePalette();
 
@@ -1195,6 +1201,10 @@ void EditorState::renderInspector() {
             addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world);
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Camera")) {
+            addCompEntry<Components::CameraComponent>("CameraComponent", m_selectedEntity, world);
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Scripting")) {
             // LuaScript: always available — adds a new script slot each click
             if (ImGui::MenuItem("LuaScript")) {
@@ -1517,8 +1527,18 @@ void EditorState::renderInspector() {
             char tbuf[512]; snprintf(tbuf, sizeof(tbuf), "%s", tr->text.c_str());
             if (ImGui::InputTextMultiline("Text##tr", tbuf, sizeof(tbuf), ImVec2(-1, 60)))
                 tr->text = tbuf;
-            char trfbuf[128]; snprintf(trfbuf, sizeof(trfbuf), "%s", tr->fontId.c_str());
-            if (ImGui::InputText("Font ID##tr", trfbuf, sizeof(trfbuf))) tr->fontId = trfbuf;
+            {
+                auto fontKeys = Assets::ResourceManager<Assets::FontManager>::GetKeys();
+                std::sort(fontKeys.begin(), fontKeys.end());
+                int curIdx = 0;
+                for (int i = 0; i < (int)fontKeys.size(); ++i)
+                    if (fontKeys[i] == tr->fontId) { curIdx = i; break; }
+                std::vector<const char*> fontCStrs;
+                fontCStrs.reserve(fontKeys.size());
+                for (const auto& k : fontKeys) fontCStrs.push_back(k.c_str());
+                if (ImGui::Combo("Font ID##tr", &curIdx, fontCStrs.data(), (int)fontCStrs.size()))
+                    tr->fontId = fontKeys[curIdx];
+            }
             ImGui::DragFloat("Font Size##tr", &tr->fontSize, 0.01f);
             ImGui::ColorEdit3("Color##tr", glm::value_ptr(tr->color));
             ImGui::Checkbox("Visible##tr", &tr->visible);
@@ -1566,6 +1586,22 @@ void EditorState::renderInspector() {
             ImGui::ColorEdit3("Hover Color##uib",  glm::value_ptr(btn->hoverColor));
         }
         if (rm) world.removeComponent<Components::UIButton>(m_selectedEntity);
+    }
+
+    // ── CameraComponent ───────────────────────────────────────────────────────
+    if (world.hasComponent<Components::CameraComponent>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("CameraComponent##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rcam")) rm = true;
+        if (open) {
+            auto* cam = world.getComponent<Components::CameraComponent>(m_selectedEntity);
+            ImGui::Checkbox("Is Main##cam",  &cam->isMain);
+            ImGui::DragFloat("Zoom##cam",    &cam->zoom, 0.01f, 0.01f, 20.0f);
+            ImGui::DragFloat2("Offset##cam", &cam->offset.x, 1.0f);
+        }
+        if (rm) world.removeComponent<Components::CameraComponent>(m_selectedEntity);
     }
 
     ImGui::End();
@@ -2205,10 +2241,20 @@ void EditorState::renderAssetBrowser() {
                     // Import into CURRENT directory
                     fs::path dest = fs::path(m_currentAssetDir) / fs::path(filePath).filename();
                     Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
-                    // If imported to a different location than the manager's default, 
+                    // If imported to a different location than the manager's default,
                     // we might need to handle the move, but ImportTexture handles the copy to assets/textures.
                     break;
                 }
+            }
+            // Route font files to the font browser import modal
+            if (ext == ".ttf" || ext == ".otf") {
+                strncpy_s(m_newFontPathBuf, filePath.c_str(), sizeof(m_newFontPathBuf) - 1);
+                if (!m_newFontNameBuf[0]) {
+                    std::string stem = fs::path(filePath).stem().string();
+                    strncpy_s(m_newFontNameBuf, stem.c_str(), sizeof(m_newFontNameBuf) - 1);
+                }
+                m_newFontSize = 32;
+                m_pendingFontImportPopup = true;
             }
         }
     }
@@ -2965,6 +3011,127 @@ void EditorState::renderScriptsBrowser() {
             ImGui::PopID();
         }
         ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderFontBrowser
+// ---------------------------------------------------------------------------
+
+void EditorState::renderFontBrowser() {
+    ImGui::Begin("Fonts");
+
+    namespace fs = std::filesystem;
+    static constexpr const char* kFontConfig = "assets/configs/fonts.json";
+
+    // ── Handle pending font import from dropped files ─────────────────────
+    if (m_pendingFontImportPopup) {
+        m_pendingFontImportPopup = false;
+        ImGui::OpenPopup("##AddFont");
+    }
+
+    // ── Toolbar ───────────────────────────────────────────────────────────
+    if (ImGui::Button("Add Font")) {
+        m_newFontNameBuf[0] = '\0';
+        m_newFontPathBuf[0] = '\0';
+        m_newFontSize = 32;
+        ImGui::OpenPopup("##AddFont");
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("(drag .ttf/.otf here)");
+    ImGui::Separator();
+
+    // ── Add Font modal ────────────────────────────────────────────────────
+    if (ImGui::BeginPopupModal("##AddFont", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Import Font");
+        ImGui::Separator();
+
+        ImGui::SetNextItemWidth(300.0f);
+        ImGui::InputText("File##fontpath", m_newFontPathBuf, sizeof(m_newFontPathBuf));
+        ImGui::SameLine();
+        if (ImGui::Button("Browse...##font")) {
+#ifdef _WIN32
+            OPENFILENAMEA ofn{}; char szFile[512]{};
+            ofn.lStructSize = sizeof(ofn); ofn.lpstrFile = szFile; ofn.nMaxFile = sizeof(szFile);
+            ofn.lpstrFilter = "Font Files\0*.ttf;*.otf\0All Files\0*.*\0";
+            ofn.nFilterIndex = 1; ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+            if (GetOpenFileNameA(&ofn)) {
+                strncpy_s(m_newFontPathBuf, szFile, sizeof(m_newFontPathBuf) - 1);
+                if (!m_newFontNameBuf[0]) {
+                    std::string stem = fs::path(szFile).stem().string();
+                    strncpy_s(m_newFontNameBuf, stem.c_str(), sizeof(m_newFontNameBuf) - 1);
+                }
+            }
+#endif
+        }
+
+        ImGui::InputText("Name (ID)##fontname", m_newFontNameBuf, sizeof(m_newFontNameBuf));
+        ImGui::InputInt("Size (pt)##fontsize", &m_newFontSize);
+        if (m_newFontSize < 4) m_newFontSize = 4;
+
+        ImGui::Spacing();
+        if (ImGui::Button("Import##font", ImVec2(100, 0))) {
+            if (m_newFontNameBuf[0] && m_newFontPathBuf[0] && m_newFontSize > 0) {
+                Assets::FontManager::ImportFont(m_newFontPathBuf, m_newFontNameBuf,
+                                                (unsigned int)m_newFontSize, kFontConfig);
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel##font", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+
+    // ── Delete confirmation modal ─────────────────────────────────────────
+    if (!m_deletingFont.empty()) ImGui::OpenPopup("##DeleteFont");
+    if (ImGui::BeginPopupModal("##DeleteFont", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Delete font \"%s\"?", m_deletingFont.c_str());
+        ImGui::Text("This will unload it, remove it from fonts.json,");
+        ImGui::Text("and delete the file from assets/fonts/.");
+        ImGui::Spacing();
+        if (ImGui::Button("Delete##fontconfirm", ImVec2(100, 0))) {
+            Assets::FontManager::DeleteFont(m_deletingFont, kFontConfig);
+            m_deletingFont.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel##fontcancel", ImVec2(100, 0))) {
+            m_deletingFont.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // ── Font list ─────────────────────────────────────────────────────────
+    auto fontKeys = Assets::ResourceManager<Assets::FontManager>::GetKeys();
+    std::sort(fontKeys.begin(), fontKeys.end());
+
+    if (fontKeys.empty()) {
+        ImGui::TextDisabled("No fonts loaded. Use 'Add Font' or drag a .ttf/.otf file here.");
+    } else {
+        if (ImGui::BeginTable("##FontTable", 3,
+                              ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                              ImGuiTableFlags_SizingStretchProp)) {
+            ImGui::TableSetupColumn("Name",   ImGuiTableColumnFlags_WidthStretch, 2.0f);
+            ImGui::TableSetupColumn("Path",   ImGuiTableColumnFlags_WidthStretch, 4.0f);
+            ImGui::TableSetupColumn("Delete", ImGuiTableColumnFlags_WidthFixed,   60.0f);
+            ImGui::TableHeadersRow();
+
+            for (const auto& key : fontKeys) {
+                std::string filePath = Assets::FontManager::GetFilePath(key, kFontConfig);
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::TextUnformatted(key.c_str());
+                ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(filePath.empty() ? "(built-in)" : filePath.c_str());
+                ImGui::TableSetColumnIndex(2);
+                std::string delId = "X##fdel_" + key;
+                if (ImGui::Button(delId.c_str())) {
+                    m_deletingFont = key;
+                }
+            }
+            ImGui::EndTable();
+        }
     }
 
     ImGui::End();

@@ -73,6 +73,15 @@ public:
     }
   }
 
+  // Return all registered resource names
+  static std::vector<std::string> GetKeys() {
+    std::vector<std::string> keys;
+    keys.reserve(resources.size());
+    for (const auto &kv : resources)
+      keys.push_back(kv.first);
+    return keys;
+  }
+
   // Clear all resources
   static void Clear() {
     for (auto &kv : resources) {

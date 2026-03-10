@@ -23,11 +23,13 @@
 #include "Components/Transform.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/Velocity.hpp"
+#include "Graphics/Camera2D.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include <cmath>
 #include <filesystem>
 #include <iostream>
 
+#include "Components/CameraComponent.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Core/Engine.hpp"
 #include "Memory/MemoryManager.hpp"
@@ -89,6 +91,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::Layer>();
   m_world.registerComponent<Components::Light>();
   m_world.registerComponent<Components::UIButton>();
+  m_world.registerComponent<Components::CameraComponent>();
 
   // Let the game register its own component types (set via Engine::setComponentRegistrar).
   Core::Engine::Get().invokeComponentRegistrar(m_world);
@@ -209,6 +212,10 @@ void Scene::Update(double dt, Platform::InputManager &input) {
 
   // --- Game-specific update (particles, collision reactions, portal, etc.) ---
   if (m_onUpdate) m_onUpdate(m_world, dt, m_collisionSystem, *this);
+
+  // --- Camera system: must run last so it sees final entity positions ---
+  if (m_cameraSystemEnabled)
+    m_cameraSystem.update(m_world);
 }
 
 void Scene::Render(Graphics::RenderingManager &renderer) {
@@ -230,6 +237,13 @@ void Scene::Render(Graphics::RenderingManager &renderer) {
 
   // --- Game-specific render (particles, etc.) ---
   if (m_onRender) m_onRender(m_world, renderer);
+}
+
+void Scene::RenderText(Graphics::RenderingManager &renderer) {
+  if (m_textRenderSystemEnabled) {
+    m_textRenderSystem.update(m_world, renderer,
+                              Core::Engine::Get().camera().viewProj());
+  }
 }
 
 void Scene::RespawnPlayer() {

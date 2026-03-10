@@ -114,13 +114,7 @@
             "name": "floor_texture",
             "path": "assets/textures/corridorfloor.png"
         },
-        {
-            "alphaOnlyIsRed": false,
-            "flipY": true,
-            "name": "pot_texture",
-            "path": "assets/textures/pot.png"
-        },
-        {
+{
             "alphaOnlyIsRed": false,
             "flipY": true,
             "name": "battery_full",

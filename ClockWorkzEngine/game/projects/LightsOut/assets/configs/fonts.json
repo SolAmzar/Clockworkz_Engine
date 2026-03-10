@@ -1,0 +1,24 @@
+{
+    "fonts": [
+        {
+            "name": "Title",
+            "path": "../fonts/MANIC1.ttf",
+            "size": 48
+        },
+        {
+            "name": "Subtitle",
+            "path": "../fonts/MANIC2.ttf",
+            "size": 72
+        },
+        {
+            "name": "Selection",
+            "path": "../fonts/MANIC1.ttf",
+            "size": 60
+        },
+        {
+            "name": "BodyText",
+            "path": "../fonts/ANUNE___.TTF",
+            "size": 32
+        }
+    ]
+}

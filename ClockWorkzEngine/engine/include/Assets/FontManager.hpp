@@ -69,6 +69,26 @@ namespace Assets
 
     inline const std::map<char, Character> &GetCharacters() const { return characters; }
 
+    // Load all fonts listed in a JSON config file (same pattern as TextureManager)
+    // Each entry: { "name": "Title", "path": "assets/fonts/MANIC1.ttf", "size": 48 }
+    static bool LoadFromConfig(const std::string &configPath);
+
+    // Import a font from an external path: copies it to assets/fonts/, adds to config, loads into memory.
+    static bool ImportFont(const std::string &sourcePath, const std::string &name,
+                           unsigned int size,
+                           const std::string &configPath = "assets/configs/fonts.json");
+
+    // Delete a font: unloads from memory, removes from config, deletes file from disk.
+    static bool DeleteFont(const std::string &name,
+                           const std::string &configPath = "assets/configs/fonts.json");
+
+    // Returns the file path stored in the config for a named font (empty if not found).
+    static std::string GetFilePath(const std::string &name,
+                                   const std::string &configPath = "assets/configs/fonts.json");
+
+    // Unload a named font from memory (ResourceManager).
+    static void Unload(const std::string &name);
+
   private:
     FT_Face face;
     FT_Library ft;

@@ -57,6 +57,7 @@ private:
     void renderAudioBrowser();
     void renderPrefabBrowser();
     void renderTilePalette();
+    void renderFontBrowser();
 
     // ----- Scene helpers -----
     void renderGrid();
@@ -208,6 +209,13 @@ private:
     std::string             m_deletingAudio;
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
+
+    // ----- Font browser -----
+    char                     m_newFontNameBuf[128]{};
+    char                     m_newFontPathBuf[512]{};
+    int                      m_newFontSize{32};
+    std::string              m_deletingFont;
+    bool                     m_pendingFontImportPopup{false};
 
     // ----- Prefab Browser -----
     std::vector<std::string> m_availablePrefabs;

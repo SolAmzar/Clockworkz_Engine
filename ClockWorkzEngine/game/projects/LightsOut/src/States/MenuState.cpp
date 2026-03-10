@@ -63,10 +63,7 @@ void MenuState::onEnter() {
   m_cam      = &engine.camera();
 
   // Load fonts (kept for compatibility with any TextRenderer entities)
-  ResourceManager<Assets::FontManager>::Load("Title",     "assets/fonts/MANIC1.ttf",  48);
-  ResourceManager<Assets::FontManager>::Load("Subtitle",  "assets/fonts/MANIC2.TTF",  72);
-  ResourceManager<Assets::FontManager>::Load("Debug",     "assets/fonts/MANIC1.TTF",  24);
-  ResourceManager<Assets::FontManager>::Load("Selection", "assets/fonts/MANIC1.TTF",  60);
+  Assets::FontManager::LoadFromConfig("assets/configs/fonts.json");
   ResourceManager<Shader>::Load("text",    "assets/shaders/text.vert",    "assets/shaders/text.frag");
   ResourceManager<Shader>::Load("texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
 
@@ -183,12 +180,11 @@ void MenuState::update(double /*dt*/) {
     auto *sr  = m_menuScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
     if (!btn || !tf || !sr || !btn->interactable) continue;
 
-    float halfW = sr->size.x * 0.5f;
-    float halfH = sr->size.y * 0.5f;
-    bool hovered = (mouseWorld.x >= tf->position.x - halfW &&
-                    mouseWorld.x <= tf->position.x + halfW &&
-                    mouseWorld.y >= tf->position.y - halfH &&
-                    mouseWorld.y <= tf->position.y + halfH);
+    // tf->position is the top-left of the button box (matches RenderTextInBox convention)
+    bool hovered = (mouseWorld.x >= tf->position.x &&
+                    mouseWorld.x <= tf->position.x + sr->size.x &&
+                    mouseWorld.y >= tf->position.y - sr->size.y &&
+                    mouseWorld.y <= tf->position.y);
     if (hovered) {
       mouseHover = true;
       if (m_selected != i) {
@@ -251,10 +247,7 @@ void MenuState::render(Core::Time * /*timer*/) {
   m_renderer->beginScenePass(vp);
   m_menuScene.Render(*m_renderer);
   m_renderer->endScenePass();
-
-  m_renderer->beginFontPass(vp);
-  m_textRenderSystem.update(m_menuScene.GetWorld(), *m_renderer, vp);
-  m_renderer->endFontPass();
+  m_menuScene.RenderText(*m_renderer);
 }
 
 void MenuState::renderImGui(Core::Time * /*timer*/) {

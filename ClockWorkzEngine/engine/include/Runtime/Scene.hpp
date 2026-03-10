@@ -18,6 +18,7 @@
 #include "Systems/AudioSystem.hpp"
 #include "Systems/CollisionSystem.hpp"
 #include "Systems/PhysicsSystem.hpp"
+#include "Systems/CameraSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "Systems/StateMachineSystem.hpp"
 #include "Systems/ScriptSystem.hpp"
@@ -34,6 +35,7 @@ public:
   void Init();
   void Update(double dt, Platform::InputManager &input);
   void Render(Graphics::RenderingManager &renderer);
+  void RenderText(Graphics::RenderingManager &renderer); // Call AFTER endScenePass
   void Clear();
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
@@ -93,6 +95,7 @@ public:
   bool m_stateMachineSystemEnabled{true};
   bool m_textRenderSystemEnabled{true};
   bool m_scriptSystemEnabled{true};
+  bool m_cameraSystemEnabled{true};
 
   // Layer System
   static constexpr int MAX_LAYERS = 32;
@@ -119,6 +122,7 @@ private:
   Systems::StateMachineSystem m_stateMachineSystem;
   Systems::TextRenderSystem m_textRenderSystem;
   Systems::ScriptSystem m_scriptSystem;
+  Systems::CameraSystem m_cameraSystem;
 
   // --- Game Logic State (set/read by game states) ---
   float m_playerDeathTimer = -1.0f;

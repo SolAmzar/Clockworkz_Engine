@@ -17,7 +17,6 @@ reserved.
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
-#include "Systems/TextRenderSystem.hpp"
 #include "ECS/World.hpp"
 #include <memory>
 #include <string>
@@ -70,7 +69,6 @@ private:
   Graphics::Camera2D         *m_cam{nullptr};
 
   Runtime::Scene             m_menuScene;
-  Systems::TextRenderSystem  m_textRenderSystem;
 
   // Ordered list of button entities (filled from world.each<UIButton> at load)
   std::vector<ECS::Entity>   m_buttonEntities;

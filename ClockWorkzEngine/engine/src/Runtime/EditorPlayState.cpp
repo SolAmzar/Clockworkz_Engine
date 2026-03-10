@@ -18,8 +18,6 @@ reserved.
 #include "Graphics/ImGuiManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
-#include "Components/Tag.hpp"
-#include "Components/Transform.hpp"
 #include "IMGUI/imgui.h"
 
 #include <GL/glew.h>
@@ -93,14 +91,7 @@ void EditorPlayState::update(double dt) {
     }
 
     m_scene.Update(dt, m_input);
-
-    // Camera follow: track entity tagged "Player"
-    auto& camera = Core::Engine::Get().camera();
-    m_scene.GetWorld().each<Components::Tag, Components::Transform>(
-        [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
-            if (tag.tag == "Player")
-                camera.setPosition(glm::vec2(t.position.x, t.position.y));
-        });
+    // Camera follow is handled by CameraSystem inside Scene::Update().
 }
 
 // ---------------------------------------------------------------------------

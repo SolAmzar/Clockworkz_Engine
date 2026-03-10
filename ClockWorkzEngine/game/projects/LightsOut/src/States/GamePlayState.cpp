@@ -89,6 +89,7 @@ void GamePlayState::render(Core::Time* /*timer*/) {
   m_renderer->beginScenePass(vp);
   m_scene.Render(*m_renderer);
   m_renderer->endScenePass();
+  m_scene.RenderText(*m_renderer);
   // Particle emitter + light pass are handled by the onRender callback
   // registered in main_game.cpp's setSceneSetup — no extra code needed here.
 }
