@@ -25,6 +25,7 @@ reserved.
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
+#include "GlobalAudioSettings.hpp"
 #include "IMGUI/imgui.h"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
@@ -84,6 +85,11 @@ void PauseState::onEnter() {
           updateLayout(e.width, e.height);
       });
 
+  GlobalAudioSettings::Load();
+  m_bgmVolumeBeforePause = GlobalAudioSettings::GetBGMVolume();
+  m_sfxVolumeBeforePause = GlobalAudioSettings::GetSFXVolume();
+  m_bgmVolumeDuringPause = m_bgmVolumeBeforePause * 0.4f;
+  m_sfxVolumeDuringPause = m_sfxVolumeBeforePause * 0.4f;
   m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeDuringPause);
   m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeDuringPause);
 
@@ -123,15 +129,13 @@ void PauseState::applyHoverColors() {
 void PauseState::handleAction(const std::string &action) {
   if (action == "resume") {
     std::cout << "[PauseState] Resuming...\n";
-    m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
-    m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
+    GlobalAudioSettings::Apply(m_audio);
     m_gsm.pop();
     return;
   }
   if (action == "main_menu") {
     std::cout << "[PauseState] Going to main menu...\n";
-    m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
-    m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
+    GlobalAudioSettings::Apply(m_audio);
     m_gsm.switchToAndClear(
         std::make_shared<MenuState>(m_gsm, m_input,
                                     Core::Engine::Get().window(),
@@ -149,8 +153,7 @@ void PauseState::update(double /*dt*/) {
   // ESC always resumes
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
     std::cout << "[PauseState] ESC pressed - resuming\n";
-    m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
-    m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
+    GlobalAudioSettings::Apply(m_audio);
     m_gsm.pop();
     return;
   }
@@ -250,3 +253,5 @@ void PauseState::onExit() {
 }
 
 } // namespace Runtime
+
+

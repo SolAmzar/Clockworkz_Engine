@@ -30,6 +30,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Systems/CollisionSystem.hpp"
 #include "Components/Tag.hpp"
 #include "States/MenuState.hpp"
+#include "GlobalAudioSettings.hpp"
 #include <memory>
 #include <iostream>
 
@@ -138,6 +139,7 @@ int main()
                     [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
                         if (tag.tag == "Player") t.position = spawn;
                     });
+                Runtime::GlobalAudioSettings::Apply(Core::Engine::Get().audio());
             },
             // onRespawn: restore player state
             [](ECS::World& world, const vec2& spawn) {
@@ -162,3 +164,5 @@ int main()
 
     return engine.Run();
 }
+
+

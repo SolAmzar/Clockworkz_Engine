@@ -14,6 +14,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "States/PauseState.hpp"
 
 #include "Core/Engine.hpp"
+#include "GlobalAudioSettings.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Platform/InputManager.hpp"
@@ -46,8 +47,9 @@ void GamePlayState::onEnter() {
 
   // Load the first level
   if (!m_scene.LoadFromFile(k_firstLevel)) {
-    std::cerr << "[GamePlayState] Failed to load level: " << k_firstLevel << "\n";
+    std::cerr << "[GamePlayState] Failed to load level: " << k_firstLevel << "\\n";
   }
+  GlobalAudioSettings::Apply(engine.audio());
 
   // Scale camera to 1920x1080 design space (letterbox)
   float zoom = std::min(static_cast<float>(m_window.width())  / 1920.f,
@@ -99,3 +101,5 @@ void GamePlayState::onExit() {
 }
 
 } // namespace Runtime
+
+

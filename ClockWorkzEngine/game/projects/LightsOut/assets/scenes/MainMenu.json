@@ -67,7 +67,7 @@
                         "r": 1.0
                     },
                     "fontId": "Title",
-                    "fontSize": 2.5,
+                    "fontSize": 2.0899999141693115,
                     "text": "LIGHTS OUT",
                     "visible": true
                 },
@@ -77,12 +77,12 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -300.0,
+                        "x": -260.6217346191406,
                         "y": 399.0287780761719
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
+                        "x": 0.8799999952316284,
                         "y": 1.0
                     },
                     "snapToGrid": false
@@ -116,7 +116,7 @@
                     },
                     "position": {
                         "x": -200.0,
-                        "y": 215.8857879638672
+                        "y": 278.3478698730469
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -386,7 +386,7 @@
                         "g": 0.800000011920929,
                         "r": 1.0
                     },
-                    "fontId": "Debug",
+                    "fontId": "BodyText",
                     "fontSize": 1.2000000476837158,
                     "text": "HOW TO PLAY\n\nWASD / Arrow Keys - Move\nE - Interact\nEsc - Pause\n\nCollect all fragments to open the door.\nStay out of the light!\n\nPress any key to close.",
                     "visible": false
@@ -409,6 +409,494 @@
                 }
             },
             "name": "howtoplay_overlay"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.25,
+                        "g": 0.15000000596046448,
+                        "r": 0.10000000149011612
+                    },
+                    "size": {
+                        "x": 400.0,
+                        "y": 70.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 200.0,
+                        "y": 100.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8199999928474426,
+                    "text": "OPTIONS",
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -827.9999389648438,
+                        "y": -212.9191436767578
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "options",
+                    "hoverColor": {
+                        "b": 0.0,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    }
+                }
+            },
+            "name": "Btn_Option"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.9200000166893005,
+                        "b": 0.0,
+                        "g": 0.0,
+                        "r": 0.0
+                    },
+                    "size": {
+                        "x": 1920.0,
+                        "y": 1080.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 900.0,
+                        "y": 700.0
+                    },
+                    "color": {
+                        "b": 0.800000011920929,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "fontId": "BodyText",
+                    "fontSize": 1.2000000476837158,
+                    "text": "OPTIONS",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_overlay"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 600.0,
+                        "y": 80.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 1.100000023841858,
+                    "text": "OPTIONS",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -300.0,
+                        "y": 285.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_title"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 300.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 1.0
+                    },
+                    "fontId": "Title",
+                    "fontSize": 1.0,
+                    "text": "BGM VOLUME",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -380.0,
+                        "y": 130.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_bgm_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 300.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 1.0
+                    },
+                    "fontId": "Title",
+                    "fontSize": 1.0,
+                    "text": "SFX VOLUME",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -380.0,
+                        "y": -5.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_sfx_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 2,
+                    "boxSize": {
+                        "x": 140.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.7200000286102295,
+                    "text": "100%",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 390.0,
+                        "y": 130.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_bgm_value"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 2,
+                    "boxSize": {
+                        "x": 140.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.7200000286102295,
+                    "text": "100%",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 390.0,
+                        "y": -5.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_sfx_value"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 240.0,
+                        "y": 60.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8999999761581421,
+                    "text": "BACK",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -120.0,
+                        "y": -195.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_back_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 760.0,
+                        "y": 140.0
+                    },
+                    "color": {
+                        "b": 0.800000011920929,
+                        "g": 0.7799999713897705,
+                        "r": 0.8399999737739563
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.6000000238418579,
+                    "text": "UP and DOWN - SELECT\nLEFT and RIGHT - ADJUST\nENTER and ESC - CLOSE",
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -548.0,
+                        "y": -193.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 0.6000000238418579,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_help"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.20000000298023224,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 480.0,
+                        "y": 48.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 180.0,
+                        "y": 100.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_bgm_bar"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.20000000298023224,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 480.0,
+                        "y": 48.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 180.0,
+                        "y": -35.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_sfx_bar"
         }
     ],
     "sfxVolume": 1.0,
