@@ -1,825 +1,762 @@
 {
-  "bgm": "",
-  "darknessColor": {
-    "b": 0.8999999761581421,
-    "g": 0.699999988079071,
-    "r": 0.699999988079071
-  },
-  "darknessIntensity": 0.800000011920929,
-  "enableDarkness": false,
-  "objects": [
-    {
-      "active": true,
-      "components": {
-        "collider": {
-          "blocksLight": true,
-          "collisionCategory": 1,
-          "collisionMask": 4294967295,
-          "height": 100.0,
-          "isHazard": false,
-          "isSolid": true,
-          "isTrigger": false,
-          "mass": 3.0,
-          "moveable": true,
-          "offset": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "radius": 50.0,
-          "shape": 0,
-          "width": 100.0
-        },
-        "door": {
-          "closedTexture": "door_close",
-          "isOpen": false,
-          "openTexture": "door_open",
-          "requiredFragments": 1
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 2,
-          "textureId": "door_open",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": 141.32647705078125,
-            "y": -96.61587524414062
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/door.lua",
-            "enabled": true,
-            "properties": {
-              "requiredFragments": 1,
-              "isOpen": false,
-              "openTexture": "door_open",
-              "closedTexture": "door_close"
-            }
-          }
-        ]
-      },
-      "name": "Entity_4"
+    "bgm": "",
+    "darknessColor": {
+        "b": 0.8999999761581421,
+        "g": 0.699999988079071,
+        "r": 0.699999988079071
     },
-    {
-      "active": true,
-      "components": {
-        "battery": {
-          "charge": 100.0,
-          "isCharging": true,
-          "maxCharge": 100.0
-        },
-        "collider": {
-          "blocksLight": false,
-          "collisionCategory": 1,
-          "collisionMask": 4294967295,
-          "height": 100.0,
-          "isHazard": false,
-          "isSolid": true,
-          "isTrigger": false,
-          "mass": 1.0,
-          "moveable": true,
-          "offset": {
-            "x": -0.0,
-            "y": -0.0
-          },
-          "radius": 20.0,
-          "shape": 1,
-          "width": 100.0
-        },
-        "fragmentCollector": {
-          "collectedCount": 0,
-          "pickupRadius": 50.0,
-          "requiredFragments": 10
-        },
-        "light": {
-          "active": false,
-          "angle": 60.0,
-          "color": {
-            "b": 0.6000000238418579,
-            "g": 0.8999999761581421,
-            "r": 1.0
-          },
-          "intensity": 1.0,
-          "offset": {
-            "x": 35.0,
-            "y": -20.0
-          },
-          "radius": 300.0
-        },
-        "luaScript": [
-          {
-            "enabled": true,
-            "properties": {
-              "baseWalkSpeed": 10.0,
-              "bobAmount": 4.0,
-              "bobSpeed": 6.0,
-              "footstepInterval": 0.6000000238418579,
-              "sprintMultiplier": 2.0,
-              "walkSpeed": 10.0
+    "darknessIntensity": 0.800000011920929,
+    "enableDarkness": false,
+    "objects": [
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 3.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "closedTexture": "door_close",
+                            "isOpen": false,
+                            "openTexture": "door_open",
+                            "requiredFragments": 1
+                        },
+                        "scriptPath": "components/door.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "door_open",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 141.32647705078125,
+                        "y": -96.61587524414063
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
             },
-            "scriptPath": "player_controller.lua"
-          },
-          {
-            "scriptPath": "components/battery.lua",
-            "enabled": true,
-            "properties": {
-              "charge": 100.0,
-              "maxCharge": 100.0,
-              "drainRate": 5.0,
-              "chargeRate": 20.0,
-              "isCharging": true
-            }
-          },
-          {
-            "scriptPath": "components/fragment_collector.lua",
-            "enabled": true,
-            "properties": {
-              "requiredFragments": 10,
-              "collectedCount": 0,
-              "pickupRadius": 50.0
-            }
-          }
-        ],
-        "spriteAnimator": {
-          "filename": "player.json"
+            "name": "Entity_4"
         },
-        "spriteRenderer": {
-          "color": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 50.0,
-            "y": 50.0
-          },
-          "sortOrder": 2,
-          "textureId": "player_texture",
-          "unlit": false,
-          "uv": [
-            0.25,
-            0.875,
-            0.125,
-            0.125
-          ],
-          "visible": true
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": -0.0,
+                        "y": -0.0
+                    },
+                    "radius": 20.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "light": {
+                    "active": false,
+                    "angle": 60.0,
+                    "color": {
+                        "b": 0.6000000238418579,
+                        "g": 0.8999999761581421,
+                        "r": 1.0
+                    },
+                    "intensity": 1.0,
+                    "offset": {
+                        "x": 35.0,
+                        "y": -20.0
+                    },
+                    "radius": 300.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "baseWalkSpeed": 10.0,
+                            "bobAmount": 4.0,
+                            "bobSpeed": 6.0,
+                            "footstepInterval": 0.6000000238418579,
+                            "sprintMultiplier": 2.0,
+                            "walkSpeed": 10.0
+                        },
+                        "scriptPath": "player_controller.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "charge": 100.0,
+                            "chargeRate": 20.0,
+                            "drainRate": 5.0,
+                            "isCharging": true,
+                            "maxCharge": 100.0
+                        },
+                        "scriptPath": "components/battery.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "collectedCount": 0,
+                            "pickupRadius": 50.0,
+                            "requiredFragments": 10
+                        },
+                        "scriptPath": "components/fragment_collector.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "player.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 50.0,
+                        "y": 50.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "player_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.875,
+                        0.125,
+                        0.125
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 2.5007717609405518,
+                    "scale": {
+                        "x": 1.5,
+                        "y": 1.5
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 12.0,
+                    "x": 0.0,
+                    "y": 0.0
+                }
+            },
+            "name": "Player"
         },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "rotation": 2.5007717609405518,
-          "scale": {
-            "x": 1.5,
-            "y": 1.5
-          },
-          "snapToGrid": false
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_initialized": true,
+                            "clockwise": true,
+                            "initialRotation": 0.0,
+                            "isOpen": false,
+                            "speed": 90.0,
+                            "swingAngle": 90.0
+                        },
+                        "scriptPath": "components/door_swing.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "wall_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": -100.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -708.3333740234375,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 2.0,
+                        "y": 0.30000001192092896
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity_6"
         },
-        "velocity": {
-          "moveSpeed": 12.0,
-          "x": 0.0,
-          "y": 0.0
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 0,
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragment_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -48.0,
+                        "y": -5.605249881744385
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "closedTexture": "door_close",
+                            "isOpen": false,
+                            "openTexture": "door_open",
+                            "requiredFragments": 2
+                        },
+                        "scriptPath": "components/door.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "door_open",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 147.8385772705078,
+                        "y": -257.8871765136719
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity_5"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": -0.0,
+                        "y": -0.0
+                    },
+                    "radius": 36.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "hp": 50.0,
+                            "invulnerable": false,
+                            "isDead": false,
+                            "maxHp": 50.0,
+                            "regenRate": 0.0
+                        },
+                        "scriptPath": "components/health.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_stateTimer": 0.0,
+                            "_wanderTimer": 0.0,
+                            "alertDuration": 3.0,
+                            "chaseSpeed": 150.0,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "patrolSpeed": 50.0,
+                            "state": "Patrol",
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "exposureTime": 0.0,
+                            "inLight": false,
+                            "isDangerous": false,
+                            "maxExposureTime": 10.0
+                        },
+                        "scriptPath": "components/light_exposure.lua"
+                    }
+                ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": -200.0
+                    },
+                    "active": false,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "direction": {
+                        "x": 1.0,
+                        "y": 0.0
+                    },
+                    "lifeMax": 1.2000000476837158,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 200.0,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.25,
+                    "speedMax": 120.0,
+                    "speedMin": 20.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.5,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1159.066650390625,
+                        "y": -2.764181137084961
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": 0.6908736824989319,
+                    "y": -0.722975492477417
+                }
+            },
+            "name": "Enemy Test"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 0,
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "fragment_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 101.0,
+                        "y": 358.9187927246094
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 0,
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragment_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -193.0,
+                        "y": -5.605249881744385
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "levelName": "LightsOut002.json"
+                        },
+                        "scriptPath": "components/portal.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "pot_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -424.010498046875,
+                        "y": 524.549072265625
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity 9"
         }
-      },
-      "name": "Player"
-    },
-    {
-      "active": true,
-      "components": {
-        "collider": {
-          "blocksLight": true,
-          "collisionCategory": 1,
-          "collisionMask": 4294967295,
-          "height": 100.0,
-          "isHazard": false,
-          "isSolid": true,
-          "isTrigger": false,
-          "mass": 1.0,
-          "moveable": false,
-          "offset": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "radius": 50.0,
-          "shape": 0,
-          "width": 100.0
-        },
-        "doorSwing": {
-          "clockwise": true,
-          "initialRotation": 0.0,
-          "initialized": true,
-          "isOpen": false,
-          "speed": 90.0,
-          "swingAngle": 90.0
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 2,
-          "textureId": "wall_texture",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": -100.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": -708.3333740234375,
-            "y": 0.0
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 2.0,
-            "y": 0.30000001192092896
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/door_swing.lua",
-            "enabled": true,
-            "properties": {
-              "isOpen": false,
-              "swingAngle": 90.0,
-              "clockwise": true,
-              "speed": 90.0,
-              "initialRotation": 0.0,
-              "_initialized": true
-            }
-          }
-        ]
-      },
-      "name": "Entity_6"
-    },
-    {
-      "active": true,
-      "components": {
-        "fragment": {
-          "collected": false,
-          "fragmentId": 0
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 0.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 0,
-          "textureId": "fragment_texture",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": -48.0,
-            "y": -5.605249881744385
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/fragment.lua",
-            "enabled": true,
-            "properties": {
-              "fragmentId": 0,
-              "collected": false,
-              "requiresLight": true,
-              "bobSpeed": 2.0,
-              "bobAmount": 10.0,
-              "fadeSpeed": 5.0,
-              "_baseY": 0.0,
-              "_timer": 0.0,
-              "_alpha": 1.0,
-              "_initialized": false
-            }
-          }
-        ]
-      },
-      "name": "Fragment"
-    },
-    {
-      "active": true,
-      "components": {
-        "collider": {
-          "blocksLight": true,
-          "collisionCategory": 1,
-          "collisionMask": 4294967295,
-          "height": 100.0,
-          "isHazard": false,
-          "isSolid": true,
-          "isTrigger": false,
-          "mass": 1.0,
-          "moveable": true,
-          "offset": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "radius": 50.0,
-          "shape": 0,
-          "width": 100.0
-        },
-        "door": {
-          "closedTexture": "door_close",
-          "isOpen": false,
-          "openTexture": "door_open",
-          "requiredFragments": 2
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 2,
-          "textureId": "door_open",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": 147.8385772705078,
-            "y": -257.8871765136719
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/door.lua",
-            "enabled": true,
-            "properties": {
-              "requiredFragments": 2,
-              "isOpen": false,
-              "openTexture": "door_open",
-              "closedTexture": "door_close"
-            }
-          }
-        ]
-      },
-      "name": "Entity_5"
-    },
-    {
-      "active": true,
-      "components": {
-        "collider": {
-          "blocksLight": false,
-          "collisionCategory": 1,
-          "collisionMask": 4294967295,
-          "height": 100.0,
-          "isHazard": false,
-          "isSolid": true,
-          "isTrigger": false,
-          "mass": 1.0,
-          "moveable": false,
-          "offset": {
-            "x": -0.0,
-            "y": -0.0
-          },
-          "radius": 36.0,
-          "shape": 1,
-          "width": 100.0
-        },
-        "enemyAI": {
-          "chaseSpeed": 150.0,
-          "detectionRadius": 300.0,
-          "patrolSpeed": 50.0
-        },
-        "health": {
-          "hp": 50.0,
-          "invulnerable": false,
-          "isDead": false,
-          "maxHp": 50.0,
-          "regenRate": 0.0
-        },
-        "lightExposure": {
-          "exposureTime": 0.0,
-          "inLight": false,
-          "isDangerous": false,
-          "maxExposureTime": 10.0
-        },
-        "particleEmitter": {
-          "acceleration": {
-            "x": 0.0,
-            "y": -200.0
-          },
-          "active": false,
-          "colorEnd": {
-            "a": 0.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "colorStart": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "direction": {
-            "x": 1.0,
-            "y": 0.0
-          },
-          "lifeMax": 1.2000000476837158,
-          "lifeMin": 0.5,
-          "localOffset": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "looping": true,
-          "rate": 200.0,
-          "sizeEnd": 0.0,
-          "sizeStart": 2.25,
-          "speedMax": 120.0,
-          "speedMin": 20.0,
-          "spreadDeg": 45.0,
-          "worldSpace": true
-        },
-        "spriteAnimator": {
-          "filename": "enemy.json"
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 2,
-          "textureId": "monster_texture",
-          "unlit": false,
-          "uv": [
-            0.5,
-            0.25,
-            0.25,
-            0.25
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": -1159.066650390625,
-            "y": -2.764181137084961
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "velocity": {
-          "moveSpeed": 50.0,
-          "x": 0.6908736824989319,
-          "y": -0.722975492477417
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/health.lua",
-            "enabled": true,
-            "properties": {
-              "hp": 50.0,
-              "maxHp": 50.0,
-              "regenRate": 0.0,
-              "invulnerable": false,
-              "isDead": false
-            }
-          },
-          {
-            "scriptPath": "components/enemy_ai.lua",
-            "enabled": true,
-            "properties": {
-              "detectionRadius": 300.0,
-              "chaseSpeed": 150.0,
-              "patrolSpeed": 50.0,
-              "state": "Patrol",
-              "alertDuration": 3.0,
-              "lightSensitivity": 0.3,
-              "wanderInterval": 2.0,
-              "_stateTimer": 0.0,
-              "_wanderTimer": 0.0
-            }
-          },
-          {
-            "scriptPath": "components/light_exposure.lua",
-            "enabled": true,
-            "properties": {
-              "maxExposureTime": 10.0,
-              "isDangerous": false,
-              "exposureTime": 0.0,
-              "inLight": false
-            }
-          }
-        ]
-      },
-      "name": "Enemy Test"
-    },
-    {
-      "active": true,
-      "components": {
-        "fragment": {
-          "collected": false,
-          "fragmentId": 0
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 0.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 2,
-          "textureId": "fragment_texture",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": 101.0,
-            "y": 358.9187927246094
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/fragment.lua",
-            "enabled": true,
-            "properties": {
-              "fragmentId": 0,
-              "collected": false,
-              "requiresLight": true,
-              "bobSpeed": 2.0,
-              "bobAmount": 10.0,
-              "fadeSpeed": 5.0,
-              "_baseY": 0.0,
-              "_timer": 0.0,
-              "_alpha": 1.0,
-              "_initialized": false
-            }
-          }
-        ]
-      },
-      "name": "Fragment"
-    },
-    {
-      "active": true,
-      "components": {
-        "fragment": {
-          "collected": false,
-          "fragmentId": 0
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 0.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 0,
-          "textureId": "fragment_texture",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": -193.0,
-            "y": -5.605249881744385
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/fragment.lua",
-            "enabled": true,
-            "properties": {
-              "fragmentId": 0,
-              "collected": false,
-              "requiresLight": true,
-              "bobSpeed": 2.0,
-              "bobAmount": 10.0,
-              "fadeSpeed": 5.0,
-              "_baseY": 0.0,
-              "_timer": 0.0,
-              "_alpha": 1.0,
-              "_initialized": false
-            }
-          }
-        ]
-      },
-      "name": "Fragment"
-    },
-    {
-      "active": true,
-      "components": {
-        "collider": {
-          "blocksLight": false,
-          "collisionCategory": 1,
-          "collisionMask": 4294967295,
-          "height": 100.0,
-          "isHazard": false,
-          "isSolid": true,
-          "isTrigger": true,
-          "mass": 1.0,
-          "moveable": false,
-          "offset": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "radius": 50.0,
-          "shape": 0,
-          "width": 100.0
-        },
-        "portal": {
-          "levelName": "LightsOut002.json"
-        },
-        "spriteRenderer": {
-          "color": {
-            "a": 1.0,
-            "b": 1.0,
-            "g": 1.0,
-            "r": 1.0
-          },
-          "size": {
-            "x": 100.0,
-            "y": 100.0
-          },
-          "sortOrder": 0,
-          "textureId": "pot_texture",
-          "unlit": false,
-          "uv": [
-            0.0,
-            0.0,
-            1.0,
-            1.0
-          ],
-          "visible": true
-        },
-        "transform": {
-          "pivot": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "position": {
-            "x": -424.010498046875,
-            "y": 524.549072265625
-          },
-          "rotation": 0.0,
-          "scale": {
-            "x": 1.0,
-            "y": 1.0
-          },
-          "snapToGrid": false
-        },
-        "luaScript": [
-          {
-            "scriptPath": "components/portal.lua",
-            "enabled": true,
-            "properties": {
-              "levelName": "LightsOut002.json"
-            }
-          }
-        ]
-      },
-      "name": "Entity 9"
+    ],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": 0.0,
+        "y": 0.0
     }
-  ],
-  "sfxVolume": 1.0,
-  "spawnPoint": {
-    "x": 0.0,
-    "y": 0.0
-  }
 }

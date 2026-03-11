@@ -206,6 +206,15 @@ private:
     std::string             m_currentAudioDir;
     std::string             m_renamingAudioPath;
     char                    m_renameAudioBuf[256]{};
+    std::string             m_editingAudio;
+    char                    m_editAudioNameBuf[128]{};
+    char                    m_editAudioPathBuf[256]{};
+    bool                    m_editAudioLoop{false};
+    bool                    m_editAudioStream{false};
+    bool                    m_editAudioIs3D{false};
+    float                   m_editAudioVolume{1.0f};
+    float                   m_editAudioPitch{1.0f};
+    bool                    m_editAudioIsBGM{false};
     std::string             m_deletingAudio;
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
@@ -270,3 +279,4 @@ private:
 };
 
 } // namespace Runtime
+

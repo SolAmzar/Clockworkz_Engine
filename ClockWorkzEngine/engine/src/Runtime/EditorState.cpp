@@ -1402,9 +1402,52 @@ void EditorState::renderInspector() {
         if (ImGui::SmallButton("X##rfa")) rm = true;
         if (open) {
             auto* fa = world.getComponent<Components::FootstepAudio>(m_selectedEntity);
-            char prefixBuf[256]; snprintf(prefixBuf, sizeof(prefixBuf), "%s", fa->soundPrefix.c_str());
-            if (ImGui::InputText("Sound Prefix##fa", prefixBuf, sizeof(prefixBuf)))
-                fa->soundPrefix = prefixBuf;
+
+            static const char* presetLabels[] = {"Custom", "Concrete", "Tile", "Wood"};
+            int presetIndex = 0;
+            if (fa->soundPrefix == "fs_concrete_") presetIndex = 1;
+            else if (fa->soundPrefix == "fs_tile_") presetIndex = 2;
+            else if (fa->soundPrefix == "fs_wood_") presetIndex = 3;
+            if (ImGui::Combo("Preset##fa", &presetIndex, presetLabels, IM_ARRAYSIZE(presetLabels))) {
+                if (presetIndex == 1) {
+                    fa->soundPrefix = "fs_concrete_";
+                    fa->concretePrefix = "fs_concrete_";
+                    fa->tilePrefix = "fs_tile_";
+                    fa->woodPrefix = "fs_concrete_";
+                    fa->variationCount = 4;
+                } else if (presetIndex == 2) {
+                    fa->soundPrefix = "fs_tile_";
+                    fa->concretePrefix = "fs_concrete_";
+                    fa->tilePrefix = "fs_tile_";
+                    fa->woodPrefix = "fs_concrete_";
+                    fa->variationCount = 4;
+                } else if (presetIndex == 3) {
+                    fa->soundPrefix = "fs_concrete_";
+                    fa->concretePrefix = "fs_concrete_";
+                    fa->tilePrefix = "fs_tile_";
+                    fa->woodPrefix = "fs_concrete_";
+                    fa->variationCount = 4;
+                }
+            }
+
+            ImGui::Checkbox("Use Surface Sounds##fa", &fa->useSurfaceSounds);
+
+            char defaultBuf[256]; snprintf(defaultBuf, sizeof(defaultBuf), "%s", fa->soundPrefix.c_str());
+            if (ImGui::InputText("Default Prefix##fa", defaultBuf, sizeof(defaultBuf)))
+                fa->soundPrefix = defaultBuf;
+
+            char concreteBuf[256]; snprintf(concreteBuf, sizeof(concreteBuf), "%s", fa->concretePrefix.c_str());
+            if (ImGui::InputText("Concrete Prefix##fa", concreteBuf, sizeof(concreteBuf)))
+                fa->concretePrefix = concreteBuf;
+
+            char tileBuf[256]; snprintf(tileBuf, sizeof(tileBuf), "%s", fa->tilePrefix.c_str());
+            if (ImGui::InputText("Tile Prefix##fa", tileBuf, sizeof(tileBuf)))
+                fa->tilePrefix = tileBuf;
+
+            char woodBuf[256]; snprintf(woodBuf, sizeof(woodBuf), "%s", fa->woodPrefix.c_str());
+            if (ImGui::InputText("Wood Prefix##fa", woodBuf, sizeof(woodBuf)))
+                fa->woodPrefix = woodBuf;
+
             ImGui::DragFloat("Interval##fa", &fa->interval, 0.01f, 0.01f, 10.0f);
             ImGui::DragFloat("Sprint Scale##fa", &fa->sprintIntervalScale, 0.01f, 0.1f, 2.0f);
             ImGui::DragFloat("Sprint Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
@@ -1418,7 +1461,6 @@ void EditorState::renderInspector() {
         }
         if (rm) world.removeComponent<Components::FootstepAudio>(m_selectedEntity);
     }
-
     // ── SpriteAnimator ──────────────────────────────────────────────────────
     if (world.hasComponent<Components::SpriteAnimator>(m_selectedEntity)) {
         bool rm = false;
@@ -1524,9 +1566,53 @@ void EditorState::renderInspector() {
                                 if (ImGui::Checkbox(def.label.c_str(), &v)) val = v;
                             } else if (def.type == "string") {
                                 std::string sv = std::get<std::string>(val);
-                                char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
-                                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
-                                    val = std::string(strbuf);
+                                std::string loweredName = def.name;
+                                std::string loweredLabel = def.label;
+                                std::transform(loweredName.begin(), loweredName.end(), loweredName.begin(),
+                                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                                std::transform(loweredLabel.begin(), loweredLabel.end(), loweredLabel.begin(),
+                                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+                                const bool looksLikeSoundId =
+                                    loweredName.find("sfx") != std::string::npos ||
+                                    loweredName.find("sound") != std::string::npos ||
+                                    loweredName.find("audio") != std::string::npos ||
+                                    loweredLabel.find("sfx") != std::string::npos ||
+                                    loweredLabel.find("sound") != std::string::npos ||
+                                    loweredLabel.find("audio") != std::string::npos;
+
+                                if (looksLikeSoundId) {
+                                    auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
+                                    std::sort(soundNames.begin(), soundNames.end());
+                                    if (!sv.empty() && std::find(soundNames.begin(), soundNames.end(), sv) == soundNames.end())
+                                        soundNames.insert(soundNames.begin(), sv);
+
+                                    std::vector<const char*> items;
+                                    items.reserve(soundNames.size() + 1);
+                                    items.push_back("<none>");
+
+                                    int currentIndex = 0;
+                                    for (std::size_t soundIndex = 0; soundIndex < soundNames.size(); ++soundIndex) {
+                                        items.push_back(soundNames[soundIndex].c_str());
+                                        if (soundNames[soundIndex] == sv)
+                                            currentIndex = static_cast<int>(soundIndex) + 1;
+                                    }
+
+                                    std::string comboLabel = std::string(def.label) + "##soundprop";
+                                    if (ImGui::Combo(comboLabel.c_str(), &currentIndex, items.data(), static_cast<int>(items.size()))) {
+                                        val = currentIndex == 0 ? std::string() : soundNames[static_cast<std::size_t>(currentIndex - 1)];
+                                        sv = std::get<std::string>(val);
+                                    }
+
+                                    std::string inputLabel = std::string("Override ") + def.label + "##soundproptext";
+                                    char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                                    if (ImGui::InputText(inputLabel.c_str(), strbuf, sizeof(strbuf)))
+                                        val = std::string(strbuf);
+                                } else {
+                                    char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                                    if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                                        val = std::string(strbuf);
+                                }
                             }
                         }
                     }
@@ -3177,6 +3263,7 @@ void EditorState::renderAudioBrowser() {
     const fs::path audioRoot("assets/audio");
 
     if (!fs::exists(audioRoot)) fs::create_directories(audioRoot, ec);
+    const std::string kSoundConfig = "assets/configs/sounds.json";
 
     // ── Navigation Bar ───────────────────────────────────────────────────────
     if (m_currentAudioDir != audioRoot.generic_string()) {
@@ -3255,6 +3342,42 @@ void EditorState::renderAudioBrowser() {
         ImGui::EndPopup();
     }
 
+    if (!m_editingAudio.empty()) ImGui::OpenPopup("##EditAudio");
+    if (ImGui::BeginPopupModal("##EditAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Edit Audio: %s", m_editingAudio.c_str());
+        ImGui::Separator();
+        ImGui::InputText("Name##editaudio", m_editAudioNameBuf, sizeof(m_editAudioNameBuf));
+        ImGui::InputText("Path##editaudio", m_editAudioPathBuf, sizeof(m_editAudioPathBuf));
+        ImGui::Checkbox("Loop##editaudio", &m_editAudioLoop); ImGui::SameLine();
+        ImGui::Checkbox("Stream##editaudio", &m_editAudioStream); ImGui::SameLine();
+        ImGui::Checkbox("3D##editaudio", &m_editAudioIs3D);
+        ImGui::Checkbox("BGM##editaudio", &m_editAudioIsBGM);
+        ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Pitch##editaudio", &m_editAudioPitch, 0.1f, 3.0f);
+
+        if (ImGui::Button("Save", ImVec2(100, 0))) {
+            Assets::SoundConfig cfg;
+            cfg.name = m_editAudioNameBuf;
+            cfg.path = m_editAudioPathBuf;
+            cfg.loop = m_editAudioLoop;
+            cfg.stream = m_editAudioStream;
+            cfg.is3D = m_editAudioIs3D;
+            cfg.volume = m_editAudioVolume;
+            cfg.pitch = m_editAudioPitch;
+            cfg.group = m_editAudioIsBGM ? "BGM" : "SFX";
+            if (Assets::SoundManager::UpdateConfig(m_editingAudio, cfg, kSoundConfig)) {
+                m_editingAudio.clear();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_editingAudio.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
     // ── Rename modal ──────────────────────────────────────────────────────────
     if (!m_renamingAudioPath.empty()) ImGui::OpenPopup("##RenameAudio");
     if (ImGui::BeginPopupModal("##RenameAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -3266,7 +3389,12 @@ void EditorState::renderAudioBrowser() {
             if (m_renameAudioBuf[0]) {
                 fs::path dst = renamePath.parent_path() / m_renameAudioBuf;
                 if (!isAudioDir) dst.replace_extension(renamePath.extension());
+                const std::string soundName = isAudioDir
+                    ? std::string{}
+                    : Assets::SoundManager::GetNameForPath(renamePath.generic_string(), kSoundConfig);
                 fs::rename(renamePath, dst, ec);
+                if (!isAudioDir && ec.value() == 0 && !soundName.empty())
+                    Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
             }
             m_renamingAudioPath.clear();
             ImGui::CloseCurrentPopup();
@@ -3310,7 +3438,13 @@ void EditorState::renderAudioBrowser() {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
                 fs::path destFile = destDir / fs::path(m_movingAudioPath).filename();
-                if (!fs::exists(destFile)) fs::rename(fs::path(m_movingAudioPath), destFile, ec);
+                const std::string soundName =
+                    Assets::SoundManager::GetNameForPath(fs::path(m_movingAudioPath).generic_string(), kSoundConfig);
+                if (!fs::exists(destFile)) {
+                    fs::rename(fs::path(m_movingAudioPath), destFile, ec);
+                    if (ec.value() == 0 && !soundName.empty())
+                        Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
+                }
                 m_movingAudioPath.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -3350,6 +3484,10 @@ void EditorState::renderAudioBrowser() {
             std::string fname = path.filename().string();
             std::string stem = path.stem().string();
             bool isDir = fs::is_directory(path);
+            std::string soundName = isDir
+                ? std::string{}
+                : Assets::SoundManager::GetNameForPath(path.generic_string(), kSoundConfig);
+            const std::string& soundKey = soundName.empty() ? stem : soundName;
             ImGui::PushID(fname.c_str());
 
             float colW = ImGui::GetContentRegionAvail().x;
@@ -3366,12 +3504,19 @@ void EditorState::renderAudioBrowser() {
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("AUDIO_ASSET_FILE")) {
                         fs::path src((const char*)payloadFile->Data);
-                        fs::rename(src, path / src.filename(), ec);
+                        const std::string movedName = Assets::SoundManager::GetNameForPath(src.generic_string(), kSoundConfig);
+                        fs::path dest = path / src.filename();
+                        fs::rename(src, dest, ec);
+                        if (ec.value() == 0 && !movedName.empty())
+                            Assets::SoundManager::UpdatePathInConfig(movedName, dest.generic_string(), kSoundConfig);
                     } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
-                        std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data);
+                        std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data, kSoundConfig);
                         if (!srcPath.empty()) {
                             fs::path src(srcPath);
-                            fs::rename(src, path / src.filename(), ec);
+                            fs::path dest = path / src.filename();
+                            fs::rename(src, dest, ec);
+                            if (ec.value() == 0)
+                                Assets::SoundManager::UpdatePathInConfig((const char*)payloadAsset->Data, dest.generic_string(), kSoundConfig);
                         }
                     }
                     ImGui::EndDragDropTarget();
@@ -3394,15 +3539,29 @@ void EditorState::renderAudioBrowser() {
                 if (ImGui::BeginDragDropSource()) {
                     std::string pstr = path.generic_string();
                     ImGui::SetDragDropPayload("AUDIO_ASSET_FILE", pstr.c_str(), pstr.size() + 1);
-                    ImGui::SetDragDropPayload("AUDIO_ASSET", stem.c_str(), stem.size() + 1);
-                    ImGui::Text("%s", stem.c_str());
+                    ImGui::SetDragDropPayload("AUDIO_ASSET", soundKey.c_str(), soundKey.size() + 1);
+                    ImGui::Text("%s", soundKey.c_str());
                     ImGui::EndDragDropSource();
                 }
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) Assets::SoundManager::Play(stem);
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) Assets::SoundManager::Play(soundKey);
 
                 if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("Play")) Assets::SoundManager::Play(stem);
-                    if (ImGui::MenuItem("Stop")) Assets::SoundManager::Stop(stem);
+                    if (ImGui::MenuItem("Play")) Assets::SoundManager::Play(soundKey);
+                    if (ImGui::MenuItem("Stop")) Assets::SoundManager::Stop(soundKey);
+                    if (ImGui::MenuItem("Edit Settings")) {
+                        Assets::SoundConfig cfg;
+                        if (Assets::SoundManager::GetConfig(soundKey, cfg, kSoundConfig)) {
+                            m_editingAudio = soundKey;
+                            strncpy_s(m_editAudioNameBuf, cfg.name.c_str(), sizeof(m_editAudioNameBuf) - 1);
+                            strncpy_s(m_editAudioPathBuf, cfg.path.c_str(), sizeof(m_editAudioPathBuf) - 1);
+                            m_editAudioLoop = cfg.loop;
+                            m_editAudioStream = cfg.stream;
+                            m_editAudioIs3D = cfg.is3D;
+                            m_editAudioVolume = cfg.volume;
+                            m_editAudioPitch = cfg.pitch;
+                            m_editAudioIsBGM = (cfg.group == "BGM");
+                        }
+                    }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Rename")) {
                         m_renamingAudioPath = path.string();
@@ -3418,7 +3577,7 @@ void EditorState::renderAudioBrowser() {
                         fs::copy_file(src, dst, ec);
                     }
                     ImGui::Separator();
-                    if (ImGui::MenuItem("Delete")) m_deletingAudio = stem;
+                    if (ImGui::MenuItem("Delete")) m_deletingAudio = soundKey;
                     ImGui::EndPopup();
                 }
             }
@@ -4202,5 +4361,19 @@ void EditorState::checkAssetHotReload() {
 }
 
 } // namespace Runtime
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

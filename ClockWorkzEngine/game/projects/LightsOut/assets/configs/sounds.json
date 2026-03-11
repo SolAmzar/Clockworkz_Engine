@@ -1,167 +1,226 @@
 {
-    "sounds": [
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "ui_move",
-            "path": "assets/audio/ui_move.wav",
-            "stream": false,
-            "volume": 0.8999999761581421
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "ui_select",
-            "path": "assets/audio/ui_select.wav",
-            "stream": false,
-            "volume": 1.0
-        },
-        {
-            "group": "BGM",
-            "is3D": false,
-            "loop": true,
-            "name": "menu_bgm",
-            "path": "assets/audio/menu_bgm.wav",
-            "stream": true,
-            "volume": 0.7720000147819519
-        },
-        {
-            "group": "BGM",
-            "is3D": false,
-            "loop": true,
-            "name": "level_bgm",
-            "path": "assets/audio/level_bgm.wav",
-            "stream": true,
-            "volume": 0.2669999897480011
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": true,
-            "name": "level_ambience",
-            "path": "assets/audio/level_ambience.wav",
-            "stream": true,
-            "volume": 0.5
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "flashlight_on",
-            "path": "assets/audio/sfx/flashlight_on.wav",
-            "stream": true,
-            "volume": 0.5
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "flashlight_off",
-            "path": "assets/audio/sfx/flashlight_off.wav",
-            "stream": true,
-            "volume": 0.6620000004768372
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "enemy_death_1",
-            "path": "assets/audio/sfx/enemy_death_1.wav",
-            "stream": true,
-            "volume": 0.1889999955892563
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "enemy_death_2",
-            "path": "assets/audio/sfx/enemy_death_2.wav",
-            "stream": true,
-            "volume": 0.15800000727176666
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "enemy_death_3",
-            "path": "assets/audio/sfx/enemy_death_3.wav",
-            "stream": true,
-            "volume": 0.20499999821186066
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_concrete_1",
-            "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
-            "stream": false,
-            "volume": 0.05400000140070915
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_concrete_2",
-            "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
-            "stream": false,
-            "volume": 0.06300000101327896
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_concrete_3",
-            "path": "assets/audio/fs/Concrete/fs_concrete_3.mp3",
-            "stream": false,
-            "volume": 0.10000000149011612
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_concrete_4",
-            "path": "assets/audio/fs/Concrete/fs_concrete_4.mp3",
-            "stream": false,
-            "volume": 0.06300000101327896
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_tile_1",
-            "path": "assets/audio/fs/Tile/fs_tile_1.ogg",
-            "stream": false,
-            "volume": 0.029999999329447746
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_tile_2",
-            "path": "assets/audio/fs/Tile/fs_tile_2.ogg",
-            "stream": false,
-            "volume": 0.05299999937415123
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_tile_3",
-            "path": "assets/audio/fs/Tile/fs_tile_3.ogg",
-            "stream": false,
-            "volume": 0.04899999871850014
-        },
-        {
-            "group": "SFX",
-            "is3D": true,
-            "loop": false,
-            "name": "fs_tile_4",
-            "path": "assets/audio/fs/Tile/fs_tile_4.ogg",
-            "stream": false,
-            "volume": 0.10000000149011612
-        }
-    ]
+    "sounds":  [
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "ui_move",
+                       "path":  "assets/audio/ui_move.wav",
+                       "stream":  false,
+                       "volume":  0.8999999761581421
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "ui_select",
+                       "path":  "assets/audio/ui_select.wav",
+                       "stream":  false,
+                       "volume":  1.0
+                   },
+                   {
+                       "group":  "BGM",
+                       "is3D":  false,
+                       "loop":  true,
+                       "name":  "menu_bgm",
+                       "path":  "assets/audio/menu_bgm.wav",
+                       "stream":  true,
+                       "volume":  0.7720000147819519
+                   },
+                   {
+                       "group":  "BGM",
+                       "is3D":  false,
+                       "loop":  true,
+                       "name":  "level_bgm",
+                       "path":  "assets/audio/level_bgm.wav",
+                       "stream":  true,
+                       "volume":  0.2669999897480011
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  true,
+                       "name":  "level_ambience",
+                       "path":  "assets/audio/level_ambience.wav",
+                       "stream":  true,
+                       "volume":  0.5
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "flashlight_on",
+                       "path":  "assets/audio/sfx/flashlight_on.wav",
+                       "stream":  true,
+                       "volume":  0.5
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "flashlight_off",
+                       "path":  "assets/audio/sfx/flashlight_off.wav",
+                       "stream":  true,
+                       "volume":  0.6620000004768372
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "enemy_death_1",
+                       "path":  "assets/audio/sfx/enemy_death_1.wav",
+                       "stream":  true,
+                       "volume":  0.1889999955892563
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "enemy_death_2",
+                       "path":  "assets/audio/sfx/enemy_death_2.wav",
+                       "stream":  true,
+                       "volume":  0.15800000727176666
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "enemy_death_3",
+                       "path":  "assets/audio/sfx/enemy_death_3.wav",
+                       "stream":  true,
+                       "volume":  0.20499999821186066
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_concrete_1",
+                       "path":  "assets/audio/fs/Concrete/fs_concrete_1.mp3",
+                       "stream":  false,
+                       "volume":  0.05400000140070915
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_concrete_2",
+                       "path":  "assets/audio/fs/Concrete/fs_concrete_2.mp3",
+                       "stream":  false,
+                       "volume":  0.06300000101327896
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_concrete_3",
+                       "path":  "assets/audio/fs/Concrete/fs_concrete_3.mp3",
+                       "stream":  false,
+                       "volume":  0.10000000149011612
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_concrete_4",
+                       "path":  "assets/audio/fs/Concrete/fs_concrete_4.mp3",
+                       "stream":  false,
+                       "volume":  0.06300000101327896
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_tile_1",
+                       "path":  "assets/audio/fs/Tile/fs_tile_1.ogg",
+                       "stream":  false,
+                       "volume":  0.029999999329447746
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_tile_2",
+                       "path":  "assets/audio/fs/Tile/fs_tile_2.ogg",
+                       "stream":  false,
+                       "volume":  0.05299999937415123
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_tile_3",
+                       "path":  "assets/audio/fs/Tile/fs_tile_3.ogg",
+                       "stream":  false,
+                       "volume":  0.04899999871850014
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_tile_4",
+                       "path":  "assets/audio/fs/Tile/fs_tile_4.ogg",
+                       "stream":  false,
+                       "volume":  0.10000000149011612
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  false,
+                       "loop":  false,
+                       "name":  "fragment_collect_1",
+                       "path":  "assets/audio/fragment/fragment_collect_1.mp3",
+                       "pitch":  1,
+                       "stream":  false,
+                       "volume":  1
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_monster_1",
+                       "path":  "assets/audio/fs/Monster fs/fs_monster_1.mp3",
+                       "pitch":  1.0,
+                       "stream":  false,
+                       "volume":  0.18
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_monster_2",
+                       "path":  "assets/audio/fs/Monster fs/fs_monster_2.mp3",
+                       "pitch":  1.0,
+                       "stream":  false,
+                       "volume":  0.18
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_monster_4",
+                       "path":  "assets/audio/fs/Monster fs/fs_monster_4.mp3",
+                       "pitch":  1.0,
+                       "stream":  false,
+                       "volume":  0.18
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_monster_5",
+                       "path":  "assets/audio/fs/Monster fs/fs_monster_5.mp3",
+                       "pitch":  1.0,
+                       "stream":  false,
+                       "volume":  0.18
+                   },
+                   {
+                       "group":  "SFX",
+                       "is3D":  true,
+                       "loop":  false,
+                       "name":  "fs_monster_3",
+                       "path":  "assets/audio/fs/Monster fs/fs_monster_3.mp3",
+                       "pitch":  1.0,
+                       "stream":  false,
+                       "volume":  0.18
+                   }
+               ]
 }
-

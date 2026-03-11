@@ -64,6 +64,8 @@ public:
              bool paused = false);
   void playOneShot(const std::string &id, Group group = Group::SFX,
                    float volume = 1.0f);
+  void playOneShotLocal(const std::string &id, Group group = Group::SFX,
+                        float volume = 1.0f);
   void playOneShotAt(const std::string &id, const vec3 &pos,
                      Group group = Group::SFX, float volume = 1.0f);
 
@@ -133,6 +135,7 @@ private:
   std::unordered_map<std::string, SoundProfile> m_soundProfiles;
   std::unordered_map<std::string, FMOD::Sound *> m_sounds;
   std::unordered_map<int, ChannelHandle> m_channels;
+  vec3 m_listenerPos{0.0f, 0.0f, 0.0f};
   std::unordered_map<int, FadeOut> m_fadeOuts;
   int m_nextChannelId = 1;
 
@@ -141,3 +144,5 @@ private:
 };
 
 } // namespace Audio
+
+

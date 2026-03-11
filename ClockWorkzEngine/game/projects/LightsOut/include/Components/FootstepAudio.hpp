@@ -12,7 +12,11 @@ struct FootstepAudio {
   float resetDelay{0.05f};
   float volume{1.0f};
   int variationCount{4};
+  bool useSurfaceSounds{true};
   std::string soundPrefix{"fs_concrete_"};
+  std::string concretePrefix{"fs_concrete_"};
+  std::string tilePrefix{"fs_tile_"};
+  std::string woodPrefix{"fs_concrete_"};
   float timerRemaining{0.0f};
 };
 

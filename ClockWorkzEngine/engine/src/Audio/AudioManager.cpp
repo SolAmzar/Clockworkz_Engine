@@ -22,6 +22,7 @@ reserved.
 #include "Assets/SoundManager.hpp"
 #include <cassert>
 #include <fmod.hpp>
+#include <fmod_dsp.h>
 #include <fmod_errors.h>
 #include <iostream>
 #include <objbase.h> // CoInitializeEx / CoUninitialize
@@ -290,7 +291,59 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
     FMOD_VECTOR p{pos.x, pos.y, pos.z};
     FMOD_VECTOR v{0.0f, 0.0f, 0.0f};
     it->second.ch->set3DAttributes(&p, &v);
-    it->second.ch->set3DMinMaxDistance(48.0f, 600.0f);
+    it->second.ch->set3DMinMaxDistance(24.0f, 320.0f);
+
+    const vec3 delta = vec3{pos.x - m_listenerPos.x, pos.y - m_listenerPos.y,
+                            pos.z - m_listenerPos.z};
+    const float distance =
+        std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+
+    const float falloffStart = 40.0f;
+    const float falloffEnd = 320.0f;
+    float distanceT = 0.0f;
+    if (distance > falloffStart) {
+      distanceT = (distance - falloffStart) / (falloffEnd - falloffStart);
+      distanceT = std::clamp(distanceT, 0.0f, 1.0f);
+    }
+
+    const float shapedVolume = volume * (1.0f - (0.62f * distanceT * distanceT));
+    it->second.ch->setVolume(std::max(0.0f, shapedVolume));
+
+    const float filterInStart = 48.0f;
+    const float filterPeak = 140.0f;
+    const float filterReleaseEnd = 260.0f;
+    float filterT = 0.0f;
+    if (distance > filterInStart && distance < filterReleaseEnd) {
+      if (distance <= filterPeak) {
+        filterT = (distance - filterInStart) / (filterPeak - filterInStart);
+      } else {
+        filterT = 1.0f - ((distance - filterPeak) / (filterReleaseEnd - filterPeak));
+      }
+      filterT = std::clamp(filterT, 0.0f, 1.0f);
+    }
+
+    if (filterT > 0.01f && m_system) {
+      FMOD::DSP *lowpass = nullptr;
+      if (m_system->createDSPByType(FMOD_DSP_TYPE_LOWPASS, &lowpass) == FMOD_OK &&
+          lowpass) {
+        const float cutoff = 18000.0f - (16200.0f * filterT);
+        lowpass->setParameterFloat(FMOD_DSP_LOWPASS_CUTOFF,
+                                   std::max(650.0f, cutoff));
+        lowpass->setParameterFloat(FMOD_DSP_LOWPASS_RESONANCE, 1.02f);
+        it->second.ch->addDSP(0, lowpass);
+        lowpass->release();
+      }
+
+      FMOD::DSP *highpass = nullptr;
+      if (m_system->createDSPByType(FMOD_DSP_TYPE_HIGHPASS, &highpass) == FMOD_OK &&
+          highpass) {
+        const float cutoff = 20.0f + (140.0f * filterT);
+        highpass->setParameterFloat(FMOD_DSP_HIGHPASS_CUTOFF, cutoff);
+        highpass->setParameterFloat(FMOD_DSP_HIGHPASS_RESONANCE, 1.0f);
+        it->second.ch->addDSP(1, highpass);
+        highpass->release();
+      }
+    }
   }
 
   it->second.ch->setPaused(paused);
@@ -377,6 +430,19 @@ void AudioManager::playOneShot(const std::string &id, Group g, float volume) {
   int h = play(id, g, volume, false);
   // nothing special: one-shot just doesn't track or pause later
   (void)h;
+}
+
+void AudioManager::playOneShotLocal(const std::string &id, Group g,
+                                    float volume) {
+  int h = play(id, g, volume, false);
+  if (h <= 0)
+    return;
+
+  auto it = m_channels.find(h);
+  if (it == m_channels.end() || !it->second.ch)
+    return;
+
+  it->second.ch->setMode(FMOD_2D);
 }
 
 void AudioManager::playOneShotAt(const std::string &id, const vec3 &pos,
@@ -511,6 +577,11 @@ void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
 //     m_channels[handle] = { ch };
 //     return handle;
 // }
+
+
+
+
+
 
 
 

@@ -26076,6 +26076,20 @@
                     "shape": 1,
                     "width": 50.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_concrete_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 4,
+                    "volume": 0.22100000083446503,
+                    "woodPrefix": "fs_concrete_"
+                },
                 "light": {
                     "active": false,
                     "angle": 60.0,
@@ -42889,14 +42903,18 @@
                     "width": 100.0
                 },
                 "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
                     "interval": 0.6000000238418579,
                     "minSpeed": 0.10000000149011612,
                     "resetDelay": 0.05000000074505806,
-                    "soundPrefix": "fs_concrete_",
+                    "soundPrefix": "fs_monster_",
                     "sprintIntervalScale": 0.6000000238418579,
                     "sprintSpeedThreshold": 14.0,
-                    "variationCount": 4,
-                    "volume": 1.0
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 5,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
                 },
                 "luaScript": [
                     {
@@ -45284,6 +45302,7 @@
                             "collected": false,
                             "fadeSpeed": 5.0,
                             "fragmentId": 0,
+                            "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
                         "scriptPath": "components/fragment.lua"

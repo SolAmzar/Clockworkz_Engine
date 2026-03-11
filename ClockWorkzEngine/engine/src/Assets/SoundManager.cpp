@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           SoundManager.cpp
 \project        Lights Out
@@ -7,7 +7,7 @@
 and management. Does not manage playback, only loading and unloading sound
 assets.
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -281,6 +281,179 @@ std::string SoundManager::GetFilePath(const std::string &name,
   return "";
 }
 
+std::string SoundManager::GetNameForPath(const std::string &path,
+                                         const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return "";
+
+  nlohmann::json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return "";
+  }
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return "";
+
+  const fs::path target = fs::path(path).lexically_normal();
+  for (const auto &entry : j["sounds"]) {
+    const fs::path entryPath =
+        fs::path(entry.value("path", "")).lexically_normal();
+    if (entryPath == target)
+      return entry.value("name", "");
+  }
+
+  return "";
+}
+bool SoundManager::GetConfig(const std::string &name, SoundConfig &outConfig,
+                             const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return false;
+
+  nlohmann::json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return false;
+  }
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return false;
+
+  for (const auto &entry : j["sounds"]) {
+    if (entry.value("name", "") != name)
+      continue;
+
+    outConfig.name = entry.value("name", "");
+    outConfig.path = entry.value("path", "");
+    outConfig.loop = entry.value("loop", false);
+    outConfig.stream = entry.value("stream", false);
+    outConfig.is3D = entry.value("is3D", false);
+    outConfig.volume = entry.value("volume", 1.0f);
+    outConfig.pitch = entry.value("pitch", 1.0f);
+    outConfig.group = entry.value("group", "SFX");
+    return true;
+  }
+
+  return false;
+}
+
+bool SoundManager::UpdateConfig(const std::string &name,
+                                const SoundConfig &config,
+                                const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return false;
+
+  nlohmann::json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return false;
+  }
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return false;
+
+  bool changed = false;
+  for (auto &entry : j["sounds"]) {
+    if (entry.value("name", "") != name)
+      continue;
+
+    entry["name"] = config.name;
+    entry["path"] = config.path;
+    entry["loop"] = config.loop;
+    entry["stream"] = config.stream;
+    entry["is3D"] = config.is3D;
+    entry["volume"] = config.volume;
+    entry["pitch"] = config.pitch;
+    entry["group"] = config.group;
+    changed = true;
+    break;
+  }
+
+  if (!changed)
+    return false;
+
+  std::ofstream out(configPath);
+  if (!out)
+    return false;
+  out << std::setw(4) << j << "\n";
+  out.close();
+
+  s_configs[name] = config;
+
+  if (s_audio) {
+    Audio::AudioManager::SoundProfile profile;
+    profile.volume = config.volume;
+    profile.pitch = config.pitch;
+    profile.group = (config.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+    s_audio->registerSoundProfile(name, profile);
+  }
+
+  if (IsLoaded(name)) {
+    Unload(name);
+    auto clip = LoadSound(name, config.path, config.loop, config.stream, config.is3D);
+    if (!clip)
+      return false;
+    if (s_audio) {
+      Audio::AudioManager::SoundProfile profile;
+      profile.volume = config.volume;
+      profile.pitch = config.pitch;
+      profile.group = (config.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+      s_audio->registerSoundProfile(name, profile);
+    }
+    s_configs[name] = config;
+  }
+
+  return true;
+}
+
+bool SoundManager::UpdatePathInConfig(const std::string &name,
+                                      const std::string &newPath,
+                                      const std::string &configPath) {
+  std::ifstream file(configPath);
+  if (!file)
+    return false;
+
+  nlohmann::json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return false;
+  }
+
+  if (!j.contains("sounds") || !j["sounds"].is_array())
+    return false;
+
+  bool changed = false;
+  for (auto &entry : j["sounds"]) {
+    if (entry.value("name", "") == name) {
+      entry["path"] = newPath;
+      changed = true;
+      break;
+    }
+  }
+
+  if (!changed)
+    return false;
+
+  std::ofstream out(configPath);
+  if (!out)
+    return false;
+
+  out << std::setw(4) << j << "\n";
+
+  auto it = s_configs.find(name);
+  if (it != s_configs.end())
+    it->second.path = newPath;
+
+  return true;
+}
+
 bool SoundManager::ImportSound(const std::string &sourcePath,
                                const std::string &name,
                                const SoundConfig &config,
@@ -421,3 +594,5 @@ bool SoundManager::DeleteFromDisk(const std::string &name,
 }
 
 } // namespace Assets
+
+

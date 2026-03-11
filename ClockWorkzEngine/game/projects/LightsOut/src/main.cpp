@@ -104,7 +104,11 @@ int main()
                     {"resetDelay", fa->resetDelay},
                     {"volume", fa->volume},
                     {"variationCount", fa->variationCount},
-                    {"soundPrefix", fa->soundPrefix}};
+                    {"useSurfaceSounds", fa->useSurfaceSounds},
+                    {"soundPrefix", fa->soundPrefix},
+                    {"concretePrefix", fa->concretePrefix},
+                    {"tilePrefix", fa->tilePrefix},
+                    {"woodPrefix", fa->woodPrefix}};
             }
         },
         [](ECS::Entity entity, ECS::World& world, const void* rawComponents) {
@@ -149,7 +153,11 @@ int main()
                 fa.resetDelay = fac.value("resetDelay", fa.resetDelay);
                 fa.volume = fac.value("volume", fa.volume);
                 fa.variationCount = fac.value("variationCount", fa.variationCount);
+                fa.useSurfaceSounds = fac.value("useSurfaceSounds", fa.useSurfaceSounds);
                 fa.soundPrefix = fac.value("soundPrefix", fa.soundPrefix);
+                fa.concretePrefix = fac.value("concretePrefix", fa.concretePrefix);
+                fa.tilePrefix = fac.value("tilePrefix", fa.tilePrefix);
+                fa.woodPrefix = fac.value("woodPrefix", fa.woodPrefix);
                 world.addComponent(entity, fa);
             }
         }
@@ -237,6 +245,8 @@ int main()
 #endif
     return _result;
 }
+
+
 
 
 

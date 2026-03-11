@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           SoundManager.hpp
 \project        Lights Out
@@ -6,7 +6,7 @@
 \brief          Declaration of Sound Manager for data-driven sound loading and
 management. Does not manage playback, only loading and unloading sound assets.
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content ? 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -109,6 +109,19 @@ public:
   static std::string GetFilePath(const std::string &name,
                                  const std::string &configPath =
                                      "assets/configs/sounds.json");
+  static std::string GetNameForPath(const std::string &path,
+                                    const std::string &configPath =
+                                        "assets/configs/sounds.json");
+  static bool GetConfig(const std::string &name, SoundConfig &outConfig,
+                        const std::string &configPath =
+                            "assets/configs/sounds.json");
+  static bool UpdateConfig(const std::string &name, const SoundConfig &config,
+                           const std::string &configPath =
+                               "assets/configs/sounds.json");
+  static bool UpdatePathInConfig(const std::string &name,
+                                 const std::string &newPath,
+                                 const std::string &configPath =
+                                     "assets/configs/sounds.json");
 
 private:
   static std::vector<SoundConfig> ParseConfig(const std::string &configPath);
@@ -120,3 +133,5 @@ private:
 };
 
 } // namespace Assets
+
+
