@@ -103,11 +103,11 @@ static vec2 screenToWorld(const vec2& screenPos, const vec2& camPos,
     return camPos + vec2(centered.x / zoom, -centered.y / zoom);
 }
 
-template<typename T>
-static void addCompEntry(const char* label, ECS::Entity entity, ECS::World& world) {
+template<typename T, typename ExecFn>
+static void addCompEntry(const char* label, ECS::Entity entity, ECS::World& world, ExecFn&& exec) {
     bool has = world.hasComponent<T>(entity);
     if (ImGui::MenuItem(label, nullptr, false, !has))
-        world.addComponent(entity, T{});
+        exec(std::make_unique<Runtime::AddComponentCmd<T>>(world, entity));
     if (has) { ImGui::SameLine(); ImGui::TextDisabled("(present)"); }
 }
 
@@ -505,8 +505,8 @@ void EditorState::render(Core::Time* timer) {
 
     Systems::renderLightPass(m_scene.GetWorld(), renderer);
 
-    // Grid + collider outlines (debug pass, drawn on top of scene)
-    if (m_showGrid || m_showColliders) {
+    // Grid + collider + UIButton outlines (debug pass, drawn on top of scene)
+    if (m_showGrid || m_showColliders || m_showUIButtons) {
         renderer.beginDebugPass(camera.viewProj());
 
         if (m_showGrid)
@@ -546,6 +546,25 @@ void EditorState::render(Core::Time* timer) {
                         float r = c.radius * std::max(t.scale.x, t.scale.y);
                         renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
                     }
+                });
+        }
+
+        if (m_showUIButtons) {
+            auto& world = m_scene.GetWorld();
+            world.each<Components::Transform, Components::UIButton>(
+                [&](ECS::Entity, Components::Transform& t, Components::UIButton& btn) {
+                    float halfW = btn.size.x * t.scale.x * 0.5f;
+                    float halfH = btn.size.y * t.scale.y * 0.5f;
+                    float cx = t.position.x + btn.offset.x;
+                    float cy = t.position.y + btn.offset.y;
+                    // Cyan box for hit area
+                    renderer.drawLine(cx - halfW, cy - halfH, cx + halfW, cy - halfH, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx + halfW, cy - halfH, cx + halfW, cy + halfH, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx + halfW, cy + halfH, cx - halfW, cy + halfH, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx - halfW, cy + halfH, cx - halfW, cy - halfH, 0.f, 1.f, 1.f);
+                    // Cross at center
+                    renderer.drawLine(cx - 4.f, cy, cx + 4.f, cy, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx, cy - 4.f, cx, cy + 4.f, 0.f, 1.f, 1.f);
                 });
         }
 
@@ -1209,6 +1228,7 @@ void EditorState::renderInspector() {
     ImGui::Begin("Inspector");
 
     auto& world = m_scene.GetWorld();
+    auto execCmd = [this](std::unique_ptr<IEditorCommand> cmd) { executeCommand(std::move(cmd)); };
 
     if (!world.isValid(m_selectedEntity)) {
         ImGui::TextDisabled("No entity selected.");
@@ -1222,31 +1242,31 @@ void EditorState::renderInspector() {
 
     if (ImGui::BeginPopup("##AddComp")) {
         if (ImGui::BeginMenu("Core")) {
-            addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world);
-            addCompEntry<Components::Tag>("Tag", m_selectedEntity, world);
+            addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::Tag>("Tag", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Rendering")) {
-            addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world);
-            addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world);
-            addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world);
-            addCompEntry<Components::Light>("Light", m_selectedEntity, world);
+            addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::Light>("Light", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Physics")) {
-            addCompEntry<Components::Collider>("Collider", m_selectedEntity, world);
+            addCompEntry<Components::Collider>("Collider", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Audio")) {
-            addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world);
+            addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("UI")) {
-            addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world);
+            addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Camera")) {
-            addCompEntry<Components::CameraComponent>("CameraComponent", m_selectedEntity, world);
+            addCompEntry<Components::CameraComponent>("CameraComponent", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Scripting")) {
@@ -1256,7 +1276,7 @@ void EditorState::renderInspector() {
                     world.addComponent(m_selectedEntity, Components::LuaScript{});
                 world.getComponent<Components::LuaScript>(m_selectedEntity)->scripts.push_back({});
             }
-            addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world);
+            addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         ImGui::EndPopup();
@@ -1307,7 +1327,7 @@ void EditorState::renderInspector() {
                 t->scale = {scale[0], scale[1]};
 
             float pivot[2] = {t->pivot.x, t->pivot.y};
-            if (ImGui::DragFloat2("Pivot", pivot, 0.5f))
+            if (ImGui::DragFloat2("Offset", pivot, 0.5f))
                 t->pivot = {pivot[0], pivot[1]};
 
             ImGui::Checkbox("Snap to Grid##transform", &t->snapToGrid);
@@ -1316,8 +1336,13 @@ void EditorState::renderInspector() {
 
     // SpriteRenderer
     if (world.hasComponent<Components::SpriteRenderer>(m_selectedEntity)) {
-        auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
-        if (ImGui::CollapsingHeader("SpriteRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool rmSprite = false;
+        bool openSprite = ImGui::CollapsingHeader("SpriteRenderer##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rsr")) rmSprite = true;
+        if (openSprite) {
+            auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
             char texBuf[256];
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
             if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
@@ -1343,9 +1368,10 @@ void EditorState::renderInspector() {
             ImGui::Checkbox("Visible", &sr->visible);
             ImGui::DragInt("Sort Order", &sr->sortOrder);
         }
+        if (rmSprite) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteRenderer>>(world, m_selectedEntity));
     } else {
         if (ImGui::Button("+ Add SpriteRenderer"))
-            world.addComponent(m_selectedEntity, Components::SpriteRenderer{});
+            execCmd(std::make_unique<AddComponentCmd<Components::SpriteRenderer>>(world, m_selectedEntity));
     }
 
     // Collider
@@ -1408,7 +1434,7 @@ void EditorState::renderInspector() {
                 vel->velocity = {vv[0], vv[1]};
             ImGui::DragFloat("MoveSpeed##vel", &vel->moveSpeed, 1.0f);
         }
-        if (rm) world.removeComponent<Components::Velocity>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Velocity>>(world, m_selectedEntity));
     }
 
     // ── AudioSource ─────────────────────────────────────────────────────────
@@ -1432,7 +1458,7 @@ void EditorState::renderInspector() {
             ImGui::SameLine();
             ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
         }
-        if (rm) world.removeComponent<Components::AudioSource>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::AudioSource>>(world, m_selectedEntity));
     }
 
     // ── SpriteAnimator ──────────────────────────────────────────────────────
@@ -1459,7 +1485,7 @@ void EditorState::renderInspector() {
             ImGui::SameLine();
             ImGui::Checkbox("Paused##sa", &sa->paused);
         }
-        if (rm) world.removeComponent<Components::SpriteAnimator>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteAnimator>>(world, m_selectedEntity));
     }
 
     // ── StateMachine ────────────────────────────────────────────────────────
@@ -1477,7 +1503,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("State Timer##sm", &sm->stateTimer, 0.0f);
             ImGui::EndDisabled();
         }
-        if (rm) world.removeComponent<Components::StateMachine>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::StateMachine>>(world, m_selectedEntity));
     }
 
     // ── LuaScript (multi-slot) ───────────────────────────────────────────────
@@ -1591,7 +1617,7 @@ void EditorState::renderInspector() {
             if (ImGui::Combo("Alignment##tr", &alignIdx, alignItems, 3))
                 tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
         }
-        if (rm) world.removeComponent<Components::TextRenderer>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::TextRenderer>>(world, m_selectedEntity));
     }
 
     // Light
@@ -1610,7 +1636,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("Angle##lt", &lt->angle, 0.5f, 0.0f, 360.0f);
             ImGui::SliderFloat("Intensity##lt", &lt->intensity, 0.0f, 1.0f);
         }
-        if (rm) world.removeComponent<Components::Light>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Light>>(world, m_selectedEntity));
     }
 
     // ── UIButton ─────────────────────────────────────────────────────────────
@@ -1625,11 +1651,23 @@ void EditorState::renderInspector() {
             char abuf[256]; snprintf(abuf, sizeof(abuf), "%s", btn->action.c_str());
             if (ImGui::InputText("Action##uib", abuf, sizeof(abuf)))
                 btn->action = abuf;
-            ImGui::Checkbox("Interactable##uib", &btn->interactable);
-            ImGui::ColorEdit3("Normal Color##uib", glm::value_ptr(btn->normalColor));
-            ImGui::ColorEdit3("Hover Color##uib",  glm::value_ptr(btn->hoverColor));
+            ImGui::Checkbox("Interactable##uib",   &btn->interactable);
+            ImGui::Checkbox("Show Background##uib", &btn->showBackground);
+            ImGui::DragFloat2("Hit Size##uib",      &btn->size.x,   1.f);
+            ImGui::DragFloat2("Hit Offset##uib",    &btn->offset.x, 1.f);
+            if (ImGui::Button("Follow Sprite##uib")) {
+                auto *sprite = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+                if (sprite) {
+                    btn->size   = sprite->size;
+                    btn->offset = {0.f, 0.f};
+                }
+            }
+            ImGui::SameLine();
+            ImGui::Checkbox("Show Hit Area##uib",   &m_showUIButtons);
+            ImGui::ColorEdit3("Normal Color##uib",  glm::value_ptr(btn->normalColor));
+            ImGui::ColorEdit3("Hover Color##uib",   glm::value_ptr(btn->hoverColor));
         }
-        if (rm) world.removeComponent<Components::UIButton>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UIButton>>(world, m_selectedEntity));
     }
 
     // ── CameraComponent ───────────────────────────────────────────────────────
@@ -1645,7 +1683,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("Zoom##cam",    &cam->zoom, 0.01f, 0.01f, 20.0f);
             ImGui::DragFloat2("Offset##cam", &cam->offset.x, 1.0f);
         }
-        if (rm) world.removeComponent<Components::CameraComponent>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::CameraComponent>>(world, m_selectedEntity));
     }
 
     ImGui::End();

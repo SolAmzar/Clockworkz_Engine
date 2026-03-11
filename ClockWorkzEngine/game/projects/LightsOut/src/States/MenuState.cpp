@@ -35,6 +35,7 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "States/PlayState.hpp"
+#include "States/SettingsState.hpp"
 #include "States/SpriteEditorState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -112,13 +113,13 @@ void MenuState::applyHoverColors() {
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
     ECS::Entity e   = m_buttonEntities[i];
     auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(e);
-    auto *sr  = m_menuScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    auto *tr  = m_menuScene.GetWorld().getComponent<Components::TextRenderer>(e);
+    auto *sprite = m_menuScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
+    auto *text   = m_menuScene.GetWorld().getComponent<Components::TextRenderer>(e);
     if (!btn) continue;
-    bool selected = (i == m_selected);
+    bool selected = (m_selected >= 0 && i == m_selected);
     glm::vec3 c = selected ? btn->hoverColor : btn->normalColor;
-    if (sr) sr->color = glm::vec4(c, 1.f);
-    if (tr) tr->color = c;
+    if (text) text->color = c;                                         // tint text only
+    if (sprite && !btn->showBackground) sprite->visible = false;      // hide background if flagged off
   }
 }
 
@@ -135,12 +136,15 @@ void MenuState::handleAction(const std::string &action) {
     // Show the howtoplay_overlay entity
     m_showingHowToPlay = true;
     m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-        [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sr) {
-          if (tag.tag == "howtoplay_overlay") sr.visible = true;
+        [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sprite) {
+          if (tag.tag == "howtoplay_overlay") sprite.visible = true;
         });
     return;
   }
-  // load_game, options: no-op for now
+  if (action == "settings") {
+    m_gsm.push(std::make_shared<SettingsState>(m_gsm, m_input, m_window, m_audio));
+    return;
+  }
   std::cout << "[MenuState] Action: " << action << " (not implemented)\n";
 }
 
@@ -156,8 +160,8 @@ void MenuState::update(double /*dt*/) {
         m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
       m_showingHowToPlay = false;
       m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-          [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sr) {
-            if (tag.tag == "howtoplay_overlay") sr.visible = false;
+          [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sprite) {
+            if (tag.tag == "howtoplay_overlay") sprite.visible = false;
           });
     }
     return;
@@ -177,14 +181,14 @@ void MenuState::update(double /*dt*/) {
     ECS::Entity e = m_buttonEntities[i];
     auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(e);
     auto *tf  = m_menuScene.GetWorld().getComponent<Components::Transform>(e);
-    auto *sr  = m_menuScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    if (!btn || !tf || !sr || !btn->interactable) continue;
+    if (!btn || !tf || !btn->interactable) continue;
 
-    // tf->position is the top-left of the button box (matches RenderTextInBox convention)
-    bool hovered = (mouseWorld.x >= tf->position.x &&
-                    mouseWorld.x <= tf->position.x + sr->size.x &&
-                    mouseWorld.y >= tf->position.y - sr->size.y &&
-                    mouseWorld.y <= tf->position.y);
+    float cx = tf->position.x + btn->offset.x;
+    float cy = tf->position.y + btn->offset.y;
+    float halfW = btn->size.x * 0.5f;
+    float halfH = btn->size.y * 0.5f;
+    bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
+                    mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
     if (hovered) {
       mouseHover = true;
       if (m_selected != i) {
@@ -198,6 +202,9 @@ void MenuState::update(double /*dt*/) {
       }
     }
   }
+
+  // Deselect when mouse is not over any button
+  if (!mouseHover) m_selected = -1;
 
   // Keyboard navigation
   if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
@@ -244,20 +251,18 @@ void MenuState::render(Core::Time * /*timer*/) {
 
   glm::mat4 vp = m_cam->viewProj();
 
-  m_renderer->beginScenePass(vp);
-  m_menuScene.Render(*m_renderer);
-  m_renderer->endScenePass();
-  m_menuScene.RenderText(*m_renderer);
+  m_menuScene.RenderAll(*m_renderer, vp);
 }
 
 void MenuState::renderImGui(Core::Time * /*timer*/) {
 #ifdef _DEBUG
-  if (!m_debug) return;
-  ImGui::Begin("MenuState Debug");
-  ImGui::Text("Buttons loaded: %d", (int)m_buttonEntities.size());
-  ImGui::Text("Selected: %d", m_selected);
-  ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-  ImGui::End();
+  if (m_debug) {
+    ImGui::Begin("MenuState Debug");
+    ImGui::Text("Buttons loaded: %d", (int)m_buttonEntities.size());
+    ImGui::Text("Selected: %d", m_selected);
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    ImGui::End();
+  }
 #endif
 }
 

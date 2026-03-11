@@ -108,9 +108,7 @@ void EditorPlayState::render(Core::Time* timer) {
     auto& renderer = engine.rendering();
     auto& camera   = engine.camera();
 
-    renderer.beginScenePass(camera.viewProj(), glm::vec4(1.0f));
-    m_scene.Render(renderer);
-    renderer.endScenePass();
+    m_scene.RenderAll(renderer, camera.viewProj());
 }
 
 // ---------------------------------------------------------------------------

@@ -86,10 +86,7 @@ void GamePlayState::render(Core::Time* /*timer*/) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   glm::mat4 vp = m_cam->viewProj();
-  m_renderer->beginScenePass(vp);
-  m_scene.Render(*m_renderer);
-  m_renderer->endScenePass();
-  m_scene.RenderText(*m_renderer);
+  m_scene.RenderAll(*m_renderer, vp);
   // Particle emitter + light pass are handled by the onRender callback
   // registered in main_game.cpp's setSceneSetup — no extra code needed here.
 }

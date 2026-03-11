@@ -135,6 +135,9 @@ private:
     // ----- Collider debug -----
     bool                    m_showColliders{false};
 
+    // ----- UIButton hit-area debug -----
+    bool                    m_showUIButtons{false};
+
     // ----- Stats memory graph -----
     float                   m_statsHistory[128]{};
     int                     m_statsHistoryOffset{0};

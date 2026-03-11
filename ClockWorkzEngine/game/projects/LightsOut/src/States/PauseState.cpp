@@ -31,6 +31,7 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "States/MenuState.hpp"
+#include "States/SettingsState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -84,9 +85,6 @@ void PauseState::onEnter() {
           updateLayout(e.width, e.height);
       });
 
-  m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeDuringPause);
-  m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeDuringPause);
-
   std::cout << "[PauseState] Ready\n";
 }
 
@@ -108,34 +106,35 @@ void PauseState::collectButtons() {
 
 void PauseState::applyHoverColors() {
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
-    ECS::Entity e  = m_buttonEntities[i];
-    auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(e);
-    auto *sr  = m_pauseScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    auto *tr  = m_pauseScene.GetWorld().getComponent<Components::TextRenderer>(e);
+    ECS::Entity e      = m_buttonEntities[i];
+    auto *btn    = m_pauseScene.GetWorld().getComponent<Components::UIButton>(e);
+    auto *sprite = m_pauseScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
+    auto *text   = m_pauseScene.GetWorld().getComponent<Components::TextRenderer>(e);
     if (!btn) continue;
-    bool selected = (i == m_selected);
+    bool selected = (m_selected >= 0 && i == m_selected);
     glm::vec3 c = selected ? btn->hoverColor : btn->normalColor;
-    if (sr) sr->color = glm::vec4(c, 1.f);
-    if (tr) tr->color = c;
+    if (text) text->color = c;
+    if (sprite && !btn->showBackground) sprite->visible = false;
   }
 }
 
 void PauseState::handleAction(const std::string &action) {
   if (action == "resume") {
     std::cout << "[PauseState] Resuming...\n";
-    m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
-    m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
     m_gsm.pop();
     return;
   }
   if (action == "main_menu") {
     std::cout << "[PauseState] Going to main menu...\n";
-    m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
-    m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
     m_gsm.switchToAndClear(
         std::make_shared<MenuState>(m_gsm, m_input,
                                     Core::Engine::Get().window(),
                                     Core::Engine::Get().audio()));
+    return;
+  }
+  if (action == "settings") {
+    m_gsm.push(std::make_shared<SettingsState>(
+        m_gsm, m_input, Core::Engine::Get().window(), m_audio));
     return;
   }
   std::cout << "[PauseState] Unknown action: " << action << "\n";
@@ -149,30 +148,29 @@ void PauseState::update(double /*dt*/) {
   // ESC always resumes
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
     std::cout << "[PauseState] ESC pressed - resuming\n";
-    m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeBeforePause);
-    m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeBeforePause);
     m_gsm.pop();
     return;
   }
 
   // Mouse world-space position (vec2 is the engine's custom type)
   vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
-  bool clicked = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
+  bool clicked    = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
+  bool mouseHover = false;
 
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
     ECS::Entity e = m_buttonEntities[i];
     auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(e);
     auto *tf  = m_pauseScene.GetWorld().getComponent<Components::Transform>(e);
-    auto *sr  = m_pauseScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    if (!btn || !tf || !sr || !btn->interactable) continue;
+    if (!btn || !tf || !btn->interactable) continue;
 
-    float halfW = sr->size.x * 0.5f;
-    float halfH = sr->size.y * 0.5f;
-    bool hovered = (mouseWorld.x >= tf->position.x - halfW &&
-                    mouseWorld.x <= tf->position.x + halfW &&
-                    mouseWorld.y >= tf->position.y - halfH &&
-                    mouseWorld.y <= tf->position.y + halfH);
+    float cx = tf->position.x + btn->offset.x;
+    float cy = tf->position.y + btn->offset.y;
+    float halfW = btn->size.x * 0.5f;
+    float halfH = btn->size.y * 0.5f;
+    bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
+                    mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
     if (hovered) {
+      mouseHover = true;
       if (m_selected != i) {
         m_selected = i;
         m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
@@ -184,6 +182,9 @@ void PauseState::update(double /*dt*/) {
       }
     }
   }
+
+  // Deselect when mouse is not over any button
+  if (!mouseHover) m_selected = -1;
 
   // Keyboard navigation
   if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
@@ -217,22 +218,17 @@ void PauseState::render(Core::Time * /*timer*/) {
   // NO glClear — framebuffer persistence keeps the frozen game frame visible behind the overlay
   glm::mat4 vp = m_cam->viewProj();
 
-  m_renderer->beginScenePass(vp);
-  m_pauseScene.Render(*m_renderer);
-  m_renderer->endScenePass();
-
-  m_renderer->beginFontPass(vp);
-  m_textRenderSystem.update(m_pauseScene.GetWorld(), *m_renderer, vp);
-  m_renderer->endFontPass();
+  m_pauseScene.RenderAll(*m_renderer, vp);
 }
 
 void PauseState::renderImGui(Core::Time * /*timer*/) {
 #ifdef _DEBUG
-  if (!m_debug) return;
-  ImGui::Begin("Pause State Debug");
-  ImGui::Text("Press ESC to Resume");
-  ImGui::Text("Buttons: %d  Selected: %d", (int)m_buttonEntities.size(), m_selected);
-  ImGui::End();
+  if (m_debug) {
+    ImGui::Begin("Pause State Debug");
+    ImGui::Text("Press ESC to Resume");
+    ImGui::Text("Buttons: %d  Selected: %d", (int)m_buttonEntities.size(), m_selected);
+    ImGui::End();
+  }
 #endif
 }
 
