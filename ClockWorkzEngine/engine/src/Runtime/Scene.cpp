@@ -143,6 +143,9 @@ void Scene::Clear() {
 
 bool Scene::LoadFromFile(const std::string &path) {
   Clear();
+  // Re-wire load-level callback cleared by Clear() so scripts can still call
+  // World.loadLevel() after a level transition (e.g. player respawn in level 2).
+  m_scriptSystem.setLoadLevelFn([this](const std::string& name) { SetPendingLevel(name); });
   if (std::filesystem::exists(path)) {
     if (SceneSerializer::Deserialize(*this, path)) {
       m_currentLevelPath = path;

@@ -11,6 +11,13 @@ Properties = {
 }
 
 function onUpdate(self, entity, dt)
+    -- Stop all AI when dead (hp <= 0 causes health.lua to set isDead = true)
+    local isDead = World.getScriptProp(entity.id, "isDead")
+    if isDead then
+        entity.velocity = Vec2(0, 0)
+        return
+    end
+
     local player = World.findByTag("Player")
     if not player then return end
     local diff = player.position - entity.position

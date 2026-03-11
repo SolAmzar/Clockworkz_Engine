@@ -42906,7 +42906,7 @@
                             "_stateTimer": 0.0,
                             "_wanderTimer": 0.0,
                             "alertDuration": 3.0,
-                            "chaseSpeed": 150.0,
+                            "chaseSpeed": 3.299999952316284,
                             "detectionRadius": 400.0,
                             "lightSensitivity": 0.30000001192092896,
                             "patrolSpeed": 50.0,
