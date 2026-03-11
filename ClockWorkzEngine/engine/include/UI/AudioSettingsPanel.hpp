@@ -16,6 +16,8 @@ reserved.
 /******************************************************************************/
 #pragma once
 
+#ifdef _DEBUG
+
 namespace Audio {
 
 class AudioSettingsPanel {
@@ -31,3 +33,5 @@ public:
 };
 
 } // namespace Audio
+
+#endif // _DEBUG

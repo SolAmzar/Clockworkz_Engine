@@ -20,7 +20,7 @@ reserved.
 namespace Components {
 
 struct UIButton {
-    std::string action{};                        // e.g. "start_game", "exit", "resume", "main_menu"
+    std::string uiScript{};                      // Lua script path; on_click() called on activation
     glm::vec3   normalColor{1.f, 1.f, 1.f};     // text tint when idle
     glm::vec3   hoverColor {1.f, 0.8f, 0.f};    // text tint when mouse is over
     bool        interactable{true};              // when false, ignores mouse input

@@ -245,7 +245,8 @@
                     "size": {
                         "x": 400.0,
                         "y": 70.0
-                    }
+                    },
+                    "uiScript": "ui/btn_start_game.lua"
                 }
             },
             "name": "Btn_StartGame"
@@ -331,7 +332,8 @@
                     "size": {
                         "x": 400.0,
                         "y": 70.0
-                    }
+                    },
+                    "uiScript": "ui/btn_how_to_play.lua"
                 }
             },
             "name": "Btn_HowToPlay"
@@ -417,7 +419,8 @@
                     "size": {
                         "x": 400.0,
                         "y": 70.0
-                    }
+                    },
+                    "uiScript": "ui/btn_settings.lua"
                 }
             },
             "name": "Btn_Settings"
@@ -503,7 +506,8 @@
                     "size": {
                         "x": 189.0,
                         "y": 121.0
-                    }
+                    },
+                    "uiScript": "ui/btn_exit.lua"
                 }
             },
             "name": "Btn_Exit"

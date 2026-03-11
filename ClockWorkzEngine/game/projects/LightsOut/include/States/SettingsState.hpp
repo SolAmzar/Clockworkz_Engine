@@ -17,6 +17,7 @@ reserved.
 #include "Runtime/Scene.hpp"
 #include "Systems/UISliderSystem.hpp"
 #include "ECS/World.hpp"
+#include "Components/UIButton.hpp"
 #include <glm/vec2.hpp>
 #include <string>
 #include <vector>
@@ -54,7 +55,7 @@ public:
 
 private:
     void updateLayout(int w, int h);
-    void handleAction(const std::string &action);
+    void handleButton(const Components::UIButton &btn);
     void collectButtons();
     void applyHoverColors();
     void syncSlidersFromSettings();

@@ -36,6 +36,7 @@ endif()
 if(MSVC)
   target_compile_options(CWZEngine PRIVATE
     /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj
+    /external:anglebrackets /external:W0
   )
   target_compile_options(CWZEngine PRIVATE
     $<$<CONFIG:Debug>:/Od>

@@ -13,6 +13,9 @@ reserved.
 /******************************************************************************/
 
 #include "UI/AudioSettingsPanel.hpp"
+
+#ifdef _DEBUG
+
 #include "Audio/AudioManager.hpp"
 #include "Audio/AudioSettings.hpp"
 #include "IMGUI/imgui.h"
@@ -49,3 +52,5 @@ void AudioSettingsPanel::draw(bool& visible) {
 }
 
 } // namespace Audio
+
+#endif // _DEBUG

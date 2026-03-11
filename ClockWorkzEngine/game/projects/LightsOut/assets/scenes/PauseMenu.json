@@ -75,7 +75,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": true
+                    "visible": false
                 },
                 "transform": {
                     "pivot": {
@@ -210,11 +210,16 @@
                         "g": 1.0,
                         "r": 1.0
                     },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "showBackground": true,
                     "size": {
                         "x": 350.0,
                         "y": 70.0
-                    }
+                    },
+                    "uiScript": "ui/btn_resume.lua"
                 }
             },
             "name": "Btn_Resume"
@@ -292,11 +297,16 @@
                         "g": 1.0,
                         "r": 1.0
                     },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "showBackground": true,
                     "size": {
                         "x": 350.0,
                         "y": 70.0
-                    }
+                    },
+                    "uiScript": "ui/btn_main_menu.lua"
                 }
             },
             "name": "Btn_MainMenu"
@@ -324,7 +334,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": false
+                    "visible": true
                 },
                 "textRenderer": {
                     "alignment": 1,
@@ -374,11 +384,16 @@
                         "g": 1.0,
                         "r": 1.0
                     },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "showBackground": true,
                     "size": {
                         "x": 350.0,
                         "y": 70.0
-                    }
+                    },
+                    "uiScript": "ui/btn_settings.lua"
                 }
             },
             "name": "Btn_Settings"

@@ -27,6 +27,7 @@ All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <string>
 #include <unordered_map>
 #include <iostream>
+#include <variant>
 
 namespace Scripting {
 
@@ -140,17 +141,15 @@ namespace Scripting {
     // GameObjectType Enum Binding
     //-------------------------------------------------------------------------
     void RegisterGameObjectType(sol::state& lua) {
-        lua.new_enum<Gameplay::GameObjectType>("GameObjectType",
-            {
-                {"Floor", Gameplay::GameObjectType::Floor},
-                {"Wall", Gameplay::GameObjectType::Wall},
-                {"Player", Gameplay::GameObjectType::Player},
-                {"Enemy", Gameplay::GameObjectType::Enemy},
-                {"Trap", Gameplay::GameObjectType::Trap},
-                {"Unknown", Gameplay::GameObjectType::Unknown},
-                {"Ball", Gameplay::GameObjectType::Ball},
-                {"Box", Gameplay::GameObjectType::Box},
-            }
+        lua.new_enum("GameObjectType",
+            "Floor", Gameplay::GameObjectType::Floor,
+            "Wall", Gameplay::GameObjectType::Wall,
+            "Player", Gameplay::GameObjectType::Player,
+            "Enemy", Gameplay::GameObjectType::Enemy,
+            "Trap", Gameplay::GameObjectType::Trap,
+            "Unknown", Gameplay::GameObjectType::Unknown,
+            "Ball", Gameplay::GameObjectType::Ball,
+            "Box", Gameplay::GameObjectType::Box
         );
     }
 
@@ -312,7 +311,7 @@ namespace Scripting {
                 sr.setTint(glm::vec4(r, g, b, a));
             },
             "getTint", [](Gameplay::SpriteRendererComponent& sr) {
-                auto t = sr.tint();
+                const auto& t = sr.tint();
                 return std::make_tuple(t.r, t.g, t.b, t.a);
             },
             "isUI", sol::property(
@@ -345,7 +344,7 @@ namespace Scripting {
         );
 
         // Key constants table
-        sol::table keys = lua.create_table();
+        auto keys = lua.create_table();
         keys["A"] = GLFW_KEY_A;
         keys["B"] = GLFW_KEY_B;
         keys["C"] = GLFW_KEY_C;
@@ -418,7 +417,7 @@ namespace Scripting {
         lua["Keys"] = keys;
 
         // Mouse button constants table
-        sol::table mouse = lua.create_table();
+        auto mouse = lua.create_table();
         mouse["LEFT"] = GLFW_MOUSE_BUTTON_LEFT;
         mouse["RIGHT"] = GLFW_MOUSE_BUTTON_RIGHT;
         mouse["MIDDLE"] = GLFW_MOUSE_BUTTON_MIDDLE;
@@ -443,15 +442,19 @@ namespace Scripting {
                                        const std::string& key,
                                        sol::this_state ts)
     {
-        sol::state_view sv(ts);
+        auto sv = sol::state_view{ts};
         auto* entry = ref.findScriptEntry(scriptPath);
         if (!entry) return sol::make_object(sv, sol::nil);
         auto it = entry->properties.find(key);
         if (it == entry->properties.end())
             return sol::make_object(sv, sol::nil);
+#ifndef __INTELLISENSE__
         return std::visit([&sv](auto&& v) -> sol::object {
             return sol::make_object(sv, v);
         }, it->second);
+#else
+        return sol::make_object(sv, sol::nil);
+#endif
     }
 
     static void setScriptPropFn(Scripting::EntityRef& ref,
@@ -463,11 +466,13 @@ namespace Scripting {
         if (!entry) return;
         auto it = entry->properties.find(key);
         if (it == entry->properties.end()) return;
+#ifndef __INTELLISENSE__
         std::visit([&](auto&& existing) {
             using T = std::decay_t<decltype(existing)>;
             auto opt = val.as<sol::optional<T>>();
             if (opt) it->second = *opt;
         }, it->second);
+#endif
     }
 
     //-------------------------------------------------------------------------
@@ -529,6 +534,11 @@ namespace Scripting {
             "setLightOffsetX",&Scripting::EntityRef::setLightOffsetX,
             "setLightOffsetY",&Scripting::EntityRef::setLightOffsetY,
 
+            // TextRenderer
+            "hasTextRenderer", &Scripting::EntityRef::hasTextRenderer,
+            "getText",         &Scripting::EntityRef::getText,
+            "setText",         &Scripting::EntityRef::setText,
+
             // SpriteRenderer
             "hasSpriteRenderer",  &Scripting::EntityRef::hasSpriteRenderer,
             "getSpriteTextureId", &Scripting::EntityRef::getSpriteTextureId,
@@ -567,48 +577,53 @@ namespace Scripting {
     //-------------------------------------------------------------------------
     // Input Global Binding — Helpers
     //-------------------------------------------------------------------------
-    static int ensureKey(const std::string& name) {
-        // Key constants lookup table (not static to avoid teardown "leaks")
-        const std::unordered_map<std::string, int> keyMap = {
-            {"A",GLFW_KEY_A},{"B",GLFW_KEY_B},{"C",GLFW_KEY_C},{"D",GLFW_KEY_D},
-            {"E",GLFW_KEY_E},{"F",GLFW_KEY_F},{"G",GLFW_KEY_G},{"H",GLFW_KEY_H},
-            {"I",GLFW_KEY_I},{"J",GLFW_KEY_J},{"K",GLFW_KEY_K},{"L",GLFW_KEY_L},
-            {"M",GLFW_KEY_M},{"N",GLFW_KEY_N},{"O",GLFW_KEY_O},{"P",GLFW_KEY_P},
-            {"Q",GLFW_KEY_Q},{"R",GLFW_KEY_R},{"S",GLFW_KEY_S},{"T",GLFW_KEY_T},
-            {"U",GLFW_KEY_U},{"V",GLFW_KEY_V},{"W",GLFW_KEY_W},{"X",GLFW_KEY_X},
-            {"Y",GLFW_KEY_Y},{"Z",GLFW_KEY_Z},
-            {"0",GLFW_KEY_0},{"1",GLFW_KEY_1},{"2",GLFW_KEY_2},{"3",GLFW_KEY_3},
-            {"4",GLFW_KEY_4},{"5",GLFW_KEY_5},{"6",GLFW_KEY_6},{"7",GLFW_KEY_7},
-            {"8",GLFW_KEY_8},{"9",GLFW_KEY_9},
-            {"SPACE",GLFW_KEY_SPACE},{"ENTER",GLFW_KEY_ENTER},
-            {"ESCAPE",GLFW_KEY_ESCAPE},{"TAB",GLFW_KEY_TAB},
-            {"BACKSPACE",GLFW_KEY_BACKSPACE},
-            {"LEFT_SHIFT",GLFW_KEY_LEFT_SHIFT},{"RIGHT_SHIFT",GLFW_KEY_RIGHT_SHIFT},
-            {"SHIFT",GLFW_KEY_LEFT_SHIFT},
-            {"LEFT_CTRL",GLFW_KEY_LEFT_CONTROL},{"RIGHT_CTRL",GLFW_KEY_RIGHT_CONTROL},
-            {"CTRL",GLFW_KEY_LEFT_CONTROL},
-            {"LEFT_ALT",GLFW_KEY_LEFT_ALT},{"RIGHT_ALT",GLFW_KEY_RIGHT_ALT},
-            {"UP",GLFW_KEY_UP},{"DOWN",GLFW_KEY_DOWN},
-            {"LEFT",GLFW_KEY_LEFT},{"RIGHT",GLFW_KEY_RIGHT},
-            {"F1",GLFW_KEY_F1},{"F2",GLFW_KEY_F2},{"F3",GLFW_KEY_F3},
-            {"F4",GLFW_KEY_F4},{"F5",GLFW_KEY_F5},{"F6",GLFW_KEY_F6},
-            {"F7",GLFW_KEY_F7},{"F8",GLFW_KEY_F8},{"F9",GLFW_KEY_F9},
-            {"F10",GLFW_KEY_F10},{"F11",GLFW_KEY_F11},{"F12",GLFW_KEY_F12},
-            {"APOSTROPHE",    GLFW_KEY_APOSTROPHE},
-            {"COMMA",         GLFW_KEY_COMMA},
-            {"MINUS",         GLFW_KEY_MINUS},
-            {"PERIOD",        GLFW_KEY_PERIOD},
-            {"SLASH",         GLFW_KEY_SLASH},
-            {"SEMICOLON",     GLFW_KEY_SEMICOLON},
-            {"EQUAL",         GLFW_KEY_EQUAL},
-            {"LEFT_BRACKET",  GLFW_KEY_LEFT_BRACKET},
-            {"BACKSLASH",     GLFW_KEY_BACKSLASH},
-            {"RIGHT_BRACKET", GLFW_KEY_RIGHT_BRACKET},
-            {"GRAVE_ACCENT",  GLFW_KEY_GRAVE_ACCENT},
-        };
+    static const std::unordered_map<std::string, int> s_keyMap = {
+        {"A",GLFW_KEY_A},{"B",GLFW_KEY_B},{"C",GLFW_KEY_C},{"D",GLFW_KEY_D},
+        {"E",GLFW_KEY_E},{"F",GLFW_KEY_F},{"G",GLFW_KEY_G},{"H",GLFW_KEY_H},
+        {"I",GLFW_KEY_I},{"J",GLFW_KEY_J},{"K",GLFW_KEY_K},{"L",GLFW_KEY_L},
+        {"M",GLFW_KEY_M},{"N",GLFW_KEY_N},{"O",GLFW_KEY_O},{"P",GLFW_KEY_P},
+        {"Q",GLFW_KEY_Q},{"R",GLFW_KEY_R},{"S",GLFW_KEY_S},{"T",GLFW_KEY_T},
+        {"U",GLFW_KEY_U},{"V",GLFW_KEY_V},{"W",GLFW_KEY_W},{"X",GLFW_KEY_X},
+        {"Y",GLFW_KEY_Y},{"Z",GLFW_KEY_Z},
+        {"0",GLFW_KEY_0},{"1",GLFW_KEY_1},{"2",GLFW_KEY_2},{"3",GLFW_KEY_3},
+        {"4",GLFW_KEY_4},{"5",GLFW_KEY_5},{"6",GLFW_KEY_6},{"7",GLFW_KEY_7},
+        {"8",GLFW_KEY_8},{"9",GLFW_KEY_9},
+        {"SPACE",GLFW_KEY_SPACE},{"ENTER",GLFW_KEY_ENTER},
+        {"ESCAPE",GLFW_KEY_ESCAPE},{"TAB",GLFW_KEY_TAB},
+        {"BACKSPACE",GLFW_KEY_BACKSPACE},
+        {"LEFT_SHIFT",GLFW_KEY_LEFT_SHIFT},{"RIGHT_SHIFT",GLFW_KEY_RIGHT_SHIFT},
+        {"SHIFT",GLFW_KEY_LEFT_SHIFT},
+        {"LEFT_CTRL",GLFW_KEY_LEFT_CONTROL},{"RIGHT_CTRL",GLFW_KEY_RIGHT_CONTROL},
+        {"CTRL",GLFW_KEY_LEFT_CONTROL},
+        {"LEFT_ALT",GLFW_KEY_LEFT_ALT},{"RIGHT_ALT",GLFW_KEY_RIGHT_ALT},
+        {"UP",GLFW_KEY_UP},{"DOWN",GLFW_KEY_DOWN},
+        {"LEFT",GLFW_KEY_LEFT},{"RIGHT",GLFW_KEY_RIGHT},
+        {"F1",GLFW_KEY_F1},{"F2",GLFW_KEY_F2},{"F3",GLFW_KEY_F3},
+        {"F4",GLFW_KEY_F4},{"F5",GLFW_KEY_F5},{"F6",GLFW_KEY_F6},
+        {"F7",GLFW_KEY_F7},{"F8",GLFW_KEY_F8},{"F9",GLFW_KEY_F9},
+        {"F10",GLFW_KEY_F10},{"F11",GLFW_KEY_F11},{"F12",GLFW_KEY_F12},
+        {"APOSTROPHE",    GLFW_KEY_APOSTROPHE},
+        {"COMMA",         GLFW_KEY_COMMA},
+        {"MINUS",         GLFW_KEY_MINUS},
+        {"PERIOD",        GLFW_KEY_PERIOD},
+        {"SLASH",         GLFW_KEY_SLASH},
+        {"SEMICOLON",     GLFW_KEY_SEMICOLON},
+        {"EQUAL",         GLFW_KEY_EQUAL},
+        {"LEFT_BRACKET",  GLFW_KEY_LEFT_BRACKET},
+        {"BACKSLASH",     GLFW_KEY_BACKSLASH},
+        {"RIGHT_BRACKET", GLFW_KEY_RIGHT_BRACKET},
+        {"GRAVE_ACCENT",  GLFW_KEY_GRAVE_ACCENT},
+    };
 
-        auto it = keyMap.find(name);
-        if (it == keyMap.end()) return -1;
+    static const std::unordered_map<std::string, int> s_mouseMap = {
+        {"LEFT",  GLFW_MOUSE_BUTTON_LEFT},
+        {"RIGHT", GLFW_MOUSE_BUTTON_RIGHT},
+        {"MIDDLE",GLFW_MOUSE_BUTTON_MIDDLE},
+    };
+
+    static int ensureKey(const std::string& name) {
+        auto it = s_keyMap.find(name);
+        if (it == s_keyMap.end()) return -1;
         auto& inp = Core::Engine::Get().input();
         if (!inp.isKeyTracked(it->second))
             inp.trackKey(it->second);
@@ -616,15 +631,8 @@ namespace Scripting {
     }
 
     static int ensureMouse(const std::string& name) {
-        // Mouse button lookup table (not static to avoid teardown "leaks")
-        const std::unordered_map<std::string, int> mouseMap = {
-            {"LEFT",  GLFW_MOUSE_BUTTON_LEFT},
-            {"RIGHT", GLFW_MOUSE_BUTTON_RIGHT},
-            {"MIDDLE",GLFW_MOUSE_BUTTON_MIDDLE},
-        };
-
-        auto it = mouseMap.find(name);
-        if (it == mouseMap.end()) return -1;
+        auto it = s_mouseMap.find(name);
+        if (it == s_mouseMap.end()) return -1;
         auto& inp = Core::Engine::Get().input();
         if (!inp.isMouseButtonTracked(it->second))
             inp.trackMouseButton(it->second);
@@ -662,7 +670,7 @@ namespace Scripting {
     }
 
     void RegisterInputGlobal(sol::state& lua) {
-        sol::table t = lua.create_table();
+        auto t = lua.create_table();
         t.set_function("isKeyDown", &LuaIsKeyDown);
         t.set_function("wasKeyPressed", &LuaWasKeyPressed);
         t.set_function("wasKeyReleased", &LuaWasKeyReleased);
@@ -690,7 +698,7 @@ namespace Scripting {
     }
 
     void RegisterAudioGlobal(sol::state& lua) {
-        sol::table t = lua.create_table();
+        auto t = lua.create_table();
         t.set_function("play", &LuaAudioPlay);
         t.set_function("playOneShot", &LuaAudioPlayOneShot);
         t.set_function("stop", &LuaAudioStop);
@@ -746,9 +754,12 @@ namespace Scripting {
         std::cout << "[LuaBindings] Registered Audio global" << std::endl;
 
         // Create Engine global table for accessing engine services
-        sol::table engine = lua.create_table();
+        auto engine = lua.create_table();
         engine.set_function("input", &LuaGetInput);
         engine.set_function("mouseWorldPos", &LuaGetMouseWorldPosGlobal);
+        engine.set_function("triggerGameOver", []() {
+            Core::Engine::Get().setGameOverPending();
+        });
         lua["Engine"] = engine;
         std::cout << "[LuaBindings] Registered Engine global table" << std::endl;
 

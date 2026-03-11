@@ -146,18 +146,19 @@ static json SerializeWorld(ECS::World &world,
     }
 
     // TextRenderer
-    if (auto *tr = world.getComponent<Components::TextRenderer>(entity)) {
+    if (auto *textComp = world.getComponent<Components::TextRenderer>(entity)) {
       obj["components"]["textRenderer"] = {
-          {"text",             tr->text},
-          {"fontId",           tr->fontId},
-          {"fontSize",         tr->fontSize},
-          {"color",            {{"r", tr->color.r}, {"g", tr->color.g}, {"b", tr->color.b}}},
-          {"visible",          tr->visible},
-          {"boxSize",          {{"x", tr->boxSize.x}, {"y", tr->boxSize.y}}},
-          {"alignment",        static_cast<int>(tr->alignment)},
-          {"verticalAlignment",static_cast<int>(tr->verticalAlign)},
-          {"wordWrap",         tr->wordWrap},
-          {"lineSpacing",      tr->lineSpacing}};
+          {"text",             textComp->text},
+          {"fontId",           textComp->fontId},
+          {"fontSize",         textComp->fontSize},
+          {"color",            {{"r", textComp->color.r}, {"g", textComp->color.g}, {"b", textComp->color.b}}},
+          {"visible",          textComp->visible},
+          {"boxSize",          {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
+          {"alignment",        static_cast<int>(textComp->alignment)},
+          {"verticalAlignment",static_cast<int>(textComp->verticalAlign)},
+          {"wordWrap",         textComp->wordWrap},
+          {"lineSpacing",      textComp->lineSpacing},
+          {"padding",          {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
     }
 
     // LuaScript — stored as a JSON array of script entries
@@ -190,7 +191,7 @@ static json SerializeWorld(ECS::World &world,
     // UIButton
     if (auto *ub = world.getComponent<Components::UIButton>(entity)) {
       obj["components"]["uiButton"] = {
-          {"action",         ub->action},
+          {"uiScript",       ub->uiScript},
           {"interactable",   ub->interactable},
           {"showBackground", ub->showBackground},
           {"size",           {{"x", ub->size.x},   {"y", ub->size.y}}},
@@ -409,26 +410,30 @@ bool SceneSerializer::Deserialize(ECS::World &world,
 
       // TextRenderer
       if (components.contains("textRenderer")) {
-        auto &trc = components["textRenderer"];
-        Components::TextRenderer tr;
-        tr.text    = trc.value("text",    "");
-        tr.fontId  = trc.value("fontId",  "Debug");
-        tr.fontSize= trc.value("fontSize", 1.0f);
-        if (trc.contains("color")) {
-          tr.color.r = trc["color"].value("r", 1.0f);
-          tr.color.g = trc["color"].value("g", 1.0f);
-          tr.color.b = trc["color"].value("b", 1.0f);
+        auto &textRendererJson = components["textRenderer"];
+        Components::TextRenderer textComp;
+        textComp.text    = textRendererJson.value("text",    "");
+        textComp.fontId  = textRendererJson.value("fontId",  "Debug");
+        textComp.fontSize= textRendererJson.value("fontSize", 1.0f);
+        if (textRendererJson.contains("color")) {
+          textComp.color.r = textRendererJson["color"].value("r", 1.0f);
+          textComp.color.g = textRendererJson["color"].value("g", 1.0f);
+          textComp.color.b = textRendererJson["color"].value("b", 1.0f);
         }
-        tr.visible = trc.value("visible", true);
-        if (trc.contains("boxSize")) {
-          tr.boxSize.x = trc["boxSize"].value("x", 200.0f);
-          tr.boxSize.y = trc["boxSize"].value("y", 100.0f);
+        textComp.visible = textRendererJson.value("visible", true);
+        if (textRendererJson.contains("boxSize")) {
+          textComp.boxSize.x = textRendererJson["boxSize"].value("x", 200.0f);
+          textComp.boxSize.y = textRendererJson["boxSize"].value("y", 100.0f);
         }
-        tr.alignment     = static_cast<Components::TextAlignment>   (trc.value("alignment",          0));
-        tr.verticalAlign = static_cast<Components::VerticalAlignment>(trc.value("verticalAlignment", 0));
-        tr.wordWrap      = trc.value("wordWrap",    true);
-        tr.lineSpacing   = trc.value("lineSpacing", 1.0f);
-        world.addComponent(entity, tr);
+        textComp.alignment     = static_cast<Components::TextAlignment>   (textRendererJson.value("alignment",          0));
+        textComp.verticalAlign = static_cast<Components::VerticalAlignment>(textRendererJson.value("verticalAlignment", 0));
+        textComp.wordWrap      = textRendererJson.value("wordWrap",    true);
+        textComp.lineSpacing   = textRendererJson.value("lineSpacing", 1.0f);
+        if (textRendererJson.contains("padding")) {
+          textComp.padding.x = textRendererJson["padding"].value("x", 0.0f);
+          textComp.padding.y = textRendererJson["padding"].value("y", 0.0f);
+        }
+        world.addComponent(entity, textComp);
       }
 
       // LuaScript — supports new array format and old single-object format
@@ -478,7 +483,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("uiButton")) {
         auto &ub = components["uiButton"];
         Components::UIButton btn;
-        btn.action         = ub.value("action", "");
+        btn.uiScript       = ub.value("uiScript", "");
         btn.interactable   = ub.value("interactable", true);
         btn.showBackground = ub.value("showBackground", true);
         if (ub.contains("size")) {

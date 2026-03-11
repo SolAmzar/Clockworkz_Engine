@@ -16,6 +16,7 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Components/SpriteRenderer.hpp"
+#include "Components/TextRenderer.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Tag.hpp"
 #include "Components/Light.hpp"
@@ -142,6 +143,11 @@ float EntityRef::getLightOffsetX() const { auto* t = m_world ? m_world->getCompo
 float EntityRef::getLightOffsetY() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.y : 0.f; }
 void  EntityRef::setLightOffsetX(float x) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.x = x; }
 void  EntityRef::setLightOffsetY(float y) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.y = y; }
+
+// --- TextRenderer ---
+bool        EntityRef::hasTextRenderer() const { return m_world && m_world->hasComponent<Components::TextRenderer>(m_entity); }
+std::string EntityRef::getText()         const { auto* r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity) : nullptr; return r ? r->text : ""; }
+void        EntityRef::setText(const std::string& t) { auto* r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity) : nullptr; if (r) r->text = t; }
 
 // --- SpriteRenderer ---
 bool        EntityRef::hasSpriteRenderer() const { return m_world && m_world->hasComponent<Components::SpriteRenderer>(m_entity); }

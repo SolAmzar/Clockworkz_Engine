@@ -12,7 +12,7 @@ reserved.
 /******************************************************************************/
 
 #pragma once
-#include <glm/vec2.hpp>
+#include "Math/Vec2.hpp"
 #include <glm/vec3.hpp>
 #include <string>
 
@@ -29,7 +29,7 @@ struct TextRenderer {
     bool             visible{true};
 
     // Box that defines the text area
-    glm::vec2        boxSize{200.0f, 100.0f};
+    vec2             boxSize{200.0f, 100.0f};
 
     // Horizontal alignment drives the gizmo anchor:
     //   Left   → gizmo = left edge  (text extends right)
@@ -41,6 +41,9 @@ struct TextRenderer {
 
     bool             wordWrap    {true};   // wrap text to box width
     float            lineSpacing {1.0f};   // multiplier on line height
+
+    // Inner padding (pixels): x = left/right, y = top/bottom
+    vec2             padding     {0.0f, 0.0f};
 };
 
 } // namespace Components

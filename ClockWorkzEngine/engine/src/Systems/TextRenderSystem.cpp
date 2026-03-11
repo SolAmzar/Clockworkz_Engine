@@ -32,6 +32,7 @@ void TextRenderSystem::update(ECS::World &world,
   world.each<Components::Transform, Components::TextRenderer>(
       [&](ECS::Entity e, Components::Transform &transform,
           Components::TextRenderer &text) {
+        (void)e;
         if (!text.visible || text.text.empty())
           return;
 
@@ -64,8 +65,13 @@ void TextRenderSystem::update(ECS::World &world,
         }
         boxTop = transform.position.y;
 
-        font->RenderTextInBox(text.text, boxLeft, boxTop, boxW, boxH, scale,
-                              text.color, *shader,
+        // Apply padding: shrink the inner content area
+        float padX = text.padding.x * transform.scale.x;
+        float padY = text.padding.y * transform.scale.y;
+        font->RenderTextInBox(text.text,
+                              boxLeft + padX, boxTop - padY,
+                              boxW - padX * 2.0f, boxH - padY * 2.0f,
+                              scale, text.color, *shader,
                               static_cast<int>(text.alignment),
                               static_cast<int>(text.verticalAlign),
                               text.wordWrap,

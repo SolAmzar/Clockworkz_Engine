@@ -13,6 +13,7 @@ reserved.
 /******************************************************************************/
 
 #include "States/PauseState.hpp"
+#include "Scripting/LuaManager.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Audio/AudioManager.hpp"
@@ -118,26 +119,29 @@ void PauseState::applyHoverColors() {
   }
 }
 
-void PauseState::handleAction(const std::string &action) {
-  if (action == "resume") {
-    std::cout << "[PauseState] Resuming...\n";
-    m_gsm.pop();
-    return;
+void PauseState::handleButton(const Components::UIButton &btn) {
+  if (!btn.uiScript.empty()) {
+    Scripting::LuaManager &lua = Core::Engine::Get().lua();
+    sol::state &ls = lua.GetState();
+    ls["GSM"] = ls.create_table_with(
+      "pop", [&]() {
+        m_gsm.pop();
+      },
+      "switch_to_menu", [&]() {
+        m_gsm.switchToAndClear(std::make_shared<MenuState>(
+          m_gsm, m_input,
+          Core::Engine::Get().window(),
+          Core::Engine::Get().audio()));
+      },
+      "push_settings", [&]() {
+        m_gsm.push(std::make_shared<SettingsState>(
+          m_gsm, m_input, Core::Engine::Get().window(), m_audio));
+      }
+    );
+    if (lua.ExecuteScript("assets/scripts/" + btn.uiScript)) {
+      lua.CallFunction("on_click");
+    }
   }
-  if (action == "main_menu") {
-    std::cout << "[PauseState] Going to main menu...\n";
-    m_gsm.switchToAndClear(
-        std::make_shared<MenuState>(m_gsm, m_input,
-                                    Core::Engine::Get().window(),
-                                    Core::Engine::Get().audio()));
-    return;
-  }
-  if (action == "settings") {
-    m_gsm.push(std::make_shared<SettingsState>(
-        m_gsm, m_input, Core::Engine::Get().window(), m_audio));
-    return;
-  }
-  std::cout << "[PauseState] Unknown action: " << action << "\n";
 }
 
 void PauseState::update(double /*dt*/) {
@@ -177,7 +181,7 @@ void PauseState::update(double /*dt*/) {
       }
       if (clicked) {
         m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
-        handleAction(btn->action);
+        handleButton(*btn);
         return;
       }
     }
@@ -200,7 +204,7 @@ void PauseState::update(double /*dt*/) {
       m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
       auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[m_selected]);
-      if (btn) { handleAction(btn->action); return; }
+      if (btn) { handleButton(*btn); return; }
     }
   }
 

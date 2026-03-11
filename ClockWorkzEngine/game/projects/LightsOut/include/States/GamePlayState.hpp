@@ -13,6 +13,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
+#include <string>
 
 namespace Platform { class InputManager; class WindowManager; }
 namespace Runtime  { class GameStateManager; }
@@ -24,7 +25,8 @@ namespace Runtime {
 class GamePlayState final : public GameState {
 public:
   GamePlayState(GameStateManager& gsm, Platform::InputManager& input,
-                Platform::WindowManager& window);
+                Platform::WindowManager& window,
+                std::string startLevel = std::string(k_firstLevel));
   ~GamePlayState() = default;
 
   const char* name() const override { return "GamePlayState"; }
@@ -42,9 +44,11 @@ private:
   Graphics::Camera2D*         m_cam{nullptr};
 
   Runtime::Scene m_scene;
+  std::string    m_startLevel;   // level loaded on enter (default: k_firstLevel)
+  float          m_deathTimer{0.0f}; // counts up after Engine.triggerGameOver()
 
   // First level loaded on enter
-  static constexpr const char* k_firstLevel = "assets/scenes/level_save.json";
+  static constexpr const char* k_firstLevel  = "assets/scenes/level_save.json";
   // Sentinel value used in a Portal's levelName to signal "return to main menu"
   static constexpr const char* k_menuSentinel = "MAIN_MENU";
 };

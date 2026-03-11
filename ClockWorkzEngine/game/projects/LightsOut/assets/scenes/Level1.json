@@ -33,6 +33,10 @@
           {
             "enabled": true,
             "scriptPath": "player_controller.lua"
+          },
+          {
+            "enabled": true,
+            "scriptPath": "components/fragment_collector.lua"
           }
         ],
         "tag": {
@@ -17952,6 +17956,132 @@
         }
       },
       "name": "floor1"
+    },
+    {
+      "active": true,
+      "name": "FragmentManager",
+      "components": {
+        "transform": {
+          "pivot": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        "luaScript": [
+          {
+            "enabled": true,
+            "scriptPath": "fragment_system.lua"
+          }
+        ]
+      }
+    },
+    {
+      "active": true,
+      "name": "HUD_Battery",
+      "components": {
+        "transform": {
+          "pivot": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        "spriteRenderer": {
+          "textureId": "battery_full",
+          "uv": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "size": {
+            "x": 100.0,
+            "y": 50.0
+          },
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "unlit": true,
+          "visible": true,
+          "sortOrder": 10
+        },
+        "luaScript": [
+          {
+            "enabled": true,
+            "scriptPath": "ui/hud_battery.lua"
+          }
+        ]
+      }
+    },
+    {
+      "active": true,
+      "name": "HUD_FragmentCounter",
+      "components": {
+        "transform": {
+          "pivot": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "rotation": 0.0,
+          "scale": {
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        "textRenderer": {
+          "text": "0 / 0 fragments collected",
+          "fontId": "Debug",
+          "fontSize": 1.5,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0
+          },
+          "visible": true,
+          "boxSize": {
+            "x": 300.0,
+            "y": 60.0
+          },
+          "alignment": 0,
+          "verticalAlign": 0,
+          "wordWrap": false,
+          "lineSpacing": 1.0,
+          "padding": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "luaScript": [
+          {
+            "enabled": true,
+            "scriptPath": "ui/hud_fragment_counter.lua"
+          }
+        ]
+      }
     }
   ],
   "sfxVolume": 1.0,

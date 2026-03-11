@@ -21,6 +21,7 @@ Properties = {
 local PlayerController = {}
 
 -- Runtime state (not inspector properties)
+PlayerController._isDead          = false   -- guard: prevents double game-over trigger
 PlayerController.walkSpeed        = 10.0
 PlayerController.sprintMultiplier = 2.0
 PlayerController.baseWalkSpeed    = 10.0
@@ -179,9 +180,13 @@ end
 
 function PlayerController:onCollisionEnter(entity, other)
     if other:getTagValue() == "Enemy" then
-        if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
-            entity:playAnimation("death")
-            entity:setColliderSolid(false)
+        if not self._isDead then
+            self._isDead = true
+            if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
+                entity:playAnimation("death")
+                entity:setColliderSolid(false)
+            end
+            Engine.triggerGameOver()
         end
     end
 end

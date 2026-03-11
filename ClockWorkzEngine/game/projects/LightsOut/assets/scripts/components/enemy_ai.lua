@@ -1,8 +1,8 @@
 Properties = {
     { name = "state",            type = "string", default = "Patrol", label = "State" },
     { name = "detectionRadius",  type = "float",  default = 300.0,    label = "Detection Radius" },
-    { name = "chaseSpeed",       type = "float",  default = 150.0,    label = "Chase Speed" },
-    { name = "patrolSpeed",      type = "float",  default = 50.0,     label = "Patrol Speed" },
+    { name = "chaseSpeed",       type = "float",  default = 10.0,    label = "Chase Speed" },
+    { name = "patrolSpeed",      type = "float",  default = 5.0,     label = "Patrol Speed" },
     { name = "alertDuration",    type = "float",  default = 3.0,      label = "Alert Duration" },
     { name = "lightSensitivity", type = "float",  default = 0.3,      label = "Light Sensitivity" },
     { name = "wanderInterval",   type = "float",  default = 2.0,      label = "Wander Interval" },

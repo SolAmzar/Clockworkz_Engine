@@ -73,6 +73,7 @@ public:
   std::string GetPendingLevel() const { return m_pendingLevel; }
   void ClearPendingLevel() { m_pendingLevel.clear(); }
   void SetPendingLevel(const std::string& level) { m_pendingLevel = level; }
+  std::string GetCurrentLevelPath() const { return m_currentLevelPath; }
 
   // "SceneManager" Interface (Legacy/Manager expectation)
   bool load() {

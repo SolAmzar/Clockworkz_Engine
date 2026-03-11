@@ -752,6 +752,148 @@
                 }
             },
             "name": "Entity 9"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "fragment_system.lua"
+                    }
+                ],
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "FragmentManager"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "offsetX": 800.0,
+                            "offsetY": -420.0,
+                            "threshold1": 0.0,
+                            "threshold2": 25.0,
+                            "threshold3": 50.0,
+                            "threshold4": 75.0,
+                            "updateRate": 0.05000000074505806
+                        },
+                        "scriptPath": "ui/hud_battery.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 200.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "battery_full",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "HUD_Battery"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "offsetX": -830.0,
+                            "offsetY": -420.0
+                        },
+                        "scriptPath": "ui/hud_fragment_counter.lua"
+                    }
+                ],
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 300.0,
+                        "y": 60.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Debug",
+                    "fontSize": 1.5,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "0 / 0 fragments collected",
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "HUD_FragmentCounter"
         }
     ],
     "sfxVolume": 1.0,

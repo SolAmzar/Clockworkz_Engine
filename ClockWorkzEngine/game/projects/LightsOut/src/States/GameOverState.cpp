@@ -2,148 +2,212 @@
 /*!
 \file           GameOverState.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 90% [Lebon] 10%
-\brief          Implements GameOverState, the game over screen.
+\author(s)      [Syafiq]
+\brief          Lose screen implementation. Loads LoseScreen.json and dispatches
+                UIButton clicks via Lua scripts (btn_retry, btn_main_menu).
+                R key shortcuts to retry without needing a button click.
 
-All content c 2025 DigiPen Institute of Technology Singapore. All rights
-reserved.
+All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
-
 #include "States/GameOverState.hpp"
+#include "States/GamePlayState.hpp"
+#include "States/MenuState.hpp"
+#include "Scripting/LuaManager.hpp"
+#include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
+#include "Assets/SoundManager.hpp"
+#include "Assets/TextureManager.hpp"
+#include "Components/SpriteRenderer.hpp"
+#include "Components/Tag.hpp"
+#include "Components/TextRenderer.hpp"
+#include "Components/Transform.hpp"
 #include "Core/Engine.hpp"
-#include "IMGUI/imgui.h"
+#include "Graphics/Camera2D.hpp"
+#include "Graphics/RenderingManager.hpp"
+#include "Graphics/Shader.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "States/MenuState.hpp"
-#include "States/PlayState.hpp"
+#include "Runtime/SceneSerializer.hpp"
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <glm/glm.hpp>
 #include <iostream>
+#include <memory>
+
+using Assets::ResourceManager;
+using Graphics::Shader;
 
 namespace Runtime {
 
-GameOverState::GameOverState(GameStateManager &gsm,
-                             Platform::InputManager &input,
-                             const std::string &sceneId)
-    : m_gsm(gsm), m_input(input), m_sceneId(sceneId), m_fadeAlpha(0.0f),
-      m_restartRequested(false), m_menuRequested(false) {}
-
-GameOverState::~GameOverState() {}
-
-const char *GameOverState::name() const { return "GameOverState"; }
+GameOverState::GameOverState(GameStateManager& gsm,
+                             Platform::InputManager& input,
+                             const std::string& currentLevelPath)
+    : m_gsm(gsm), m_input(input), m_currentLevelPath(currentLevelPath) {}
 
 void GameOverState::onEnter() {
-  std::cout << "[GameOverState] Entered\n";
-  m_fadeAlpha = 0.0f;
-  m_restartRequested = false;
-  m_menuRequested = false;
+    std::cout << "[GameOverState] Entered — level to retry: " << m_currentLevelPath << "\n";
+    m_selected = -1;
+    m_buttonEntities.clear();
+
+    Core::Engine& engine = Core::Engine::Get();
+    m_renderer = &engine.rendering();
+    m_cam      = &engine.camera();
+
+    Assets::FontManager::LoadFromConfig("assets/configs/fonts.json");
+    ResourceManager<Shader>::Load("text",    "assets/shaders/text.vert",    "assets/shaders/text.frag");
+    ResourceManager<Shader>::Load("texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
+    Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
+
+    m_loseScene.Init();
+    m_loseScene.LoadFromFile("assets/scenes/LoseScreen.json");
+
+    collectButtons();
+    updateLayout(engine.window().width(), engine.window().height());
+
+    engine.events().subscribe<Core::WindowResizeEvent>(
+        this, [this](const Core::WindowResizeEvent& e) {
+            if (e.width > 0 && e.height > 0)
+                updateLayout(e.width, e.height);
+        });
 }
 
-void GameOverState::onExit() { std::cout << "[GameOverState] Exited\n"; }
-
-void GameOverState::update(double dt) {
-  // Fade in effect
-  if (m_fadeAlpha < 1.0f) {
-    m_fadeAlpha += static_cast<float>(dt * 2.0f);
-    if (m_fadeAlpha > 1.0f)
-      m_fadeAlpha = 1.0f;
-  }
-
-  // Handle input
-  if (m_input.wasKeyPressed(GLFW_KEY_R) ||
-      m_input.wasKeyPressed(GLFW_KEY_ENTER)) {
-    std::cout << "[GameOverState] Restart requested\n";
-    m_restartRequested = true;
-  }
-
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
-      m_input.wasKeyPressed(GLFW_KEY_M)) {
-    std::cout << "[GameOverState] Return to menu requested\n";
-    m_menuRequested = true;
-  }
-
-  // Process state transitions
-  if (m_restartRequested) {
-    m_gsm.pop(); // Remove GameOverState
-    m_gsm.pop(); // Remove PlayState
-    m_gsm.push(std::make_shared<PlayState>(m_sceneId, m_input, m_gsm));
-    std::cout << "[GameOverState] Restarting PlayState...\n";
-    return;
-  } else if (m_menuRequested) {
-    m_gsm.pop(); // Remove GameOverState
-    m_gsm.pop(); // Remove PlayState
-    return;
-  }
+void GameOverState::updateLayout(int w, int h) {
+    float zoom = std::min((float)w / 1920.f, (float)h / 1080.f);
+    m_cam->setViewport(w, h);
+    m_cam->setPosition({0.f, 0.f});
+    m_cam->setZoom(zoom);
+    glViewport(0, 0, w, h);
 }
 
-void GameOverState::render(Core::Time *timer) {
-  (void)timer;
-  // The PlayState underneath will still render the game world
-  // We just overlay the game over UI in renderImGui
+void GameOverState::collectButtons() {
+    m_buttonEntities.clear();
+    m_loseScene.GetWorld().each<Components::UIButton>(
+        [this](ECS::Entity e, Components::UIButton&) {
+            m_buttonEntities.push_back(e);
+        });
 }
 
-void GameOverState::renderImGui(Core::Time *timer) {
-  (void)timer;
-  Core::Engine &engine = Core::Engine::Get();
-  auto &window = engine.window();
+void GameOverState::applyHoverColors() {
+    for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
+        ECS::Entity e    = m_buttonEntities[i];
+        auto* btn    = m_loseScene.GetWorld().getComponent<Components::UIButton>(e);
+        auto* sprite = m_loseScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
+        auto* text   = m_loseScene.GetWorld().getComponent<Components::TextRenderer>(e);
+        if (!btn) continue;
+        glm::vec3 c = (m_selected == i) ? btn->hoverColor : btn->normalColor;
+        if (text)   text->color   = c;
+        if (sprite && !btn->showBackground) sprite->visible = false;
+    }
+}
 
-  // Get window dimensions
-  float windowWidth = static_cast<float>(window.width());
-  float windowHeight = static_cast<float>(window.height());
+void GameOverState::handleButton(const Components::UIButton& btn) {
+    if (!btn.uiScript.empty()) {
+        Scripting::LuaManager& lua = Core::Engine::Get().lua();
+        sol::state& ls = lua.GetState();
+        auto& window = Core::Engine::Get().window();
+        auto& audio  = Core::Engine::Get().audio();
+        ls["GSM"] = ls.create_table_with(
+            "retry", [&]() {
+                m_gsm.switchToAndClear(std::make_shared<GamePlayState>(
+                    m_gsm, m_input, window, m_currentLevelPath));
+            },
+            "switch_to_menu", [&]() {
+                m_gsm.switchToAndClear(std::make_shared<MenuState>(
+                    m_gsm, m_input, window, audio));
+            }
+        );
+        if (lua.ExecuteScript("assets/scripts/" + btn.uiScript))
+            lua.CallFunction("on_click");
+    }
+}
 
-  // Create a fullscreen semi-transparent overlay
-  ImGui::SetNextWindowPos(ImVec2(0, 0));
-  ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
-  ImGui::Begin("GameOverOverlay", nullptr,
-               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                   ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+void GameOverState::update(double /*dt*/) {
+    Core::Engine& engine = Core::Engine::Get();
+    int w = engine.window().width();
+    int h = engine.window().height();
 
-  // Draw dark overlay
-  ImDrawList *drawList = ImGui::GetWindowDrawList();
-  ImU32 overlayColor = ImGui::ColorConvertFloat4ToU32(
-      ImVec4(0.0f, 0.0f, 0.0f, 0.7f * m_fadeAlpha));
-  drawList->AddRectFilled(ImVec2(0, 0), ImVec2(windowWidth, windowHeight),
-                          overlayColor);
+    // R key shortcut — retry without needing a button click
+    if (m_input.wasKeyPressed(GLFW_KEY_R)) {
+        m_gsm.switchToAndClear(std::make_shared<GamePlayState>(
+            m_gsm, m_input, engine.window(), m_currentLevelPath));
+        return;
+    }
+    // ESC / M — return to main menu
+    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) || m_input.wasKeyPressed(GLFW_KEY_M)) {
+        m_gsm.switchToAndClear(std::make_shared<MenuState>(
+            m_gsm, m_input, engine.window(), engine.audio()));
+        return;
+    }
 
-  ImGui::End();
+    vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
+    bool clicked    = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
+    bool mouseHover = false;
 
-  // Create game over text window
-  ImGui::PushStyleColor(ImGuiCol_WindowBg,
-                        ImVec4(0, 0, 0, 0)); // Transparent background
-  ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0)); // No border
+    for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
+        ECS::Entity e  = m_buttonEntities[i];
+        auto* btn = m_loseScene.GetWorld().getComponent<Components::UIButton>(e);
+        auto* tf  = m_loseScene.GetWorld().getComponent<Components::Transform>(e);
+        if (!btn || !tf || !btn->interactable) continue;
 
-  ImGui::SetNextWindowPos(
-      ImVec2(windowWidth * 0.5f - 200, windowHeight * 0.35f));
-  ImGui::SetNextWindowSize(ImVec2(400, 200));
-  ImGui::Begin("GameOverText", nullptr,
-               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar);
+        float cx    = tf->position.x + btn->offset.x;
+        float cy    = tf->position.y + btn->offset.y;
+        float halfW = btn->size.x * 0.5f;
+        float halfH = btn->size.y * 0.5f;
+        bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
+                        mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
+        if (hovered) {
+            mouseHover = true;
+            if (m_selected != i) {
+                m_selected = i;
+                Assets::SoundManager::Play("ui_move");
+            }
+            if (clicked) {
+                Assets::SoundManager::Play("ui_select");
+                handleButton(*btn);
+                return;
+            }
+        }
+    }
+    if (!mouseHover) m_selected = -1;
 
-  // "GAME OVER" text in red
-  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, m_fadeAlpha));
-  ImGui::SetWindowFontScale(3.0f);
-  ImGui::Text("GAME OVER");
-  ImGui::SetWindowFontScale(1.0f);
-  ImGui::PopStyleColor();
+    // Keyboard navigation
+    if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
+        Assets::SoundManager::Play("ui_move");
+        if (--m_selected < 0) m_selected = (int)m_buttonEntities.size() - 1;
+    }
+    if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
+        Assets::SoundManager::Play("ui_move");
+        if (++m_selected >= (int)m_buttonEntities.size()) m_selected = 0;
+    }
+    if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
+        if (m_selected >= 0 && m_selected < (int)m_buttonEntities.size()) {
+            Assets::SoundManager::Play("ui_select");
+            auto* btn = m_loseScene.GetWorld().getComponent<Components::UIButton>(
+                m_buttonEntities[m_selected]);
+            if (btn) { handleButton(*btn); return; }
+        }
+    }
 
-  ImGui::Spacing();
-  ImGui::Spacing();
-  ImGui::Separator();
-  ImGui::Spacing();
+    applyHoverColors();
+}
 
-  // Instructions in white
-  ImGui::PushStyleColor(ImGuiCol_Text,
-                        ImVec4(1.0f, 1.0f, 1.0f, m_fadeAlpha * 0.9f));
-  ImGui::SetWindowFontScale(1.2f);
-  ImGui::Text("Press [R] or [ENTER] to Restart");
-  ImGui::Text("Press [ESC] or [M] for Menu");
-  ImGui::SetWindowFontScale(1.0f);
-  ImGui::PopStyleColor();
+void GameOverState::render(Core::Time* /*timer*/) {
+    int w = (int)Core::Engine::Get().window().width();
+    int h = (int)Core::Engine::Get().window().height();
+    glViewport(0, 0, w, h);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-  ImGui::End();
-  ImGui::PopStyleColor(2); // Pop the window style colors
+    m_loseScene.RenderAll(*m_renderer, m_cam->viewProj());
+}
+
+void GameOverState::onExit() {
+    Core::Engine::Get().events().unsubscribeOwner(this);
+    m_loseScene.Clear();
+    std::cout << "[GameOverState] Exited\n";
 }
 
 } // namespace Runtime

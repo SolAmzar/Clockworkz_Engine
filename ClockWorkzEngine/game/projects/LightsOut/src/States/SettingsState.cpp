@@ -13,6 +13,7 @@ reserved.
 */
 /******************************************************************************/
 #include "States/SettingsState.hpp"
+#include "Scripting/LuaManager.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/TextureManager.hpp"
@@ -119,12 +120,17 @@ void SettingsState::applyHoverColors() {
     }
 }
 
-void SettingsState::handleAction(const std::string &action) {
-    if (action == "back") {
-        m_gsm.pop();
-        return;
+void SettingsState::handleButton(const Components::UIButton &btn) {
+    if (!btn.uiScript.empty()) {
+        Scripting::LuaManager &lua = Core::Engine::Get().lua();
+        sol::state &ls = lua.GetState();
+        ls["GSM"] = ls.create_table_with(
+            "pop", [&]() { m_gsm.pop(); }
+        );
+        if (lua.ExecuteScript("assets/scripts/" + btn.uiScript)) {
+            lua.CallFunction("on_click");
+        }
     }
-    std::cout << "[SettingsState] Unknown action: " << action << "\n";
 }
 
 void SettingsState::update(double /*dt*/) {
@@ -161,7 +167,7 @@ void SettingsState::update(double /*dt*/) {
             mouseHover = true;
             m_selected = i;
             if (clicked) {
-                handleAction(btn->action);
+                handleButton(*btn);
                 return;
             }
         }
@@ -181,7 +187,7 @@ void SettingsState::update(double /*dt*/) {
         if (!m_buttonEntities.empty()) {
             auto *btn = m_scene.GetWorld().getComponent<Components::UIButton>(
                 m_buttonEntities[m_selected]);
-            if (btn) { handleAction(btn->action); return; }
+            if (btn) { handleButton(*btn); return; }
         }
     }
 

@@ -1,0 +1,70 @@
+-- *****************************************************************************
+-- file           hud_battery.lua
+-- project        Lights Out
+-- brief          HUD sprite that swaps between 5 battery textures based on the
+--                player's current charge level. Follows the camera (which tracks
+--                the player) by repositioning itself via offsetX/offsetY each frame.
+--
+-- All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+-- *****************************************************************************
+
+Properties = {
+    -- Position relative to player (= camera centre) in world units
+    { name = "offsetX",    type = "float", default = 800.0, label = "Screen Offset X"     },
+    { name = "offsetY",    type = "float", default =  -420.0, label = "Screen Offset Y"     },
+    -- Charge % above which each texture is shown (battery.lua charge is 0–100)
+    { name = "threshold4", type = "float", default =  75.0,  label = "Full Threshold %"    },
+    { name = "threshold3", type = "float", default =  50.0,  label = "3/4 Threshold %"     },
+    { name = "threshold2", type = "float", default =  25.0,  label = "Half Threshold %"    },
+    { name = "threshold1", type = "float", default =   0.0,  label = "Low Threshold %"     },
+    -- Seconds between texture checks (0 = every frame)
+    { name = "updateRate", type = "float", default =   0.05, label = "Update Interval (s)" },
+}
+
+local HudBattery = {}
+HudBattery._timer = 0.0
+
+-- Texture IDs (registered in Textures.json) → source assets:
+--   "battery_full"  → energy 4.png
+--   "battery_3/4"   → energy 3.png
+--   "battery_2/4"   → energy 2.png
+--   "battery_1/4"   → energy 1.png
+--   "battery_empty" → energy flat.png
+
+function HudBattery:onUpdate(entity, dt)
+    local player = World.findByTag("Player")
+    if not player or not player:isValid() then return end
+
+    -- Keep HUD at a fixed screen position by tracking player (= camera) position
+    entity.position = Vec2(player.position.x + self.offsetX,
+                           player.position.y + self.offsetY)
+
+    -- Throttle the texture-swap check
+    self._timer = self._timer + dt
+    if self._timer < self.updateRate then return end
+    self._timer = 0.0
+
+    -- Select texture from inspector-configurable thresholds
+    local thresholds = {
+        { threshold = self.threshold4, id = "battery_full"  },
+        { threshold = self.threshold3, id = "battery_3/4"   },
+        { threshold = self.threshold2, id = "battery_2/4"   },
+        { threshold = self.threshold1, id = "battery_1/4"   },
+        { threshold = -1.0,            id = "battery_empty" },
+    }
+
+    local charge = player:hasBattery() and player:getBatteryCharge() or 100.0
+    local texId = "battery_empty"
+    for _, entry in ipairs(thresholds) do
+        if charge > entry.threshold then
+            texId = entry.id
+            break
+        end
+    end
+
+    if entity:hasSpriteRenderer() and entity:getSpriteTextureId() ~= texId then
+        entity:setSpriteTextureId(texId)
+    end
+end
+
+return HudBattery

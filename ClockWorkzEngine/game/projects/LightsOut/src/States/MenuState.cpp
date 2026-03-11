@@ -14,6 +14,7 @@ reserved.
 
 #include "States/MenuState.hpp"
 #include "States/GamePlayState.hpp"
+#include "Scripting/LuaManager.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/SoundManager.hpp"
@@ -123,29 +124,37 @@ void MenuState::applyHoverColors() {
   }
 }
 
-void MenuState::handleAction(const std::string &action) {
-  if (action == "start_game") {
-    m_gsm.switchTo(std::make_shared<GamePlayState>(m_gsm, m_input, m_window));
-    return;
+void MenuState::handleButton(const Components::UIButton &btn) {
+  if (!btn.uiScript.empty()) {
+    Scripting::LuaManager &lua = Core::Engine::Get().lua();
+    sol::state &ls = lua.GetState();
+    ls["GSM"] = ls.create_table_with(
+      "switch_to_gameplay", [&]() {
+        m_gsm.switchTo(std::make_shared<GamePlayState>(m_gsm, m_input, m_window));
+      },
+      "push_settings", [&]() {
+        m_gsm.push(std::make_shared<SettingsState>(m_gsm, m_input, m_window, m_audio));
+      },
+      "quit", [&]() {
+        Core::Engine::Get().events().publish(Core::QuitGameEvent{});
+      },
+      "show_overlay", [&](const std::string &tag) {
+        m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+          [&tag](ECS::Entity, Components::Tag &t, Components::SpriteRenderer &s) {
+            if (t.tag == tag) s.visible = true;
+          });
+      },
+      "hide_overlay", [&](const std::string &tag) {
+        m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+          [&tag](ECS::Entity, Components::Tag &t, Components::SpriteRenderer &s) {
+            if (t.tag == tag) s.visible = false;
+          });
+      }
+    );
+    if (lua.ExecuteScript("assets/scripts/" + btn.uiScript)) {
+      lua.CallFunction("on_click");
+    }
   }
-  if (action == "exit") {
-    Core::Engine::Get().events().publish(Core::QuitGameEvent());
-    return;
-  }
-  if (action == "how_to_play") {
-    // Show the howtoplay_overlay entity
-    m_showingHowToPlay = true;
-    m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-        [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sprite) {
-          if (tag.tag == "howtoplay_overlay") sprite.visible = true;
-        });
-    return;
-  }
-  if (action == "settings") {
-    m_gsm.push(std::make_shared<SettingsState>(m_gsm, m_input, m_window, m_audio));
-    return;
-  }
-  std::cout << "[MenuState] Action: " << action << " (not implemented)\n";
 }
 
 void MenuState::update(double /*dt*/) {
@@ -197,7 +206,7 @@ void MenuState::update(double /*dt*/) {
       }
       if (clicked) {
         Assets::SoundManager::Play("ui_select");
-        handleAction(btn->action);
+        handleButton(*btn);
         return;
       }
     }
@@ -220,7 +229,7 @@ void MenuState::update(double /*dt*/) {
       Assets::SoundManager::Play("ui_select");
       auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[m_selected]);
-      if (btn) { handleAction(btn->action); return; }
+      if (btn) { handleButton(*btn); return; }
     }
   }
 

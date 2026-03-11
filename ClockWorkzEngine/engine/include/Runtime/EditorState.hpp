@@ -22,6 +22,7 @@ reserved.
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Platform { class InputManager; }
@@ -84,6 +85,14 @@ private:
         std::string              name;
         std::vector<ECS::Entity> entities;
     };
+
+    // --- Hierarchy groups (folders) ---
+    struct HierarchyGroup {
+        std::string           name{"Group"};
+        std::vector<uint32_t> entityIds;   // stored as IDs (generation-independent)
+        bool                  collapsed{false};
+        int                   sortOrderBase{0};
+    };
     enum class PaintMode { Paint, Erase, Select };
 
     // ----- Tilemap helpers -----
@@ -116,6 +125,15 @@ private:
     ECS::Entity             m_selectedEntity{0, 0};
     std::vector<ECS::Entity> m_selectedEntities;    // all selected (incl. primary)
 
+    // ----- Hierarchy ordering & groups -----
+    std::vector<uint32_t>        m_hierarchyOrder;   // all entity IDs in display order
+    std::vector<HierarchyGroup>  m_hierarchyGroups;  // folder groups
+    int                          m_selectedGroupIdx{-1};
+    int                          m_renamingGroupIdx{-1};
+
+    // ----- Hidden entities (editor-only, not saved as gameplay data) -----
+    std::unordered_set<uint32_t> m_hiddenEntities;
+
     // ----- Viewport -----
     vec2                    m_viewportSize{800.0f, 600.0f};
     bool                    m_viewportFocused{false};
@@ -137,6 +155,9 @@ private:
 
     // ----- UIButton hit-area debug -----
     bool                    m_showUIButtons{false};
+
+    // ----- TextRenderer box debug -----
+    bool                    m_showTextBoxes{false};
 
     // ----- Stats memory graph -----
     float                   m_statsHistory[128]{};
@@ -294,6 +315,9 @@ private:
     bool                    m_isRenaming{false};
     ECS::Entity             m_renamingEntity{0, 0};
     char                    m_renameBuffer[256]{};
+
+    // ----- Hierarchy multi-select anchor (shift+click range) -----
+    uint32_t                m_lastAnchorId{0};  // ID of the last plain-clicked entity
 };
 
 } // namespace Runtime

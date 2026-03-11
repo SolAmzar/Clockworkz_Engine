@@ -436,11 +436,16 @@
                         "g": 1.0,
                         "r": 1.0
                     },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "showBackground": true,
                     "size": {
                         "x": 280.0,
                         "y": 60.0
-                    }
+                    },
+                    "uiScript": "ui/btn_back.lua"
                 }
             },
             "name": "Btn_Back"

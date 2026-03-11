@@ -19,12 +19,18 @@ reserved.
 #pragma once
 #include <string>
 #include <unordered_map>
-#include <variant>
 #include <vector>
+#ifndef __INTELLISENSE__
+#include <variant>
+#endif
 
 namespace Components {
 
+#ifdef __INTELLISENSE__
+struct ScriptPropValue { float f{}; int i{}; bool b{}; std::string s{}; };
+#else
 using ScriptPropValue = std::variant<float, int, bool, std::string>;
+#endif
 
 // One script slot — an entity can have many of these.
 struct LuaScriptEntry {
