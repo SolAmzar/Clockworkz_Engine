@@ -20,11 +20,12 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Scripting/LuaManager.hpp"
 #include "Scripting/EntityRef.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/FootstepAudio.hpp"
 
 namespace Scripting {
 
 // ---------------------------------------------------------------------------
-// Property accessor helpers â€” read/write typed values from a script entry
+// Property accessor helpers — read/write typed values from a script entry
 // ---------------------------------------------------------------------------
 static float getPropF(EntityRef& e, const char* path, const char* key, float def = 0.f) {
     auto* entry = e.findScriptEntry(path);
@@ -139,8 +140,12 @@ void RegisterGameBindings(LuaManager& luaMgr) {
     er["setInLight"]            = [](EntityRef& e, bool v) { setPropB(e, "components/light_exposure.lua", "inLight", v); };
     er["isExposureDangerous"]   = [](EntityRef& e) { return getPropB(e, "components/light_exposure.lua", "isDangerous"); };
 
-    // --- PlayerController â€” tag-based check (player_controller.lua) ---
+    // --- PlayerController — tag-based check (player_controller.lua) ---
     er["hasPlayerController"]   = [](EntityRef& e) { return e.hasScript("player_controller.lua"); };
+    er["hasFootstepAudio"]      = [](EntityRef& e) {
+        auto* world = e.getWorld();
+        return world && world->hasComponent<Components::FootstepAudio>(e.getEntity());
+    };
 }
 
 } // namespace Scripting

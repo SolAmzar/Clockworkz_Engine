@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           AudioManager.hpp
 \project        Lights Out
@@ -13,7 +13,7 @@
 pausing
                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -60,8 +60,12 @@ public:
 
   // Playback
   int play(const std::string &id, Group group, float volume, bool paused);
+  int playAt(const std::string &id, const vec3 &pos, Group group, float volume,
+             bool paused = false);
   void playOneShot(const std::string &id, Group group = Group::SFX,
                    float volume = 1.0f);
+  void playOneShotAt(const std::string &id, const vec3 &pos,
+                     Group group = Group::SFX, float volume = 1.0f);
 
   // Stop control
   void stop(std::string const &name); // stop a specific playing sound by key

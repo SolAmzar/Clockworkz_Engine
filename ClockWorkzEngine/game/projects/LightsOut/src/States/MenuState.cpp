@@ -14,6 +14,7 @@ reserved.
 
 #include "States/MenuState.hpp"
 #include "States/GamePlayState.hpp"
+#include "States/OptionsState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/SoundManager.hpp"
@@ -40,6 +41,7 @@ reserved.
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <cctype>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -56,6 +58,29 @@ float s_menuSfxVolume = 1.0f;
 
 float clampVolume(float value) {
   return std::clamp(value, 0.0f, 1.0f);
+}
+
+struct RectBounds {
+  float centerX;
+  float centerY;
+  float width;
+  float height;
+};
+
+bool containsPoint(const RectBounds &rect, const vec2 &point) {
+  const float halfW = rect.width * 0.5f;
+  const float halfH = rect.height * 0.5f;
+  return point.x >= rect.centerX - halfW && point.x <= rect.centerX + halfW &&
+         point.y >= rect.centerY - halfH && point.y <= rect.centerY + halfH;
+}
+
+bool isOptionsEntityTag(const std::string &tag) {
+  std::string lowered = tag;
+  std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                 [](unsigned char ch) {
+                   return static_cast<char>(std::tolower(ch));
+                 });
+  return lowered.find("options") != std::string::npos;
 }
 } // namespace
 
@@ -243,17 +268,17 @@ void MenuState::openOptions() {
   setMenuButtonsVisible(false);
   setOverlayVisible("options_overlay", true);
 
-  const char *optionTags[] = {
-      "options_title",      "options_bgm_label", "options_sfx_label",
-      "options_bgm_value",  "options_sfx_value", "options_back_label",
-      "options_help"};
   m_menuScene.GetWorld().each<Components::Tag, Components::TextRenderer>(
       [&](ECS::Entity, Components::Tag &tag, Components::TextRenderer &tr) {
-        for (const char *optionTag : optionTags) {
-          if (tag.tag == optionTag) {
-            tr.visible = true;
-            break;
-          }
+        if (isOptionsEntityTag(tag.tag)) {
+          tr.visible = true;
+        }
+      });
+
+  m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+      [&](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sr) {
+        if (isOptionsEntityTag(tag.tag)) {
+          sr.visible = true;
         }
       });
 }
@@ -263,35 +288,51 @@ void MenuState::closeOptions() {
   setOverlayVisible("options_overlay", false);
   setMenuButtonsVisible(true);
 
-  const char *optionTags[] = {
-      "options_title",      "options_bgm_label", "options_sfx_label",
-      "options_bgm_value",  "options_sfx_value", "options_back_label",
-      "options_help"};
   m_menuScene.GetWorld().each<Components::Tag, Components::TextRenderer>(
       [&](ECS::Entity, Components::Tag &tag, Components::TextRenderer &tr) {
-        for (const char *optionTag : optionTags) {
-          if (tag.tag == optionTag) {
-            tr.visible = false;
-            break;
-          }
+        if (isOptionsEntityTag(tag.tag)) {
+          tr.visible = false;
+        }
+      });
+
+  m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+      [&](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sr) {
+        if (isOptionsEntityTag(tag.tag)) {
+          sr.visible = false;
         }
       });
 }
 
-void MenuState::adjustOptionVolume(float delta) {
-  if (m_optionsSelected == 0) {
-    s_menuBgmVolume = clampVolume(s_menuBgmVolume + delta);
+void MenuState::setOptionVolume(int optionIndex, float value) {
+  const float clampedValue = clampVolume(value);
+
+  if (optionIndex == 0) {
+    if (s_menuBgmVolume == clampedValue) {
+      return;
+    }
+    s_menuBgmVolume = clampedValue;
     GlobalAudioSettings::SetBGMVolume(s_menuBgmVolume);
-    GlobalAudioSettings::Apply(m_audio);
-    GlobalAudioSettings::Save();
-  } else if (m_optionsSelected == 1) {
-    s_menuSfxVolume = clampVolume(s_menuSfxVolume + delta);
+  } else if (optionIndex == 1) {
+    if (s_menuSfxVolume == clampedValue) {
+      return;
+    }
+    s_menuSfxVolume = clampedValue;
     GlobalAudioSettings::SetSFXVolume(s_menuSfxVolume);
-    GlobalAudioSettings::Apply(m_audio);
-    GlobalAudioSettings::Save();
+  } else {
+    return;
   }
 
+  GlobalAudioSettings::Apply(m_audio);
+  GlobalAudioSettings::Save();
   updateOptionsOverlayText();
+}
+
+void MenuState::adjustOptionVolume(float delta) {
+  if (m_optionsSelected == 0) {
+    setOptionVolume(0, s_menuBgmVolume + delta);
+  } else if (m_optionsSelected == 1) {
+    setOptionVolume(1, s_menuSfxVolume + delta);
+  }
 }
 
 void MenuState::renderVolumeBar(float centerX, float centerY, float width,
@@ -315,9 +356,6 @@ void MenuState::renderVolumeBar(float centerX, float centerY, float width,
 }
 
 void MenuState::renderOptionsOverlay() {
-  m_renderer->drawFilledRect(0.0f, 0.0f, 1920.0f, 1080.0f, 0.0f, 0.0f, 0.0f);
-  m_renderer->drawFilledRect(0.0f, 0.0f, 1120.0f, 760.0f, 0.08f, 0.06f, 0.09f);
-  m_renderer->drawFilledRect(0.0f, 250.0f, 1120.0f, 110.0f, 0.16f, 0.08f, 0.10f);
 
   auto renderBarFromScene = [this](const char *tagName, float value,
                                    bool selected, float fallbackX,
@@ -393,7 +431,68 @@ void MenuState::update(double /*dt*/) {
   }
 
   if (m_showingOptions) {
+    vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
+    const bool mousePressed = m_input.wasMousePressed(GLFW_MOUSE_BUTTON_LEFT);
+    const bool mouseDown = m_input.isMouseDown(GLFW_MOUSE_BUTTON_LEFT);
     bool movedSelection = false;
+
+    auto getSpriteRectByTag = [this](const char *tagName, const RectBounds &fallback) {
+      RectBounds rect = fallback;
+      m_menuScene.GetWorld().each<Components::Tag, Components::Transform,
+                                  Components::SpriteRenderer>(
+          [&](ECS::Entity, Components::Tag &tag, Components::Transform &transform,
+              Components::SpriteRenderer &sr) {
+            if (tag.tag == tagName) {
+              rect.centerX = transform.position.x;
+              rect.centerY = transform.position.y;
+              rect.width = sr.size.x;
+              rect.height = sr.size.y;
+            }
+          });
+      return rect;
+    };
+
+    auto getTextRectByTag = [this](const char *tagName, const RectBounds &fallback) {
+      RectBounds rect = fallback;
+      m_menuScene.GetWorld().each<Components::Tag, Components::Transform,
+                                  Components::TextRenderer>(
+          [&](ECS::Entity, Components::Tag &tag, Components::Transform &transform,
+              Components::TextRenderer &tr) {
+            if (tag.tag == tagName) {
+              rect.centerX = transform.position.x;
+              rect.centerY = transform.position.y;
+              if (tr.boxSize.x > 0.0f) {
+                rect.width = tr.boxSize.x;
+              }
+              if (tr.boxSize.y > 0.0f) {
+                rect.height = tr.boxSize.y;
+              }
+            }
+          });
+      return rect;
+    };
+
+    const RectBounds bgmRect = getSpriteRectByTag(
+        "options_bgm_bar", RectBounds{180.0f, 100.0f, 480.0f, 48.0f});
+    const RectBounds sfxRect = getSpriteRectByTag(
+        "options_sfx_bar", RectBounds{180.0f, -35.0f, 480.0f, 48.0f});
+    const RectBounds backRect = getTextRectByTag(
+        "options_back_label", RectBounds{0.0f, -225.0f, 220.0f, 56.0f});
+
+    int hoveredOption = -1;
+    if (containsPoint(bgmRect, mouseWorld)) {
+      hoveredOption = 0;
+    } else if (containsPoint(sfxRect, mouseWorld)) {
+      hoveredOption = 1;
+    } else if (containsPoint(backRect, mouseWorld)) {
+      hoveredOption = 2;
+    }
+
+    if (hoveredOption >= 0 && hoveredOption != m_optionsSelected) {
+      m_optionsSelected = hoveredOption;
+      Assets::SoundManager::Play("ui_move");
+      movedSelection = true;
+    }
 
     if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
       Assets::SoundManager::Play("ui_move");
@@ -408,6 +507,29 @@ void MenuState::update(double /*dt*/) {
     }
     if (movedSelection) {
       updateOptionsOverlayText();
+    }
+
+    if (mousePressed && hoveredOption == 2) {
+      Assets::SoundManager::Play("ui_select");
+      closeOptions();
+      return;
+    }
+
+    auto applyMouseSlider = [this, mouseWorld](const RectBounds &rect, int optionIndex) {
+      const float left = rect.centerX - rect.width * 0.5f;
+      const float normalized = clampVolume((mouseWorld.x - left) / rect.width);
+      setOptionVolume(optionIndex, normalized);
+    };
+
+    if (mousePressed && hoveredOption >= 0 && hoveredOption <= 1) {
+      Assets::SoundManager::Play("ui_move");
+      applyMouseSlider((hoveredOption == 0) ? bgmRect : sfxRect, hoveredOption);
+    } else if (mouseDown) {
+      if (containsPoint(bgmRect, mouseWorld)) {
+        applyMouseSlider(bgmRect, 0);
+      } else if (containsPoint(sfxRect, mouseWorld)) {
+        applyMouseSlider(sfxRect, 1);
+      }
     }
 
     if (m_input.wasKeyPressed(GLFW_KEY_LEFT) || m_input.wasKeyPressed(GLFW_KEY_A)) {
@@ -567,6 +689,12 @@ void MenuState::onExit() {
 }
 
 } // namespace Runtime
+
+
+
+
+
+
 
 
 

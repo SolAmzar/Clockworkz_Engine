@@ -3,7 +3,7 @@
 \file           main.cpp
 \project        Lights Out
 \author(s)      [Lebon], [Syafiq]
-\brief          Entry point for CWZEditor.exe â€” editor executable.
+\brief          Entry point for CWZEditor.exe — editor executable.
                 Boots to EditorHubState. All game logic lives in Lua scripts.
 
 All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -39,6 +39,8 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Systems/LightRenderSystem.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
+#include "Components/FootstepAudio.hpp"
+#include "Audio/FootstepAudioRuntime.hpp"
 #include <memory>
 #include <iostream>
 #ifdef _DEBUG
@@ -67,6 +69,7 @@ int main()
     engine.setComponentRegistrar([](ECS::World& world) {
         world.registerComponent<Components::ParticleEmitter>();
         world.registerComponent<Gameplay::SurfaceComponent>();
+        world.registerComponent<Components::FootstepAudio>();
     });
 
     engine.setLuaExtensionRegistrar(Scripting::RegisterGameBindings);
@@ -92,6 +95,17 @@ int main()
             }
             if (auto* sc = world.getComponent<Gameplay::SurfaceComponent>(entity))
                 comps["surface"] = {{"type", static_cast<int>(sc->type())}};
+            if (auto* fa = world.getComponent<Components::FootstepAudio>(entity)) {
+                comps["footstepAudio"] = {
+                    {"interval", fa->interval},
+                    {"sprintIntervalScale", fa->sprintIntervalScale},
+                    {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
+                    {"minSpeed", fa->minSpeed},
+                    {"resetDelay", fa->resetDelay},
+                    {"volume", fa->volume},
+                    {"variationCount", fa->variationCount},
+                    {"soundPrefix", fa->soundPrefix}};
+            }
         },
         [](ECS::Entity entity, ECS::World& world, const void* rawComponents) {
             using json = nlohmann::json;
@@ -125,6 +139,19 @@ int main()
                     world.addComponent(entity, col);
                 }
             }
+            if (c.contains("footstepAudio")) {
+                const auto& fac = c["footstepAudio"];
+                Components::FootstepAudio fa;
+                fa.interval = fac.value("interval", fa.interval);
+                fa.sprintIntervalScale = fac.value("sprintIntervalScale", fa.sprintIntervalScale);
+                fa.sprintSpeedThreshold = fac.value("sprintSpeedThreshold", fa.sprintSpeedThreshold);
+                fa.minSpeed = fac.value("minSpeed", fa.minSpeed);
+                fa.resetDelay = fac.value("resetDelay", fa.resetDelay);
+                fa.volume = fac.value("volume", fa.volume);
+                fa.variationCount = fac.value("variationCount", fa.variationCount);
+                fa.soundPrefix = fac.value("soundPrefix", fa.soundPrefix);
+                world.addComponent(entity, fa);
+            }
         }
     );
 
@@ -138,6 +165,8 @@ int main()
                             pe.update(pos, dt);
                         }
                     });
+                Audio::UpdateFootstepListener(world);
+                Audio::UpdateFootstepAudio(world, dt);
             },
             [](ECS::World& world, Graphics::RenderingManager& renderer) {
                 world.each<Components::ParticleEmitter>(
@@ -208,3 +237,7 @@ int main()
 #endif
     return _result;
 }
+
+
+
+

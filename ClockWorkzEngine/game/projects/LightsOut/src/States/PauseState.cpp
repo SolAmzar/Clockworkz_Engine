@@ -32,6 +32,7 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "States/MenuState.hpp"
+#include "States/OptionsState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -110,6 +111,18 @@ void PauseState::collectButtons() {
       [this](ECS::Entity e, Components::UIButton &) {
         m_buttonEntities.push_back(e);
       });
+
+  std::sort(m_buttonEntities.begin(), m_buttonEntities.end(),
+            [this](ECS::Entity lhs, ECS::Entity rhs) {
+              const auto *lhsTransform =
+                  m_pauseScene.GetWorld().getComponent<Components::Transform>(lhs);
+              const auto *rhsTransform =
+                  m_pauseScene.GetWorld().getComponent<Components::Transform>(rhs);
+
+              const float lhsY = lhsTransform ? lhsTransform->position.y : 0.0f;
+              const float rhsY = rhsTransform ? rhsTransform->position.y : 0.0f;
+              return lhsY > rhsY;
+            });
 }
 
 void PauseState::applyHoverColors() {
@@ -142,6 +155,14 @@ void PauseState::handleAction(const std::string &action) {
                                     Core::Engine::Get().audio()));
     return;
   }
+  if (action == "options") {
+    std::cout << "[PauseState] Opening options...\n";
+    GlobalAudioSettings::Apply(m_audio);
+    m_gsm.push(std::make_shared<OptionsState>(
+        m_gsm, m_input, Core::Engine::Get().window(),
+        Core::Engine::Get().audio()));
+    return;
+  }
   std::cout << "[PauseState] Unknown action: " << action << "\n";
 }
 
@@ -162,6 +183,7 @@ void PauseState::update(double /*dt*/) {
   vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
   bool clicked = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
 
+  int hoveredIndex = -1;
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
     ECS::Entity e = m_buttonEntities[i];
     auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(e);
@@ -176,12 +198,21 @@ void PauseState::update(double /*dt*/) {
                     mouseWorld.y >= tf->position.y - halfH &&
                     mouseWorld.y <= tf->position.y + halfH);
     if (hovered) {
-      if (m_selected != i) {
-        m_selected = i;
-        m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
-      }
-      if (clicked) {
-        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
+      hoveredIndex = i;
+      break;
+    }
+  }
+
+  if (hoveredIndex >= 0) {
+    if (m_selected != hoveredIndex) {
+      m_selected = hoveredIndex;
+      m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
+    }
+    if (clicked) {
+      m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
+      auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(
+          m_buttonEntities[hoveredIndex]);
+      if (btn) {
         handleAction(btn->action);
         return;
       }
@@ -253,5 +284,6 @@ void PauseState::onExit() {
 }
 
 } // namespace Runtime
+
 
 

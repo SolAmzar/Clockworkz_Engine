@@ -1,7 +1,6 @@
 #include "GlobalAudioSettings.hpp"
 
 #include "Core/json.hpp"
-#include <algorithm>
 #include <fstream>
 
 namespace Runtime {
@@ -15,7 +14,9 @@ const char *GlobalAudioSettings::ConfigPath() {
 }
 
 float GlobalAudioSettings::Clamp(float value) {
-  return std::clamp(value, 0.0f, 1.0f);
+  if (value < 0.0f) return 0.0f;
+  if (value > 1.0f) return 1.0f;
+  return value;
 }
 
 void GlobalAudioSettings::Load() {

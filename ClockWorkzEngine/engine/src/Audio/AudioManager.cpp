@@ -1,4 +1,4 @@
-ï»¿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
@@ -13,7 +13,7 @@
 pausing
                                 - Providing 3D audio listener settings if needed
 
-All content Â© 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -92,7 +92,7 @@ bool AudioManager::init(int maxChannels) {
   // FMOD requires COM to be initialised on the calling thread before
   // System_Create. COINIT_APARTMENTTHREADED is the mode FMOD recommends.
   // We track the result so we only call CoUninitialize() if WE initialised it
-  // (S_FALSE means COM was already initialised â€” we still own a reference).
+  // (S_FALSE means COM was already initialised — we still own a reference).
   HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
   m_comInitialized = SUCCEEDED(hr);
 
@@ -273,6 +273,29 @@ int AudioManager::play(const std::string &id, Group g, float volume,
   return 0;
 }
 
+int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
+                         float volume, bool paused) {
+  int handle = play(id, g, volume, true);
+  if (handle <= 0)
+    return handle;
+
+  auto it = m_channels.find(handle);
+  if (it == m_channels.end() || !it->second.ch)
+    return handle;
+
+  auto clip = Assets::SoundManager::Get(id);
+  FMOD::Sound *sound = clip ? clip->GetRaw() : nullptr;
+  FMOD_MODE mode = 0;
+  if (sound && sound->getMode(&mode) == FMOD_OK && (mode & FMOD_3D)) {
+    FMOD_VECTOR p{pos.x, pos.y, pos.z};
+    FMOD_VECTOR v{0.0f, 0.0f, 0.0f};
+    it->second.ch->set3DAttributes(&p, &v);
+    it->second.ch->set3DMinMaxDistance(48.0f, 600.0f);
+  }
+
+  it->second.ch->setPaused(paused);
+  return handle;
+}
 void AudioManager::registerSoundProfile(const std::string &name,
                                         const SoundProfile &profile) {
   m_soundProfiles[name] = profile;
@@ -356,6 +379,11 @@ void AudioManager::playOneShot(const std::string &id, Group g, float volume) {
   (void)h;
 }
 
+void AudioManager::playOneShotAt(const std::string &id, const vec3 &pos,
+                                 Group g, float volume) {
+  int h = playAt(id, pos, g, volume, false);
+  (void)h;
+}
 void AudioManager::stop(int h) {
   auto it = m_channels.find(h);
   if (it == m_channels.end())
@@ -483,3 +511,6 @@ void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
 //     m_channels[handle] = { ch };
 //     return handle;
 // }
+
+
+

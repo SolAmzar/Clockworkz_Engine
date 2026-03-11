@@ -42888,6 +42888,16 @@
                     "shape": 0,
                     "width": 100.0
                 },
+                "footstepAudio": {
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_concrete_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "variationCount": 4,
+                    "volume": 1.0
+                },
                 "luaScript": [
                     {
                         "enabled": true,
@@ -42906,10 +42916,10 @@
                             "_stateTimer": 0.0,
                             "_wanderTimer": 0.0,
                             "alertDuration": 3.0,
-                            "chaseSpeed": 150.0,
+                            "chaseSpeed": 15.600000381469727,
                             "detectionRadius": 400.0,
                             "lightSensitivity": 0.30000001192092896,
-                            "patrolSpeed": 50.0,
+                            "patrolSpeed": 14.899999618530273,
                             "state": "Patrol",
                             "wanderInterval": 2.0
                         },

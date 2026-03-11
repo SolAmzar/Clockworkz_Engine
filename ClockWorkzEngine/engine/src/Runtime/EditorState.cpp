@@ -66,6 +66,7 @@ reserved.
 // Engine components
 #include "Components/Velocity.hpp"
 #include "Components/AudioSource.hpp"
+#include "Components/FootstepAudio.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
@@ -1195,6 +1196,7 @@ void EditorState::renderInspector() {
         }
         if (ImGui::BeginMenu("Audio")) {
             addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world);
+            addCompEntry<Components::FootstepAudio>("FootstepAudio", m_selectedEntity, world);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("UI")) {
@@ -1389,6 +1391,32 @@ void EditorState::renderInspector() {
             ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
         }
         if (rm) world.removeComponent<Components::AudioSource>(m_selectedEntity);
+    }
+
+    // FootstepAudio
+    if (world.hasComponent<Components::FootstepAudio>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("FootstepAudio##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rfa")) rm = true;
+        if (open) {
+            auto* fa = world.getComponent<Components::FootstepAudio>(m_selectedEntity);
+            char prefixBuf[256]; snprintf(prefixBuf, sizeof(prefixBuf), "%s", fa->soundPrefix.c_str());
+            if (ImGui::InputText("Sound Prefix##fa", prefixBuf, sizeof(prefixBuf)))
+                fa->soundPrefix = prefixBuf;
+            ImGui::DragFloat("Interval##fa", &fa->interval, 0.01f, 0.01f, 10.0f);
+            ImGui::DragFloat("Sprint Scale##fa", &fa->sprintIntervalScale, 0.01f, 0.1f, 2.0f);
+            ImGui::DragFloat("Sprint Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
+            ImGui::DragFloat("Min Speed##fa", &fa->minSpeed, 0.01f, 0.0f, 1000.0f);
+            ImGui::DragFloat("Reset Delay##fa", &fa->resetDelay, 0.01f, 0.0f, 1.0f);
+            ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 1.0f);
+            ImGui::DragInt("Variations##fa", &fa->variationCount, 1.0f, 1, 16);
+            ImGui::BeginDisabled(true);
+            ImGui::DragFloat("Timer Remaining##fa", &fa->timerRemaining, 0.0f);
+            ImGui::EndDisabled();
+        }
+        if (rm) world.removeComponent<Components::FootstepAudio>(m_selectedEntity);
     }
 
     // ── SpriteAnimator ──────────────────────────────────────────────────────
@@ -4174,3 +4202,5 @@ void EditorState::checkAssetHotReload() {
 }
 
 } // namespace Runtime
+
+

@@ -2,7 +2,7 @@
 -- file           player_controller.lua
 -- project        Lights Out
 -- author(s)      [Syafiq] 100%
--- brief          Unified player controller â€” movement, rotation, animation,
+-- brief          Unified player controller — movement, rotation, animation,
 --                torch, battery, torch bobbing, and footstep audio.
 --
 -- All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -90,14 +90,17 @@ function PlayerController:onUpdate(entity, dt)
             entity:setAnimationPlaybackSpeed(playbackSpeed)
         end
 
-        -- Footstep audio
-        self._footstepTimer = self._footstepTimer - dt
-        if self._footstepTimer <= 0.0 then
-            local interval = self.footstepInterval
-            if isSprinting then interval = interval * 0.6 end
-            self._footstepTimer = interval
-            local variation = math.random(1, 4)
-            Audio.playOneShot("fs_concrete_" .. variation)
+        -- Legacy footstep audio fallback. If a FootstepAudio component is present,
+        -- the C++ runtime component handles playback instead.
+        if not entity:hasFootstepAudio() then
+            self._footstepTimer = self._footstepTimer - dt
+            if self._footstepTimer <= 0.0 then
+                local interval = self.footstepInterval
+                if isSprinting then interval = interval * 0.6 end
+                self._footstepTimer = interval
+                local variation = math.random(1, 4)
+                Audio.playOneShot("fs_concrete_" .. variation)
+            end
         end
     else
         entity.velocity = Vec2(0, 0)

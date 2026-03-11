@@ -64,6 +64,7 @@ private:
   void openOptions();
   void closeOptions();
   void adjustOptionVolume(float delta);
+  void setOptionVolume(int optionIndex, float value);
   void updateOptionsOverlayText();
   void renderOptionsOverlay();
   void renderVolumeBar(float centerX, float centerY, float width,
@@ -91,6 +92,7 @@ private:
 };
 
 } // namespace Runtime
+
 
 
 

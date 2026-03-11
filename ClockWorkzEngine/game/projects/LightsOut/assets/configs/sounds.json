@@ -92,7 +92,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_concrete_1",
             "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
@@ -101,7 +101,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_concrete_2",
             "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
@@ -110,7 +110,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_concrete_3",
             "path": "assets/audio/fs/Concrete/fs_concrete_3.mp3",
@@ -119,7 +119,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_concrete_4",
             "path": "assets/audio/fs/Concrete/fs_concrete_4.mp3",
@@ -128,7 +128,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_tile_1",
             "path": "assets/audio/fs/Tile/fs_tile_1.ogg",
@@ -137,7 +137,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_tile_2",
             "path": "assets/audio/fs/Tile/fs_tile_2.ogg",
@@ -146,7 +146,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_tile_3",
             "path": "assets/audio/fs/Tile/fs_tile_3.ogg",
@@ -155,7 +155,7 @@
         },
         {
             "group": "SFX",
-            "is3D": false,
+            "is3D": true,
             "loop": false,
             "name": "fs_tile_4",
             "path": "assets/audio/fs/Tile/fs_tile_4.ogg",
@@ -164,3 +164,4 @@
         }
     ]
 }
+
