@@ -52,7 +52,7 @@ public:
                                             Systems::CollisionSystem&, Scene&)>;
   using SceneRenderFn  = std::function<void(ECS::World&,
                                             Graphics::RenderingManager&)>;
-  using SceneLoadFn    = std::function<void(ECS::World&, const vec2& spawnPoint)>;
+  using SceneLoadFn    = std::function<void(ECS::World&, const vec2& spawnPoint, Scene&)>;
   using SceneRespawnFn = std::function<void(ECS::World&, const vec2& spawnPoint)>;
   void setGameCallbacks(SceneUpdateFn  onUpdate,
                         SceneRenderFn  onRender,
@@ -136,8 +136,9 @@ private:
   SceneRespawnFn m_onRespawn;
 
   std::string m_name;
-  std::string m_bgm;       // Background music track name
-  float m_sfxVolume{1.0f}; // SFX Volume multiplier
+  std::string m_bgm;          // Legacy background music track name
+  std::string m_musicContext; // Central music context id
+  float m_sfxVolume{1.0f};    // SFX Volume multiplier
   vec2 m_spawnPoint{0.0f, 0.0f};
   std::unordered_map<std::string, float> m_soundVolumeOverrides;
 
@@ -149,6 +150,8 @@ private:
 public:
   void setBGM(const std::string &bgm) { m_bgm = bgm; }
   std::string getBGM() const { return m_bgm; }
+  void setMusicContext(const std::string &context) { m_musicContext = context; }
+  std::string getMusicContext() const { return m_musicContext; }
 
   void setSFXVolume(float volume);
   float getSFXVolume() const { return m_sfxVolume; }
@@ -194,3 +197,4 @@ private:
 };
 
 } // namespace Runtime
+

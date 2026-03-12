@@ -13,7 +13,7 @@
 pausing
                                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -94,7 +94,7 @@ bool AudioManager::init(int maxChannels) {
   // FMOD requires COM to be initialised on the calling thread before
   // System_Create. COINIT_APARTMENTTHREADED is the mode FMOD recommends.
   // We track the result so we only call CoUninitialize() if WE initialised it
-  // (S_FALSE means COM was already initialised — we still own a reference).
+  // (S_FALSE means COM was already initialised ï¿½ we still own a reference).
   HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
   m_comInitialized = SUCCEEDED(hr);
 
@@ -320,7 +320,8 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
       distanceT = std::clamp(distanceT, 0.0f, 1.0f);
     }
 
-    const float shapedVolume = volume * (1.0f - (falloffAmount * distanceT * distanceT));
+    const float shapedDistanceT = std::pow(distanceT, 0.6f);
+    const float shapedVolume = volume * (1.0f - (falloffAmount * shapedDistanceT));
     it->second.ch->setVolume(std::max(0.0f, shapedVolume));
 
     float filterT = 0.0f;

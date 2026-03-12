@@ -21,11 +21,13 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Scripting/EntityRef.hpp"
 #include "Components/LuaScript.hpp"
 #include "Components/FootstepAudio.hpp"
+#include "Core/Engine.hpp"
+#include "LevelMusicManager.hpp"
 
 namespace Scripting {
 
 // ---------------------------------------------------------------------------
-// Property accessor helpers — read/write typed values from a script entry
+// Property accessor helpers ï¿½ read/write typed values from a script entry
 // ---------------------------------------------------------------------------
 static float getPropF(EntityRef& e, const char* path, const char* key, float def = 0.f) {
     auto* entry = e.findScriptEntry(path);
@@ -140,12 +142,35 @@ void RegisterGameBindings(LuaManager& luaMgr) {
     er["setInLight"]            = [](EntityRef& e, bool v) { setPropB(e, "components/light_exposure.lua", "inLight", v); };
     er["isExposureDangerous"]   = [](EntityRef& e) { return getPropB(e, "components/light_exposure.lua", "isDangerous"); };
 
-    // --- PlayerController — tag-based check (player_controller.lua) ---
+    // --- PlayerController ï¿½ tag-based check (player_controller.lua) ---
     er["hasPlayerController"]   = [](EntityRef& e) { return e.hasScript("player_controller.lua"); };
     er["hasFootstepAudio"]      = [](EntityRef& e) {
         auto* world = e.getWorld();
         return world && world->hasComponent<Components::FootstepAudio>(e.getEntity());
     };
+
+    sol::table audio = lua["Audio"];
+    if (!audio.valid()) {
+        audio = lua.create_table();
+        lua["Audio"] = audio;
+    }
+
+    audio.set_function("requestMusicContext", [](const std::string& contextId) {
+        return Runtime::LevelMusicManager::RequestContext(contextId, Core::Engine::Get().audio());
+    });
+    audio.set_function("stopMusic", [](sol::optional<float> fadeOutSeconds) {
+        Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio(),
+                                         fadeOutSeconds.value_or(0.5f));
+    });
+    audio.set_function("getCurrentMusicContext", []() {
+        return Runtime::LevelMusicManager::CurrentContext();
+    });
+    audio.set_function("getCurrentMusicTrack", []() {
+        return Runtime::LevelMusicManager::CurrentTrack();
+    });
+    audio.set_function("hasMusicContext", [](const std::string& contextId) {
+        return Runtime::LevelMusicManager::HasContext(contextId);
+    });
 }
 
 } // namespace Scripting

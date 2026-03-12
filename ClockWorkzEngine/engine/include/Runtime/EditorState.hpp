@@ -164,6 +164,9 @@ private:
     char                    m_loadSceneFilter[128]{};
     std::string             m_pendingLoadPath;
     char                    m_newSceneBuf[128]{};
+    bool                    m_sceneMetaBuffersDirty{true};
+    char                    m_sceneBgmBuf[128]{};
+    char                    m_sceneMusicContextBuf[128]{};
 
     // ----- Asset rename/delete -----
     std::string             m_renamingAsset;
@@ -207,6 +210,34 @@ private:
     std::string             m_renamingAudioPath;
     char                    m_renameAudioBuf[256]{};
     std::string             m_editingAudio;
+    std::vector<std::string> m_selectedAudioAssets;
+    bool                    m_openBatchEditAudioPopup{false};
+    bool                    m_batchApplyLoop{false};
+    bool                    m_batchAudioLoop{false};
+    bool                    m_batchApplyStream{false};
+    bool                    m_batchAudioStream{false};
+    bool                    m_batchApplyIs3D{false};
+    bool                    m_batchAudioIs3D{false};
+    bool                    m_batchApplyGroup{false};
+    bool                    m_batchAudioIsBGM{false};
+    bool                    m_batchApplyVolume{false};
+    float                   m_batchAudioVolume{1.0f};
+    bool                    m_batchApplyPitch{false};
+    float                   m_batchAudioPitch{1.0f};
+    bool                    m_batchApplyMinDistance{false};
+    float                   m_batchAudioMinDistance{24.0f};
+    bool                    m_batchApplyMaxDistance{false};
+    float                   m_batchAudioMaxDistance{320.0f};
+    bool                    m_batchApplyFalloffStart{false};
+    float                   m_batchAudioFalloffStart{40.0f};
+    bool                    m_batchApplyFalloffAmount{false};
+    float                   m_batchAudioFalloffAmount{0.62f};
+    bool                    m_batchApplyFilterInStart{false};
+    float                   m_batchAudioFilterInStart{48.0f};
+    bool                    m_batchApplyFilterPeak{false};
+    float                   m_batchAudioFilterPeak{140.0f};
+    bool                    m_batchApplyFilterReleaseEnd{false};
+    float                   m_batchAudioFilterReleaseEnd{260.0f};
     char                    m_editAudioNameBuf[128]{};
     char                    m_editAudioPathBuf[256]{};
     bool                    m_editAudioLoop{false};
@@ -286,5 +317,6 @@ private:
 };
 
 } // namespace Runtime
+
 
 

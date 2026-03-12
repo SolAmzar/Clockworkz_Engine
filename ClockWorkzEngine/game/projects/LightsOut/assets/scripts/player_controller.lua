@@ -2,7 +2,7 @@
 -- file           player_controller.lua
 -- project        Lights Out
 -- author(s)      [Syafiq] 100%
--- brief          Unified player controller — movement, rotation, animation,
+-- brief          Unified player controller ï¿½ movement, rotation, animation,
 --                torch, battery, torch bobbing, and footstep audio.
 --
 -- All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -59,27 +59,35 @@ function PlayerController:onUpdate(entity, dt)
     end
 
     -- ----------------------------------------------------------------
-    -- Movement (rotation-based forward / backward)
+    -- Movement (rotation-based WASD)
     -- ----------------------------------------------------------------
     local forwardInput = 0
+    local strafeInput  = 0
     if input:isKeyDown(Keys.W) then forwardInput = forwardInput + 1 end
     if input:isKeyDown(Keys.S) then forwardInput = forwardInput - 1 end
+    if input:isKeyDown(Keys.D) then strafeInput = strafeInput - 1 end
+    if input:isKeyDown(Keys.A) then strafeInput = strafeInput + 1 end
 
     local currentState = "idle"
-    if forwardInput ~= 0 then
+    if forwardInput ~= 0 or strafeInput ~= 0 then
         local speedMul = isSprinting and self.sprintMultiplier or 1.0
         local speed    = self.walkSpeed * speedMul
 
         local angle = entity.rotation
-        local fx = math.cos(angle) * forwardInput
-        local fy = math.sin(angle) * forwardInput
-        local len = math.sqrt(fx * fx + fy * fy)
+        local forwardX = math.cos(angle)
+        local forwardY = math.sin(angle)
+        local rightX = -forwardY
+        local rightY = forwardX
+
+        local moveX = (forwardX * forwardInput) + (rightX * strafeInput)
+        local moveY = (forwardY * forwardInput) + (rightY * strafeInput)
+        local len = math.sqrt(moveX * moveX + moveY * moveY)
         if len > 0 then
-            fx = fx / len
-            fy = fy / len
+            moveX = moveX / len
+            moveY = moveY / len
         end
 
-        entity.velocity = Vec2(fx * speed, fy * speed)
+        entity.velocity = Vec2(moveX * speed, moveY * speed)
         currentState = isSprinting and "run" or "walk"
 
         -- Scale animation speed proportionally to walk speed
@@ -190,3 +198,4 @@ function PlayerController:onCollisionEnter(entity, other)
 end
 
 return PlayerController
+

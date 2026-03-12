@@ -3,7 +3,7 @@
 \file           main_game.cpp
 \project        Lights Out
 \author(s)      [Lebon]
-\brief          Entry point for LightsOut.exe � game executable.
+\brief          Entry point for LightsOut.exe ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â game executable.
                 Boots straight to MenuState. All game logic lives in Lua scripts.
                 No C++ game systems needed.
 
@@ -33,6 +33,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Components/Tag.hpp"
 #include "States/MenuState.hpp"
 #include "GlobalAudioSettings.hpp"
+#include "LevelMusicManager.hpp"
 #include <memory>
 #include <iostream>
 
@@ -171,12 +172,13 @@ int main()
                 Systems::renderLightPass(world, renderer);
             },
             // onLoad: reset player position to spawn
-            [](ECS::World& world, const vec2& spawn) {
+            [](ECS::World& world, const vec2& spawn, Runtime::Scene& scene) {
                 world.each<Components::Tag, Components::Transform>(
                     [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
                         if (tag.tag == "Player") t.position = spawn;
                     });
                 Runtime::GlobalAudioSettings::Apply(Core::Engine::Get().audio());
+                Runtime::LevelMusicManager::ApplySceneMusic(scene, Core::Engine::Get().audio());
             },
             // onRespawn: restore player state
             [](ECS::World& world, const vec2& spawn) {
@@ -201,6 +203,7 @@ int main()
 
     return engine.Run();
 }
+
 
 
 

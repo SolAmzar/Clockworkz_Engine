@@ -15,6 +15,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Core/Engine.hpp"
 #include "GlobalAudioSettings.hpp"
+#include "LevelMusicManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Platform/InputManager.hpp"
@@ -72,11 +73,11 @@ void GamePlayState::update(double dt) {
     return;
   }
 
-  // Normal gameplay update — scene handles level transitions (level_save →
+  // Normal gameplay update ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â scene handles level transitions (level_save ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
   // level_save_02) automatically when a portal sets a non-sentinel levelName.
   m_scene.Update(dt, m_input);
 
-  // ESC → push pause overlay (GamePlayState stays on the stack, frozen)
+  // ESC ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ push pause overlay (GamePlayState stays on the stack, frozen)
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
     m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
 }
@@ -93,13 +94,15 @@ void GamePlayState::render(Core::Time* /*timer*/) {
   m_renderer->endScenePass();
   m_scene.RenderText(*m_renderer);
   // Particle emitter + light pass are handled by the onRender callback
-  // registered in main_game.cpp's setSceneSetup — no extra code needed here.
+  // registered in main_game.cpp's setSceneSetup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no extra code needed here.
 }
 
 void GamePlayState::onExit() {
+  Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
   m_scene.Clear();
 }
 
 } // namespace Runtime
+
 
 

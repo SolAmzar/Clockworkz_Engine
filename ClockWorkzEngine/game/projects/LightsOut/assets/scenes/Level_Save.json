@@ -7,6 +7,7 @@
     },
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": true,
+    "musicContext": "",
     "objects": [
         {
             "active": true,
@@ -1955,73 +1956,14 @@
         {
             "active": true,
             "components": {
-                "particleEmitter": {
-                    "acceleration": {
-                        "x": 0.0,
-                        "y": -200.0
-                    },
-                    "active": false,
-                    "colorEnd": {
-                        "a": 0.0,
-                        "b": 0.0,
-                        "g": 0.0,
-                        "r": 0.0
-                    },
-                    "colorStart": {
-                        "a": 1.0,
-                        "b": 255.0,
-                        "g": 255.0,
-                        "r": 255.0
-                    },
-                    "direction": {
-                        "x": 1.0,
-                        "y": 0.0
-                    },
-                    "lifeMax": 1.0,
-                    "lifeMin": 0.5,
-                    "localOffset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "looping": true,
-                    "rate": 200.0,
-                    "sizeEnd": 1.0,
-                    "sizeStart": 5.0,
-                    "speedMax": 120.0,
-                    "speedMin": 20.0,
-                    "spreadDeg": 45.0,
-                    "worldSpace": true
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 0,
-                    "textureId": "corridor floor1",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": -450.0,
-                        "y": 150.0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -2031,7 +1973,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete floor"
+            "name": "Entity 523"
         },
         {
             "active": true,
@@ -46143,14 +46085,36 @@
         {
             "active": true,
             "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "corridor floor1",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": -450.0,
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -46160,7 +46124,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity 523"
+            "name": "concrete floor"
         }
     ],
     "sfxVolume": 1.0,

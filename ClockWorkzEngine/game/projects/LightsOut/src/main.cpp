@@ -3,7 +3,7 @@
 \file           main.cpp
 \project        Lights Out
 \author(s)      [Lebon], [Syafiq]
-\brief          Entry point for CWZEditor.exe � editor executable.
+\brief          Entry point for CWZEditor.exe ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â editor executable.
                 Boots to EditorHubState. All game logic lives in Lua scripts.
 
 All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -41,6 +41,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Components/FootstepAudio.hpp"
 #include "Audio/FootstepAudioRuntime.hpp"
+#include "LevelMusicManager.hpp"
 #include <memory>
 #include <iostream>
 #ifdef _DEBUG
@@ -186,11 +187,12 @@ int main()
                     });
                 Systems::renderLightPass(world, renderer);
             },
-            [](ECS::World& world, const vec2& spawn) {
+            [](ECS::World& world, const vec2& spawn, Runtime::Scene& scene) {
                 world.each<Components::Tag, Components::Transform>(
                     [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
                         if (tag.tag == "Player") t.position = spawn;
                     });
+                Runtime::LevelMusicManager::ApplySceneMusic(scene, Core::Engine::Get().audio());
             },
             [](ECS::World& world, const vec2& spawn) {
                 world.each<Components::Tag, Components::Transform, Components::SpriteAnimator>(
@@ -245,6 +247,7 @@ int main()
 #endif
     return _result;
 }
+
 
 
 
