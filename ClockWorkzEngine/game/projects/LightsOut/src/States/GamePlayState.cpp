@@ -12,8 +12,11 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "States/GamePlayState.hpp"
 #include "States/MenuState.hpp"
 #include "States/PauseState.hpp"
+#include "States/GameOverState.hpp"
 
 #include "Core/Engine.hpp"
+#include "GlobalAudioSettings.hpp"
+#include "LevelMusicManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Platform/InputManager.hpp"
@@ -31,8 +34,10 @@ namespace Runtime {
 
 GamePlayState::GamePlayState(GameStateManager& gsm,
                              Platform::InputManager& input,
-                             Platform::WindowManager& window)
-    : m_gsm(gsm), m_input(input), m_window(window) {}
+                             Platform::WindowManager& window,
+                             std::string startLevel)
+    : m_gsm(gsm), m_input(input), m_window(window),
+      m_startLevel(std::move(startLevel)) {}
 
 void GamePlayState::onEnter() {
   auto& engine = Core::Engine::Get();
@@ -44,10 +49,11 @@ void GamePlayState::onEnter() {
   m_scene.Init();
   engine.invokeSceneSetup(m_scene);
 
-  // Load the first level
-  if (!m_scene.LoadFromFile(k_firstLevel)) {
-    std::cerr << "[GamePlayState] Failed to load level: " << k_firstLevel << "\n";
+  // Load the starting level (default: k_firstLevel; overridden on retry)
+  if (!m_scene.LoadFromFile(m_startLevel)) {
+    std::cerr << "[GamePlayState] Failed to load level: " << m_startLevel << "\n";
   }
+  GlobalAudioSettings::Apply(engine.audio());
 
   // Scale camera to 1920x1080 design space (letterbox)
   float zoom = std::min(static_cast<float>(m_window.width())  / 1920.f,
@@ -62,6 +68,19 @@ void GamePlayState::update(double dt) {
   // The portal's onUpdate callback (wired in main_game.cpp's setSceneSetup)
   // calls scene.SetPendingLevel("MAIN_MENU") at end of the previous frame;
   // we catch it at the top of this frame, clear it, and transition cleanly.
+  // Death: Engine.triggerGameOver() was called from Lua — wait 2s then push lose screen
+  if (Core::Engine::Get().isGameOverPending()) {
+    m_deathTimer += static_cast<float>(dt);
+    m_scene.Update(dt, m_input);   // keep scene alive so death animation plays
+    if (m_deathTimer >= 2.0f) {
+      Core::Engine::Get().clearGameOverPending();
+      m_deathTimer = 0.0f;
+      m_gsm.push(std::make_shared<GameOverState>(
+          m_gsm, m_input, m_scene.GetCurrentLevelPath()));
+    }
+    return;  // block ESC/pause during death countdown
+  }
+
   if (m_scene.GetPendingLevel() == k_menuSentinel) {
     m_scene.ClearPendingLevel();
     auto& e = Core::Engine::Get();
@@ -70,11 +89,11 @@ void GamePlayState::update(double dt) {
     return;
   }
 
-  // Normal gameplay update — scene handles level transitions (level_save →
+  // Normal gameplay update ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â scene handles level transitions (level_save ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
   // level_save_02) automatically when a portal sets a non-sentinel levelName.
   m_scene.Update(dt, m_input);
 
-  // ESC → push pause overlay (GamePlayState stays on the stack, frozen)
+  // ESC ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ push pause overlay (GamePlayState stays on the stack, frozen)
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
     m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
 }
@@ -86,16 +105,17 @@ void GamePlayState::render(Core::Time* /*timer*/) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   glm::mat4 vp = m_cam->viewProj();
-  m_renderer->beginScenePass(vp);
-  m_scene.Render(*m_renderer);
-  m_renderer->endScenePass();
-  m_scene.RenderText(*m_renderer);
+  m_scene.RenderAll(*m_renderer, vp);
   // Particle emitter + light pass are handled by the onRender callback
-  // registered in main_game.cpp's setSceneSetup — no extra code needed here.
+  // registered in main_game.cpp's setSceneSetup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no extra code needed here.
 }
 
 void GamePlayState::onExit() {
+  Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
   m_scene.Clear();
 }
 
 } // namespace Runtime
+
+
+

@@ -22,6 +22,7 @@ reserved.
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Platform { class InputManager; }
@@ -84,6 +85,14 @@ private:
         std::string              name;
         std::vector<ECS::Entity> entities;
     };
+
+    // --- Hierarchy groups (folders) ---
+    struct HierarchyGroup {
+        std::string           name{"Group"};
+        std::vector<uint32_t> entityIds;   // stored as IDs (generation-independent)
+        bool                  collapsed{false};
+        int                   sortOrderBase{0};
+    };
     enum class PaintMode { Paint, Erase, Select };
 
     // ----- Tilemap helpers -----
@@ -116,6 +125,15 @@ private:
     ECS::Entity             m_selectedEntity{0, 0};
     std::vector<ECS::Entity> m_selectedEntities;    // all selected (incl. primary)
 
+    // ----- Hierarchy ordering & groups -----
+    std::vector<uint32_t>        m_hierarchyOrder;   // all entity IDs in display order
+    std::vector<HierarchyGroup>  m_hierarchyGroups;  // folder groups
+    int                          m_selectedGroupIdx{-1};
+    int                          m_renamingGroupIdx{-1};
+
+    // ----- Hidden entities (editor-only, not saved as gameplay data) -----
+    std::unordered_set<uint32_t> m_hiddenEntities;
+
     // ----- Viewport -----
     vec2                    m_viewportSize{800.0f, 600.0f};
     bool                    m_viewportFocused{false};
@@ -134,6 +152,12 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+
+    // ----- UIButton hit-area debug -----
+    bool                    m_showUIButtons{false};
+
+    // ----- TextRenderer box debug -----
+    bool                    m_showTextBoxes{false};
 
     // ----- Stats memory graph -----
     float                   m_statsHistory[128]{};
@@ -166,6 +190,9 @@ private:
     char                    m_loadSceneFilter[128]{};
     std::string             m_pendingLoadPath;
     char                    m_newSceneBuf[128]{};
+    bool                    m_sceneMetaBuffersDirty{true};
+    char                    m_sceneBgmBuf[128]{};
+    char                    m_sceneMusicContextBuf[128]{};
 
     // ----- Asset rename/delete -----
     std::string             m_renamingAsset;
@@ -230,6 +257,50 @@ private:
     std::string             m_currentAudioDir;
     std::string             m_renamingAudioPath;
     char                    m_renameAudioBuf[256]{};
+    std::string             m_editingAudio;
+    std::vector<std::string> m_selectedAudioAssets;
+    bool                    m_openBatchEditAudioPopup{false};
+    bool                    m_batchApplyLoop{false};
+    bool                    m_batchAudioLoop{false};
+    bool                    m_batchApplyStream{false};
+    bool                    m_batchAudioStream{false};
+    bool                    m_batchApplyIs3D{false};
+    bool                    m_batchAudioIs3D{false};
+    bool                    m_batchApplyGroup{false};
+    bool                    m_batchAudioIsBGM{false};
+    bool                    m_batchApplyVolume{false};
+    float                   m_batchAudioVolume{1.0f};
+    bool                    m_batchApplyPitch{false};
+    float                   m_batchAudioPitch{1.0f};
+    bool                    m_batchApplyMinDistance{false};
+    float                   m_batchAudioMinDistance{24.0f};
+    bool                    m_batchApplyMaxDistance{false};
+    float                   m_batchAudioMaxDistance{320.0f};
+    bool                    m_batchApplyFalloffStart{false};
+    float                   m_batchAudioFalloffStart{40.0f};
+    bool                    m_batchApplyFalloffAmount{false};
+    float                   m_batchAudioFalloffAmount{0.62f};
+    bool                    m_batchApplyFilterInStart{false};
+    float                   m_batchAudioFilterInStart{48.0f};
+    bool                    m_batchApplyFilterPeak{false};
+    float                   m_batchAudioFilterPeak{140.0f};
+    bool                    m_batchApplyFilterReleaseEnd{false};
+    float                   m_batchAudioFilterReleaseEnd{260.0f};
+    char                    m_editAudioNameBuf[128]{};
+    char                    m_editAudioPathBuf[256]{};
+    bool                    m_editAudioLoop{false};
+    bool                    m_editAudioStream{false};
+    bool                    m_editAudioIs3D{false};
+    float                   m_editAudioVolume{1.0f};
+    float                   m_editAudioPitch{1.0f};
+    bool                    m_editAudioIsBGM{false};
+    float                   m_editAudioMinDistance{24.0f};
+    float                   m_editAudioMaxDistance{320.0f};
+    float                   m_editAudioFalloffStart{40.0f};
+    float                   m_editAudioFalloffAmount{0.62f};
+    float                   m_editAudioFilterInStart{48.0f};
+    float                   m_editAudioFilterPeak{140.0f};
+    float                   m_editAudioFilterReleaseEnd{260.0f};
     std::string             m_deletingAudio;
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
@@ -291,6 +362,12 @@ private:
     bool                    m_isRenaming{false};
     ECS::Entity             m_renamingEntity{0, 0};
     char                    m_renameBuffer[256]{};
+
+    // ----- Hierarchy multi-select anchor (shift+click range) -----
+    uint32_t                m_lastAnchorId{0};  // ID of the last plain-clicked entity
 };
 
 } // namespace Runtime
+
+
+

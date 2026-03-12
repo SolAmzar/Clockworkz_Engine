@@ -7,10 +7,43 @@
     },
     "darknessIntensity": 0.0,
     "enableDarkness": false,
+    "hiddenEntities": [
+        "SubtitleText"
+    ],
+    "hierarchyGroups": [],
+    "hierarchyOrder": [
+        "Btn_HowToPlay",
+        "Btn_Option",
+        "Btn_Exit",
+        "howtoplay_overlay",
+        "options_bg",
+        "options_title",
+        "options_master_label",
+        "options_master_bar",
+        "options_master_value",
+        "options_bgm_label",
+        "options_bgm_bar",
+        "options_bgm_value",
+        "options_sfx_label",
+        "options_sfx_bar",
+        "options_sfx_value",
+        "options_back_label",
+        "options_help",
+        "Background",
+        "SubtitleText",
+        "Btn_StartGame",
+        "Logo"
+    ],
+    "musicContext": "",
     "objects": [
         {
             "active": true,
             "components": {
+                "audioSource": {
+                    "loop": false,
+                    "soundId": "",
+                    "volume": 1.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -55,21 +88,27 @@
         {
             "active": true,
             "components": {
-                "textRenderer": {
-                    "alignment": 1,
-                    "boxSize": {
-                        "x": 600.0,
-                        "y": 120.0
-                    },
+                "spriteRenderer": {
                     "color": {
-                        "b": 0.699999988079071,
-                        "g": 0.699999988079071,
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
                         "r": 1.0
                     },
-                    "fontId": "Title",
-                    "fontSize": 2.5,
-                    "text": "LIGHTS OUT",
-                    "visible": true
+                    "size": {
+                        "x": 520.0,
+                        "y": 40.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
                 },
                 "transform": {
                     "pivot": {
@@ -77,8 +116,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -300.0,
-                        "y": 399.0287780761719
+                        "x": 10.0,
+                        "y": 145.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -86,9 +125,36 @@
                         "y": 1.0
                     },
                     "snapToGrid": false
+                },
+                "uiSlider": {
+                    "fillColor": {
+                        "a": 1.0,
+                        "b": 0.029999999329447746,
+                        "g": 0.5600000023841858,
+                        "r": 0.8500000238418579
+                    },
+                    "handleColor": {
+                        "a": 1.0,
+                        "b": 0.9200000166893005,
+                        "g": 0.9200000166893005,
+                        "r": 0.9200000166893005
+                    },
+                    "handleSize": 22.0,
+                    "maxValue": 1.0,
+                    "minValue": 0.0,
+                    "settingKey": "master",
+                    "trackColor": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "trackHeight": 18.0,
+                    "trackWidth": 520.0,
+                    "value": 1.0
                 }
             },
-            "name": "TitleText"
+            "name": "options_master_bar"
         },
         {
             "active": true,
@@ -106,8 +172,15 @@
                     },
                     "fontId": "Debug",
                     "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "A PUZZLE HORROR GAME",
-                    "visible": true
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
                 },
                 "transform": {
                     "pivot": {
@@ -116,7 +189,7 @@
                     },
                     "position": {
                         "x": -200.0,
-                        "y": 215.8857879638672
+                        "y": 278.3478698730469
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -166,8 +239,15 @@
                     },
                     "fontId": "Selection",
                     "fontSize": 0.8799999952316284,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "START GAME",
-                    "visible": true
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": true
                 },
                 "transform": {
                     "pivot": {
@@ -175,8 +255,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -759.0,
-                        "y": 273.0
+                        "x": -564.291015625,
+                        "y": 235.91258239746094
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -197,7 +277,17 @@
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
-                    }
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": false,
+                    "size": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uiScript": ""
                 }
             },
             "name": "Btn_StartGame"
@@ -240,8 +330,15 @@
                     },
                     "fontId": "Selection",
                     "fontSize": 0.7799999713897705,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "HOW TO PLAY",
-                    "visible": true
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": true
                 },
                 "transform": {
                     "pivot": {
@@ -249,8 +346,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -929.6286010742188,
-                        "y": -65.89895629882813
+                        "x": -728.296875,
+                        "y": -71.19715881347656
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -271,7 +368,17 @@
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
-                    }
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": false,
+                    "size": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uiScript": ""
                 }
             },
             "name": "Btn_HowToPlay"
@@ -314,8 +421,15 @@
                     },
                     "fontId": "Selection",
                     "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "EXIT",
-                    "visible": true
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": true
                 },
                 "transform": {
                     "pivot": {
@@ -323,8 +437,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -714.6607055664063,
-                        "y": -269.4338684082031
+                        "x": -508.02484130859375,
+                        "y": -281.3265686035156
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -345,7 +459,17 @@
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
-                    }
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": false,
+                    "size": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uiScript": ""
                 }
             },
             "name": "Btn_Exit"
@@ -386,10 +510,17 @@
                         "g": 0.800000011920929,
                         "r": 1.0
                     },
-                    "fontId": "Debug",
+                    "fontId": "BodyText",
                     "fontSize": 1.2000000476837158,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "HOW TO PLAY\n\nWASD / Arrow Keys - Move\nE - Interact\nEsc - Pause\n\nCollect all fragments to open the door.\nStay out of the light!\n\nPress any key to close.",
-                    "visible": false
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
                 },
                 "transform": {
                     "pivot": {
@@ -397,8 +528,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 5.0,
+                        "y": 4.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -409,6 +540,732 @@
                 }
             },
             "name": "howtoplay_overlay"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "logo_texture",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 271.3526916503906
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 5.0,
+                        "y": 5.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Logo"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.25,
+                        "g": 0.15000000596046448,
+                        "r": 0.10000000149011612
+                    },
+                    "size": {
+                        "x": 400.0,
+                        "y": 70.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 200.0,
+                        "y": 100.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8199999928474426,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "OPTIONS",
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -720.965576171875,
+                        "y": -222.4970703125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "options",
+                    "hoverColor": {
+                        "b": 0.0,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": false,
+                    "size": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uiScript": ""
+                }
+            },
+            "name": "Btn_Option"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 520.0,
+                        "y": 40.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 10.0,
+                        "y": -90.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiSlider": {
+                    "fillColor": {
+                        "a": 1.0,
+                        "b": 0.0313725508749485,
+                        "g": 0.5607843399047852,
+                        "r": 0.8509804010391235
+                    },
+                    "handleColor": {
+                        "a": 1.0,
+                        "b": 0.9200000166893005,
+                        "g": 0.9200000166893005,
+                        "r": 0.9200000166893005
+                    },
+                    "handleSize": 22.0,
+                    "maxValue": 1.0,
+                    "minValue": 0.0,
+                    "settingKey": "sfx",
+                    "trackColor": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "trackHeight": 18.0,
+                    "trackWidth": 520.0,
+                    "value": 1.0
+                }
+            },
+            "name": "options_sfx_bar"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 900.0,
+                        "y": 100.0
+                    },
+                    "color": {
+                        "b": 0.6899999976158142,
+                        "g": 0.6600000262260437,
+                        "r": 0.9800000190734863
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 1.5499999523162842,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "AUDIO SETTINGS",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 10.0,
+                        "y": 340.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_title"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 260.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 0.9800000190734863
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.9200000166893005,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "MUSIC",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -360.0,
+                        "y": 95.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_bgm_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 320.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 0.9800000190734863
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.9200000166893005,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "EFFECTS",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -360.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_sfx_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 150.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8199999928474426,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "100%",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 370.0,
+                        "y": 56.111106872558594
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_bgm_value"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 150.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8199999928474426,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "100%",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 368.3333435058594,
+                        "y": -62.5
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_sfx_value"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 240.0,
+                        "y": 60.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 0.9800000190734863
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "BACK",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -179.44444274902344
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_back_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 760.0,
+                        "y": 120.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.5199999809265137,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "UP and DOWN - SELECT\nLEFT and RIGHT - ADJUST\nENTER and ESC - CLOSE",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -410.0,
+                        "y": -126.66667175292969
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 0.75,
+                        "y": 0.75
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_help"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 520.0,
+                        "y": 40.0
+                    },
+                    "sortOrder": 10,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 10.0,
+                        "y": 31.38888931274414
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiSlider": {
+                    "fillColor": {
+                        "a": 1.0,
+                        "b": 0.029999999329447746,
+                        "g": 0.5600000023841858,
+                        "r": 0.8500000238418579
+                    },
+                    "handleColor": {
+                        "a": 1.0,
+                        "b": 0.9200000166893005,
+                        "g": 0.9200000166893005,
+                        "r": 0.9200000166893005
+                    },
+                    "handleSize": 22.0,
+                    "maxValue": 1.0,
+                    "minValue": 0.0,
+                    "settingKey": "bgm",
+                    "trackColor": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "trackHeight": 18.0,
+                    "trackWidth": 520.0,
+                    "value": 1.0
+                }
+            },
+            "name": "options_bgm_bar"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.8399999737739563,
+                        "g": 0.8399999737739563,
+                        "r": 0.8399999737739563
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 15,
+                    "textureId": "pause_bg_texture",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -140.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 62.0,
+                        "y": 33.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_bg"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 260.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 0.8799999952316284,
+                        "g": 0.8600000143051147,
+                        "r": 0.9800000190734863
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.9200000166893005,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "MASTER",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -360.0,
+                        "y": 240.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_master_label"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 150.0,
+                        "y": 48.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8199999928474426,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "100%",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 370.0,
+                        "y": 173.33334350585938
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "options_master_value"
         }
     ],
     "sfxVolume": 1.0,

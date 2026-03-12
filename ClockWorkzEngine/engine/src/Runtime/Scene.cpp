@@ -22,6 +22,7 @@
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/UIButton.hpp"
+#include "Components/UISlider.hpp"
 #include "Components/Velocity.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Runtime/SceneSerializer.hpp"
@@ -91,6 +92,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::Layer>();
   m_world.registerComponent<Components::Light>();
   m_world.registerComponent<Components::UIButton>();
+  m_world.registerComponent<Components::UISlider>();
   m_world.registerComponent<Components::CameraComponent>();
 
   // Let the game register its own component types (set via Engine::setComponentRegistrar).
@@ -120,9 +122,7 @@ bool Scene::isLayerEnabled(int layer) const {
 }
 
 void Scene::Clear() {
-  // Stop BGM when clearing scene
-  std::cout << "[Scene] Clearing Scene... Stopping BGM Group.\n";
-  Core::Engine::Get().audio().stopGroup(Audio::Group::BGM);
+  std::cout << "[Scene] Clearing Scene...\n";
 
   m_scriptSystem.clear();
 
@@ -139,10 +139,14 @@ void Scene::Clear() {
   m_darknessIntensity = 0.8f;
   m_darknessColor = glm::vec3(0.7f, 0.7f, 0.9f);
   m_bgm.clear();
+  m_musicContext.clear();
 }
 
 bool Scene::LoadFromFile(const std::string &path) {
   Clear();
+  // Re-wire load-level callback cleared by Clear() so scripts can still call
+  // World.loadLevel() after a level transition (e.g. player respawn in level 2).
+  m_scriptSystem.setLoadLevelFn([this](const std::string& name) { SetPendingLevel(name); });
   if (std::filesystem::exists(path)) {
     if (SceneSerializer::Deserialize(*this, path)) {
       m_currentLevelPath = path;
@@ -151,7 +155,7 @@ bool Scene::LoadFromFile(const std::string &path) {
                 << m_spawnPoint.x << ", " << m_spawnPoint.y << ")\n";
 
       // Let game-side code reset game entities (e.g. player spawn point)
-      if (m_onLoad) m_onLoad(m_world, m_spawnPoint);
+      if (m_onLoad) m_onLoad(m_world, m_spawnPoint, *this);
 
       return true;
     } else {
@@ -164,7 +168,6 @@ bool Scene::LoadFromFile(const std::string &path) {
 }
 
 void Scene::Update(double dt, Platform::InputManager &input) {
-  (void)input; // input used by game-specific systems in PlayState/SandboxState
   // Get layer enabled flags pointer for systems
   const std::vector<bool> *layerFlags =
       m_layerEnabled.empty() ? nullptr : &m_layerEnabled;
@@ -184,6 +187,9 @@ void Scene::Update(double dt, Platform::InputManager &input) {
     m_animSystem.update(m_world, dt);
   if (m_stateMachineSystemEnabled)
     m_stateMachineSystem.update(m_world, dt);
+  // UI hover visual feedback (works in every state, including EditorPlayState)
+  m_uiButtonSystem.update(m_world, input);
+
   // Note: game-specific systems (PlayerSystem, AISystem, BatterySystem, etc.)
   // are called by the game state (PlayState) after this update.
 
@@ -225,7 +231,12 @@ void Scene::Render(Graphics::RenderingManager &renderer) {
 
   if (m_renderSystemEnabled) {
     m_renderSystem.update(m_world, renderer, layerFlags);
+    m_uiSliderSystem.render(m_world, renderer);
   }
+
+  // Flush the sprite batch before the light pass so light cones are drawn
+  // on top of sprites (not underneath them).
+  renderer.flush();
 
   // --- Render Legacy GameObjects ---
   for (auto &obj : m_gameObjects) {
@@ -246,6 +257,14 @@ void Scene::RenderText(Graphics::RenderingManager &renderer) {
   }
 }
 
+void Scene::RenderAll(Graphics::RenderingManager &renderer,
+                      const glm::mat4 &viewProj, const glm::vec4 &tint) {
+  renderer.beginScenePass(viewProj, tint);
+  Render(renderer);
+  renderer.endScenePass();
+  RenderText(renderer);
+}
+
 void Scene::RespawnPlayer() {
   m_playerDeathTimer = -1.0f;
   m_deathDuration = 0.0f;
@@ -257,3 +276,4 @@ void Scene::RespawnPlayer() {
 }
 
 } // namespace Runtime
+

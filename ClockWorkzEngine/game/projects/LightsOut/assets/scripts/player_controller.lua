@@ -2,7 +2,7 @@
 -- file           player_controller.lua
 -- project        Lights Out
 -- author(s)      [Syafiq] 100%
--- brief          Unified player controller — movement, rotation, animation,
+-- brief          Unified player controller � movement, rotation, animation,
 --                torch, battery, torch bobbing, and footstep audio.
 --
 -- All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -21,6 +21,7 @@ Properties = {
 local PlayerController = {}
 
 -- Runtime state (not inspector properties)
+PlayerController._isDead          = false   -- guard: prevents double game-over trigger
 PlayerController.walkSpeed        = 10.0
 PlayerController.sprintMultiplier = 2.0
 PlayerController.baseWalkSpeed    = 10.0
@@ -34,6 +35,9 @@ PlayerController._footstepTimer  = 0.0
 PlayerController._baseTorchOffX  = nil   -- captured once on first torch use
 PlayerController._baseTorchOffY  = nil
 PlayerController._torchActive    = false
+PlayerController._isDead         = false
+PlayerController._deathTimer     = 0.0
+local DEATH_RESPAWN_DELAY        = 2.8   -- seconds before level reloads
 
 function PlayerController:onStart(entity)
     entity.moveSpeed = self.walkSpeed
@@ -41,6 +45,13 @@ end
 
 function PlayerController:onUpdate(entity, dt)
     if not entity:isValid() then return end
+    if self._isDead then
+        self._deathTimer = self._deathTimer - dt
+        if self._deathTimer <= 0 then
+            World.loadLevel("level_save")
+        end
+        return
+    end
 
     local input        = Engine.input()
     local isSprinting  = input:isKeyDown(Keys.LEFT_SHIFT)
@@ -59,27 +70,35 @@ function PlayerController:onUpdate(entity, dt)
     end
 
     -- ----------------------------------------------------------------
-    -- Movement (rotation-based forward / backward)
+    -- Movement (rotation-based WASD)
     -- ----------------------------------------------------------------
     local forwardInput = 0
+    local strafeInput  = 0
     if input:isKeyDown(Keys.W) then forwardInput = forwardInput + 1 end
     if input:isKeyDown(Keys.S) then forwardInput = forwardInput - 1 end
+    if input:isKeyDown(Keys.D) then strafeInput = strafeInput - 1 end
+    if input:isKeyDown(Keys.A) then strafeInput = strafeInput + 1 end
 
     local currentState = "idle"
-    if forwardInput ~= 0 then
+    if forwardInput ~= 0 or strafeInput ~= 0 then
         local speedMul = isSprinting and self.sprintMultiplier or 1.0
         local speed    = self.walkSpeed * speedMul
 
         local angle = entity.rotation
-        local fx = math.cos(angle) * forwardInput
-        local fy = math.sin(angle) * forwardInput
-        local len = math.sqrt(fx * fx + fy * fy)
+        local forwardX = math.cos(angle)
+        local forwardY = math.sin(angle)
+        local rightX = -forwardY
+        local rightY = forwardX
+
+        local moveX = (forwardX * forwardInput) + (rightX * strafeInput)
+        local moveY = (forwardY * forwardInput) + (rightY * strafeInput)
+        local len = math.sqrt(moveX * moveX + moveY * moveY)
         if len > 0 then
-            fx = fx / len
-            fy = fy / len
+            moveX = moveX / len
+            moveY = moveY / len
         end
 
-        entity.velocity = Vec2(fx * speed, fy * speed)
+        entity.velocity = Vec2(moveX * speed, moveY * speed)
         currentState = isSprinting and "run" or "walk"
 
         -- Scale animation speed proportionally to walk speed
@@ -90,14 +109,17 @@ function PlayerController:onUpdate(entity, dt)
             entity:setAnimationPlaybackSpeed(playbackSpeed)
         end
 
-        -- Footstep audio
-        self._footstepTimer = self._footstepTimer - dt
-        if self._footstepTimer <= 0.0 then
-            local interval = self.footstepInterval
-            if isSprinting then interval = interval * 0.6 end
-            self._footstepTimer = interval
-            local variation = math.random(1, 4)
-            Audio.playOneShot("fs_concrete_" .. variation)
+        -- Legacy footstep audio fallback. If a FootstepAudio component is present,
+        -- the C++ runtime component handles playback instead.
+        if not entity:hasFootstepAudio() then
+            self._footstepTimer = self._footstepTimer - dt
+            if self._footstepTimer <= 0.0 then
+                local interval = self.footstepInterval
+                if isSprinting then interval = interval * 0.6 end
+                self._footstepTimer = interval
+                local variation = math.random(1, 4)
+                Audio.playOneShot("fs_concrete_" .. variation)
+            end
         end
     else
         entity.velocity = Vec2(0, 0)
@@ -179,11 +201,16 @@ end
 
 function PlayerController:onCollisionEnter(entity, other)
     if other:getTagValue() == "Enemy" then
-        if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
-            entity:playAnimation("death")
-            entity:setColliderSolid(false)
+        if not self._isDead then
+            self._isDead = true
+            if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
+                entity:playAnimation("death")
+                entity:setColliderSolid(false)
+            end
+            Engine.triggerGameOver()
         end
     end
 end
 
 return PlayerController
+

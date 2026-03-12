@@ -23,6 +23,8 @@
 #include "Systems/StateMachineSystem.hpp"
 #include "Systems/ScriptSystem.hpp"
 #include "Systems/TextRenderSystem.hpp"
+#include "Systems/UIButtonSystem.hpp"
+#include "Systems/UISliderSystem.hpp"
 
 namespace Runtime {
 
@@ -36,6 +38,10 @@ public:
   void Update(double dt, Platform::InputManager &input);
   void Render(Graphics::RenderingManager &renderer);
   void RenderText(Graphics::RenderingManager &renderer); // Call AFTER endScenePass
+  // Convenience: runs the full render pipeline in the correct order.
+  // Prefer this over calling Render/RenderText manually in game states.
+  void RenderAll(Graphics::RenderingManager &renderer, const glm::mat4 &viewProj,
+                 const glm::vec4 &tint = glm::vec4(1.0f));
   void Clear();
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
@@ -52,7 +58,7 @@ public:
                                             Systems::CollisionSystem&, Scene&)>;
   using SceneRenderFn  = std::function<void(ECS::World&,
                                             Graphics::RenderingManager&)>;
-  using SceneLoadFn    = std::function<void(ECS::World&, const vec2& spawnPoint)>;
+  using SceneLoadFn    = std::function<void(ECS::World&, const vec2& spawnPoint, Scene&)>;
   using SceneRespawnFn = std::function<void(ECS::World&, const vec2& spawnPoint)>;
   void setGameCallbacks(SceneUpdateFn  onUpdate,
                         SceneRenderFn  onRender,
@@ -67,6 +73,7 @@ public:
   std::string GetPendingLevel() const { return m_pendingLevel; }
   void ClearPendingLevel() { m_pendingLevel.clear(); }
   void SetPendingLevel(const std::string& level) { m_pendingLevel = level; }
+  std::string GetCurrentLevelPath() const { return m_currentLevelPath; }
 
   // "SceneManager" Interface (Legacy/Manager expectation)
   bool load() {
@@ -121,6 +128,8 @@ private:
   Systems::AnimationSystem m_animSystem;
   Systems::StateMachineSystem m_stateMachineSystem;
   Systems::TextRenderSystem m_textRenderSystem;
+  Systems::UIButtonSystem m_uiButtonSystem;
+  Systems::UISliderSystem m_uiSliderSystem;
   Systems::ScriptSystem m_scriptSystem;
   Systems::CameraSystem m_cameraSystem;
 
@@ -136,8 +145,9 @@ private:
   SceneRespawnFn m_onRespawn;
 
   std::string m_name;
-  std::string m_bgm;       // Background music track name
-  float m_sfxVolume{1.0f}; // SFX Volume multiplier
+  std::string m_bgm;          // Legacy background music track name
+  std::string m_musicContext; // Central music context id
+  float m_sfxVolume{1.0f};    // SFX Volume multiplier
   vec2 m_spawnPoint{0.0f, 0.0f};
   std::unordered_map<std::string, float> m_soundVolumeOverrides;
 
@@ -149,6 +159,8 @@ private:
 public:
   void setBGM(const std::string &bgm) { m_bgm = bgm; }
   std::string getBGM() const { return m_bgm; }
+  void setMusicContext(const std::string &context) { m_musicContext = context; }
+  std::string getMusicContext() const { return m_musicContext; }
 
   void setSFXVolume(float volume);
   float getSFXVolume() const { return m_sfxVolume; }
@@ -194,3 +206,4 @@ private:
 };
 
 } // namespace Runtime
+

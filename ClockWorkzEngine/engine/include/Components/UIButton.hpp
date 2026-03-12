@@ -5,8 +5,9 @@
 \author(s)      [Syafiq]
 \brief          UIButton component for editor-authored interactive menu buttons.
                 Attach to any entity with Transform + SpriteRenderer to make
-                it a clickable button. The 'action' string is mapped to game
-                logic in the active menu state.
+                it a clickable button. The legacy 'action' string is kept for
+                compatibility with older menu scenes, while 'uiScript' supports
+                script-driven buttons.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
@@ -14,15 +15,20 @@ reserved.
 /******************************************************************************/
 #pragma once
 #include <string>
+#include "Math/Vec2.hpp"
 #include <glm/vec3.hpp>
 
 namespace Components {
 
 struct UIButton {
-    std::string action{};                        // e.g. "start_game", "exit", "resume", "main_menu"
-    glm::vec3   normalColor{1.f, 1.f, 1.f};     // sprite/text tint when idle
-    glm::vec3   hoverColor {1.f, 0.8f, 0.f};    // sprite/text tint when mouse is over
-    bool        interactable{true};              // when false, ignores mouse input
+    std::string action{};                        // legacy action string for older scenes
+    std::string uiScript{};                      // Lua script path; on_click() called on activation
+    glm::vec3   normalColor{1.f, 1.f, 1.f};
+    glm::vec3   hoverColor {1.f, 0.8f, 0.f};
+    bool        interactable{true};
+    bool        showBackground{true};
+    vec2        size{0.f, 0.f};
+    vec2        offset{0.f, 0.f};
 };
 
 } // namespace Components

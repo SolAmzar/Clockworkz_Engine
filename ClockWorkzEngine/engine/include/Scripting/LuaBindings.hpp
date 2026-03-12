@@ -10,7 +10,47 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 /******************************************************************************/
 
 #pragma once
+
+#ifdef __INTELLISENSE__
+// Minimal sol2 stubs — used only by IntelliSense, never by the real compiler.
+namespace sol {
+    struct nil_t {};
+    static nil_t nil;
+    struct no_constructor_t {};
+    static no_constructor_t no_constructor;
+    struct this_state {};
+    struct object { template<typename T> T as() const; };
+    struct state_proxy { template<typename T> void operator=(T&&) {} };
+    struct state_view { explicit state_view(this_state) {} };
+    struct table {
+        void set_function(const char*, ...) {}
+        state_proxy operator[](const char*) { return {}; }
+    };
+    struct state {
+        template<typename T, typename... A> void new_usertype(const char*, A&&...) {}
+        template<typename E, typename P> void new_enum(const char*, P) {}
+        void set_function(const char*, ...) {}
+        table create_table() { return {}; }
+        state_proxy operator[](const char* ) { return {}; }
+        state_proxy operator[](int        ) { return {}; }
+    };
+    template<typename... T> struct constructors {};
+    template<typename T>    struct optional    {
+        explicit operator bool() const { return false; }
+        T& operator*() { static T v{}; return v; }
+    };
+    template<typename... A> int    property   (A&&...) { return 0; }
+    template<typename... A> int    overload   (A&&...) { return 0; }
+    template<typename... A> object make_object(A&&...) { return {}; }
+    enum class meta_function {
+        addition, subtraction, multiplication, division,
+        unary_minus, equal_to, to_string
+    };
+}
+#else
 #include <sol/sol.hpp>
+#endif
+
 
 // Forward declarations
 namespace Gameplay {

@@ -1,0 +1,459 @@
+{
+    "bgm": "",
+    "darknessColor": {
+        "b": 0.0,
+        "g": 0.0,
+        "r": 0.0
+    },
+    "darknessIntensity": 0.0,
+    "enableDarkness": false,
+    "objects": [
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 3770.0,
+                        "y": 1933.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "pause_bg_texture",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "SettingsPanel"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 500.0,
+                        "y": 80.0
+                    },
+                    "color": {
+                        "b": 0.699999988079071,
+                        "g": 0.699999988079071,
+                        "r": 1.0
+                    },
+                    "fontId": "Title",
+                    "fontSize": 1.399999976158142,
+                    "lineSpacing": 1.0,
+                    "text": "AUDIO SETTINGS",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 277.13946533203125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "SettingsTitle"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 160.0,
+                        "y": 36.0
+                    },
+                    "color": {
+                        "b": 0.800000011920929,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.6000000238418579,
+                    "lineSpacing": 1.0,
+                    "text": "MASTER",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -190.0,
+                        "y": 180.22930908203125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Label_Master"
+        },
+        {
+            "active": true,
+            "components": {
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 130.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiSlider": {
+                    "fillColor": {
+                        "a": 1.0,
+                        "b": 0.10000000149011612,
+                        "g": 0.550000011920929,
+                        "r": 0.8500000238418579
+                    },
+                    "handleColor": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "handleSize": 26.0,
+                    "maxValue": 1.0,
+                    "minValue": 0.0,
+                    "settingKey": "master",
+                    "trackColor": {
+                        "a": 1.0,
+                        "b": 0.20000000298023224,
+                        "g": 0.20000000298023224,
+                        "r": 0.20000000298023224
+                    },
+                    "trackHeight": 16.0,
+                    "trackWidth": 440.0,
+                    "value": 1.0
+                }
+            },
+            "name": "Slider_Master"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 160.0,
+                        "y": 36.0
+                    },
+                    "color": {
+                        "b": 0.800000011920929,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.6000000238418579,
+                    "lineSpacing": 1.0,
+                    "text": "MUSIC",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -190.0,
+                        "y": 67.60282897949219
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Label_BGM"
+        },
+        {
+            "active": true,
+            "components": {
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 15.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiSlider": {
+                    "fillColor": {
+                        "a": 1.0,
+                        "b": 0.10000000149011612,
+                        "g": 0.550000011920929,
+                        "r": 0.8500000238418579
+                    },
+                    "handleColor": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "handleSize": 26.0,
+                    "maxValue": 1.0,
+                    "minValue": 0.0,
+                    "settingKey": "bgm",
+                    "trackColor": {
+                        "a": 1.0,
+                        "b": 0.20000000298023224,
+                        "g": 0.20000000298023224,
+                        "r": 0.20000000298023224
+                    },
+                    "trackHeight": 16.0,
+                    "trackWidth": 440.0,
+                    "value": 0.800000011920929
+                }
+            },
+            "name": "Slider_BGM"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 160.0,
+                        "y": 36.0
+                    },
+                    "color": {
+                        "b": 0.800000011920929,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.6000000238418579,
+                    "lineSpacing": 1.0,
+                    "text": "EFFECTS",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -190.0,
+                        "y": -46.21040725708008
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Label_SFX"
+        },
+        {
+            "active": true,
+            "components": {
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -100.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiSlider": {
+                    "fillColor": {
+                        "a": 1.0,
+                        "b": 0.10000000149011612,
+                        "g": 0.550000011920929,
+                        "r": 0.8500000238418579
+                    },
+                    "handleColor": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "handleSize": 26.0,
+                    "maxValue": 1.0,
+                    "minValue": 0.0,
+                    "settingKey": "sfx",
+                    "trackColor": {
+                        "a": 1.0,
+                        "b": 0.20000000298023224,
+                        "g": 0.20000000298023224,
+                        "r": 0.20000000298023224
+                    },
+                    "trackHeight": 16.0,
+                    "trackWidth": 440.0,
+                    "value": 1.0
+                }
+            },
+            "name": "Slider_SFX"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.25,
+                        "g": 0.15000000596046448,
+                        "r": 0.10000000149011612
+                    },
+                    "size": {
+                        "x": 280.0,
+                        "y": 60.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 280.0,
+                        "y": 60.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 0.8500000238418579,
+                    "lineSpacing": 1.0,
+                    "text": "BACK",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1.6768341064453125,
+                        "y": -158.76312255859375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "back",
+                    "hoverColor": {
+                        "b": 0.0,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": true,
+                    "size": {
+                        "x": 280.0,
+                        "y": 60.0
+                    },
+                    "uiScript": "ui/btn_back.lua"
+                }
+            },
+            "name": "Btn_Back"
+        }
+    ],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": 0.0,
+        "y": 0.0
+    }
+}

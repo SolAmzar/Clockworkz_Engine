@@ -1,4 +1,4 @@
-# engine/CMakeLists.txt â€” CWZEngine static library
+# engine/CMakeLists.txt — CWZEngine static library
 #
 # All engine sources live in engine/src/ and engine/include/.
 # The top-level include/ is still on the include path because a small number of
@@ -16,6 +16,13 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/include/*.h"
   "${CMAKE_SOURCE_DIR}/include/*.hpp"
 )
+
+# Ensure LuaBindings.cpp is included (workaround if glob didn't pick it up due to casing/path issues)
+set(_lua_bindings_path "${CMAKE_CURRENT_SOURCE_DIR}/src/Scripting/LuaBindings.cpp")
+if(EXISTS "${_lua_bindings_path}")
+  list(APPEND ENGINE_SOURCES "${_lua_bindings_path}")
+  message(STATUS "Forcing inclusion of engine source: ${_lua_bindings_path}")
+endif()
 
 # --- Static library target ---
 add_library(CWZEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
@@ -39,6 +46,7 @@ import_ffmpeg(CWZEngine)
 if(MSVC)
   target_compile_options(CWZEngine PRIVATE
     /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj
+    /external:anglebrackets /external:W0
   )
   target_compile_options(CWZEngine PRIVATE
     $<$<CONFIG:Debug>:/Od>
@@ -54,10 +62,13 @@ endif()
 
 # --- Include directories ---
 # SYSTEM PUBLIC: game inherits these; SYSTEM suppresses 3rd-party warnings
+# LightsOut include is currently needed because some engine/runtime files and
+# editor UI still reference project-specific components.
 target_include_directories(CWZEngine
   SYSTEM PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/include"   # kept: engine files reference game headers here (known coupling)
+    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/game/projects/LightsOut/include"
   PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )

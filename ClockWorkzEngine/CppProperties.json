@@ -5,9 +5,30 @@
         "msvc_x64"
       ],
       "name": "x64-Debug",
+      "cppStandard": "c++17",
       "includePath": [
         "${env.INCLUDE}",
-        "${workspaceRoot}\\**"
+        "${workspaceRoot}\\engine\\include",
+        "${workspaceRoot}\\engine\\src",
+        "${workspaceRoot}\\game\\projects\\LightsOut\\include",
+        "${workspaceRoot}\\game\\projects\\LightsOut\\src",
+        "${workspaceRoot}\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\sol2-src\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\lua_source-src\\src",
+        "${workspaceRoot}\\out\\build\\_deps\\glfw-src\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\glew-src\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\glm-src",
+        "${workspaceRoot}\\out\\build\\_deps\\freetype-src\\include",
+        "${workspaceRoot}\\fmod\\api\\core\\inc"
+      ],
+      "systemIncludePath": [
+        "${workspaceRoot}\\out\\build\\_deps\\sol2-src\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\lua_source-src\\src",
+        "${workspaceRoot}\\out\\build\\_deps\\glfw-src\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\glew-src\\include",
+        "${workspaceRoot}\\out\\build\\_deps\\glm-src",
+        "${workspaceRoot}\\out\\build\\_deps\\freetype-src\\include",
+        "${workspaceRoot}\\fmod\\api\\core\\inc"
       ],
       "defines": [
         "WIN32",

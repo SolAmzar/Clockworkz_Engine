@@ -10,7 +10,7 @@
                 Responsibilities:
                 - Retrieve Texture2D from ResourceManager by texture alias
                 - Bind texture and issue draw call through Renderer2D
-                - Allow optional color tint and UV cropping (for spritesheets)
+                - Allow optional color tint and UV cropping (for sprite sheets)
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */

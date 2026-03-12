@@ -26,7 +26,6 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Runtime/GameState.hpp"
 #include "Runtime/SceneManager.hpp"
-#include "Systems/AISystem.hpp"
 #include "Systems/ActivationSystem.hpp"
 #include "Systems/BatterySystem.hpp"
 #include "Systems/DoorSwingSystem.hpp"
@@ -159,7 +158,6 @@ private:
   void syncEnemyTransforms();
 
   // Game-specific ECS systems (removed from Scene, owned by PlayState)
-  Systems::AISystem m_aiSystem;
   Systems::BatterySystem m_batterySystem;
   Systems::FragmentSystem m_fragmentSystem;
   Systems::LightExposureSystem m_lightSystem;

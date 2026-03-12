@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           AudioManager.hpp
 \project        Lights Out
@@ -13,7 +13,7 @@
 pausing
                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -60,8 +60,14 @@ public:
 
   // Playback
   int play(const std::string &id, Group group, float volume, bool paused);
+  int playAt(const std::string &id, const vec3 &pos, Group group, float volume,
+             bool paused = false);
   void playOneShot(const std::string &id, Group group = Group::SFX,
                    float volume = 1.0f);
+  void playOneShotLocal(const std::string &id, Group group = Group::SFX,
+                        float volume = 1.0f);
+  void playOneShotAt(const std::string &id, const vec3 &pos,
+                     Group group = Group::SFX, float volume = 1.0f);
 
   // Stop control
   void stop(std::string const &name); // stop a specific playing sound by key
@@ -96,6 +102,13 @@ public:
     float volume = 1.0f;
     float pitch = 1.0f;
     Group group = Group::SFX;
+    float minDistance = 24.0f;
+    float maxDistance = 320.0f;
+    float falloffStart = 40.0f;
+    float falloffAmount = 0.62f;
+    float filterInStart = 48.0f;
+    float filterPeak = 140.0f;
+    float filterReleaseEnd = 260.0f;
   };
   void registerSoundProfile(const std::string &name,
                             const SoundProfile &profile);
@@ -129,6 +142,7 @@ private:
   std::unordered_map<std::string, SoundProfile> m_soundProfiles;
   std::unordered_map<std::string, FMOD::Sound *> m_sounds;
   std::unordered_map<int, ChannelHandle> m_channels;
+  vec3 m_listenerPos{0.0f, 0.0f, 0.0f};
   std::unordered_map<int, FadeOut> m_fadeOuts;
   int m_nextChannelId = 1;
 
@@ -137,3 +151,6 @@ private:
 };
 
 } // namespace Audio
+
+
+

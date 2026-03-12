@@ -177,13 +177,12 @@ namespace Assets {
                                        const std::string& configPath = "assets/configs/Textures.json");
 
     private:
-        /**
-         * @brief Parse texture configuration from JSON
-         *
-         * @param configPath Path to JSON config file
-         * @return Vector of TextureConfig structures
-         */
         static std::vector<TextureConfig> ParseConfig(const std::string& configPath);
+
+        // Returns name unchanged if it already ends with "_texture",
+        // otherwise appends "_texture". Applied at load and lookup time so
+        // all registered keys are consistent.
+        static std::string normalize(const std::string& name);
     };
 
 } // namespace Assets
