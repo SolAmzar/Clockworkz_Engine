@@ -28,8 +28,8 @@ reserved.
 #include "Audio/SurfaceAudioSystem.hpp"
 #include "Components/Battery.hpp"
 #include "Components/EnemyAI.hpp"
-#include "Components/LightExposure.hpp"
 #include "Components/Light.hpp"
+#include "Components/LightExposure.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
@@ -45,13 +45,13 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
-#include "States/GameOverState.hpp"
 #include "Runtime/GameStateManager.hpp"
-#include "States/MenuState.hpp"
-#include "States/PauseState.hpp"
 #include "Runtime/Scene.hpp"
 #include "Runtime/SceneManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
+#include "States/GameOverState.hpp"
+#include "States/MenuState.hpp"
+#include "States/PauseState.hpp"
 #include <Assets/TextureManager.hpp>
 #include <Components/Collider.hpp>
 #include <Components/Tag.hpp>
@@ -62,13 +62,13 @@ reserved.
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include <Gameplay/Prefab.hpp>
-#include <Scripting/LuaScriptComponent.hpp>
 #include <Gameplay/WallTiles.hpp>
 #include <Graphics/Camera2D.hpp>
 #include <Graphics/GraphicsManager.hpp>
 #include <Graphics/Renderer2D.hpp>
 #include <Math/VecCompatGLM.hpp>
 #include <Platform/LevelEditorState.hpp>
+#include <Scripting/LuaScriptComponent.hpp>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -83,6 +83,7 @@ reserved.
 #include <thread>
 #include <unordered_map>
 #include <vector>
+
 
 using namespace Graphics;
 using namespace Assets;
@@ -207,7 +208,7 @@ void PlayState::onEnter() {
   // Initialize level editor
   Core::Engine &engine = Core::Engine::Get();
 
-  //auto &audio = engine.audio(); 
+  // auto &audio = engine.audio();
 
   // play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
   m_bgmChannel = Assets::SoundManager::Play("level_bgm");
@@ -517,9 +518,9 @@ void PlayState::update(double dt) {
     // This ensures camera tracks player even if "m_player" GameObject pointer
     // is stale
     scene->GetWorld().each<Components::Tag, Components::Transform>(
-        [&](ECS::Entity, Components::Tag &tag,
-            Components::Transform &t) {
-          if (tag.tag != "Player") return;
+        [&](ECS::Entity, Components::Tag &tag, Components::Transform &t) {
+          if (tag.tag != "Player")
+            return;
           auto &camera = Core::Engine::Get().camera();
           camera.setPosition(glm::vec2(t.position.x, t.position.y));
         });
@@ -580,7 +581,8 @@ void PlayState::update(double dt) {
           vec2 move{0, 0};
 
           // Skip C++ movement if Lua script handles it
-          bool hasLuaScript = obj->getComponent<Scripting::LuaScriptComponent>() != nullptr;
+          bool hasLuaScript =
+              obj->getComponent<Scripting::LuaScriptComponent>() != nullptr;
           if (!hasLuaScript) {
             // WASD input → movement vector
             if (m_input.isKeyDown(GLFW_KEY_W))
@@ -712,8 +714,10 @@ void PlayState::update(double dt) {
 
             // Normalize angle difference to [-PI, PI] for shortest path
             const float PI = 3.14159265358979f;
-            while (angleDiff > PI) angleDiff -= 2.0f * PI;
-            while (angleDiff < -PI) angleDiff += 2.0f * PI;
+            while (angleDiff > PI)
+              angleDiff -= 2.0f * PI;
+            while (angleDiff < -PI)
+              angleDiff += 2.0f * PI;
 
             // Apply rotation (can add smoothing here if desired)
             obj->transform().rotationRad = currentAngle + angleDiff;
@@ -726,7 +730,8 @@ void PlayState::update(double dt) {
           if (playerSpriteComp) {
             // Determine animation state
             std::string animState = m_flashlightOn ? "idle_torch" : "idle";
-            // Check velocity for movement (works with both C++ and Lua movement)
+            // Check velocity for movement (works with both C++ and Lua
+            // movement)
             vec2 vel = obj->velocity();
             bool isMoving = (vel.x != 0 || vel.y != 0);
 

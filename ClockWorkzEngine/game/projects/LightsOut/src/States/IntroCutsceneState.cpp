@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file           IntroCutsceneState.cpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Implements the startup intro cutscene state for Lights Out.
+
+                Sets up a temporary playback scene, starts the intro video and
+                audio, handles skip input, and transitions to the main menu.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #include "States/IntroCutsceneState.hpp"
 
 #include "Audio/AudioManager.hpp"

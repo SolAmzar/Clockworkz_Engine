@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           VideoFrameQueue.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Declares a thread-safe queue used to pass decoded video frames
+                from FFmpeg to render-time playback systems.
+
+                Defines the frame payload structure along with synchronized push,
+                peek, pop, and clear operations.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include <cstdint>

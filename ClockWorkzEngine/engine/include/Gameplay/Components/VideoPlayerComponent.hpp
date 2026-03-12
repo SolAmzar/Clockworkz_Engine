@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file           VideoPlayerComponent.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Declares the legacy gameplay video player component wrapper.
+
+                Bridges decoded video frames to renderable textures for the
+                legacy GameObject component pipeline.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include "Components/VideoPlayer.hpp"
 #include "Gameplay/GameObject.hpp"

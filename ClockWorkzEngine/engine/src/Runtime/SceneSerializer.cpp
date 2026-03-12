@@ -17,20 +17,21 @@ reserved.
 
 // Engine components only
 #include "Components/AudioSource.hpp"
+#include "Components/CameraComponent.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
-#include "Scripting/ScriptPropertyReader.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/Tag.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
-#include "Components/CameraComponent.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/UISlider.hpp"
 #include "Components/Velocity.hpp"
+#include "Scripting/ScriptPropertyReader.hpp"
+
 
 #pragma warning(push, 0)
 #include "Core/json.hpp"
@@ -43,11 +44,12 @@ using json = nlohmann::json;
 namespace Runtime {
 
 // Static extension callbacks (null by default)
-SceneSerializer::SerializeExtFn   SceneSerializer::s_serializeExt;
+SceneSerializer::SerializeExtFn SceneSerializer::s_serializeExt;
 SceneSerializer::DeserializeExtFn SceneSerializer::s_deserializeExt;
 
-void SceneSerializer::setExtensions(SerializeExtFn ser, DeserializeExtFn deser) {
-  s_serializeExt   = std::move(ser);
+void SceneSerializer::setExtensions(SerializeExtFn ser,
+                                    DeserializeExtFn deser) {
+  s_serializeExt = std::move(ser);
   s_deserializeExt = std::move(deser);
 }
 
@@ -148,30 +150,35 @@ static json SerializeWorld(ECS::World &world,
     // TextRenderer
     if (auto *textComp = world.getComponent<Components::TextRenderer>(entity)) {
       obj["components"]["textRenderer"] = {
-          {"text",             textComp->text},
-          {"fontId",           textComp->fontId},
-          {"fontSize",         textComp->fontSize},
-          {"color",            {{"r", textComp->color.r}, {"g", textComp->color.g}, {"b", textComp->color.b}}},
-          {"visible",          textComp->visible},
-          {"boxSize",          {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
-          {"alignment",        static_cast<int>(textComp->alignment)},
-          {"verticalAlignment",static_cast<int>(textComp->verticalAlign)},
-          {"wordWrap",         textComp->wordWrap},
-          {"lineSpacing",      textComp->lineSpacing},
-          {"padding",          {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
+          {"text", textComp->text},
+          {"fontId", textComp->fontId},
+          {"fontSize", textComp->fontSize},
+          {"color",
+           {{"r", textComp->color.r},
+            {"g", textComp->color.g},
+            {"b", textComp->color.b}}},
+          {"visible", textComp->visible},
+          {"boxSize", {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
+          {"alignment", static_cast<int>(textComp->alignment)},
+          {"verticalAlignment", static_cast<int>(textComp->verticalAlign)},
+          {"wordWrap", textComp->wordWrap},
+          {"lineSpacing", textComp->lineSpacing},
+          {"padding",
+           {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
     }
 
-    // LuaScript ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â stored as a JSON array of script entries
+    // LuaScript ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â stored as a JSON array of script
+    // entries
     if (auto *ls = world.getComponent<Components::LuaScript>(entity)) {
       json arr = json::array();
-      for (auto& entry : ls->scripts) {
+      for (auto &entry : ls->scripts) {
         json lsj;
         lsj["scriptPath"] = entry.scriptPath;
-        lsj["enabled"]    = entry.enabled;
+        lsj["enabled"] = entry.enabled;
         if (!entry.properties.empty()) {
           json propsJ = json::object();
-          for (auto& [key, val] : entry.properties)
-            std::visit([&](auto&& v) { propsJ[key] = v; }, val);
+          for (auto &[key, val] : entry.properties)
+            std::visit([&](auto &&v) { propsJ[key] = v; }, val);
           lsj["properties"] = propsJ;
         }
         arr.push_back(lsj);
@@ -180,57 +187,73 @@ static json SerializeWorld(ECS::World &world,
     }
 
     // Light
-    if (auto* lt = world.getComponent<Components::Light>(entity)) {
+    if (auto *lt = world.getComponent<Components::Light>(entity)) {
       obj["components"]["light"] = {
           {"active", lt->active},
           {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
-          {"color",  {{"r", lt->color.r},  {"g", lt->color.g},  {"b", lt->color.b}}},
-          {"radius", lt->radius}, {"angle", lt->angle}, {"intensity", lt->intensity}};
+          {"color",
+           {{"r", lt->color.r}, {"g", lt->color.g}, {"b", lt->color.b}}},
+          {"radius", lt->radius},
+          {"angle", lt->angle},
+          {"intensity", lt->intensity}};
     }
 
     // UIButton
     if (auto *ub = world.getComponent<Components::UIButton>(entity)) {
       obj["components"]["uiButton"] = {
-          {"action",         ub->action},
-          {"uiScript",       ub->uiScript},
-          {"interactable",   ub->interactable},
+          {"action", ub->action},
+          {"uiScript", ub->uiScript},
+          {"interactable", ub->interactable},
           {"showBackground", ub->showBackground},
-          {"size",           {{"x", ub->size.x},   {"y", ub->size.y}}},
-          {"offset",         {{"x", ub->offset.x}, {"y", ub->offset.y}}},
-          {"normalColor",    {{"r", ub->normalColor.r}, {"g", ub->normalColor.g}, {"b", ub->normalColor.b}}},
-          {"hoverColor",     {{"r", ub->hoverColor.r},  {"g", ub->hoverColor.g},  {"b", ub->hoverColor.b}}}
-      };
+          {"size", {{"x", ub->size.x}, {"y", ub->size.y}}},
+          {"offset", {{"x", ub->offset.x}, {"y", ub->offset.y}}},
+          {"normalColor",
+           {{"r", ub->normalColor.r},
+            {"g", ub->normalColor.g},
+            {"b", ub->normalColor.b}}},
+          {"hoverColor",
+           {{"r", ub->hoverColor.r},
+            {"g", ub->hoverColor.g},
+            {"b", ub->hoverColor.b}}}};
     }
 
     // UISlider
     if (auto *us = world.getComponent<Components::UISlider>(entity)) {
-      obj["components"]["uiSlider"] = {
-          {"settingKey",  us->settingKey},
-          {"minValue",    us->minValue},
-          {"maxValue",    us->maxValue},
-          {"value",       us->value},
-          {"trackWidth",  us->trackWidth},
-          {"trackHeight", us->trackHeight},
-          {"handleSize",  us->handleSize},
-          {"trackColor",  {{"r", us->trackColor.r},  {"g", us->trackColor.g},
-                           {"b", us->trackColor.b},  {"a", us->trackColor.a}}},
-          {"fillColor",   {{"r", us->fillColor.r},   {"g", us->fillColor.g},
-                           {"b", us->fillColor.b},   {"a", us->fillColor.a}}},
-          {"handleColor", {{"r", us->handleColor.r}, {"g", us->handleColor.g},
-                           {"b", us->handleColor.b}, {"a", us->handleColor.a}}}
-      };
+      obj["components"]["uiSlider"] = {{"settingKey", us->settingKey},
+                                       {"minValue", us->minValue},
+                                       {"maxValue", us->maxValue},
+                                       {"value", us->value},
+                                       {"trackWidth", us->trackWidth},
+                                       {"trackHeight", us->trackHeight},
+                                       {"handleSize", us->handleSize},
+                                       {"trackColor",
+                                        {{"r", us->trackColor.r},
+                                         {"g", us->trackColor.g},
+                                         {"b", us->trackColor.b},
+                                         {"a", us->trackColor.a}}},
+                                       {"fillColor",
+                                        {{"r", us->fillColor.r},
+                                         {"g", us->fillColor.g},
+                                         {"b", us->fillColor.b},
+                                         {"a", us->fillColor.a}}},
+                                       {"handleColor",
+                                        {{"r", us->handleColor.r},
+                                         {"g", us->handleColor.g},
+                                         {"b", us->handleColor.b},
+                                         {"a", us->handleColor.a}}}};
     }
 
     // CameraComponent
-    if (auto* cc = world.getComponent<Components::CameraComponent>(entity)) {
+    if (auto *cc = world.getComponent<Components::CameraComponent>(entity)) {
       obj["components"]["cameraComponent"] = {
           {"isMain", cc->isMain},
-          {"zoom",   cc->zoom},
+          {"zoom", cc->zoom},
           {"offset", {{"x", cc->offset.x}, {"y", cc->offset.y}}}};
     }
 
     // Game-specific components (registered via SceneSerializer::setExtensions)
-    if (serExt) serExt(entity, world, &obj["components"]);
+    if (serExt)
+      serExt(entity, world, &obj["components"]);
 
     root["objects"].push_back(obj);
   });
@@ -414,9 +437,9 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("textRenderer")) {
         auto &textRendererJson = components["textRenderer"];
         Components::TextRenderer textComp;
-        textComp.text    = textRendererJson.value("text",    "");
-        textComp.fontId  = textRendererJson.value("fontId",  "Debug");
-        textComp.fontSize= textRendererJson.value("fontSize", 1.0f);
+        textComp.text = textRendererJson.value("text", "");
+        textComp.fontId = textRendererJson.value("fontId", "Debug");
+        textComp.fontSize = textRendererJson.value("fontSize", 1.0f);
         if (textRendererJson.contains("color")) {
           textComp.color.r = textRendererJson["color"].value("r", 1.0f);
           textComp.color.g = textRendererJson["color"].value("g", 1.0f);
@@ -427,10 +450,12 @@ bool SceneSerializer::Deserialize(ECS::World &world,
           textComp.boxSize.x = textRendererJson["boxSize"].value("x", 200.0f);
           textComp.boxSize.y = textRendererJson["boxSize"].value("y", 100.0f);
         }
-        textComp.alignment     = static_cast<Components::TextAlignment>   (textRendererJson.value("alignment",          0));
-        textComp.verticalAlign = static_cast<Components::VerticalAlignment>(textRendererJson.value("verticalAlignment", 0));
-        textComp.wordWrap      = textRendererJson.value("wordWrap",    true);
-        textComp.lineSpacing   = textRendererJson.value("lineSpacing", 1.0f);
+        textComp.alignment = static_cast<Components::TextAlignment>(
+            textRendererJson.value("alignment", 0));
+        textComp.verticalAlign = static_cast<Components::VerticalAlignment>(
+            textRendererJson.value("verticalAlignment", 0));
+        textComp.wordWrap = textRendererJson.value("wordWrap", true);
+        textComp.lineSpacing = textRendererJson.value("lineSpacing", 1.0f);
         if (textRendererJson.contains("padding")) {
           textComp.padding.x = textRendererJson["padding"].value("x", 0.0f);
           textComp.padding.y = textRendererJson["padding"].value("y", 0.0f);
@@ -438,31 +463,39 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         world.addComponent(entity, textComp);
       }
 
-      // LuaScript ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â supports new array format and old single-object format
+      // LuaScript ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â supports new array format and old
+      // single-object format
       if (components.contains("luaScript")) {
-        auto& lsData = components["luaScript"];
+        auto &lsData = components["luaScript"];
         Components::LuaScript ls;
 
-        auto deserializeEntry = [](const json& lsj) {
+        auto deserializeEntry = [](const json &lsj) {
           Components::LuaScriptEntry entry;
           entry.scriptPath = lsj.value("scriptPath", "");
-          entry.enabled    = lsj.value("enabled", true);
+          entry.enabled = lsj.value("enabled", true);
           if (lsj.contains("properties") && !entry.scriptPath.empty()) {
-            auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
-            for (auto& def : propDefs) {
-              if (!lsj["properties"].contains(def.name)) continue;
-              auto& jv = lsj["properties"][def.name];
-              if      (def.type == "float")  entry.properties[def.name] = jv.get<float>();
-              else if (def.type == "int")    entry.properties[def.name] = jv.get<int>();
-              else if (def.type == "bool")   entry.properties[def.name] = jv.get<bool>();
-              else if (def.type == "string") entry.properties[def.name] = jv.get<std::string>();
+            auto &propDefs =
+                Scripting::ScriptPropertyReader::read(entry.scriptPath);
+            for (auto &def : propDefs) {
+              if (!lsj["properties"].contains(def.name))
+                continue;
+              auto &jv = lsj["properties"][def.name];
+              if (def.type == "float")
+                entry.properties[def.name] = jv.get<float>();
+              else if (def.type == "int")
+                entry.properties[def.name] = jv.get<int>();
+              else if (def.type == "bool")
+                entry.properties[def.name] = jv.get<bool>();
+              else if (def.type == "string")
+                entry.properties[def.name] = jv.get<std::string>();
             }
           }
           return entry;
         };
 
         if (lsData.is_array()) {
-          for (auto& item : lsData) ls.scripts.push_back(deserializeEntry(item));
+          for (auto &item : lsData)
+            ls.scripts.push_back(deserializeEntry(item));
         } else {
           ls.scripts.push_back(deserializeEntry(lsData)); // backward compat
         }
@@ -471,12 +504,20 @@ bool SceneSerializer::Deserialize(ECS::World &world,
 
       // Light
       if (components.contains("light")) {
-        auto& lc = components["light"];
+        auto &lc = components["light"];
         Components::Light lt;
         lt.active = lc.value("active", true);
-        if (lc.contains("offset")) { lt.offset.x = lc["offset"].value("x", 35.f); lt.offset.y = lc["offset"].value("y", -20.f); }
-        if (lc.contains("color"))  { lt.color.r  = lc["color"].value("r", 1.f);   lt.color.g  = lc["color"].value("g", 0.9f);  lt.color.b  = lc["color"].value("b", 0.6f); }
-        lt.radius = lc.value("radius", 300.f); lt.angle = lc.value("angle", 60.f);
+        if (lc.contains("offset")) {
+          lt.offset.x = lc["offset"].value("x", 35.f);
+          lt.offset.y = lc["offset"].value("y", -20.f);
+        }
+        if (lc.contains("color")) {
+          lt.color.r = lc["color"].value("r", 1.f);
+          lt.color.g = lc["color"].value("g", 0.9f);
+          lt.color.b = lc["color"].value("b", 0.6f);
+        }
+        lt.radius = lc.value("radius", 300.f);
+        lt.angle = lc.value("angle", 60.f);
         lt.intensity = lc.value("intensity", 1.f);
         world.addComponent(entity, lt);
       }
@@ -485,15 +526,16 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("uiButton")) {
         auto &ub = components["uiButton"];
         Components::UIButton btn;
-        btn.action         = ub.value("action", "");
-        btn.uiScript       = ub.value("uiScript", "");
-        btn.interactable   = ub.value("interactable", true);
+        btn.action = ub.value("action", "");
+        btn.uiScript = ub.value("uiScript", "");
+        btn.interactable = ub.value("interactable", true);
         btn.showBackground = ub.value("showBackground", true);
         if (ub.contains("size")) {
           btn.size = {ub["size"].value("x", 0.f), ub["size"].value("y", 0.f)};
         }
         if (ub.contains("offset")) {
-          btn.offset = {ub["offset"].value("x", 0.f), ub["offset"].value("y", 0.f)};
+          btn.offset = {ub["offset"].value("x", 0.f),
+                        ub["offset"].value("y", 0.f)};
         }
         if (ub.contains("normalColor")) {
           btn.normalColor = {ub["normalColor"].value("r", 1.f),
@@ -512,13 +554,13 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("uiSlider")) {
         auto &us = components["uiSlider"];
         Components::UISlider sl;
-        sl.settingKey  = us.value("settingKey",  "");
-        sl.minValue    = us.value("minValue",    0.f);
-        sl.maxValue    = us.value("maxValue",    1.f);
-        sl.value       = us.value("value",       1.f);
-        sl.trackWidth  = us.value("trackWidth",  400.f);
+        sl.settingKey = us.value("settingKey", "");
+        sl.minValue = us.value("minValue", 0.f);
+        sl.maxValue = us.value("maxValue", 1.f);
+        sl.value = us.value("value", 1.f);
+        sl.trackWidth = us.value("trackWidth", 400.f);
         sl.trackHeight = us.value("trackHeight", 18.f);
-        sl.handleSize  = us.value("handleSize",  22.f);
+        sl.handleSize = us.value("handleSize", 22.f);
         if (us.contains("trackColor")) {
           sl.trackColor = {us["trackColor"].value("r", 0.25f),
                            us["trackColor"].value("g", 0.25f),
@@ -526,10 +568,10 @@ bool SceneSerializer::Deserialize(ECS::World &world,
                            us["trackColor"].value("a", 1.f)};
         }
         if (us.contains("fillColor")) {
-          sl.fillColor  = {us["fillColor"].value("r", 0.85f),
-                           us["fillColor"].value("g", 0.55f),
-                           us["fillColor"].value("b", 0.10f),
-                           us["fillColor"].value("a", 1.f)};
+          sl.fillColor = {us["fillColor"].value("r", 0.85f),
+                          us["fillColor"].value("g", 0.55f),
+                          us["fillColor"].value("b", 0.10f),
+                          us["fillColor"].value("a", 1.f)};
         }
         if (us.contains("handleColor")) {
           sl.handleColor = {us["handleColor"].value("r", 1.f),
@@ -542,10 +584,10 @@ bool SceneSerializer::Deserialize(ECS::World &world,
 
       // CameraComponent
       if (components.contains("cameraComponent")) {
-        auto& cc = components["cameraComponent"];
+        auto &cc = components["cameraComponent"];
         Components::CameraComponent cam;
         cam.isMain = cc.value("isMain", true);
-        cam.zoom   = cc.value("zoom", 1.0f);
+        cam.zoom = cc.value("zoom", 1.0f);
         if (cc.contains("offset")) {
           cam.offset.x = cc["offset"].value("x", 0.0f);
           cam.offset.y = cc["offset"].value("y", 0.0f);
@@ -553,8 +595,10 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         world.addComponent(entity, cam);
       }
 
-      // Game-specific components (registered via SceneSerializer::setExtensions)
-      if (s_deserializeExt) s_deserializeExt(entity, world, &components);
+      // Game-specific components (registered via
+      // SceneSerializer::setExtensions)
+      if (s_deserializeExt)
+        s_deserializeExt(entity, world, &components);
     }
   }
   return true;
@@ -612,4 +656,3 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
 }
 
 } // namespace Runtime
-

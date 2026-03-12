@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file           FFmpegDecoder.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Implements the FFmpeg-backed decoder for engine video playback.
+
+                Opens media files, decodes video frames on a worker thread,
+                converts them to RGBA, and pushes them into the frame queue.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #include "Video/FFmpegDecoder.hpp"
 #include <chrono>
 #include <iostream>

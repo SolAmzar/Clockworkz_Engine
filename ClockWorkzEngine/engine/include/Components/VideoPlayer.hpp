@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           VideoPlayer.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Declares the ECS video playback component used by the runtime
+                editor and gameplay systems.
+
+                Stores video asset path, playback controls, runtime status, and
+                the desired render target mode for an entity-driven video.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 #include <string>
 

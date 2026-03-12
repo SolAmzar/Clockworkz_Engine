@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           FFmpegDecoder.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Declares the FFmpeg-backed video decoder used by engine video
+                playback.
+
+                Manages FFmpeg decode state, a background decode thread, and
+                frame delivery into a thread-safe queue.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include "VideoFrameQueue.hpp"

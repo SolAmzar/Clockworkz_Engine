@@ -11,111 +11,132 @@ reserved.
 /******************************************************************************/
 
 #include "Scripting/EntityRef.hpp"
-#include "Components/LuaScript.hpp"
+#include "Components/Collider.hpp"
 #include "Components/Health.hpp"
+#include "Components/Light.hpp"
+#include "Components/LuaScript.hpp"
+#include "Components/SpriteAnimator.hpp"
+#include "Components/SpriteRenderer.hpp"
+#include "Components/Tag.hpp"
+#include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
-#include "Components/SpriteRenderer.hpp"
-#include "Components/TextRenderer.hpp"
-#include "Components/Collider.hpp"
-#include "Components/Tag.hpp"
-#include "Components/Light.hpp"
-#include "Components/SpriteAnimator.hpp"
+
 
 namespace Scripting {
 
-// Identity 
+// Identity
 
 bool EntityRef::isValid() const {
   return m_world && m_world->isValid(m_entity);
 }
 
-// Transform 
+// Transform
 
 vec2 EntityRef::getPosition() const {
-  if (!m_world) return {0.f, 0.f};
+  if (!m_world)
+    return {0.f, 0.f};
   auto *t = m_world->getComponent<Components::Transform>(m_entity);
   return t ? t->position : vec2{0.f, 0.f};
 }
 
 void EntityRef::setPosition(const vec2 &pos) {
-  if (!m_world) return;
+  if (!m_world)
+    return;
   auto *t = m_world->getComponent<Components::Transform>(m_entity);
-  if (t) t->position = pos;
+  if (t)
+    t->position = pos;
 }
 
 float EntityRef::getRotation() const {
-  if (!m_world) return 0.f;
+  if (!m_world)
+    return 0.f;
   auto *t = m_world->getComponent<Components::Transform>(m_entity);
   return t ? t->rotation : 0.f;
 }
 
 void EntityRef::setRotation(float rot) {
-  if (!m_world) return;
+  if (!m_world)
+    return;
   auto *t = m_world->getComponent<Components::Transform>(m_entity);
-  if (t) t->rotation = rot;
+  if (t)
+    t->rotation = rot;
 }
 
 vec2 EntityRef::getScale() const {
-  if (!m_world) return {1.f, 1.f};
+  if (!m_world)
+    return {1.f, 1.f};
   auto *t = m_world->getComponent<Components::Transform>(m_entity);
   return t ? t->scale : vec2{1.f, 1.f};
 }
 
 void EntityRef::setScale(const vec2 &scale) {
-  if (!m_world) return;
+  if (!m_world)
+    return;
   auto *t = m_world->getComponent<Components::Transform>(m_entity);
-  if (t) t->scale = scale;
+  if (t)
+    t->scale = scale;
 }
 
-// Velocity 
+// Velocity
 
 vec2 EntityRef::getVelocity() const {
-  if (!m_world) return {0.f, 0.f};
+  if (!m_world)
+    return {0.f, 0.f};
   auto *v = m_world->getComponent<Components::Velocity>(m_entity);
   return v ? v->velocity : vec2{0.f, 0.f};
 }
 
 void EntityRef::setVelocity(const vec2 &vel) {
-  if (!m_world) return;
+  if (!m_world)
+    return;
   auto *v = m_world->getComponent<Components::Velocity>(m_entity);
-  if (v) v->velocity = vel;
+  if (v)
+    v->velocity = vel;
 }
 
 float EntityRef::getMoveSpeed() const {
-  if (!m_world) return 0.f;
+  if (!m_world)
+    return 0.f;
   auto *v = m_world->getComponent<Components::Velocity>(m_entity);
   return v ? v->moveSpeed : 0.f;
 }
 
 void EntityRef::setMoveSpeed(float speed) {
-  if (!m_world) return;
+  if (!m_world)
+    return;
   auto *v = m_world->getComponent<Components::Velocity>(m_entity);
-  if (v) v->moveSpeed = speed;
+  if (v)
+    v->moveSpeed = speed;
 }
 
-// Health 
+// Health
 
 float EntityRef::getHp() const {
-  if (!m_world) return 0.f;
+  if (!m_world)
+    return 0.f;
   auto *h = m_world->getComponent<Components::Health>(m_entity);
   return h ? h->hp : 0.f;
 }
 
 void EntityRef::setHp(float hp) {
-  if (!m_world) return;
+  if (!m_world)
+    return;
   auto *h = m_world->getComponent<Components::Health>(m_entity);
-  if (h) h->hp = hp;
+  if (h)
+    h->hp = hp;
 }
 
 float EntityRef::getMaxHp() const {
-  if (!m_world) return 0.f;
+  if (!m_world)
+    return 0.f;
   auto *h = m_world->getComponent<Components::Health>(m_entity);
   return h ? h->maxHp : 0.f;
 }
 
 bool EntityRef::isDead() const {
-  if (!m_world) return false;
+  if (!m_world)
+    return false;
   auto *h = m_world->getComponent<Components::Health>(m_entity);
   return h ? h->isDead : false;
 }
@@ -134,72 +155,221 @@ bool EntityRef::hasHealth() const {
 }
 
 // --- Light ---
-bool  EntityRef::hasLight() const { return m_world && m_world->hasComponent<Components::Light>(m_entity); }
-bool  EntityRef::isLightActive() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->active : false; }
-void  EntityRef::setLightActive(bool v) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->active = v; }
-float EntityRef::getLightRadius() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->radius : 0.f; }
-float EntityRef::getLightAngle() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->angle : 0.f; }
-float EntityRef::getLightOffsetX() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.x : 0.f; }
-float EntityRef::getLightOffsetY() const { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; return t ? t->offset.y : 0.f; }
-void  EntityRef::setLightOffsetX(float x) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.x = x; }
-void  EntityRef::setLightOffsetY(float y) { auto* t = m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr; if (t) t->offset.y = y; }
+bool EntityRef::hasLight() const {
+  return m_world && m_world->hasComponent<Components::Light>(m_entity);
+}
+bool EntityRef::isLightActive() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  return t ? t->active : false;
+}
+void EntityRef::setLightActive(bool v) {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  if (t)
+    t->active = v;
+}
+float EntityRef::getLightRadius() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  return t ? t->radius : 0.f;
+}
+float EntityRef::getLightAngle() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  return t ? t->angle : 0.f;
+}
+float EntityRef::getLightOffsetX() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  return t ? t->offset.x : 0.f;
+}
+float EntityRef::getLightOffsetY() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  return t ? t->offset.y : 0.f;
+}
+void EntityRef::setLightOffsetX(float x) {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  if (t)
+    t->offset.x = x;
+}
+void EntityRef::setLightOffsetY(float y) {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  if (t)
+    t->offset.y = y;
+}
 
 // --- TextRenderer ---
-bool        EntityRef::hasTextRenderer() const { return m_world && m_world->hasComponent<Components::TextRenderer>(m_entity); }
-std::string EntityRef::getText()         const { auto* r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity) : nullptr; return r ? r->text : ""; }
-void        EntityRef::setText(const std::string& t) { auto* r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity) : nullptr; if (r) r->text = t; }
+bool EntityRef::hasTextRenderer() const {
+  return m_world && m_world->hasComponent<Components::TextRenderer>(m_entity);
+}
+std::string EntityRef::getText() const {
+  auto *r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                    : nullptr;
+  return r ? r->text : "";
+}
+void EntityRef::setText(const std::string &t) {
+  auto *r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                    : nullptr;
+  if (r)
+    r->text = t;
+}
 
 // --- SpriteRenderer ---
-bool        EntityRef::hasSpriteRenderer() const { return m_world && m_world->hasComponent<Components::SpriteRenderer>(m_entity); }
-std::string EntityRef::getSpriteTextureId() const { auto* s = m_world ? m_world->getComponent<Components::SpriteRenderer>(m_entity) : nullptr; return s ? s->textureId : ""; }
-void        EntityRef::setSpriteTextureId(const std::string& id) { auto* s = m_world ? m_world->getComponent<Components::SpriteRenderer>(m_entity) : nullptr; if (s) s->textureId = id; }
-float       EntityRef::getSpriteAlpha() const { auto* s = m_world ? m_world->getComponent<Components::SpriteRenderer>(m_entity) : nullptr; return s ? s->color.a : 1.f; }
-void        EntityRef::setSpriteAlpha(float a) { auto* s = m_world ? m_world->getComponent<Components::SpriteRenderer>(m_entity) : nullptr; if (s) s->color.a = a; }
-bool        EntityRef::isSpriteUnlit() const { auto* s = m_world ? m_world->getComponent<Components::SpriteRenderer>(m_entity) : nullptr; return s ? s->unlit : false; }
-void        EntityRef::setSpriteUnlit(bool v) { auto* s = m_world ? m_world->getComponent<Components::SpriteRenderer>(m_entity) : nullptr; if (s) s->unlit = v; }
+bool EntityRef::hasSpriteRenderer() const {
+  return m_world && m_world->hasComponent<Components::SpriteRenderer>(m_entity);
+}
+std::string EntityRef::getSpriteTextureId() const {
+  auto *s = m_world
+                ? m_world->getComponent<Components::SpriteRenderer>(m_entity)
+                : nullptr;
+  return s ? s->textureId : "";
+}
+void EntityRef::setSpriteTextureId(const std::string &id) {
+  auto *s = m_world
+                ? m_world->getComponent<Components::SpriteRenderer>(m_entity)
+                : nullptr;
+  if (s)
+    s->textureId = id;
+}
+float EntityRef::getSpriteAlpha() const {
+  auto *s = m_world
+                ? m_world->getComponent<Components::SpriteRenderer>(m_entity)
+                : nullptr;
+  return s ? s->color.a : 1.f;
+}
+void EntityRef::setSpriteAlpha(float a) {
+  auto *s = m_world
+                ? m_world->getComponent<Components::SpriteRenderer>(m_entity)
+                : nullptr;
+  if (s)
+    s->color.a = a;
+}
+bool EntityRef::isSpriteUnlit() const {
+  auto *s = m_world
+                ? m_world->getComponent<Components::SpriteRenderer>(m_entity)
+                : nullptr;
+  return s ? s->unlit : false;
+}
+void EntityRef::setSpriteUnlit(bool v) {
+  auto *s = m_world
+                ? m_world->getComponent<Components::SpriteRenderer>(m_entity)
+                : nullptr;
+  if (s)
+    s->unlit = v;
+}
 
 // --- Collider ---
-bool EntityRef::hasCollider() const { return m_world && m_world->hasComponent<Components::Collider>(m_entity); }
-bool EntityRef::isColliderSolid() const { auto* c = m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr; return c ? c->isSolid : false; }
-void EntityRef::setColliderSolid(bool v) { auto* c = m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr; if (c) c->isSolid = v; }
-bool EntityRef::isColliderMoveable() const { auto* c = m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr; return c ? c->moveable : false; }
-void EntityRef::setColliderMoveable(bool v) { auto* c = m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr; if (c) c->moveable = v; }
+bool EntityRef::hasCollider() const {
+  return m_world && m_world->hasComponent<Components::Collider>(m_entity);
+}
+bool EntityRef::isColliderSolid() const {
+  auto *c =
+      m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr;
+  return c ? c->isSolid : false;
+}
+void EntityRef::setColliderSolid(bool v) {
+  auto *c =
+      m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr;
+  if (c)
+    c->isSolid = v;
+}
+bool EntityRef::isColliderMoveable() const {
+  auto *c =
+      m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr;
+  return c ? c->moveable : false;
+}
+void EntityRef::setColliderMoveable(bool v) {
+  auto *c =
+      m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr;
+  if (c)
+    c->moveable = v;
+}
 
 // --- Tag ---
-bool        EntityRef::hasTag() const { return m_world && m_world->hasComponent<Components::Tag>(m_entity); }
-std::string EntityRef::getTagValue() const { auto* t = m_world ? m_world->getComponent<Components::Tag>(m_entity) : nullptr; return t ? t->tag : ""; }
+bool EntityRef::hasTag() const {
+  return m_world && m_world->hasComponent<Components::Tag>(m_entity);
+}
+std::string EntityRef::getTagValue() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Tag>(m_entity) : nullptr;
+  return t ? t->tag : "";
+}
 
 // --- SpriteAnimator ---
-bool EntityRef::hasSpriteAnimator() const { return m_world && m_world->hasComponent<Components::SpriteAnimator>(m_entity); }
-void EntityRef::playAnimation(const std::string& name, bool force) { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; if (a) a->play(name, force); }
-std::string EntityRef::getCurrentAnimationClip() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->currentClip : std::string{}; }
-bool EntityRef::isAnimationPlaying() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a && a->playing; }
-float EntityRef::getAnimationPlaybackSpeed() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->playbackSpeed : 1.f; }
-void  EntityRef::setAnimationPlaybackSpeed(float s) { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; if (a) a->playbackSpeed = s; }
+bool EntityRef::hasSpriteAnimator() const {
+  return m_world && m_world->hasComponent<Components::SpriteAnimator>(m_entity);
+}
+void EntityRef::playAnimation(const std::string &name, bool force) {
+  auto *a = m_world
+                ? m_world->getComponent<Components::SpriteAnimator>(m_entity)
+                : nullptr;
+  if (a)
+    a->play(name, force);
+}
+std::string EntityRef::getCurrentAnimationClip() const {
+  auto *a = m_world
+                ? m_world->getComponent<Components::SpriteAnimator>(m_entity)
+                : nullptr;
+  return a ? a->currentClip : std::string{};
+}
+bool EntityRef::isAnimationPlaying() const {
+  auto *a = m_world
+                ? m_world->getComponent<Components::SpriteAnimator>(m_entity)
+                : nullptr;
+  return a && a->playing;
+}
+float EntityRef::getAnimationPlaybackSpeed() const {
+  auto *a = m_world
+                ? m_world->getComponent<Components::SpriteAnimator>(m_entity)
+                : nullptr;
+  return a ? a->playbackSpeed : 1.f;
+}
+void EntityRef::setAnimationPlaybackSpeed(float s) {
+  auto *a = m_world
+                ? m_world->getComponent<Components::SpriteAnimator>(m_entity)
+                : nullptr;
+  if (a)
+    a->playbackSpeed = s;
+}
 
 // --- Generic script property access ---
 
-bool EntityRef::hasScript(const std::string& scriptPath) const {
-  auto* ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity) : nullptr;
-  if (!ls) return false;
-  for (const auto& entry : ls->scripts)
-    if (entry.scriptPath == scriptPath && entry.enabled) return true;
+bool EntityRef::hasScript(const std::string &scriptPath) const {
+  auto *ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity)
+                     : nullptr;
+  if (!ls)
+    return false;
+  for (const auto &entry : ls->scripts)
+    if (entry.scriptPath == scriptPath && entry.enabled)
+      return true;
   return false;
 }
 
-Components::LuaScriptEntry* EntityRef::findScriptEntry(const std::string& scriptPath) {
-  auto* ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity) : nullptr;
-  if (!ls) return nullptr;
-  for (auto& entry : ls->scripts)
-    if (entry.scriptPath == scriptPath) return &entry;
+Components::LuaScriptEntry *
+EntityRef::findScriptEntry(const std::string &scriptPath) {
+  auto *ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity)
+                     : nullptr;
+  if (!ls)
+    return nullptr;
+  for (auto &entry : ls->scripts)
+    if (entry.scriptPath == scriptPath)
+      return &entry;
   return nullptr;
 }
 
-const Components::LuaScriptEntry* EntityRef::findScriptEntry(const std::string& scriptPath) const {
-  auto* ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity) : nullptr;
-  if (!ls) return nullptr;
-  for (const auto& entry : ls->scripts)
-    if (entry.scriptPath == scriptPath) return &entry;
+const Components::LuaScriptEntry *
+EntityRef::findScriptEntry(const std::string &scriptPath) const {
+  auto *ls = m_world ? m_world->getComponent<Components::LuaScript>(m_entity)
+                     : nullptr;
+  if (!ls)
+    return nullptr;
+  for (const auto &entry : ls->scripts)
+    if (entry.scriptPath == scriptPath)
+      return &entry;
   return nullptr;
 }
 

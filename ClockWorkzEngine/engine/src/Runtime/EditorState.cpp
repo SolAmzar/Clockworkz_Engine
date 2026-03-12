@@ -504,7 +504,14 @@ void EditorState::render(Core::Time* timer) {
     auto& renderer = engine.rendering();
     auto& camera   = engine.camera();
 
-    renderer.beginScenePass(camera.viewProj(), glm::vec4(1.0f));
+    glm::vec4 sceneTint(1.0f);
+    if (m_scene.isDarknessEnabled()) {
+        float intensity = std::clamp(m_scene.getDarknessIntensity(), 0.0f, 1.0f);
+        glm::vec3 tintRgb = glm::mix(glm::vec3(1.0f), m_scene.getDarknessColor(), intensity);
+        sceneTint = glm::vec4(tintRgb, 1.0f);
+    }
+
+    renderer.beginScenePass(camera.viewProj(), sceneTint);
     m_scene.Render(renderer);
     renderer.endScenePass();
     m_scene.RenderText(renderer);
@@ -883,6 +890,24 @@ void EditorState::renderSystemsWindow() {
     ImGui::Checkbox("StateMachine", &m_scene.m_stateMachineSystemEnabled);
     ImGui::Checkbox("TextRender",   &m_scene.m_textRenderSystemEnabled);
     ImGui::Checkbox("Script",       &m_scene.m_scriptSystemEnabled);
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("Scene Darkness");
+
+    bool darknessEnabled = m_scene.isDarknessEnabled();
+    if (ImGui::Checkbox("Enable Darkness Tint", &darknessEnabled)) {
+        m_scene.setDarknessEnabled(darknessEnabled);
+    }
+
+    float darknessIntensity = m_scene.getDarknessIntensity();
+    if (ImGui::SliderFloat("Darkness Level", &darknessIntensity, 0.0f, 1.0f, "%.2f")) {
+        m_scene.setDarknessIntensity(darknessIntensity);
+    }
+
+    glm::vec3 darknessColor = m_scene.getDarknessColor();
+    if (ImGui::ColorEdit3("Darkness Color", glm::value_ptr(darknessColor))) {
+        m_scene.setDarknessColor(darknessColor);
+    }
 
     ImGui::Spacing();
     ImGui::Text("Entity count: %u", m_scene.GetWorld().entityCount());

@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           OpenGLVideoTexture.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Implements the OpenGL helper that stores decoded video frames
+                in a GPU texture.
+
+                Creates, updates, and destroys the texture resource used by the
+                engine video playback pipeline.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #include "Graphics/OpenGLVideoTexture.hpp"
 #include <GL/glew.h>
 #include <iostream>

@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           VideoPlaybackSystem.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Implements timed ECS video playback and rendering.
+
+                Initializes decoder contexts on demand, presents frames using
+                playback timestamps, and updates SpriteRenderer targets with the
+                latest video texture.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #include "Systems/VideoPlaybackSystem.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"

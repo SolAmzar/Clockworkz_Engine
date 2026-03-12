@@ -1,3 +1,18 @@
+/******************************************************************************/
+/*!
+\file           VideoPlayerComponent.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon], 100%
+\brief          Implements the legacy gameplay video player component wrapper.
+
+                Handles decoder setup, playback control, frame upload, and
+                sprite rendering for GameObject-based video playback.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #include "Gameplay/Components/VideoPlayerComponent.hpp"
 #include "Core/Engine.hpp"
 #include "Gameplay/Components/SpriteRenderer.hpp"

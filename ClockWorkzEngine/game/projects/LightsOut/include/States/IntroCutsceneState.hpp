@@ -1,3 +1,19 @@
+/******************************************************************************/
+/*!
+\file           IntroCutsceneState.hpp
+\project        Lights Out
+\author(s)      [Lebon], 100%
+\brief          Declares the startup game state that plays the intro cutscene
+                before the main menu.
+
+                Owns the temporary scene, skip handling, video playback system,
+                and cutscene-to-menu transition logic.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include "ECS/World.hpp"

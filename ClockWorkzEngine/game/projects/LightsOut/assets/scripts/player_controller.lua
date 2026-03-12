@@ -35,9 +35,16 @@ PlayerController._footstepTimer  = 0.0
 PlayerController._baseTorchOffX  = nil   -- captured once on first torch use
 PlayerController._baseTorchOffY  = nil
 PlayerController._torchActive    = false
+PlayerController._manualTorchOff = false
+PlayerController._batteryDying   = false
+PlayerController._flickerTimer   = 0.0
+PlayerController._flickerStep    = 0.0
 PlayerController._isDead         = false
 PlayerController._deathTimer     = 0.0
 local DEATH_RESPAWN_DELAY        = 2.8   -- seconds before level reloads
+local BATTERY_DEATH_FLICKER_TIME = 0.9
+local BATTERY_DEATH_FLICKER_MIN_STEP = 0.015
+local BATTERY_DEATH_FLICKER_MAX_STEP = 0.08
 
 function PlayerController:onStart(entity)
     entity.moveSpeed = self.walkSpeed
@@ -138,12 +145,14 @@ function PlayerController:onUpdate(entity, dt)
             self._baseTorchOffX = entity:getLightOffsetX()
             self._baseTorchOffY = entity:getLightOffsetY()
             self._torchActive   = entity:isLightActive()
+            self._manualTorchOff = not self._torchActive
         end
 
-        if input:wasKeyPressed(Keys.F) then
+        if (not self._batteryDying) and input:wasKeyPressed(Keys.F) then
             local charge = entity:hasBattery() and entity:getBatteryCharge() or 1.0
             if charge > 0.0 then
                 self._torchActive = not self._torchActive
+                self._manualTorchOff = not self._torchActive
                 entity:setLightActive(self._torchActive)
                 if self._torchActive then
                     Audio.playOneShot("flashlight_on")
@@ -155,19 +164,37 @@ function PlayerController:onUpdate(entity, dt)
             end
         end
 
-        -- Battery: set isCharging flag so BatterySystem applies drain/charge math.
-        -- Force torch off if battery hits zero.
+        -- Battery recharges whenever the torch is off.
         if entity:hasBattery() then
             entity:setBatteryCharging(not self._torchActive)
-            if self._torchActive and entity:getBatteryCharge() <= 0.0 then
-                self._torchActive = false
-                entity:setLightActive(false)
-                Audio.playOneShot("flashlight_off")
+            if self._torchActive and (not self._batteryDying) and entity:getBatteryCharge() <= 0.0 then
+                self._batteryDying = true
+                self._flickerTimer = BATTERY_DEATH_FLICKER_TIME
+                self._flickerStep = 0.0
+            end
+
+            if self._batteryDying then
+                self._flickerTimer = self._flickerTimer - dt
+                self._flickerStep = self._flickerStep - dt
+
+                if self._flickerStep <= 0.0 and self._flickerTimer > 0.0 then
+                    self._flickerStep = BATTERY_DEATH_FLICKER_MIN_STEP +
+                        math.random() * (BATTERY_DEATH_FLICKER_MAX_STEP - BATTERY_DEATH_FLICKER_MIN_STEP)
+                    entity:setLightActive(not entity:isLightActive())
+                end
+
+                if self._flickerTimer <= 0.0 then
+                    self._batteryDying = false
+                    self._torchActive = false
+                    self._manualTorchOff = false
+                    entity:setLightActive(false)
+                    Audio.playOneShot("flashlight_off")
+                end
             end
         end
 
         -- Torch bobbing
-        if self._torchActive then
+        if self._torchActive and not self._batteryDying then
             local stateOffX = 0.0
             if currentState == "run" then
                 stateOffX = 10.0
@@ -184,7 +211,7 @@ function PlayerController:onUpdate(entity, dt)
         end
 
         -- Append _torch suffix to animation state
-        if self._torchActive then
+        if self._torchActive and not self._batteryDying then
             currentState = currentState .. "_torch"
         end
     end
