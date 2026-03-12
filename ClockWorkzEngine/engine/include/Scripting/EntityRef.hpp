@@ -87,6 +87,11 @@ public:
   void  setLightOffsetX(float x);
   void  setLightOffsetY(float y);
 
+  // --- TextRenderer ---
+  bool        hasTextRenderer() const;
+  std::string getText() const;
+  void        setText(const std::string& t);
+
   // --- SpriteRenderer ---
   bool        hasSpriteRenderer() const;
   std::string getSpriteTextureId() const;

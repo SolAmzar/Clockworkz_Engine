@@ -70,19 +70,27 @@ bool TextureManager::LoadFromConfig(const std::string &configPath) {
   }
 }
 
+std::string TextureManager::normalize(const std::string &name) {
+  static const std::string suffix = "_texture";
+  if (name.size() >= suffix.size() &&
+      name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0)
+    return name;
+  return name + suffix;
+}
+
 std::shared_ptr<Graphics::Texture2D>
 TextureManager::LoadTexture(const std::string &name, const std::string &path) {
+  const std::string key = normalize(name);
+
   // Check if already loaded
-  auto existing = ResourceManager<Graphics::Texture2D>::Get(name);
+  auto existing = ResourceManager<Graphics::Texture2D>::Get(key);
   if (existing) {
-    std::cout << "[TextureManager] Texture already loaded: " << name
+    std::cout << "[TextureManager] Texture already loaded: " << key
               << std::endl;
     return existing;
   }
 
-  // Load using ResourceManager - it will create the Texture2D and call
-  // Load(path)
-  auto texture = ResourceManager<Graphics::Texture2D>::Load(name, path);
+  auto texture = ResourceManager<Graphics::Texture2D>::Load(key, path);
 
   if (!texture) {
     std::cerr << "[TextureManager] Failed to load texture file: " << path
@@ -91,9 +99,9 @@ TextureManager::LoadTexture(const std::string &name, const std::string &path) {
   }
 
   // Track loaded texture name
-  if (std::find(loadedTextures.begin(), loadedTextures.end(), name) ==
+  if (std::find(loadedTextures.begin(), loadedTextures.end(), key) ==
       loadedTextures.end()) {
-    loadedTextures.push_back(name);
+    loadedTextures.push_back(key);
   }
 
   return texture;
@@ -101,22 +109,24 @@ TextureManager::LoadTexture(const std::string &name, const std::string &path) {
 
 std::shared_ptr<Graphics::Texture2D>
 TextureManager::Get(const std::string &name) {
-  return ResourceManager<Graphics::Texture2D>::Get(name);
+  // Try exact key first, then normalized key as fallback so scene JSONs that
+  // omit the "_texture" suffix still resolve correctly.
+  auto t = ResourceManager<Graphics::Texture2D>::Get(name);
+  if (!t) t = ResourceManager<Graphics::Texture2D>::Get(normalize(name));
+  return t;
 }
 
 void TextureManager::Unload(const std::string &name) {
-  auto texture = ResourceManager<Graphics::Texture2D>::Get(name);
+  const std::string key = normalize(name);
+  auto texture = ResourceManager<Graphics::Texture2D>::Get(key);
   if (texture) {
-    ResourceManager<Graphics::Texture2D>::Unload(
-        name); // Fully remove from ResourceManager
+    ResourceManager<Graphics::Texture2D>::Unload(key);
 
-    // Remove from tracking
-    auto it = std::find(loadedTextures.begin(), loadedTextures.end(), name);
-    if (it != loadedTextures.end()) {
+    auto it = std::find(loadedTextures.begin(), loadedTextures.end(), key);
+    if (it != loadedTextures.end())
       loadedTextures.erase(it);
-    }
 
-    std::cout << "[TextureManager] Unloaded texture: " << name << std::endl;
+    std::cout << "[TextureManager] Unloaded texture: " << key << std::endl;
   }
 }
 
@@ -131,7 +141,7 @@ std::vector<std::string> TextureManager::GetLoadedTextureNames() {
 }
 
 bool TextureManager::IsLoaded(const std::string &name) {
-  return ResourceManager<Graphics::Texture2D>::Get(name) != nullptr;
+  return Get(name) != nullptr;
 }
 
 std::vector<TextureConfig>
@@ -194,6 +204,7 @@ TextureManager::ParseConfig(const std::string &configPath) {
 bool TextureManager::ImportTexture(const std::string &sourcePath,
                                    const std::string &name,
                                    const std::string &configPath) {
+  const std::string key = normalize(name);
   // 1. Validate source file exists
   if (!fs::exists(sourcePath)) {
     std::cerr << "[TextureManager] Source file not found: " << sourcePath
@@ -237,8 +248,8 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
 
   // Check if name already exists
   for (const auto &entry : j["textures"]) {
-    if (entry.value("name", "") == name) {
-      std::cerr << "[TextureManager] Texture name already exists: " << name
+    if (entry.value("name", "") == key) {
+      std::cerr << "[TextureManager] Texture name already exists: " << key
                 << std::endl;
       return false;
     }
@@ -246,7 +257,7 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
 
   // Add new entry
   json newEntry;
-  newEntry["name"] = name;
+  newEntry["name"] = key;
   newEntry["path"] = destPath;
   newEntry["flipY"] = true;
   newEntry["alphaOnlyIsRed"] = false;
@@ -263,13 +274,13 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
   outFile.close();
 
   // 6. Load the texture into memory
-  auto texture = LoadTexture(name, destPath);
+  auto texture = LoadTexture(key, destPath);
   if (!texture) {
     std::cerr << "[TextureManager] Failed to load imported texture" << std::endl;
     return false;
   }
 
-  std::cout << "[TextureManager] Successfully imported: " << name << std::endl;
+  std::cout << "[TextureManager] Successfully imported: " << key << std::endl;
   return true;
 }
 

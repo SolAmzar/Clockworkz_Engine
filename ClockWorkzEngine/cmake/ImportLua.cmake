@@ -87,10 +87,13 @@ function(import_lua TARGET_NAME)
     target_link_libraries(${TARGET_NAME} PUBLIC lua_static)
     target_link_libraries(${TARGET_NAME} PUBLIC sol2::sol2)
 
-    # Make Lua headers available to consumers
-    target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${LUA_SRC_DIR})
+    # Mark Lua and Sol2 headers as SYSTEM so IntelliSense suppresses errors from them
+    target_include_directories(${TARGET_NAME} SYSTEM PUBLIC
+        ${LUA_SRC_DIR}
+        ${sol2_SOURCE_DIR}/include
+    )
 
-    # Treat Sol2 headers as external to suppress their warnings only
+    # Also pass /external:I for MSVC compiler warning suppression
     if(MSVC)
         target_compile_options(${TARGET_NAME} PRIVATE
             /external:W0

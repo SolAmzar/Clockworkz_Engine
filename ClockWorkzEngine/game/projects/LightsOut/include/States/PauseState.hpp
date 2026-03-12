@@ -12,8 +12,8 @@
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
-#include "Systems/TextRenderSystem.hpp"
 #include "ECS/World.hpp"
+#include "Components/UIButton.hpp"
 #include <glm/vec2.hpp>
 #include <string>
 #include <vector>
@@ -48,7 +48,7 @@ public:
 
 private:
   void updateLayout(int w, int h);
-  void handleAction(const std::string &action);
+  void handleButton(const Components::UIButton &btn);
   void collectButtons();
   void applyHoverColors();
 
@@ -60,7 +60,6 @@ private:
   Graphics::Camera2D         *m_cam{nullptr};
 
   Runtime::Scene            m_pauseScene;
-  Systems::TextRenderSystem m_textRenderSystem;
 
   std::vector<ECS::Entity>  m_buttonEntities;
   int                       m_selected{0};
@@ -71,10 +70,6 @@ private:
   int       m_savedViewW{800};
   int       m_savedViewH{600};
 
-  float m_bgmVolumeDuringPause{0.2f};
-  float m_sfxVolumeDuringPause{0.2f};
-  float m_bgmVolumeBeforePause{0.5f};
-  float m_sfxVolumeBeforePause{0.5f};
   float m_sfx{1.0f};
 
   bool m_debug{false};

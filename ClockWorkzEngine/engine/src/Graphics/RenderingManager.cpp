@@ -39,6 +39,8 @@ namespace Graphics {
 bool RenderingManager::init() {
   Assets::ResourceManager<Shader>::Load("debug", "assets/shaders/debug.vert",
                                         "assets/shaders/debug.frag");
+  Assets::ResourceManager<Shader>::Load("light", "assets/shaders/light.vert",
+                                        "assets/shaders/light.frag");
 
   // Create buffers
   glGenVertexArrays(1, &m_vao);

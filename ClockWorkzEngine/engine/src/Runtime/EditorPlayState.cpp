@@ -18,9 +18,15 @@ reserved.
 #include "Graphics/ImGuiManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
+#include "Scripting/LuaManager.hpp"
+#include "Components/UIButton.hpp"
+#include "Components/Transform.hpp"
+#include "Components/Tag.hpp"
+#include "Components/SpriteRenderer.hpp"
 #include "IMGUI/imgui.h"
 
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <filesystem>
 #include <iostream>
 
@@ -90,6 +96,56 @@ void EditorPlayState::update(double dt) {
         return;
     }
 
+    // UIButton click detection — mirrors the game states so scripts execute in play mode.
+    // State-transition GSM calls stop play mode (return to editor) since we can't
+    // navigate to standalone game states from inside the editor.
+    if (m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        auto& engine   = Core::Engine::Get();
+        auto& camera   = engine.camera();
+        auto& window   = engine.window();
+        vec2 mouseWorld = m_input.getMouseWorldPos(camera,
+            static_cast<float>(window.width()),
+            static_cast<float>(window.height()));
+
+        m_scene.GetWorld().each<Components::Transform, Components::UIButton>(
+            [&](ECS::Entity, Components::Transform& tf, Components::UIButton& btn) {
+                if (!btn.interactable || btn.uiScript.empty()) return;
+
+                float cx    = tf.position.x + btn.offset.x;
+                float cy    = tf.position.y + btn.offset.y;
+                float halfW = btn.size.x * 0.5f;
+                float halfH = btn.size.y * 0.5f;
+                bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
+                                mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
+                if (!hovered) return;
+
+                // Register GSM: state transitions stop play mode; overlay ops work on the scene.
+                Scripting::LuaManager& lua = engine.lua();
+                sol::state& ls = lua.GetState();
+                ls["GSM"] = ls.create_table_with(
+                    "pop",                [&]() { m_pendingStop = true; },
+                    "switch_to_gameplay", [&]() { m_pendingStop = true; },
+                    "switch_to_menu",     [&]() { m_pendingStop = true; },
+                    "push_settings",      [&]() { m_pendingStop = true; },
+                    "quit",               [&]() { m_pendingStop = true; },
+                    "show_overlay", [&](const std::string& tag) {
+                        m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+                            [&tag](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
+                                if (t.tag == tag) s.visible = true;
+                            });
+                    },
+                    "hide_overlay", [&](const std::string& tag) {
+                        m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+                            [&tag](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
+                                if (t.tag == tag) s.visible = false;
+                            });
+                    }
+                );
+                if (lua.ExecuteScript("assets/scripts/" + btn.uiScript))
+                    lua.CallFunction("on_click");
+            });
+    }
+
     m_scene.Update(dt, m_input);
     // Camera follow is handled by CameraSystem inside Scene::Update().
 }
@@ -108,9 +164,7 @@ void EditorPlayState::render(Core::Time* timer) {
     auto& renderer = engine.rendering();
     auto& camera   = engine.camera();
 
-    renderer.beginScenePass(camera.viewProj(), glm::vec4(1.0f));
-    m_scene.Render(renderer);
-    renderer.endScenePass();
+    m_scene.RenderAll(renderer, camera.viewProj());
 }
 
 // ---------------------------------------------------------------------------

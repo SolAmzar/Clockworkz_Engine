@@ -23,6 +23,8 @@
 #include "Systems/StateMachineSystem.hpp"
 #include "Systems/ScriptSystem.hpp"
 #include "Systems/TextRenderSystem.hpp"
+#include "Systems/UIButtonSystem.hpp"
+#include "Systems/UISliderSystem.hpp"
 
 namespace Runtime {
 
@@ -36,6 +38,10 @@ public:
   void Update(double dt, Platform::InputManager &input);
   void Render(Graphics::RenderingManager &renderer);
   void RenderText(Graphics::RenderingManager &renderer); // Call AFTER endScenePass
+  // Convenience: runs the full render pipeline in the correct order.
+  // Prefer this over calling Render/RenderText manually in game states.
+  void RenderAll(Graphics::RenderingManager &renderer, const glm::mat4 &viewProj,
+                 const glm::vec4 &tint = glm::vec4(1.0f));
   void Clear();
   bool LoadFromFile(const std::string &path);
   ECS::World &GetWorld() { return m_world; }
@@ -67,6 +73,7 @@ public:
   std::string GetPendingLevel() const { return m_pendingLevel; }
   void ClearPendingLevel() { m_pendingLevel.clear(); }
   void SetPendingLevel(const std::string& level) { m_pendingLevel = level; }
+  std::string GetCurrentLevelPath() const { return m_currentLevelPath; }
 
   // "SceneManager" Interface (Legacy/Manager expectation)
   bool load() {
@@ -121,6 +128,8 @@ private:
   Systems::AnimationSystem m_animSystem;
   Systems::StateMachineSystem m_stateMachineSystem;
   Systems::TextRenderSystem m_textRenderSystem;
+  Systems::UIButtonSystem m_uiButtonSystem;
+  Systems::UISliderSystem m_uiSliderSystem;
   Systems::ScriptSystem m_scriptSystem;
   Systems::CameraSystem m_cameraSystem;
 

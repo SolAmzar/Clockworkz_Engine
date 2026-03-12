@@ -22,6 +22,8 @@ reserved.
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
+#include "Components/Torch.hpp"
+#include "Components/Battery.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp" // Added
 #include <array>
 #include <cmath>
@@ -73,6 +75,35 @@ void AISystem::update(ECS::World &world, double dt,
       });
   if (playerDead)
     playerFound = false;
+
+  // 1b. Find Player Torch info (for light-attracted enemies)
+  vec2 torchBeamTarget{0, 0};
+  bool torchActive = false;
+
+  world.each<Components::PlayerController, Components::Transform,
+             Components::TorchComponent>(
+      [&](ECS::Entity torchEnt, Components::PlayerController &,
+          Components::Transform &tTrans, Components::TorchComponent &torch) {
+        if (!torch.active)
+          return;
+        // Check battery
+        if (auto *batt = world.getComponent<Components::Battery>(torchEnt)) {
+          if (batt->charge <= 0.0f)
+            return;
+        }
+        torchActive = true;
+        float angle = tTrans.rotation;
+        float c = std::cos(angle);
+        float s = std::sin(angle);
+        // Compute torch world position (matching LightExposureSystem)
+        vec2 localOffset = {torch.offset.x * tTrans.scale.x,
+                            torch.offset.y * tTrans.scale.y};
+        vec2 worldOffset = {localOffset.x * c - localOffset.y * s,
+                            localOffset.x * s + localOffset.y * c};
+        vec2 torchPos = tTrans.position + worldOffset;
+        vec2 torchDir = {c, s};
+        torchBeamTarget = torchPos + torchDir * (torch.radius * 0.7f);
+      });
 
   // Helper lambda to check if entity's layer is enabled
   auto isLayerActive = [&](ECS::Entity e) -> bool {
@@ -208,31 +239,34 @@ void AISystem::update(ECS::World &world, double dt,
         }
 
         // --- Light Sensitivity Check ---
+        // Light-attracted enemies are immune to light damage/slowdown
         float speedMultiplier = 1.0f;
         auto *lightExp = world.getComponent<Components::LightExposure>(e);
 
-        // Check if in light (immediate)
-        if (lightExp && lightExp->inLight) {
-          speedMultiplier = ai.lightSensitivity;
+        if (!ai.attractedToLight) {
+          // Check if in light (immediate)
+          if (lightExp && lightExp->inLight) {
+            speedMultiplier = ai.lightSensitivity;
 
-          // Damage over time
-          auto *health = world.getComponent<Components::Health>(e);
-          if (health && !health->isDead) {
-            const float DAMAGE_RATE = 20.0f; // DPS
-            health->hp -= DAMAGE_RATE * fDt;
+            // Damage over time
+            auto *health = world.getComponent<Components::Health>(e);
+            if (health && !health->isDead) {
+              const float DAMAGE_RATE = 20.0f; // DPS
+              health->hp -= DAMAGE_RATE * fDt;
 
-            if (health->hp <= 0.0f) {
-              health->hp = 0.0f;
-              health->isDead = true;
-              ai.state = Components::AIState::Death;
+              if (health->hp <= 0.0f) {
+                health->hp = 0.0f;
+                health->isDead = true;
+                ai.state = Components::AIState::Death;
+              }
             }
           }
-        }
-        // Fallback: if exposureTime > 0 but not currently in light directly?
-        // Original logic checked exposureTime. Let's keep exposureTime check
-        // for consistency if needed, but 'inLight' is accurate for cones.
-        else if (lightExp && lightExp->exposureTime > 0.0f) {
-          speedMultiplier = ai.lightSensitivity;
+          // Fallback: if exposureTime > 0 but not currently in light directly?
+          // Original logic checked exposureTime. Let's keep exposureTime check
+          // for consistency if needed, but 'inLight' is accurate for cones.
+          else if (lightExp && lightExp->exposureTime > 0.0f) {
+            speedMultiplier = ai.lightSensitivity;
+          }
         }
 
         // Re-Check Death after damage
@@ -273,14 +307,27 @@ void AISystem::update(ECS::World &world, double dt,
 
         // --- PATROL STATE ---
         case Components::AIState::Patrol: {
-          // Check for Player
-          if (playerFound) {
-            float distToPlayer = distance(t.position, playerPos);
-            if (distToPlayer < ai.detectionRadius) {
-              ai.state = Components::AIState::Chase;
-              // Reset Chase params if needed
+          // Light-attracted enemies only react when actually hit by the light
+          if (ai.attractedToLight) {
+            if (torchActive && playerFound && lightExp && lightExp->inLight) {
+              ai.state = Components::AIState::FlashlightChase;
               return;
             }
+          } else {
+            // Normal enemies chase the player
+            if (playerFound) {
+              float distToPlayer = distance(t.position, playerPos);
+              if (distToPlayer < ai.detectionRadius) {
+                ai.state = Components::AIState::Chase;
+                return;
+              }
+            }
+          }
+
+          // Light-attracted enemies stand still when no light
+          if (ai.attractedToLight) {
+            vel.velocity = {0.f, 0.f};
+            break;
           }
 
           // Wander Logic
@@ -328,6 +375,26 @@ void AISystem::update(ECS::World &world, double dt,
           break;
         }
 
+        // --- FLASHLIGHT CHASE STATE ---
+        case Components::AIState::FlashlightChase: {
+          // Stop chasing if light is off or no longer hitting this enemy
+          if (!torchActive || !playerFound || !lightExp || !lightExp->inLight) {
+            ai.state = Components::AIState::Patrol;
+            vel.velocity = {0.f, 0.f};
+            return;
+          }
+
+          // Move toward the player (attracted by their light)
+          vec2 dir = normalize(
+              {playerPos.x - t.position.x, playerPos.y - t.position.y});
+
+          vel.moveSpeed = ai.chaseSpeed * speedMultiplier;
+          vel.velocity = dir;
+
+          ai.targetPosition = playerPos;
+          break;
+        }
+
         // --- ALERT STATE ---
         case Components::AIState::Alert: {
           // Timer
@@ -338,9 +405,14 @@ void AISystem::update(ECS::World &world, double dt,
             return;
           }
 
-          // Check for Player
-          if (playerFound) {
-            if (distance(t.position, playerPos) < ai.detectionRadius) {
+          // Re-acquire target
+          if (ai.attractedToLight) {
+            if (torchActive && playerFound && lightExp && lightExp->inLight) {
+              ai.state = Components::AIState::FlashlightChase;
+              return;
+            }
+          } else {
+            if (playerFound && distance(t.position, playerPos) < ai.detectionRadius) {
               ai.state = Components::AIState::Chase;
               return;
             }
