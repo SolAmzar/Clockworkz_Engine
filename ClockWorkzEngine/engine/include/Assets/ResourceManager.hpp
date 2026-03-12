@@ -31,7 +31,6 @@ reserved.
 #include <string>
 #include <unordered_map>
 
-
 namespace Assets {
 
 template <typename T> class ResourceManager {
@@ -62,6 +61,11 @@ public:
       return nullptr;
     }
     return it->second;
+  }
+
+  // Inject manually created resource
+  static void Inject(const std::string &name, std::shared_ptr<T> resource) {
+    resources[name] = resource;
   }
 
   // Unload specific resource

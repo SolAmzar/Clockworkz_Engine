@@ -78,6 +78,18 @@ if(ENGINE_ENABLE_FMOD AND WIN32)
   add_dependencies(LightsOut CopyFmodDll)
 endif()
 
+if(WIN32 AND FFMPEG_DLLS)
+  add_custom_target(CopyFFmpegDll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${FFMPEG_DLLS}
+      "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
+    COMMENT "Copying FFmpeg runtime DLLs"
+    VERBATIM
+  )
+  add_dependencies(CWZEditor CopyFFmpegDll)
+  add_dependencies(LightsOut CopyFFmpegDll)
+endif()
+
 configure_lightsout_target(CWZEditor)
 configure_lightsout_target(LightsOut)
 
