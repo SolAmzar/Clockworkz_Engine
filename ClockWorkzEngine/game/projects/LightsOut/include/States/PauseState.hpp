@@ -72,6 +72,11 @@ private:
 
   float m_sfx{1.0f};
 
+  float m_bgmVolumeBeforePause{1.0f};
+  float m_sfxVolumeBeforePause{1.0f};
+  float m_bgmVolumeDuringPause{0.4f};
+  float m_sfxVolumeDuringPause{0.4f};
+
   bool m_debug{false};
 };
 

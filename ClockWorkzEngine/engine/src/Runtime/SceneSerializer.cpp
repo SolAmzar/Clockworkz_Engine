@@ -191,6 +191,7 @@ static json SerializeWorld(ECS::World &world,
     // UIButton
     if (auto *ub = world.getComponent<Components::UIButton>(entity)) {
       obj["components"]["uiButton"] = {
+          {"action",         ub->action},
           {"uiScript",       ub->uiScript},
           {"interactable",   ub->interactable},
           {"showBackground", ub->showBackground},
@@ -484,6 +485,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("uiButton")) {
         auto &ub = components["uiButton"];
         Components::UIButton btn;
+        btn.action         = ub.value("action", "");
         btn.uiScript       = ub.value("uiScript", "");
         btn.interactable   = ub.value("interactable", true);
         btn.showBackground = ub.value("showBackground", true);

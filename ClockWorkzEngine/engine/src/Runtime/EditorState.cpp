@@ -75,6 +75,7 @@ reserved.
 #include "Components/TextRenderer.hpp"
 #include "Components/CameraComponent.hpp"
 #include "Components/UIButton.hpp"
+#include "Components/UISlider.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Systems/LightRenderSystem.hpp"
@@ -1814,12 +1815,13 @@ void EditorState::renderInspector() {
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Audio")) {
-            addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world);
-            addCompEntry<Components::FootstepAudio>("FootstepAudio", m_selectedEntity, world);
+            addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::FootstepAudio>("FootstepAudio", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("UI")) {
             addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::UISlider>("UISlider", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Camera")) {
@@ -2346,6 +2348,31 @@ void EditorState::renderInspector() {
             ImGui::ColorEdit3("Hover Color##uib",   glm::value_ptr(btn->hoverColor));
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UIButton>>(world, m_selectedEntity));
+    }
+
+
+    if (world.hasComponent<Components::UISlider>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("UISlider##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##ruisl")) rm = true;
+        if (open) {
+            auto *sl = world.getComponent<Components::UISlider>(m_selectedEntity);
+            char keyBuf[64]; snprintf(keyBuf, sizeof(keyBuf), "%s", sl->settingKey.c_str());
+            if (ImGui::InputText("Setting Key##uisl", keyBuf, sizeof(keyBuf)))
+                sl->settingKey = keyBuf;
+            ImGui::DragFloat("Min Value##uisl", &sl->minValue, 0.01f);
+            ImGui::DragFloat("Max Value##uisl", &sl->maxValue, 0.01f);
+            ImGui::SliderFloat("Value##uisl", &sl->value, sl->minValue, sl->maxValue);
+            ImGui::DragFloat("Track Width##uisl", &sl->trackWidth, 1.0f, 1.0f, 2000.0f);
+            ImGui::DragFloat("Track Height##uisl", &sl->trackHeight, 1.0f, 1.0f, 400.0f);
+            ImGui::DragFloat("Handle Size##uisl", &sl->handleSize, 1.0f, 0.0f, 400.0f);
+            ImGui::ColorEdit4("Track Color##uisl", glm::value_ptr(sl->trackColor));
+            ImGui::ColorEdit4("Fill Color##uisl", glm::value_ptr(sl->fillColor));
+            ImGui::ColorEdit4("Handle Color##uisl", glm::value_ptr(sl->handleColor));
+        }
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UISlider>>(world, m_selectedEntity));
     }
 
     // CameraComponent
@@ -5724,6 +5751,12 @@ void EditorState::checkAssetHotReload() {
 }
 
 } // namespace Runtime
+
+
+
+
+
+
 
 
 

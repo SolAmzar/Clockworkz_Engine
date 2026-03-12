@@ -9,6 +9,7 @@
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
 #include "ECS/World.hpp"
+#include "Systems/UISliderSystem.hpp"
 #include <string>
 #include <vector>
 
@@ -51,11 +52,10 @@ private:
   void handleAction(const std::string &action);
   void updateSceneText();
   void closeOptions();
+  void syncSlidersFromSettings();
+  void applySliderSettings();
   void adjustOptionVolume(float delta);
   void setOptionVolume(int optionIndex, float value);
-  void renderVolumeBar(float centerX, float centerY, float width,
-                       float height, float value, bool selected);
-  void renderSceneBars();
 
   GameStateManager        &m_gsm;
   Platform::InputManager  &m_input;
@@ -66,6 +66,7 @@ private:
   Graphics::Camera2D         *m_cam{nullptr};
 
   Runtime::Scene             m_scene;
+  Systems::UISliderSystem    m_sliderSystem;
 
   std::vector<ECS::Entity>   m_buttonEntities;
   int                        m_selected{0};

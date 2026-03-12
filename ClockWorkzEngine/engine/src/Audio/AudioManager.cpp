@@ -22,6 +22,7 @@ reserved.
 #include "Assets/SoundManager.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <fmod.hpp>
 #include <fmod_dsp.h>
 #include <fmod_errors.h>
@@ -299,13 +300,17 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
       profile = profileIt->second;
     }
 
+    const auto clampf = [](float value, float minValue, float maxValue) {
+      return std::max(minValue, std::min(value, maxValue));
+    };
+
     const float minDistance = std::max(1.0f, profile.minDistance);
     const float maxDistance = std::max(minDistance + 1.0f, profile.maxDistance);
-    const float falloffStart = std::clamp(profile.falloffStart, 0.0f, maxDistance - 1.0f);
-    const float falloffAmount = std::clamp(profile.falloffAmount, 0.0f, 0.98f);
-    const float filterInStart = std::clamp(profile.filterInStart, 0.0f, maxDistance - 1.0f);
-    const float filterPeak = std::clamp(profile.filterPeak, filterInStart + 1.0f, maxDistance - 0.5f);
-    const float filterReleaseEnd = std::clamp(profile.filterReleaseEnd, filterPeak + 1.0f, maxDistance);
+    const float falloffStart = clampf(profile.falloffStart, 0.0f, maxDistance - 1.0f);
+    const float falloffAmount = clampf(profile.falloffAmount, 0.0f, 0.98f);
+    const float filterInStart = clampf(profile.filterInStart, 0.0f, maxDistance - 1.0f);
+    const float filterPeak = clampf(profile.filterPeak, filterInStart + 1.0f, maxDistance - 0.5f);
+    const float filterReleaseEnd = clampf(profile.filterReleaseEnd, filterPeak + 1.0f, maxDistance);
 
     it->second.ch->set3DMinMaxDistance(minDistance, maxDistance);
 
@@ -317,7 +322,7 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
     float distanceT = 0.0f;
     if (distance > falloffStart) {
       distanceT = (distance - falloffStart) / (maxDistance - falloffStart);
-      distanceT = std::clamp(distanceT, 0.0f, 1.0f);
+      distanceT = clampf(distanceT, 0.0f, 1.0f);
     }
 
     const float shapedDistanceT = std::pow(distanceT, 0.6f);
@@ -331,7 +336,7 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
       } else {
         filterT = 1.0f - ((distance - filterPeak) / (filterReleaseEnd - filterPeak));
       }
-      filterT = std::clamp(filterT, 0.0f, 1.0f);
+      filterT = clampf(filterT, 0.0f, 1.0f);
     }
 
     if (filterT > 0.01f && m_system) {

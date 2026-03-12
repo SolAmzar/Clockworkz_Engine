@@ -17,6 +17,7 @@
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/UIButton.hpp"
+#include "Components/UISlider.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
 #include "GlobalAudioSettings.hpp"
@@ -85,6 +86,7 @@ void OptionsState::onEnter() {
 
   GlobalAudioSettings::Load();
   GlobalAudioSettings::Apply(m_audio);
+  syncSlidersFromSettings();
   updateSceneText();
 
   updateLayout(m_window.width(), m_window.height());
@@ -129,7 +131,10 @@ void OptionsState::applyHoverColors() {
     const bool selected = (m_selected == 2);
     const glm::vec3 c = selected ? btn->hoverColor : btn->normalColor;
     if (sr) {
-      sr->color = glm::vec4(c, 1.f);
+      sr->color = glm::vec4(c, sr->color.a);
+      if (!btn->showBackground) {
+        sr->visible = false;
+      }
     }
     if (tr) {
       tr->color = c;
@@ -165,18 +170,46 @@ void OptionsState::closeOptions() {
   m_gsm.pop();
 }
 
+void OptionsState::syncSlidersFromSettings() {
+  m_scene.GetWorld().each<Components::UISlider>(
+      [&](ECS::Entity, Components::UISlider &sl) {
+        if (sl.settingKey == "bgm") {
+          sl.value = GlobalAudioSettings::GetBGMVolume();
+        } else if (sl.settingKey == "sfx") {
+          sl.value = GlobalAudioSettings::GetSFXVolume();
+        }
+      });
+}
+
+void OptionsState::applySliderSettings() {
+  bool changed = false;
+  m_scene.GetWorld().each<Components::UISlider>(
+      [&](ECS::Entity, Components::UISlider &sl) {
+        const float clamped = clampVolume(sl.value);
+        if (sl.settingKey == "bgm" &&
+            GlobalAudioSettings::GetBGMVolume() != clamped) {
+          GlobalAudioSettings::SetBGMVolume(clamped);
+          changed = true;
+        } else if (sl.settingKey == "sfx" &&
+                   GlobalAudioSettings::GetSFXVolume() != clamped) {
+          GlobalAudioSettings::SetSFXVolume(clamped);
+          changed = true;
+        }
+      });
+
+  if (changed) {
+    GlobalAudioSettings::Apply(m_audio);
+    GlobalAudioSettings::Save();
+    updateSceneText();
+  }
+}
+
 void OptionsState::setOptionVolume(int optionIndex, float value) {
   const float clampedValue = clampVolume(value);
 
   if (optionIndex == 0) {
-    if (GlobalAudioSettings::GetBGMVolume() == clampedValue) {
-      return;
-    }
     GlobalAudioSettings::SetBGMVolume(clampedValue);
   } else if (optionIndex == 1) {
-    if (GlobalAudioSettings::GetSFXVolume() == clampedValue) {
-      return;
-    }
     GlobalAudioSettings::SetSFXVolume(clampedValue);
   } else {
     return;
@@ -184,6 +217,7 @@ void OptionsState::setOptionVolume(int optionIndex, float value) {
 
   GlobalAudioSettings::Apply(m_audio);
   GlobalAudioSettings::Save();
+  syncSlidersFromSettings();
   updateSceneText();
 }
 
@@ -195,86 +229,38 @@ void OptionsState::adjustOptionVolume(float delta) {
   }
 }
 
-void OptionsState::renderVolumeBar(float centerX, float centerY, float width,
-                                   float height, float value, bool selected) {
-  const float clampedValue = clampVolume(value);
-  const float fillWidth = width * clampedValue;
-
-  if (selected) {
-    m_renderer->drawFilledRect(centerX, centerY, width + 28.0f, height + 20.0f,
-                               0.95f, 0.72f, 0.22f);
-  }
-
-  m_renderer->drawFilledRect(centerX, centerY, width, height, 0.18f, 0.10f,
-                             0.08f);
-
-  const float fillCenterX = centerX - (width - fillWidth) * 0.5f;
-  if (fillWidth > 0.0f) {
-    m_renderer->drawFilledRect(fillCenterX, centerY, fillWidth, height - 12.0f,
-                               0.87f, 0.26f, 0.16f);
-  }
-}
-
-void OptionsState::renderSceneBars() {
-  auto renderBarFromScene = [this](const char *tagName, float value,
-                                   bool selected, float fallbackX,
-                                   float fallbackY, float fallbackW,
-                                   float fallbackH) {
-    float centerX = fallbackX;
-    float centerY = fallbackY;
-    float width = fallbackW;
-    float height = fallbackH;
-
-    m_scene.GetWorld().each<Components::Tag, Components::Transform,
-                            Components::SpriteRenderer>(
-        [&](ECS::Entity, Components::Tag &tag, Components::Transform &transform,
-            Components::SpriteRenderer &sr) {
-          if (tag.tag == tagName) {
-            centerX = transform.position.x;
-            centerY = transform.position.y;
-            width = sr.size.x;
-            height = sr.size.y;
-          }
-        });
-
-    renderVolumeBar(centerX, centerY, width, height, value, selected);
-  };
-
-  renderBarFromScene("options_bgm_bar", GlobalAudioSettings::GetBGMVolume(),
-                     m_selected == 0, 180.0f, 100.0f, 480.0f, 48.0f);
-  renderBarFromScene("options_sfx_bar", GlobalAudioSettings::GetSFXVolume(),
-                     m_selected == 1, 180.0f, -35.0f, 480.0f, 48.0f);
-}
-
 void OptionsState::update(double /*dt*/) {
   int w = m_window.width();
   int h = m_window.height();
   vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
   const bool mousePressed = m_input.wasMousePressed(GLFW_MOUSE_BUTTON_LEFT);
-  const bool mouseDown = m_input.isMouseDown(GLFW_MOUSE_BUTTON_LEFT);
   bool movedSelection = false;
 
-  auto getSpriteRectByTag =
+  m_sliderSystem.update(m_scene.GetWorld(), m_input, *m_cam, (float)w,
+                        (float)h);
+  applySliderSettings();
+
+  auto getSliderRectByTag =
       [this](const char *tagName, const RectBounds &fallback) {
         RectBounds rect = fallback;
         m_scene.GetWorld().each<Components::Tag, Components::Transform,
-                                Components::SpriteRenderer>(
+                                Components::UISlider>(
             [&](ECS::Entity, Components::Tag &tag,
-                Components::Transform &transform, Components::SpriteRenderer &sr) {
+                Components::Transform &transform, Components::UISlider &sl) {
               if (tag.tag == tagName) {
                 rect.centerX = transform.position.x;
                 rect.centerY = transform.position.y;
-                rect.width = sr.size.x;
-                rect.height = sr.size.y;
+                rect.width = sl.trackWidth;
+                rect.height = std::max(sl.trackHeight, sl.handleSize);
               }
             });
         return rect;
       };
 
-  const RectBounds bgmRect = getSpriteRectByTag(
-      "options_bgm_bar", RectBounds{180.0f, 100.0f, 480.0f, 48.0f});
-  const RectBounds sfxRect = getSpriteRectByTag(
-      "options_sfx_bar", RectBounds{180.0f, -35.0f, 480.0f, 48.0f});
+  const RectBounds bgmRect = getSliderRectByTag(
+      "options_bgm_bar", RectBounds{200.0f, 70.0f, 500.0f, 48.0f});
+  const RectBounds sfxRect = getSliderRectByTag(
+      "options_sfx_bar", RectBounds{200.0f, -70.0f, 500.0f, 48.0f});
 
   int hoveredIndex = -1;
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
@@ -343,24 +329,6 @@ void OptionsState::update(double /*dt*/) {
     updateSceneText();
   }
 
-  auto applyMouseSlider = [this, mouseWorld](const RectBounds &rect,
-                                             int optionIndex) {
-    const float left = rect.centerX - rect.width * 0.5f;
-    const float normalized = clampVolume((mouseWorld.x - left) / rect.width);
-    setOptionVolume(optionIndex, normalized);
-  };
-
-  if (mousePressed && hoveredOption >= 0 && hoveredOption <= 1) {
-    Assets::SoundManager::Play("ui_move");
-    applyMouseSlider((hoveredOption == 0) ? bgmRect : sfxRect, hoveredOption);
-  } else if (mouseDown) {
-    if (containsPoint(bgmRect, mouseWorld)) {
-      applyMouseSlider(bgmRect, 0);
-    } else if (containsPoint(sfxRect, mouseWorld)) {
-      applyMouseSlider(sfxRect, 1);
-    }
-  }
-
   if (m_input.wasKeyPressed(GLFW_KEY_LEFT) ||
       m_input.wasKeyPressed(GLFW_KEY_A)) {
     Assets::SoundManager::Play("ui_move");
@@ -397,12 +365,7 @@ void OptionsState::render(Core::Time * /*timer*/) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   glm::mat4 vp = m_cam->viewProj();
-  m_renderer->beginScenePass(vp);
-  m_scene.Render(*m_renderer);
-  renderSceneBars();
-  m_renderer->endScenePass();
-
-  m_scene.RenderText(*m_renderer);
+  m_scene.RenderAll(*m_renderer, vp);
 }
 
 void OptionsState::renderImGui(Core::Time * /*timer*/) {

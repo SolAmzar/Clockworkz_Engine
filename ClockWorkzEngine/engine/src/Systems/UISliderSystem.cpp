@@ -10,6 +10,7 @@ reserved.
 */
 /******************************************************************************/
 #include "Systems/UISliderSystem.hpp"
+#include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/UISlider.hpp"
 #include "Audio/AudioManager.hpp"
@@ -25,7 +26,7 @@ reserved.
 namespace Systems {
 
 // ---------------------------------------------------------------------------
-// update — mouse-to-slider mapping and AudioSettings write-back
+// update -- mouse-to-slider mapping and AudioSettings write-back
 // ---------------------------------------------------------------------------
 void UISliderSystem::update(ECS::World          &world,
                             Platform::InputManager &input,
@@ -43,17 +44,29 @@ void UISliderSystem::update(ECS::World          &world,
     auto &audio    = Audio::AudioManager::get();
 
     world.each<Components::Transform, Components::UISlider>(
-        [&](ECS::Entity, Components::Transform &tf, Components::UISlider &sl)
+        [&](ECS::Entity entity, Components::Transform &tf, Components::UISlider &sl)
         {
+            if (auto *sprite = world.getComponent<Components::SpriteRenderer>(entity)) {
+                if (!sprite->visible) {
+                    sl.dragging = false;
+                    return;
+                }
+            }
+
             float cx     = tf.position.x;
             float cy     = tf.position.y;
             float halfW  = sl.trackWidth  * 0.5f;
             float halfH  = sl.trackHeight * 0.5f;
             float leftX  = cx - halfW;
 
+            float valueRange = sl.maxValue - sl.minValue;
+            if (valueRange <= 0.0f) {
+                valueRange = 1.0f;
+            }
+
             // Handle center X based on current value
-            float t         = (sl.value - sl.minValue) / (sl.maxValue - sl.minValue);
-            float handleX   = leftX + t * sl.trackWidth;
+            float t          = (sl.value - sl.minValue) / valueRange;
+            float handleX    = leftX + t * sl.trackWidth;
             float handleHalf = sl.handleSize * 0.5f;
 
             // Begin drag when mouse presses inside track or handle
@@ -70,7 +83,7 @@ void UISliderSystem::update(ECS::World          &world,
             if (sl.dragging) {
                 float newT = (mx - leftX) / sl.trackWidth;
                 newT = std::clamp(newT, 0.f, 1.f);
-                sl.value = sl.minValue + newT * (sl.maxValue - sl.minValue);
+                sl.value = sl.minValue + newT * valueRange;
 
                 // Write back to AudioSettings and AudioManager immediately
                 if (sl.settingKey == "master") {
@@ -88,7 +101,7 @@ void UISliderSystem::update(ECS::World          &world,
 }
 
 // ---------------------------------------------------------------------------
-// render — draw track / fill / handle quads (inside scene pass)
+// render -- draw track / fill / handle quads (inside scene pass)
 // ---------------------------------------------------------------------------
 void UISliderSystem::render(ECS::World              &world,
                             Graphics::RenderingManager &renderer)
@@ -96,14 +109,25 @@ void UISliderSystem::render(ECS::World              &world,
     static const glm::vec4 UV(0.f, 0.f, 1.f, 1.f);
 
     world.each<Components::Transform, Components::UISlider>(
-        [&](ECS::Entity, Components::Transform &tf, Components::UISlider &sl)
+        [&](ECS::Entity entity, Components::Transform &tf, Components::UISlider &sl)
         {
+            if (auto *sprite = world.getComponent<Components::SpriteRenderer>(entity)) {
+                if (!sprite->visible) {
+                    return;
+                }
+            }
+
             float cx    = tf.position.x;
             float cy    = tf.position.y;
             float halfW = sl.trackWidth * 0.5f;
             float leftX = cx - halfW;
 
-            float t       = (sl.value - sl.minValue) / (sl.maxValue - sl.minValue);
+            float valueRange = sl.maxValue - sl.minValue;
+            if (valueRange <= 0.0f) {
+                valueRange = 1.0f;
+            }
+
+            float t       = (sl.value - sl.minValue) / valueRange;
             float fillW   = t * sl.trackWidth;
             float handleX = leftX + fillW;
 

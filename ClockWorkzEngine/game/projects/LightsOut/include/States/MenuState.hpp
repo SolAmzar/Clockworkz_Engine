@@ -64,6 +64,7 @@ private:
   void setMenuButtonsVisible(bool visible);
   void openOptions();
   void closeOptions();
+  void syncOptionsSlidersInScene();
   void adjustOptionVolume(float delta);
   void setOptionVolume(int optionIndex, float value);
   void updateOptionsOverlayText();
@@ -93,6 +94,9 @@ private:
 };
 
 } // namespace Runtime
+
+
+
 
 
 

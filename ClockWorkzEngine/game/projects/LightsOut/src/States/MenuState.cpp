@@ -26,6 +26,7 @@ reserved.
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/UIButton.hpp"
+#include "Components/UISlider.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
 #include "Graphics/Camera2D.hpp"
@@ -55,6 +56,7 @@ using Graphics::Shader;
 
 namespace {
 constexpr float kVolumeStep = 0.1f;
+float s_menuMasterVolume = 1.0f;
 float s_menuBgmVolume = 1.0f;
 float s_menuSfxVolume = 1.0f;
 
@@ -120,6 +122,7 @@ void MenuState::onEnter() {
   setMenuButtonsVisible(true);
 
   GlobalAudioSettings::Load();
+  s_menuMasterVolume = GlobalAudioSettings::GetMasterVolume();
   s_menuBgmVolume = GlobalAudioSettings::GetBGMVolume();
   s_menuSfxVolume = GlobalAudioSettings::GetSFXVolume();
   updateOptionsOverlayText();
@@ -179,7 +182,10 @@ void MenuState::applyHoverColors() {
     const bool selected = (i == m_selected);
     const glm::vec3 c = selected ? btn->hoverColor : btn->normalColor;
     if (sr) {
-      sr->color = glm::vec4(c, 1.f);
+      sr->visible = btn->showBackground;
+      if (btn->showBackground) {
+        sr->color = glm::vec4(c, 1.f);
+      }
     }
     if (tr) {
       tr->color = c;
@@ -221,6 +227,18 @@ void MenuState::setOverlayVisible(const std::string &tag, bool visible) {
   }
 }
 
+void MenuState::syncOptionsSlidersInScene() {
+  m_menuScene.GetWorld().each<Components::Tag, Components::UISlider>(
+      [&](ECS::Entity, Components::Tag &tag, Components::UISlider &sl) {
+        if (tag.tag == "options_master_bar") {
+          sl.value = s_menuMasterVolume;
+        } else if (tag.tag == "options_bgm_bar") {
+          sl.value = s_menuBgmVolume;
+        } else if (tag.tag == "options_sfx_bar") {
+          sl.value = s_menuSfxVolume;
+        }
+      });
+}
 void MenuState::setMenuButtonsVisible(bool visible) {
   for (ECS::Entity entity : m_buttonEntities) {
     if (auto *sr =
@@ -246,21 +264,25 @@ void MenuState::setMenuButtonsVisible(bool visible) {
 }
 
 void MenuState::updateOptionsOverlayText() {
-  const glm::vec3 normalColor{1.0f, 0.86f, 0.88f};
-  const glm::vec3 selectedColor{0.16f, 0.08f, 0.10f};
+  const glm::vec3 normalColor{0.98f, 0.86f, 0.88f};
+  const glm::vec3 selectedColor{1.0f, 1.0f, 1.0f};
 
   m_menuScene.GetWorld().each<Components::Tag, Components::TextRenderer>(
       [&](ECS::Entity, Components::Tag &tag, Components::TextRenderer &tr) {
         const std::string &entityTag = tag.tag;
 
-        if (entityTag == "options_bgm_value") {
+        if (entityTag == "options_master_value") {
+          tr.text = std::to_string(static_cast<int>(s_menuMasterVolume * 100.0f)) + "%";
+        } else if (entityTag == "options_bgm_value") {
           tr.text = std::to_string(static_cast<int>(s_menuBgmVolume * 100.0f)) + "%";
         } else if (entityTag == "options_sfx_value") {
           tr.text = std::to_string(static_cast<int>(s_menuSfxVolume * 100.0f)) + "%";
         } else if (entityTag == "options_back_label") {
-          tr.color = (m_optionsSelected == 2) ? selectedColor : normalColor;
+          tr.color = (m_optionsSelected == 3) ? selectedColor : normalColor;
         }
       });
+
+  syncOptionsSlidersInScene();
 }
 
 void MenuState::openOptions() {
@@ -309,12 +331,18 @@ void MenuState::setOptionVolume(int optionIndex, float value) {
   const float clampedValue = clampVolume(value);
 
   if (optionIndex == 0) {
+    if (s_menuMasterVolume == clampedValue) {
+      return;
+    }
+    s_menuMasterVolume = clampedValue;
+    GlobalAudioSettings::SetMasterVolume(s_menuMasterVolume);
+  } else if (optionIndex == 1) {
     if (s_menuBgmVolume == clampedValue) {
       return;
     }
     s_menuBgmVolume = clampedValue;
     GlobalAudioSettings::SetBGMVolume(s_menuBgmVolume);
-  } else if (optionIndex == 1) {
+  } else if (optionIndex == 2) {
     if (s_menuSfxVolume == clampedValue) {
       return;
     }
@@ -331,9 +359,11 @@ void MenuState::setOptionVolume(int optionIndex, float value) {
 
 void MenuState::adjustOptionVolume(float delta) {
   if (m_optionsSelected == 0) {
-    setOptionVolume(0, s_menuBgmVolume + delta);
+    setOptionVolume(0, s_menuMasterVolume + delta);
   } else if (m_optionsSelected == 1) {
-    setOptionVolume(1, s_menuSfxVolume + delta);
+    setOptionVolume(1, s_menuBgmVolume + delta);
+  } else if (m_optionsSelected == 2) {
+    setOptionVolume(2, s_menuSfxVolume + delta);
   }
 }
 
@@ -357,42 +387,7 @@ void MenuState::renderVolumeBar(float centerX, float centerY, float width,
   }
 }
 
-void MenuState::renderOptionsOverlay() {
-
-  auto renderBarFromScene = [this](const char *tagName, float value,
-                                   bool selected, float fallbackX,
-                                   float fallbackY, float fallbackW,
-                                   float fallbackH) {
-    float centerX = fallbackX;
-    float centerY = fallbackY;
-    float width = fallbackW;
-    float height = fallbackH;
-
-    m_menuScene.GetWorld().each<Components::Tag, Components::Transform,
-                                Components::SpriteRenderer>(
-        [&](ECS::Entity, Components::Tag &tag, Components::Transform &transform,
-            Components::SpriteRenderer &sr) {
-          if (tag.tag == tagName) {
-            centerX = transform.position.x;
-            centerY = transform.position.y;
-            width = sr.size.x;
-            height = sr.size.y;
-          }
-        });
-
-    renderVolumeBar(centerX, centerY, width, height, value, selected);
-  };
-
-  renderBarFromScene("options_bgm_bar", s_menuBgmVolume,
-                     m_optionsSelected == 0, 180.0f, 100.0f, 480.0f, 48.0f);
-  renderBarFromScene("options_sfx_bar", s_menuSfxVolume,
-                     m_optionsSelected == 1, 180.0f, -35.0f, 480.0f, 48.0f);
-
-  if (m_optionsSelected == 2) {
-    m_renderer->drawFilledRect(0.0f, -225.0f, 220.0f, 56.0f, 0.95f, 0.72f,
-                               0.22f);
-  }
-}
+void MenuState::renderOptionsOverlay() {}
 
 
 void MenuState::handleAction(const std::string &action) {
@@ -477,20 +472,24 @@ void MenuState::update(double /*dt*/) {
       return rect;
     };
 
+    const RectBounds masterRect = getSpriteRectByTag(
+        "options_master_bar", RectBounds{255.0f, 200.0f, 520.0f, 40.0f});
     const RectBounds bgmRect = getSpriteRectByTag(
-        "options_bgm_bar", RectBounds{180.0f, 100.0f, 480.0f, 48.0f});
+        "options_bgm_bar", RectBounds{255.0f, 55.0f, 520.0f, 40.0f});
     const RectBounds sfxRect = getSpriteRectByTag(
-        "options_sfx_bar", RectBounds{180.0f, -35.0f, 480.0f, 48.0f});
+        "options_sfx_bar", RectBounds{255.0f, -90.0f, 520.0f, 40.0f});
     const RectBounds backRect = getTextRectByTag(
-        "options_back_label", RectBounds{0.0f, -225.0f, 220.0f, 56.0f});
+        "options_back_label", RectBounds{0.0f, -235.0f, 220.0f, 56.0f});
 
     int hoveredOption = -1;
-    if (containsPoint(bgmRect, mouseWorld)) {
+    if (containsPoint(masterRect, mouseWorld)) {
       hoveredOption = 0;
-    } else if (containsPoint(sfxRect, mouseWorld)) {
+    } else if (containsPoint(bgmRect, mouseWorld)) {
       hoveredOption = 1;
-    } else if (containsPoint(backRect, mouseWorld)) {
+    } else if (containsPoint(sfxRect, mouseWorld)) {
       hoveredOption = 2;
+    } else if (containsPoint(backRect, mouseWorld)) {
+      hoveredOption = 3;
     }
 
     if (hoveredOption >= 0 && hoveredOption != m_optionsSelected) {
@@ -501,20 +500,20 @@ void MenuState::update(double /*dt*/) {
 
     if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
       Assets::SoundManager::Play("ui_move");
-      m_optionsSelected = (m_optionsSelected + 2) % 3;
+      m_optionsSelected = (m_optionsSelected + 3) % 4;
       movedSelection = true;
     }
     if (m_input.wasKeyPressed(GLFW_KEY_DOWN) ||
         m_input.wasKeyPressed(GLFW_KEY_S)) {
       Assets::SoundManager::Play("ui_move");
-      m_optionsSelected = (m_optionsSelected + 1) % 3;
+      m_optionsSelected = (m_optionsSelected + 1) % 4;
       movedSelection = true;
     }
     if (movedSelection) {
       updateOptionsOverlayText();
     }
 
-    if (mousePressed && hoveredOption == 2) {
+    if (mousePressed && hoveredOption == 3) {
       Assets::SoundManager::Play("ui_select");
       closeOptions();
       return;
@@ -526,14 +525,22 @@ void MenuState::update(double /*dt*/) {
       setOptionVolume(optionIndex, normalized);
     };
 
-    if (mousePressed && hoveredOption >= 0 && hoveredOption <= 1) {
+    if (mousePressed && hoveredOption >= 0 && hoveredOption <= 2) {
       Assets::SoundManager::Play("ui_move");
-      applyMouseSlider((hoveredOption == 0) ? bgmRect : sfxRect, hoveredOption);
+      if (hoveredOption == 0) {
+        applyMouseSlider(masterRect, 0);
+      } else if (hoveredOption == 1) {
+        applyMouseSlider(bgmRect, 1);
+      } else {
+        applyMouseSlider(sfxRect, 2);
+      }
     } else if (mouseDown) {
-      if (containsPoint(bgmRect, mouseWorld)) {
-        applyMouseSlider(bgmRect, 0);
+      if (containsPoint(masterRect, mouseWorld)) {
+        applyMouseSlider(masterRect, 0);
+      } else if (containsPoint(bgmRect, mouseWorld)) {
+        applyMouseSlider(bgmRect, 1);
       } else if (containsPoint(sfxRect, mouseWorld)) {
-        applyMouseSlider(sfxRect, 1);
+        applyMouseSlider(sfxRect, 2);
       }
     }
 
@@ -550,7 +557,7 @@ void MenuState::update(double /*dt*/) {
     if (m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
         m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) ||
         m_input.wasKeyPressed(GLFW_KEY_SPACE)) {
-      if (m_optionsSelected == 2) {
+      if (m_optionsSelected == 3) {
         Assets::SoundManager::Play("ui_select");
         closeOptions();
       }
@@ -609,6 +616,7 @@ void MenuState::update(double /*dt*/) {
   }
 
   // Deselect when mouse is not over any button
+  const bool mouseHover = (hoveredIndex >= 0);
   if (!mouseHover) m_selected = -1;
 
   // Keyboard navigation
@@ -667,6 +675,12 @@ void MenuState::render(Core::Time * /*timer*/) {
   glm::mat4 vp = m_cam->viewProj();
 
   m_menuScene.RenderAll(*m_renderer, vp);
+  if (m_showingOptions) {
+    m_renderer->beginScenePass(vp);
+    renderOptionsOverlay();
+    m_renderer->endScenePass();
+    m_menuScene.RenderText(*m_renderer);
+  }
 }
 
 void MenuState::renderImGui(Core::Time * /*timer*/) {
@@ -691,6 +705,16 @@ void MenuState::onExit() {
 }
 
 } // namespace Runtime
+
+
+
+
+
+
+
+
+
+
 
 
 

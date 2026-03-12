@@ -217,13 +217,14 @@ void PauseState::update(double /*dt*/) {
       auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[hoveredIndex]);
       if (btn) {
-        handleAction(btn->action);
+        handleButton(*btn);
         return;
       }
     }
   }
 
   // Deselect when mouse is not over any button
+  mouseHover = (hoveredIndex >= 0);
   if (!mouseHover) m_selected = -1;
 
   // Keyboard navigation
@@ -255,10 +256,11 @@ void PauseState::update(double /*dt*/) {
 }
 
 void PauseState::render(Core::Time * /*timer*/) {
-  // NO glClear — framebuffer persistence keeps the frozen game frame visible behind the overlay
+  // NO glClear - framebuffer persistence keeps the frozen game frame visible behind the overlay
   glm::mat4 vp = m_cam->viewProj();
 
   m_pauseScene.RenderAll(*m_renderer, vp);
+  m_pauseScene.RenderText(*m_renderer);
 }
 
 void PauseState::renderImGui(Core::Time * /*timer*/) {
@@ -286,6 +288,8 @@ void PauseState::onExit() {
 }
 
 } // namespace Runtime
+
+
 
 
 

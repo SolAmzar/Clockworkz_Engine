@@ -6,6 +6,7 @@
 namespace Runtime {
 
 bool GlobalAudioSettings::s_loaded = false;
+float GlobalAudioSettings::s_masterVolume = 1.0f;
 float GlobalAudioSettings::s_bgmVolume = 1.0f;
 float GlobalAudioSettings::s_sfxVolume = 1.0f;
 
@@ -34,9 +35,11 @@ void GlobalAudioSettings::Load() {
   nlohmann::json root;
   try {
     file >> root;
+    s_masterVolume = Clamp(root.value("masterVolume", 1.0f));
     s_bgmVolume = Clamp(root.value("bgmVolume", 1.0f));
     s_sfxVolume = Clamp(root.value("sfxVolume", 1.0f));
   } catch (...) {
+    s_masterVolume = 1.0f;
     s_bgmVolume = 1.0f;
     s_sfxVolume = 1.0f;
   }
@@ -46,6 +49,7 @@ void GlobalAudioSettings::Load() {
 
 void GlobalAudioSettings::Save() {
   nlohmann::json root;
+  root["masterVolume"] = s_masterVolume;
   root["bgmVolume"] = s_bgmVolume;
   root["sfxVolume"] = s_sfxVolume;
 
@@ -57,8 +61,14 @@ void GlobalAudioSettings::Save() {
 
 void GlobalAudioSettings::Apply(Audio::AudioManager &audio) {
   Load();
+  audio.setGroupVolume(Audio::Group::Master, s_masterVolume);
   audio.setGroupVolume(Audio::Group::BGM, s_bgmVolume);
   audio.setGroupVolume(Audio::Group::SFX, s_sfxVolume);
+}
+
+float GlobalAudioSettings::GetMasterVolume() {
+  Load();
+  return s_masterVolume;
 }
 
 float GlobalAudioSettings::GetBGMVolume() {
@@ -69,6 +79,11 @@ float GlobalAudioSettings::GetBGMVolume() {
 float GlobalAudioSettings::GetSFXVolume() {
   Load();
   return s_sfxVolume;
+}
+
+void GlobalAudioSettings::SetMasterVolume(float volume) {
+  s_masterVolume = Clamp(volume);
+  s_loaded = true;
 }
 
 void GlobalAudioSettings::SetBGMVolume(float volume) {
