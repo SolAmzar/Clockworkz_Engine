@@ -92,8 +92,7 @@ function Moth:onUpdate(entity, dt)
         end
 
         local dx, dy = norm(px-ex, py-ey)
-        entity.velocity  = Vec2(dx, dy)
-        entity.moveSpeed = self.chaseSpeed
+        entity.velocity = Vec2(dx * self.chaseSpeed, dy * self.chaseSpeed)
 
         -- Flip sprite
         local sx = entity.scale.x
