@@ -14,12 +14,33 @@ namespace Runtime {
 
 using json = nlohmann::json;
 
+namespace {
+std::vector<MusicLayerConfig> SanitizeLayers(const std::vector<MusicLayerConfig> &layers) {
+  std::vector<MusicLayerConfig> sanitized;
+  sanitized.reserve(layers.size());
+  for (const auto &layer : layers) {
+    if (layer.track.empty()) {
+      continue;
+    }
+
+    auto existing = std::find_if(sanitized.begin(), sanitized.end(),
+                                 [&](const MusicLayerConfig &item) {
+                                   return item.track == layer.track;
+                                 });
+    if (existing == sanitized.end()) {
+      sanitized.push_back({layer.track, std::clamp(layer.volume, 0.0f, 1.0f)});
+    }
+  }
+  return sanitized;
+}
+} // namespace
+
 bool LevelMusicManager::s_loaded = false;
 std::vector<MusicContextConfig> LevelMusicManager::s_contexts{};
 std::string LevelMusicManager::s_currentContext{};
-std::string LevelMusicManager::s_currentTrack{};
+std::vector<std::string> LevelMusicManager::s_currentTracks{};
 float LevelMusicManager::s_currentFadeOutSeconds = 0.5f;
-int LevelMusicManager::s_currentChannel = 0;
+std::vector<int> LevelMusicManager::s_currentChannels{};
 
 const char *LevelMusicManager::ConfigPath() {
   return "assets/configs/music_contexts.json";
@@ -54,10 +75,36 @@ void LevelMusicManager::Load() {
     for (const auto &entry : root["contexts"]) {
       MusicContextConfig cfg;
       cfg.id = entry.value("id", "");
-      cfg.track = entry.value("track", "");
+
+      if (entry.contains("layers") && entry["layers"].is_array()) {
+        for (const auto &layer : entry["layers"]) {
+          if (!layer.is_object()) {
+            continue;
+          }
+          MusicLayerConfig cfgLayer;
+          cfgLayer.track = layer.value("track", "");
+          cfgLayer.volume = std::clamp(layer.value("volume", 1.0f), 0.0f, 1.0f);
+          if (!cfgLayer.track.empty()) {
+            cfg.layers.push_back(cfgLayer);
+          }
+        }
+      } else if (entry.contains("tracks") && entry["tracks"].is_array()) {
+        for (const auto &track : entry["tracks"]) {
+          if (track.is_string()) {
+            cfg.layers.push_back({track.get<std::string>(), 1.0f});
+          }
+        }
+      } else {
+        const std::string legacyTrack = entry.value("track", "");
+        if (!legacyTrack.empty()) {
+          cfg.layers.push_back({legacyTrack, 1.0f});
+        }
+      }
+
+      cfg.layers = SanitizeLayers(cfg.layers);
       cfg.fadeOutSeconds = std::max(0.0f, entry.value("fadeOutSeconds", 0.5f));
       if (!cfg.id.empty()) {
-        s_contexts.push_back(cfg);
+        s_contexts.push_back(std::move(cfg));
       }
     }
   }
@@ -72,9 +119,18 @@ bool LevelMusicManager::Save() {
     if (ctx.id.empty()) {
       continue;
     }
+
+    json layers = json::array();
+    for (const auto &layer : SanitizeLayers(ctx.layers)) {
+      layers.push_back({
+          {"track", layer.track},
+          {"volume", std::clamp(layer.volume, 0.0f, 1.0f)},
+      });
+    }
+
     root["contexts"].push_back({
         {"id", ctx.id},
-        {"track", ctx.track},
+        {"layers", layers},
         {"fadeOutSeconds", std::max(0.0f, ctx.fadeOutSeconds)},
     });
   }
@@ -101,6 +157,7 @@ bool LevelMusicManager::SetContexts(const std::vector<MusicContextConfig> &conte
       continue;
     }
     ctx.fadeOutSeconds = std::max(0.0f, ctx.fadeOutSeconds);
+    ctx.layers = SanitizeLayers(ctx.layers);
     s_contexts.push_back(std::move(ctx));
   }
 
@@ -120,13 +177,13 @@ bool LevelMusicManager::ResolveTrackForScene(const Scene &scene,
   if (!sceneContext.empty()) {
     if (ResolveTrackForContextId(sceneContext, outConfig)) {
       outContextId = outConfig.id;
-      return !outConfig.track.empty();
+      return !outConfig.layers.empty();
     }
   }
 
   if (!scene.getBGM().empty()) {
     outConfig.id = MakeLegacyContextId(scene.getBGM());
-    outConfig.track = scene.getBGM();
+    outConfig.layers = {{scene.getBGM(), 1.0f}};
     outConfig.fadeOutSeconds = 0.5f;
     outContextId = outConfig.id;
     return true;
@@ -152,6 +209,75 @@ bool LevelMusicManager::ResolveTrackForContextId(const std::string &contextId,
   return false;
 }
 
+bool LevelMusicManager::AreLayersActive(const std::vector<MusicLayerConfig> &layers,
+                                        Audio::AudioManager &audio) {
+  const auto desired = SanitizeLayers(layers);
+  if (desired.size() != s_currentTracks.size()) {
+    return false;
+  }
+
+  for (const auto &layer : desired) {
+    if (std::find(s_currentTracks.begin(), s_currentTracks.end(), layer.track) ==
+            s_currentTracks.end() ||
+        !audio.isPlaying(layer.track)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool LevelMusicManager::ApplyContext(const MusicContextConfig &desired,
+                                     const std::string &desiredContext,
+                                     Audio::AudioManager &audio) {
+  const auto desiredLayers = SanitizeLayers(desired.layers);
+  if (desiredLayers.empty()) {
+    return false;
+  }
+
+  if (AreLayersActive(desiredLayers, audio)) {
+    s_currentContext = desiredContext;
+    s_currentFadeOutSeconds = desired.fadeOutSeconds;
+    return true;
+  }
+
+  for (int channel : s_currentChannels) {
+    if (channel > 0) {
+      audio.fadeOutChannel(channel, s_currentFadeOutSeconds);
+    }
+  }
+  if (s_currentChannels.empty()) {
+    for (const auto &track : s_currentTracks) {
+      if (!track.empty()) {
+        audio.stop(track);
+      }
+    }
+  }
+
+  std::vector<int> newChannels;
+  std::vector<std::string> startedTracks;
+  newChannels.reserve(desiredLayers.size());
+  startedTracks.reserve(desiredLayers.size());
+
+  for (const auto &layer : desiredLayers) {
+    const int channel = Assets::SoundManager::Play(layer.track, layer.volume, 1.0f);
+    if (channel > 0) {
+      newChannels.push_back(channel);
+      startedTracks.push_back(layer.track);
+    }
+  }
+
+  if (startedTracks.empty()) {
+    return false;
+  }
+
+  s_currentTracks = std::move(startedTracks);
+  s_currentChannels = std::move(newChannels);
+  s_currentContext = desiredContext;
+  s_currentFadeOutSeconds = desired.fadeOutSeconds;
+  return true;
+}
+
 void LevelMusicManager::ApplySceneMusic(const Scene &scene, Audio::AudioManager &audio) {
   MusicContextConfig desired{};
   std::string desiredContext;
@@ -160,49 +286,19 @@ void LevelMusicManager::ApplySceneMusic(const Scene &scene, Audio::AudioManager 
     return;
   }
 
-  if (!desired.track.empty() && desired.track == s_currentTrack &&
-      audio.isPlaying(desired.track)) {
-    s_currentContext = desiredContext;
-    s_currentFadeOutSeconds = desired.fadeOutSeconds;
-    return;
+  if (!ApplyContext(desired, desiredContext, audio)) {
+    Stop(audio, desired.fadeOutSeconds);
   }
-
-  if (s_currentChannel > 0) {
-    audio.fadeOutChannel(s_currentChannel, s_currentFadeOutSeconds);
-  } else if (!s_currentTrack.empty()) {
-    audio.stop(s_currentTrack);
-  }
-
-  s_currentTrack = desired.track;
-  s_currentContext = desiredContext;
-  s_currentFadeOutSeconds = desired.fadeOutSeconds;
-  s_currentChannel = Assets::SoundManager::Play(desired.track);
 }
 
 bool LevelMusicManager::RequestContext(const std::string &contextId,
                                        Audio::AudioManager &audio) {
   MusicContextConfig desired{};
-  if (!ResolveTrackForContextId(contextId, desired) || desired.track.empty()) {
+  if (!ResolveTrackForContextId(contextId, desired) || desired.layers.empty()) {
     return false;
   }
 
-  if (desired.track == s_currentTrack && audio.isPlaying(desired.track)) {
-    s_currentContext = desired.id;
-    s_currentFadeOutSeconds = desired.fadeOutSeconds;
-    return true;
-  }
-
-  if (s_currentChannel > 0) {
-    audio.fadeOutChannel(s_currentChannel, s_currentFadeOutSeconds);
-  } else if (!s_currentTrack.empty()) {
-    audio.stop(s_currentTrack);
-  }
-
-  s_currentTrack = desired.track;
-  s_currentContext = desired.id;
-  s_currentFadeOutSeconds = desired.fadeOutSeconds;
-  s_currentChannel = Assets::SoundManager::Play(desired.track);
-  return s_currentChannel > 0;
+  return ApplyContext(desired, desired.id, audio);
 }
 
 bool LevelMusicManager::HasContext(const std::string &contextId) {
@@ -212,14 +308,21 @@ bool LevelMusicManager::HasContext(const std::string &contextId) {
 
 void LevelMusicManager::Stop(Audio::AudioManager &audio, float fadeOutSeconds) {
   const float fade = std::max(0.0f, fadeOutSeconds);
-  if (s_currentChannel > 0) {
-    audio.fadeOutChannel(s_currentChannel, fade);
-  } else if (!s_currentTrack.empty()) {
-    audio.stop(s_currentTrack);
+  for (int channel : s_currentChannels) {
+    if (channel > 0) {
+      audio.fadeOutChannel(channel, fade);
+    }
+  }
+  if (s_currentChannels.empty()) {
+    for (const auto &track : s_currentTracks) {
+      if (!track.empty()) {
+        audio.stop(track);
+      }
+    }
   }
 
-  s_currentChannel = 0;
-  s_currentTrack.clear();
+  s_currentChannels.clear();
+  s_currentTracks.clear();
   s_currentContext.clear();
   s_currentFadeOutSeconds = fade;
 }
@@ -229,7 +332,7 @@ std::string LevelMusicManager::CurrentContext() {
 }
 
 std::string LevelMusicManager::CurrentTrack() {
-  return s_currentTrack;
+  return s_currentTracks.empty() ? std::string{} : s_currentTracks.front();
 }
 
 } // namespace Runtime

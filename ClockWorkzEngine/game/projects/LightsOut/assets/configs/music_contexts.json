@@ -3,12 +3,22 @@
         {
             "fadeOutSeconds": 0.5,
             "id": "level_ambience",
-            "track": "level_ambience"
+            "layers": [
+                {
+                    "track": "level_ambience",
+                    "volume": 1.0
+                }
+            ]
         },
         {
             "fadeOutSeconds": 0.5,
             "id": "level_default",
-            "track": "level_bgm"
+            "layers": [
+                {
+                    "track": "level_bgm",
+                    "volume": 1.0
+                }
+            ]
         }
     ]
 }

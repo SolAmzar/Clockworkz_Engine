@@ -3282,7 +3282,7 @@ void EditorState::renderAudioBrowser() {
 
     struct MusicContextEditorEntry {
         char id[128]{};
-        char track[128]{};
+        char tracks[512]{};
         float fadeOutSeconds{0.5f};
     };
     static std::vector<MusicContextEditorEntry> s_musicContextEntries;
@@ -3292,7 +3292,14 @@ void EditorState::renderAudioBrowser() {
         for (const auto& ctx : Runtime::LevelMusicManager::GetContexts()) {
             MusicContextEditorEntry entry{};
             strncpy_s(entry.id, ctx.id.c_str(), sizeof(entry.id) - 1);
-            strncpy_s(entry.track, ctx.track.c_str(), sizeof(entry.track) - 1);
+            std::string joinedTracks;
+            for (size_t i = 0; i < ctx.layers.size(); ++i) {
+                if (i > 0) {
+                    joinedTracks += ", ";
+                }
+                joinedTracks += ctx.layers[i].track + ":" + std::to_string(ctx.layers[i].volume);
+            }
+            strncpy_s(entry.tracks, joinedTracks.c_str(), sizeof(entry.tracks) - 1);
             entry.fadeOutSeconds = ctx.fadeOutSeconds;
             s_musicContextEntries.push_back(entry);
         }
@@ -3301,7 +3308,6 @@ void EditorState::renderAudioBrowser() {
     if (!s_musicContextsLoaded) {
         reloadMusicContexts();
     }
-
     auto loadBatchAudioFromSelection = [&]() {
         m_batchApplyLoop = false;
         m_batchApplyStream = false;
@@ -3355,7 +3361,36 @@ void EditorState::renderAudioBrowser() {
             for (const auto& entry : s_musicContextEntries) {
                 Runtime::MusicContextConfig ctx;
                 ctx.id = entry.id;
-                ctx.track = entry.track;
+
+                const std::string rawTracks = entry.tracks;
+                size_t start = 0;
+                while (start < rawTracks.size()) {
+                    const size_t end = rawTracks.find_first_of(",\n\r", start);
+                    std::string token = rawTracks.substr(
+                        start, end == std::string::npos ? std::string::npos : end - start);
+                    const size_t first = token.find_first_not_of(" \t");
+                    const size_t last = token.find_last_not_of(" \t");
+                    if (first != std::string::npos && last != std::string::npos) {
+                        std::string layerText = token.substr(first, last - first + 1);
+                        float layerVolume = 1.0f;
+                        const size_t volumeSep = layerText.find(':');
+                        if (volumeSep != std::string::npos) {
+                            const std::string volumeText = layerText.substr(volumeSep + 1);
+                            layerText = layerText.substr(0, volumeSep);
+                            try {
+                                layerVolume = std::clamp(std::stof(volumeText), 0.0f, 1.0f);
+                            } catch (...) {
+                                layerVolume = 1.0f;
+                            }
+                        }
+                        ctx.layers.push_back({layerText, layerVolume});
+                    }
+                    if (end == std::string::npos) {
+                        break;
+                    }
+                    start = end + 1;
+                }
+
                 ctx.fadeOutSeconds = std::max(0.0f, entry.fadeOutSeconds);
                 if (!ctx.id.empty()) {
                     contexts.push_back(std::move(ctx));
@@ -3370,7 +3405,8 @@ void EditorState::renderAudioBrowser() {
             auto& entry = s_musicContextEntries[i];
             ImGui::PushID(static_cast<int>(i));
             ImGui::InputText("Context ID", entry.id, sizeof(entry.id));
-            ImGui::InputText("Track ID", entry.track, sizeof(entry.track));
+            ImGui::InputText("Track Layers", entry.tracks, sizeof(entry.tracks));
+            ImGui::TextDisabled("Format: track_id:volume, track_id:volume");
             ImGui::SliderFloat("Fade Out (s)", &entry.fadeOutSeconds, 0.0f, 3.0f);
             if (ImGui::Button("Remove##musicctx")) {
                 s_musicContextEntries.erase(s_musicContextEntries.begin() + static_cast<std::ptrdiff_t>(i));
@@ -3381,7 +3417,6 @@ void EditorState::renderAudioBrowser() {
             ImGui::PopID();
         }
     }
-
     if (ImGui::Button("Import Audio")) {
         m_newAudioNameBuf[0] = '\0'; m_newAudioPathBuf[0] = '\0';
         m_newAudioLoop = false; m_newAudioStream = false; m_newAudioIs3D = false;

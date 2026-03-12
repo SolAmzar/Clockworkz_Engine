@@ -8,9 +8,14 @@
 
 namespace Runtime {
 
+struct MusicLayerConfig {
+  std::string track;
+  float volume{1.0f};
+};
+
 struct MusicContextConfig {
   std::string id;
-  std::string track;
+  std::vector<MusicLayerConfig> layers;
   float fadeOutSeconds{0.5f};
 };
 
@@ -37,13 +42,18 @@ private:
                                    std::string &outContextId);
   static bool ResolveTrackForContextId(const std::string &contextId,
                                        MusicContextConfig &outConfig);
+  static bool AreLayersActive(const std::vector<MusicLayerConfig> &layers,
+                              Audio::AudioManager &audio);
+  static bool ApplyContext(const MusicContextConfig &desired,
+                           const std::string &desiredContext,
+                           Audio::AudioManager &audio);
 
   static bool s_loaded;
   static std::vector<MusicContextConfig> s_contexts;
   static std::string s_currentContext;
-  static std::string s_currentTrack;
+  static std::vector<std::string> s_currentTracks;
   static float s_currentFadeOutSeconds;
-  static int s_currentChannel;
+  static std::vector<int> s_currentChannels;
 };
 
 } // namespace Runtime
