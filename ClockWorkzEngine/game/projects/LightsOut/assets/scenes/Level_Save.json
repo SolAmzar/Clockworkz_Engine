@@ -79,8 +79,6 @@
         "Entity 518",
         "Entity 522",
         "Entity 523",
-        "FragmentManager",
-        "HUD_FragmentCounter",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -135,14 +133,11 @@
         "marble",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "marble",
         "marble",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
         "marble",
+        "concrete floor",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -163,6 +158,9 @@
         "marble",
         "concrete floor",
         "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -172,13 +170,61 @@
         "concrete floor",
         "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
         "marble",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
         "Fragment",
         "concrete floor",
         "concrete floor",
@@ -488,54 +534,8 @@
         "Fragment",
         "marble l",
         "marble l",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor"
+        "fragment",
+        "fragmentManager"
     ],
     "objects": [
         {
@@ -43443,7 +43443,7 @@
                             "state": "Patrol",
                             "wanderInterval": 2.0
                         },
-                        "scriptPath": "components/enemy_ai.lua"
+                        "scriptPath": "components/moth_ai.lua"
                     },
                     {
                         "enabled": true,
@@ -46669,34 +46669,15 @@
                 "luaScript": [
                     {
                         "enabled": true,
-                        "scriptPath": "fragment_system.lua"
-                    }
-                ],
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "FragmentManager"
-        },
-        {
-            "active": true,
-            "components": {
-                "luaScript": [
-                    {
-                        "enabled": true,
+                        "properties": {
+                            "offsetX": 800.0,
+                            "offsetY": -420.0,
+                            "threshold1": 0.0,
+                            "threshold2": 25.0,
+                            "threshold3": 50.0,
+                            "threshold4": 75.0,
+                            "updateRate": 0.05000000074505806
+                        },
                         "scriptPath": "ui/hud_battery.lua"
                     }
                 ],
@@ -46747,6 +46728,10 @@
                 "luaScript": [
                     {
                         "enabled": true,
+                        "properties": {
+                            "offsetX": -830.0,
+                            "offsetY": -420.0
+                        },
                         "scriptPath": "ui/hud_fragment_counter.lua"
                     }
                 ],
@@ -46779,8 +46764,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": -9.297012329101563,
+                        "y": 30.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -46790,7 +46775,35 @@
                     "snapToGrid": false
                 }
             },
-            "name": "HUD_FragmentCounter"
+            "name": "fragment"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "fragment_system.lua"
+                    }
+                ],
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1.7029876708984375,
+                        "y": 24.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "fragmentManager"
         }
     ],
     "sfxVolume": 1.0,

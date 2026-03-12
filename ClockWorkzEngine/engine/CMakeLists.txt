@@ -17,6 +17,13 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/include/*.hpp"
 )
 
+# Ensure LuaBindings.cpp is included (workaround if glob didn't pick it up due to casing/path issues)
+set(_lua_bindings_path "${CMAKE_CURRENT_SOURCE_DIR}/src/Scripting/LuaBindings.cpp")
+if(EXISTS "${_lua_bindings_path}")
+  list(APPEND ENGINE_SOURCES "${_lua_bindings_path}")
+  message(STATUS "Forcing inclusion of engine source: ${_lua_bindings_path}")
+endif()
+
 # --- Static library target ---
 add_library(CWZEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 

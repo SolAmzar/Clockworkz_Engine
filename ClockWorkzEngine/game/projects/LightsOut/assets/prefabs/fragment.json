@@ -1,0 +1,53 @@
+{
+    "category": "Custom",
+    "components": {
+        "luaScript": [
+            {
+                "enabled": true,
+                "properties": {
+                    "offsetX": -830.0,
+                    "offsetY": -420.0
+                },
+                "scriptPath": "ui/hud_fragment_counter.lua"
+            }
+        ],
+        "tag": {
+            "tag": "HUD_FragmentCounter"
+        },
+        "textRenderer": {
+            "alignment": 0,
+            "boxSize": {
+                "x": 300.0,
+                "y": 60.0
+            },
+            "color": {
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "fontId": "Debug",
+            "fontSize": 1.5,
+            "lineSpacing": 1.0,
+            "padding": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "text": "0 / 0 fragments collected",
+            "verticalAlignment": 0,
+            "visible": true,
+            "wordWrap": false
+        },
+        "transform": {
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        }
+    },
+    "name": "fragment"
+}
