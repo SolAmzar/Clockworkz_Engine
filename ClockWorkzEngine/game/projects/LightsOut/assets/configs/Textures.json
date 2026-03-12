@@ -114,7 +114,7 @@
             "name": "floor_texture",
             "path": "assets/textures/corridorfloor.png"
         },
-{
+        {
             "alphaOnlyIsRed": false,
             "flipY": true,
             "name": "battery_full",
@@ -923,6 +923,174 @@
             "flipY": true,
             "name": "how_to_play_texture",
             "path": "assets/textures/imported/how_to_play.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "assemblyhall_texture",
+            "path": "assets/textures/assemblyhall.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "broom_texture",
+            "path": "assets/textures/broom.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "chair sideways_texture",
+            "path": "assets/textures/chair sideways.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "chair_texture",
+            "path": "assets/textures/chair.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "chairflipped_texture",
+            "path": "assets/textures/chairflipped.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroom wall_texture",
+            "path": "assets/textures/classroom wall.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroom wall2_texture",
+            "path": "assets/textures/classroom wall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroom wall3_texture",
+            "path": "assets/textures/classroom wall3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroom wall7_texture",
+            "path": "assets/textures/classroom wall7.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroom wall9_texture",
+            "path": "assets/textures/classroom wall9.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dustpan_texture",
+            "path": "assets/textures/dustpan.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "fan_texture",
+            "path": "assets/textures/fan.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "hall speaker_texture",
+            "path": "assets/textures/hall speaker.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "locker_texture",
+            "path": "assets/textures/locker.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "locker2_texture",
+            "path": "assets/textures/locker2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "locker3_texture",
+            "path": "assets/textures/locker3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "piano_texture",
+            "path": "assets/textures/piano.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pinboard 2_texture",
+            "path": "assets/textures/pinboard 2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pinboard_texture",
+            "path": "assets/textures/pinboard.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "projector screen_texture",
+            "path": "assets/textures/projector screen.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "school wall T_texture",
+            "path": "assets/textures/school wall T.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schoolfloor1_texture",
+            "path": "assets/textures/schoolfloor1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schoolfloor2_texture",
+            "path": "assets/textures/schoolfloor2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "speaker_texture",
+            "path": "assets/textures/speaker.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "stacked chairs_texture",
+            "path": "assets/textures/stacked chairs.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "study bench_texture",
+            "path": "assets/textures/study bench.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "table flipped_texture",
+            "path": "assets/textures/table flipped.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "table upside down_texture",
+            "path": "assets/textures/table upside down.png"
         }
     ]
 }
