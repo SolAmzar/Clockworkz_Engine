@@ -22,10 +22,11 @@ namespace Components {
  * @brief AI State Enum
  */
 enum class AIState {
-  Patrol, ///< Moving between waypoints
-  Chase,  ///< Pursuing a target
-  Alert,  ///< Lost target, searching/waiting
-  Death   ///< No movement, dead
+  Patrol,          ///< Moving between waypoints
+  Chase,           ///< Pursuing a target
+  FlashlightChase, ///< Chasing the flashlight beam endpoint
+  Alert,           ///< Lost target, searching/waiting
+  Death            ///< No movement, dead
 };
 
 /**
@@ -65,6 +66,7 @@ struct EnemyAI {
   // Light Interaction
   float lightSensitivity{
       0.3f}; ///< Speed multiplier when in light (0.0 = stop, 1.0 = full speed)
+  bool attractedToLight{false}; ///< If true, chases flashlight beam instead of player
 
   // Collider state caching (used when enemy dies/reactivates)
   bool colliderCached{false};

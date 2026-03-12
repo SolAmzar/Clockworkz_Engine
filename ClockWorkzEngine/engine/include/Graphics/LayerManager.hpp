@@ -35,7 +35,7 @@ namespace Gameplay {
     }
 
     // Fixed render/update order
-    inline constexpr std::array<uint32_t, 5> kOrderedBits = {
+    static constexpr std::array<uint32_t, 5> kOrderedBits = {
       DrawLayer::Background, DrawLayer::World, DrawLayer::Actors, DrawLayer::FX, DrawLayer::UI
     };
 

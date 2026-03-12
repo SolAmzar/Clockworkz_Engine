@@ -18,6 +18,7 @@ reserved.
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"
 #include "ECS/World.hpp"
+#include "Components/UIButton.hpp"
 #include <memory>
 #include <string>
 #include <vector>

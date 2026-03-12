@@ -126,6 +126,10 @@ namespace Core {
 		Audio::SurfaceAudioSystem const& surfaceAudio() const { return *m_sfAudio; }
 		Scripting::LuaManager& lua() { return *m_lua; }
 
+		bool isGameOverPending()  const { return m_gameOverPending; }
+		void setGameOverPending()        { m_gameOverPending = true;  }
+		void clearGameOverPending()      { m_gameOverPending = false; }
+
 		//Audio::AudioManager& audio() { return *m_audio; }
 	private:
 		bool init();
@@ -162,6 +166,7 @@ namespace Core {
 		std::unique_ptr<Runtime::GameStateManager>   m_gsm;
 		EventBus m_events;
 	private: // simple data member
+		bool m_gameOverPending{ false }; // set by Lua Engine.triggerGameOver(), polled by GamePlayState
 		bool m_booted{ false }; // flag for Game state change {i dont think this is working as intented? game state change or boot once only?}
 		bool m_running{ false }; // Is the engine running?
 		bool m_shutdownCalled{ false }; // guard against double shutdown

@@ -12,6 +12,8 @@ reserved.
 
 #include "Systems/RenderSystem.hpp"
 #include "Assets/TextureManager.hpp"
+#include <iostream>
+#include <unordered_set>
 #include "Components/Layer.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
@@ -65,10 +67,15 @@ void RenderSystem::update(ECS::World &world,
   bool isUnlitMode = false; // Assuming we start in 'Lit' mode (tinted)
 
   // Render in sorted order
+  static std::unordered_set<std::string> s_warnedIds;
   for (auto &entry : entries) {
     auto texture = Assets::TextureManager::Get(entry.sprite->textureId);
-    if (!texture)
-      continue;
+    if (!texture && !entry.sprite->textureId.empty()) {
+      if (s_warnedIds.insert(entry.sprite->textureId).second)
+        std::cerr << "[RenderSystem] WARNING: textureId \"" << entry.sprite->textureId
+                  << "\" not found — sprite will be invisible. Check Textures.json.\n";
+    }
+    unsigned texId = texture ? texture->id() : 0u;
 
     // Check if we need to switch shading mode
     if (entry.sprite->unlit != isUnlitMode) {
@@ -87,7 +94,7 @@ void RenderSystem::update(ECS::World &world,
                    entry.sprite->size.y * entry.transform->scale.y);
 
     renderer.drawSprite(
-        texture->id(), position, size, entry.transform->rotation,
+        texId, position, size, entry.transform->rotation,
         entry.sprite->uv, entry.sprite->color, false,
         glm::vec2(entry.transform->pivot.x, entry.transform->pivot.y));
   }

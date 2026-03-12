@@ -145,4 +145,40 @@ struct DeleteEntityCmd final : IEditorCommand {
     const char* label() const override { return "Delete Entity"; }
 };
 
+// ---------------------------------------------------------------------------
+// AddComponentCmd<T> — adds a default-constructed component; undo removes it
+// ---------------------------------------------------------------------------
+
+template<typename T>
+struct AddComponentCmd final : IEditorCommand {
+    ECS::World& world;
+    ECS::Entity entity;
+
+    AddComponentCmd(ECS::World& w, ECS::Entity e) : world(w), entity(e) {}
+
+    void execute() override { world.addComponent(entity, T{}); }
+    void undo()    override { world.removeComponent<T>(entity); }
+    const char* label() const override { return "Add Component"; }
+};
+
+// ---------------------------------------------------------------------------
+// RemoveComponentCmd<T> — captures component data, removes it; undo restores
+// ---------------------------------------------------------------------------
+
+template<typename T>
+struct RemoveComponentCmd final : IEditorCommand {
+    ECS::World& world;
+    ECS::Entity entity;
+    T           saved{};
+
+    RemoveComponentCmd(ECS::World& w, ECS::Entity e) : world(w), entity(e) {
+        if (auto* comp = w.getComponent<T>(e))
+            saved = *comp;
+    }
+
+    void execute() override { world.removeComponent<T>(entity); }
+    void undo()    override { world.addComponent(entity, saved); }
+    const char* label() const override { return "Remove Component"; }
+};
+
 } // namespace Runtime

@@ -55,11 +55,17 @@ namespace Assets
     // Render text with this font
     void RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color, Graphics::Shader& s);
 
-    // Render text constrained to a bounding box with word wrap and alignment
-    // alignment: 0=Left, 1=Center, 2=Right
+    // Render text constrained to a bounding box.
+    // (x, y) = top-left corner of box (y-up OpenGL space, so y is the higher value).
+    // hAlign: 0=Left, 1=Center, 2=Right
+    // vAlign: 0=Top,  1=Middle, 2=Bottom
+    // wordWrap: wrap at box width; if false splits only on '\n'
+    // lineSpacing: multiplier on line height (1.0 = normal)
     void RenderTextInBox(const std::string &text, float x, float y,
                          float boxWidth, float boxHeight, float scale,
-                         glm::vec3 color, Graphics::Shader &s, int alignment);
+                         glm::vec3 color, Graphics::Shader &s,
+                         int hAlign, int vAlign,
+                         bool wordWrap, float lineSpacing);
 
     // Measure the width of a text string in pixels (before scaling)
     float MeasureTextWidth(const std::string &text, float scale) const;

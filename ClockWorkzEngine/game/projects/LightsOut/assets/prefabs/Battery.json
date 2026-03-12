@@ -1,0 +1,49 @@
+{
+    "category": "Custom",
+    "components": {
+        "luaScript": [
+            {
+                "enabled": true,
+                "properties": {
+                    "offsetX": 800.0,
+                    "offsetY": -420.0,
+                    "threshold1": 0.0,
+                    "threshold2": 25.0,
+                    "threshold3": 50.0,
+                    "threshold4": 75.0,
+                    "updateRate": 0.05000000074505806
+                },
+                "scriptPath": "ui/hud_battery.lua"
+            }
+        ],
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 200.0,
+                "y": 150.0
+            },
+            "sortOrder": 10,
+            "textureId": "battery_full"
+        },
+        "tag": {
+            "tag": "HUD_Battery"
+        },
+        "transform": {
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        }
+    },
+    "name": "Battery"
+}

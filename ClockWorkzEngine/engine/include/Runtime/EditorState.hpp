@@ -16,11 +16,13 @@ reserved.
 #include "Graphics/FrameBuffer.hpp"
 #include "ECS/Entity.hpp"
 #include "Math/Vec2.hpp"
+#include "Components/SpriteAnimator.hpp"
 #include <glm/vec2.hpp>
 #include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Platform { class InputManager; }
@@ -54,6 +56,7 @@ private:
     void renderStatsWindow();
     void renderScriptsBrowser();
     void renderAnimationsBrowser();
+    void renderAnimationEditor();
     void renderAudioBrowser();
     void renderPrefabBrowser();
     void renderTilePalette();
@@ -81,6 +84,14 @@ private:
     struct EntityGroup {
         std::string              name;
         std::vector<ECS::Entity> entities;
+    };
+
+    // --- Hierarchy groups (folders) ---
+    struct HierarchyGroup {
+        std::string           name{"Group"};
+        std::vector<uint32_t> entityIds;   // stored as IDs (generation-independent)
+        bool                  collapsed{false};
+        int                   sortOrderBase{0};
     };
     enum class PaintMode { Paint, Erase, Select };
 
@@ -114,6 +125,15 @@ private:
     ECS::Entity             m_selectedEntity{0, 0};
     std::vector<ECS::Entity> m_selectedEntities;    // all selected (incl. primary)
 
+    // ----- Hierarchy ordering & groups -----
+    std::vector<uint32_t>        m_hierarchyOrder;   // all entity IDs in display order
+    std::vector<HierarchyGroup>  m_hierarchyGroups;  // folder groups
+    int                          m_selectedGroupIdx{-1};
+    int                          m_renamingGroupIdx{-1};
+
+    // ----- Hidden entities (editor-only, not saved as gameplay data) -----
+    std::unordered_set<uint32_t> m_hiddenEntities;
+
     // ----- Viewport -----
     vec2                    m_viewportSize{800.0f, 600.0f};
     bool                    m_viewportFocused{false};
@@ -132,6 +152,12 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+
+    // ----- UIButton hit-area debug -----
+    bool                    m_showUIButtons{false};
+
+    // ----- TextRenderer box debug -----
+    bool                    m_showTextBoxes{false};
 
     // ----- Stats memory graph -----
     float                   m_statsHistory[128]{};
@@ -196,6 +222,28 @@ private:
     std::string             m_renamingAnimPath;
     char                    m_renameAnimBuf[256]{};
     std::string             m_deletingAnimPath;
+
+    // ----- Animation editor panel -----
+    bool                        m_animEditorOpen{false};
+    std::string                 m_editingAnimPath{};
+    std::string                 m_editingAnimRelPath{};
+    Components::SpriteAnimator  m_animEditorAnim{};
+    std::string                 m_animEdClip{};
+    int                         m_animEdFrame{-1};
+    bool                        m_animEdPlaying{false};
+    bool                        m_animEdLoop{true};
+    float                       m_animEdTimer{0.f};
+    int                         m_animEdSheetW{512};
+    int                         m_animEdSheetH{512};
+    int                         m_animEdCellW{64};
+    int                         m_animEdCellH{64};
+    int                         m_animEdStartF{0};
+    int                         m_animEdEndF{7};
+    char                        m_animEdNewClipName[128]{};
+    bool                        m_newAnimModalOpen{false};
+    char                        m_newAnimNameBuf[128]{};
+    std::string                 m_animEdTexture{};       // selected texture for preview
+    Graphics::FrameBuffer       m_animPreviewFB{};
 
     // ----- Audio browser -----
     char                    m_newAudioNameBuf[128]{};
@@ -314,6 +362,9 @@ private:
     bool                    m_isRenaming{false};
     ECS::Entity             m_renamingEntity{0, 0};
     char                    m_renameBuffer[256]{};
+
+    // ----- Hierarchy multi-select anchor (shift+click range) -----
+    uint32_t                m_lastAnchorId{0};  // ID of the last plain-clicked entity
 };
 
 } // namespace Runtime

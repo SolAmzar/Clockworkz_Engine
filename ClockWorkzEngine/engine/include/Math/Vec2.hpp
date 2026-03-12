@@ -118,6 +118,11 @@ struct vec2 {
 
 inline vec2 abs_vec2(vec2 v) { return { std::fabs(v.x), std::fabs(v.y) }; }
 
+inline vec2 clamp(vec2 v, vec2 lo, vec2 hi) {
+	return { std::max(lo.x, std::min(v.x, hi.x)),
+	         std::max(lo.y, std::min(v.y, hi.y)) };
+}
+
 inline vec2 operator*(f32 s, const vec2& v) {
 	return {v * s};
 }

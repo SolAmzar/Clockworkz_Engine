@@ -509,7 +509,6 @@ void PlayState::update(double dt) {
       m_batterySystem.update(world, dt);
       m_lightSystem.update(world, dt);
       m_fragmentSystem.update(world, dt);
-      m_aiSystem.update(world, dt);
       m_doorSystem.update(world, dt);
       m_doorSwingSystem.update(world, dt);
     }

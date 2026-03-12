@@ -17,6 +17,13 @@ file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/include/*.hpp"
 )
 
+# Ensure LuaBindings.cpp is included (workaround if glob didn't pick it up due to casing/path issues)
+set(_lua_bindings_path "${CMAKE_CURRENT_SOURCE_DIR}/src/Scripting/LuaBindings.cpp")
+if(EXISTS "${_lua_bindings_path}")
+  list(APPEND ENGINE_SOURCES "${_lua_bindings_path}")
+  message(STATUS "Forcing inclusion of engine source: ${_lua_bindings_path}")
+endif()
+
 # --- Static library target ---
 add_library(CWZEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
@@ -36,6 +43,7 @@ endif()
 if(MSVC)
   target_compile_options(CWZEngine PRIVATE
     /W4 /permissive- /Zc:preprocessor /Zc:__cplusplus /bigobj
+    /external:anglebrackets /external:W0
   )
   target_compile_options(CWZEngine PRIVATE
     $<$<CONFIG:Debug>:/Od>
@@ -84,7 +92,8 @@ endif()
 set(_ENGINE_HEADERS_LOCAL  "")
 set(_ENGINE_HEADERS_TOPLVL "")
 foreach(_f IN LISTS ENGINE_HEADERS)
-  if(_f MATCHES "^${CMAKE_CURRENT_SOURCE_DIR}/")
+  string(FIND "${_f}" "${CMAKE_CURRENT_SOURCE_DIR}/" _pos)
+  if(_pos EQUAL 0)
     list(APPEND _ENGINE_HEADERS_LOCAL  "${_f}")
   else()
     list(APPEND _ENGINE_HEADERS_TOPLVL "${_f}")
@@ -94,7 +103,8 @@ endforeach()
 set(_ENGINE_SOURCES_LOCAL  "")
 set(_ENGINE_SOURCES_TOPLVL "")
 foreach(_f IN LISTS ENGINE_SOURCES)
-  if(_f MATCHES "^${CMAKE_CURRENT_SOURCE_DIR}/")
+  string(FIND "${_f}" "${CMAKE_CURRENT_SOURCE_DIR}/" _pos)
+  if(_pos EQUAL 0)
     list(APPEND _ENGINE_SOURCES_LOCAL  "${_f}")
   else()
     list(APPEND _ENGINE_SOURCES_TOPLVL "${_f}")

@@ -61,6 +61,8 @@ reserved.
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <iomanip>
+#include <unordered_set>
 #include <limits>
 #include <map>
 
@@ -105,11 +107,11 @@ static vec2 screenToWorld(const vec2& screenPos, const vec2& camPos,
     return camPos + vec2(centered.x / zoom, -centered.y / zoom);
 }
 
-template<typename T>
-static void addCompEntry(const char* label, ECS::Entity entity, ECS::World& world) {
+template<typename T, typename ExecFn>
+static void addCompEntry(const char* label, ECS::Entity entity, ECS::World& world, ExecFn&& exec) {
     bool has = world.hasComponent<T>(entity);
     if (ImGui::MenuItem(label, nullptr, false, !has))
-        world.addComponent(entity, T{});
+        exec(std::make_unique<Runtime::AddComponentCmd<T>>(world, entity));
     if (has) { ImGui::SameLine(); ImGui::TextDisabled("(present)"); }
 }
 
@@ -209,6 +211,7 @@ EditorState::EditorState(Platform::InputManager& input,
 
 void EditorState::onEnter() {
     m_framebuffer.create(800, 600);
+    m_animPreviewFB.create(192, 192);
 
     m_undoStack.clear();
     m_redoStack.clear();
@@ -367,6 +370,24 @@ void EditorState::update(double dt) {
         saveScene();
     }
 
+    // Animation editor preview playback
+    if (m_animEditorOpen && m_animEdPlaying && !m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
+            if (!clip->frames.empty()) {
+                if (m_animEdFrame < 0) m_animEdFrame = 0;
+                m_animEdTimer += static_cast<float>(dt);
+                while (m_animEdTimer >= clip->frames[m_animEdFrame].duration) {
+                    m_animEdTimer -= clip->frames[m_animEdFrame].duration;
+                    ++m_animEdFrame;
+                    if (m_animEdFrame >= static_cast<int>(clip->frames.size())) {
+                        if (m_animEdLoop) m_animEdFrame = 0;
+                        else { m_animEdFrame = static_cast<int>(clip->frames.size()) - 1; m_animEdPlaying = false; }
+                    }
+                }
+            }
+        }
+    }
+
     // Texture hot-reload
     m_hotReloadTimer += static_cast<float>(dt);
     if (m_hotReloadTimer >= HOT_RELOAD_INTERVAL) {
@@ -488,8 +509,8 @@ void EditorState::render(Core::Time* timer) {
 
     Systems::renderLightPass(m_scene.GetWorld(), renderer);
 
-    // Grid + collider outlines (debug pass, drawn on top of scene)
-    if (m_showGrid || m_showColliders) {
+    // Grid + collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
+    if (m_showGrid || m_showColliders || m_showUIButtons || m_showTextBoxes) {
         renderer.beginDebugPass(camera.viewProj());
 
         if (m_showGrid)
@@ -532,10 +553,93 @@ void EditorState::render(Core::Time* timer) {
                 });
         }
 
+        if (m_showUIButtons) {
+            auto& world = m_scene.GetWorld();
+            world.each<Components::Transform, Components::UIButton>(
+                [&](ECS::Entity, Components::Transform& t, Components::UIButton& btn) {
+                    float halfW = btn.size.x * t.scale.x * 0.5f;
+                    float halfH = btn.size.y * t.scale.y * 0.5f;
+                    float cx = t.position.x + btn.offset.x;
+                    float cy = t.position.y + btn.offset.y;
+                    // Cyan box for hit area
+                    renderer.drawLine(cx - halfW, cy - halfH, cx + halfW, cy - halfH, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx + halfW, cy - halfH, cx + halfW, cy + halfH, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx + halfW, cy + halfH, cx - halfW, cy + halfH, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx - halfW, cy + halfH, cx - halfW, cy - halfH, 0.f, 1.f, 1.f);
+                    // Cross at center
+                    renderer.drawLine(cx - 4.f, cy, cx + 4.f, cy, 0.f, 1.f, 1.f);
+                    renderer.drawLine(cx, cy - 4.f, cx, cy + 4.f, 0.f, 1.f, 1.f);
+                });
+        }
+
+        if (m_showTextBoxes) {
+            auto& world = m_scene.GetWorld();
+            world.each<Components::Transform, Components::TextRenderer>(
+                [&](ECS::Entity, Components::Transform& t, Components::TextRenderer& text) {
+                    float boxW = text.boxSize.x * t.scale.x;
+                    float boxH = text.boxSize.y * t.scale.y;
+
+                    float boxLeft;
+                    switch (text.alignment) {
+                        case Components::TextAlignment::Center:
+                            boxLeft = t.position.x - boxW * 0.5f; break;
+                        case Components::TextAlignment::Right:
+                            boxLeft = t.position.x - boxW; break;
+                        default:
+                            boxLeft = t.position.x; break;
+                    }
+                    float boxTop = t.position.y;
+
+                    // Outer box — magenta
+                    float r = boxLeft, l = boxLeft + boxW;
+                    float top = boxTop, bot = boxTop - boxH;
+                    renderer.drawLine(r,   top, l,   top, 1.f, 0.f, 1.f);
+                    renderer.drawLine(l,   top, l,   bot, 1.f, 0.f, 1.f);
+                    renderer.drawLine(l,   bot, r,   bot, 1.f, 0.f, 1.f);
+                    renderer.drawLine(r,   bot, r,   top, 1.f, 0.f, 1.f);
+
+                    // Inner padding area — orange (only when padding is non-zero)
+                    float padX = text.padding.x * t.scale.x;
+                    float padY = text.padding.y * t.scale.y;
+                    if (padX > 0.f || padY > 0.f) {
+                        float ir = r + padX, il = l - padX;
+                        float itop = top - padY, ibot = bot + padY;
+                        renderer.drawLine(ir,   itop, il,   itop, 1.f, 0.5f, 0.f);
+                        renderer.drawLine(il,   itop, il,   ibot, 1.f, 0.5f, 0.f);
+                        renderer.drawLine(il,   ibot, ir,   ibot, 1.f, 0.5f, 0.f);
+                        renderer.drawLine(ir,   ibot, ir,   itop, 1.f, 0.5f, 0.f);
+                    }
+                });
+        }
+
         renderer.endDebugPass();
     }
 
     m_framebuffer.unbind();
+
+    // Animation editor preview — render current frame into m_animPreviewFB
+    if (m_animEditorOpen && !m_animEdTexture.empty() && !m_animEdClip.empty()) {
+        auto* clip = m_animEditorAnim.getClip(m_animEdClip);
+        if (clip && !clip->frames.empty()) {
+            int fi = (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size()))
+                     ? m_animEdFrame : 0;
+            auto tex = Assets::TextureManager::Get(m_animEdTexture);
+            if (tex) {
+                m_animPreviewFB.bind();
+                glClearColor(0.12f, 0.12f, 0.12f, 1.f);
+                glClear(GL_COLOR_BUFFER_BIT);
+                // Simple square ortho: world unit [0,1]^2 fills the FB
+                glm::mat4 vp = glm::ortho(0.f, 1.f, 0.f, 1.f, -1.f, 1.f);
+                renderer.beginScenePass(vp, glm::vec4(1.f));
+                renderer.drawSprite(tex->id(),
+                                    {0.5f, 0.5f}, {1.f, 1.f},
+                                    0.f, clip->frames[fi].uv,
+                                    glm::vec4(1.f), false);
+                renderer.endScenePass();
+                m_animPreviewFB.unbind();
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -595,6 +699,7 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderStatsWindow();
     renderScriptsBrowser();
     renderAnimationsBrowser();
+    renderAnimationEditor();
     renderAudioBrowser();
     renderFontBrowser();
     renderPrefabBrowser();
@@ -998,18 +1103,140 @@ void EditorState::renderLoadSceneWindow() {
 
 void EditorState::renderHierarchy() {
     ImGui::Begin("Hierarchy");
-
     auto& world = m_scene.GetWorld();
 
-    // Create entity
+    // -----------------------------------------------------------------------
+    // 1. Build id → full-entity map (needed to call world APIs)
+    // -----------------------------------------------------------------------
+    std::unordered_map<uint32_t, ECS::Entity> idMap;
+    world.each<Components::Transform>([&](ECS::Entity e, Components::Transform&) {
+        idMap[e.id] = e;
+    });
+    world.each<Components::Tag>([&](ECS::Entity e, Components::Tag&) {
+        if (!world.hasComponent<Components::Transform>(e))
+            idMap[e.id] = e;
+    });
+
+    // -----------------------------------------------------------------------
+    // 2. Sync m_hierarchyOrder: remove stale IDs, append new ones
+    // -----------------------------------------------------------------------
+    std::unordered_set<uint32_t> liveIds;
+    for (auto& [id, _] : idMap) liveIds.insert(id);
+
+    // Remove stale IDs, then deduplicate in one pass
+    {
+        std::unordered_set<uint32_t> seen;
+        m_hierarchyOrder.erase(
+            std::remove_if(m_hierarchyOrder.begin(), m_hierarchyOrder.end(),
+                [&](uint32_t id){
+                    if (liveIds.find(id) == liveIds.end()) return true; // stale
+                    return !seen.insert(id).second;                     // duplicate
+                }),
+            m_hierarchyOrder.end());
+    }
+
+    {
+        std::unordered_set<uint32_t> ordered(m_hierarchyOrder.begin(), m_hierarchyOrder.end());
+        for (uint32_t id : liveIds)
+            if (!ordered.count(id))
+                m_hierarchyOrder.push_back(id);
+    }
+
+    // Sync group entity lists (remove stale)
+    for (auto& grp : m_hierarchyGroups)
+        grp.entityIds.erase(
+            std::remove_if(grp.entityIds.begin(), grp.entityIds.end(),
+                [&](uint32_t id){ return liveIds.find(id) == liveIds.end(); }),
+            grp.entityIds.end());
+
+    // -----------------------------------------------------------------------
+    // 3. Build set of grouped entity IDs
+    // -----------------------------------------------------------------------
+    std::unordered_set<uint32_t> groupedIds;
+    for (auto& grp : m_hierarchyGroups)
+        for (uint32_t id : grp.entityIds)
+            groupedIds.insert(id);
+
+    // -----------------------------------------------------------------------
+    // 4. Helper lambdas
+    // -----------------------------------------------------------------------
     auto selectNew = [&](ECS::Entity e) {
         m_selectedEntities.clear();
         m_selectedEntity = e;
         m_selectedEntities.push_back(e);
+        m_selectedGroupIdx = -1;
     };
+
+    auto isEntitySelected = [&](ECS::Entity e) -> bool {
+        if (m_selectedEntity.id == e.id && m_selectedEntity.generation == e.generation)
+            return true;
+        for (auto& se : m_selectedEntities)
+            if (se.id == e.id && se.generation == e.generation) return true;
+        return false;
+    };
+
+    auto getDisplayName = [&](ECS::Entity e) -> std::string {
+        if (auto* tag = world.getComponent<Components::Tag>(e)) return tag->tag;
+        char buf[32]; snprintf(buf, sizeof(buf), "Entity %u", e.id);
+        return buf;
+    };
+
+    // Reorder: if the dragged entity is selected, move ALL selected entities
+    // together (maintaining relative order) to the drop position.
+    // If dragging an unselected entity, move only that one.
+    auto reorderFlat = [&](uint32_t draggedId, int destIndex) {
+        // Build selected ID set
+        std::unordered_set<uint32_t> selSet;
+        for (auto& se : m_selectedEntities) selSet.insert(se.id);
+
+        if (!selSet.count(draggedId)) {
+            // Dragging an unselected entity — move it alone
+            auto it = std::find(m_hierarchyOrder.begin(), m_hierarchyOrder.end(), draggedId);
+            if (it == m_hierarchyOrder.end()) return;
+            int srcIdx = (int)(it - m_hierarchyOrder.begin());
+            if (srcIdx == destIndex || srcIdx + 1 == destIndex) return;
+            m_hierarchyOrder.erase(it);
+            if (destIndex > srcIdx) --destIndex;
+            m_hierarchyOrder.insert(m_hierarchyOrder.begin() + destIndex, draggedId);
+            return;
+        }
+
+        // Dragging a selected entity — move all selected together.
+        // 1. Record selected IDs in their current relative order.
+        std::vector<uint32_t> toMove;
+        for (uint32_t id : m_hierarchyOrder)
+            if (selSet.count(id)) toMove.push_back(id);
+
+        // 2. Capture the anchor entity (what's currently AT destIndex).
+        uint32_t anchorId = 0;
+        bool     hasAnchor = (destIndex < (int)m_hierarchyOrder.size());
+        if (hasAnchor) anchorId = m_hierarchyOrder[destIndex];
+
+        // 3. Remove all selected from the flat list.
+        m_hierarchyOrder.erase(
+            std::remove_if(m_hierarchyOrder.begin(), m_hierarchyOrder.end(),
+                [&](uint32_t id){ return selSet.count(id) > 0; }),
+            m_hierarchyOrder.end());
+
+        // 4. Find where to insert (locate anchor in the trimmed list).
+        int insertPos = (int)m_hierarchyOrder.size(); // default: end
+        if (hasAnchor && !selSet.count(anchorId)) {
+            for (int i = 0; i < (int)m_hierarchyOrder.size(); ++i) {
+                if (m_hierarchyOrder[i] == anchorId) { insertPos = i; break; }
+            }
+        }
+
+        // 5. Insert the group in their original relative order.
+        m_hierarchyOrder.insert(m_hierarchyOrder.begin() + insertPos,
+                                toMove.begin(), toMove.end());
+    };
+
+    // -----------------------------------------------------------------------
+    // 5. Toolbar buttons
+    // -----------------------------------------------------------------------
     if (ImGui::Button("+ Entity")) {
         EntitySnapshot snap;
-        snap.tagName  = "Entity";
+        snap.tagName   = "Entity";
         snap.transform = Components::Transform{};
         auto cmd = std::make_unique<CreateEntityCmd>(world, snap);
         auto* rawCmd = cmd.get();
@@ -1028,130 +1255,471 @@ void EditorState::renderHierarchy() {
         executeCommand(std::move(cmd));
         selectNew(rawCmd->createdEntity());
     }
+    ImGui::SameLine();
+    if (ImGui::Button("+ Group")) {
+        HierarchyGroup grp;
+        grp.name = "Group";
+        for (auto& e : m_selectedEntities) grp.entityIds.push_back(e.id);
+        m_hierarchyGroups.push_back(std::move(grp));
+        m_selectedGroupIdx = (int)m_hierarchyGroups.size() - 1;
+        m_selectedEntities.clear();
+        m_selectedEntity = {0, 0};
+    }
 
     ImGui::Separator();
 
-    // Collect entities by Tag
-    struct EntityRow { ECS::Entity entity; std::string displayName; };
-    std::vector<EntityRow> rows;
+    // -----------------------------------------------------------------------
+    // 6. Render ungrouped entities with drag-drop reorder
+    // -----------------------------------------------------------------------
+    // Drop-zone payload tag
+    static constexpr char k_dragTag[] = "HRC_ENTITY";
 
-    world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
-        char buf[128];
-        snprintf(buf, sizeof(buf), "%s##%u", tag.tag.c_str(), e.id);
-        rows.push_back({e, buf});
-    });
-    world.each<Components::Transform>([&](ECS::Entity e, Components::Transform&) {
-        if (!world.hasComponent<Components::Tag>(e)) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "Entity %u##%u", e.id, e.id);
-            rows.push_back({e, buf});
-        }
-    });
+    for (int i = 0; i < (int)m_hierarchyOrder.size(); ++i) {
+        uint32_t uid = m_hierarchyOrder[i];
+        if (groupedIds.count(uid)) continue; // Skip grouped entities
+        auto mapIt = idMap.find(uid);
+        if (mapIt == idMap.end()) continue;
+        ECS::Entity e = mapIt->second;
+        ImGui::PushID(i);
 
-    for (auto& row : rows) {
-        // Highlight if primary OR in secondary selection
-        bool selected = (m_selectedEntity.id == row.entity.id &&
-                         m_selectedEntity.generation == row.entity.generation);
-        if (!selected) {
-            for (auto& se : m_selectedEntities) {
-                if (se.id == row.entity.id && se.generation == row.entity.generation) {
-                    selected = true;
-                    break;
+        // --- Thin drop-zone ABOVE this row ---
+        {
+            ImGui::PushID((int)(uid * 1000u + 1u));
+            ImGui::InvisibleButton("##drop", ImVec2(-1.0f, 4.0f));
+            if (ImGui::BeginDragDropTarget()) {
+                if (auto* p = ImGui::AcceptDragDropPayload(k_dragTag)) {
+                    uint32_t srcId = *(const uint32_t*)p->Data;
+                    reorderFlat(srcId, i);
                 }
+                ImGui::EndDragDropTarget();
             }
+            // Visual line when something is being dragged over
+            if (ImGui::IsItemHovered())
+                ImGui::GetWindowDrawList()->AddLine(
+                    ImGui::GetItemRectMin(),
+                    ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMin().y),
+                    IM_COL32(100, 180, 255, 200), 2.0f);
+            ImGui::PopID();
         }
 
-        // Inline rename
+        // --- Entity rename mode ---
         if (m_isRenaming &&
-            m_renamingEntity.id == row.entity.id &&
-            m_renamingEntity.generation == row.entity.generation) {
+            m_renamingEntity.id == e.id &&
+            m_renamingEntity.generation == e.generation) {
             ImGui::SetKeyboardFocusHere();
             if (ImGui::InputText("##rename", m_renameBuffer, sizeof(m_renameBuffer),
                                  ImGuiInputTextFlags_EnterReturnsTrue |
                                  ImGuiInputTextFlags_AutoSelectAll)) {
-                if (auto* tag = world.getComponent<Components::Tag>(row.entity))
+                if (auto* tag = world.getComponent<Components::Tag>(e))
                     tag->tag = m_renameBuffer;
                 m_isRenaming = false;
             }
             if (!ImGui::IsItemActive() && !ImGui::IsItemFocused())
                 m_isRenaming = false;
+            ImGui::PopID();
             continue;
         }
 
-        if (ImGui::Selectable(row.displayName.c_str(), selected,
-                              ImGuiSelectableFlags_AllowDoubleClick)) {
-            // Clear any active text-field so Delete works immediately after selecting an entity
+        // --- Selectable row (greyed out when hidden) ---
+        bool isHidden = m_hiddenEntities.count(uid) > 0;
+        bool selected = isEntitySelected(e);
+        char rowLabel[160];
+        snprintf(rowLabel, sizeof(rowLabel), "%s%s (ID:%u)##e%u",
+                 isHidden ? "[H] " : "", getDisplayName(e).c_str(), uid, uid);
+        if (isHidden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.45f, 1.0f));
+
+        if (ImGui::Selectable(rowLabel, selected, ImGuiSelectableFlags_AllowDoubleClick)) {
             ImGui::ClearActiveID();
-            bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
-                         ImGui::IsKeyDown(ImGuiKey_RightShift);
-            if (shift) {
-                // Shift+click: toggle entity in selection
+            m_selectedGroupIdx = -1;
+            bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+            bool alt   = ImGui::IsKeyDown(ImGuiKey_LeftAlt)   || ImGui::IsKeyDown(ImGuiKey_RightAlt);
+
+            if (shift && !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                // Build the visible ungrouped order (same order as rendered)
+                std::vector<uint32_t> visible;
+                for (uint32_t id : m_hierarchyOrder)
+                    if (!groupedIds.count(id) && idMap.count(id)) visible.push_back(id);
+
+                int anchorIdx = -1, clickIdx = -1;
+                for (int vi = 0; vi < (int)visible.size(); ++vi) {
+                    if (visible[vi] == m_lastAnchorId) anchorIdx = vi;
+                    if (visible[vi] == uid)            clickIdx  = vi;
+                }
+
+                if (anchorIdx < 0 || clickIdx < 0) {
+                    // No valid anchor yet — fall back to plain select
+                    m_selectedEntities.clear();
+                    m_selectedEntity   = e;
+                    m_selectedEntities.push_back(e);
+                    m_lastAnchorId     = uid;
+                } else {
+                    int lo = std::min(anchorIdx, clickIdx);
+                    int hi = std::max(anchorIdx, clickIdx);
+                    m_selectedEntities.clear();
+                    for (int vi = lo; vi <= hi; ++vi) {
+                        auto it2 = idMap.find(visible[vi]);
+                        if (it2 != idMap.end()) m_selectedEntities.push_back(it2->second);
+                    }
+                    // Keep anchor as primary selection
+                    auto anchorIt = idMap.find(m_lastAnchorId);
+                    m_selectedEntity = (anchorIt != idMap.end())
+                        ? anchorIt->second : m_selectedEntities.front();
+                }
+            } else if (alt && !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                // Alt+click: toggle individual entity without resetting anchor
                 auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
-                    [&](ECS::Entity e){
-                        return e.id == row.entity.id && e.generation == row.entity.generation;
-                    });
+                    [&](ECS::Entity se){ return se.id == e.id; });
                 if (it != m_selectedEntities.end()) {
                     m_selectedEntities.erase(it);
-                    // If we removed the primary, pick a new one
-                    if (m_selectedEntity.id == row.entity.id &&
-                        m_selectedEntity.generation == row.entity.generation)
+                    if (m_selectedEntity.id == e.id)
                         m_selectedEntity = m_selectedEntities.empty()
-                                           ? ECS::Entity{0, 0}
-                                           : m_selectedEntities.front();
+                            ? ECS::Entity{0,0} : m_selectedEntities.front();
                 } else {
-                    m_selectedEntities.push_back(row.entity);
-                    // First entity becomes primary if none set
-                    if (!world.isValid(m_selectedEntity))
-                        m_selectedEntity = row.entity;
+                    m_selectedEntities.push_back(e);
+                    if (!world.isValid(m_selectedEntity)) m_selectedEntity = e;
                 }
+                // Do NOT update m_lastAnchorId for alt+click
             } else {
-                // Regular click: clear selection, make this entity primary
+                // Plain click: select only this entity and set as anchor
                 m_selectedEntities.clear();
-                m_selectedEntity = row.entity;
-                m_selectedEntities.push_back(row.entity);
+                m_selectedEntity   = e;
+                m_selectedEntities.push_back(e);
+                m_lastAnchorId     = uid;
             }
+
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 m_isRenaming     = true;
-                m_renamingEntity = row.entity;
-                if (auto* tag = world.getComponent<Components::Tag>(row.entity))
+                m_renamingEntity = e;
+                if (auto* tag = world.getComponent<Components::Tag>(e))
                     strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer) - 1);
             }
         }
+        if (isHidden) ImGui::PopStyleColor();
 
-        // Right-click context menu
+        // --- Drag source ---
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            ImGui::SetDragDropPayload(k_dragTag, &uid, sizeof(uint32_t));
+            ImGui::Text("  %s", getDisplayName(e).c_str());
+            ImGui::EndDragDropSource();
+        }
+        // --- Drop on row = place after it ---
+        if (ImGui::BeginDragDropTarget()) {
+            if (auto* p = ImGui::AcceptDragDropPayload(k_dragTag)) {
+                uint32_t srcId = *(const uint32_t*)p->Data;
+                reorderFlat(srcId, i + 1);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // --- Right-click context menu ---
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Rename")) {
                 m_isRenaming     = true;
-                m_renamingEntity = row.entity;
-                if (auto* tag = world.getComponent<Components::Tag>(row.entity))
+                m_renamingEntity = e;
+                if (auto* tag = world.getComponent<Components::Tag>(e))
                     strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer) - 1);
             }
             if (ImGui::MenuItem("Clone")) {
-                EntitySnapshot snap = EntitySnapshot::capture(world, row.entity);
-                // Offset position slightly
+                EntitySnapshot snap = EntitySnapshot::capture(world, e);
                 snap.transform.position.x += m_gridSize;
                 auto cmd = std::make_unique<CreateEntityCmd>(world, snap);
                 auto* rawCmd = cmd.get();
                 executeCommand(std::move(cmd));
                 selectNew(rawCmd->createdEntity());
             }
+            // Add to existing group
+            if (!m_hierarchyGroups.empty() && ImGui::BeginMenu("Add to Group")) {
+                for (int gi = 0; gi < (int)m_hierarchyGroups.size(); ++gi) {
+                    if (ImGui::MenuItem(m_hierarchyGroups[gi].name.c_str())) {
+                        m_hierarchyGroups[gi].entityIds.push_back(uid);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::Separator();
+            // Hide / Show (Photoshop-style visibility toggle)
+            if (m_hiddenEntities.count(uid)) {
+                if (ImGui::MenuItem("Show")) {
+                    m_hiddenEntities.erase(uid);
+                    if (auto* sr = world.getComponent<Components::SpriteRenderer>(e)) sr->visible = true;
+                    if (auto* tr = world.getComponent<Components::TextRenderer>(e))   tr->visible = true;
+                    if (auto* lt = world.getComponent<Components::Light>(e))           lt->active  = true;
+                }
+            } else {
+                if (ImGui::MenuItem("Hide")) {
+                    m_hiddenEntities.insert(uid);
+                    if (auto* sr = world.getComponent<Components::SpriteRenderer>(e)) sr->visible = false;
+                    if (auto* tr = world.getComponent<Components::TextRenderer>(e))   tr->visible = false;
+                    if (auto* lt = world.getComponent<Components::Light>(e))           lt->active  = false;
+                }
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Delete")) {
-                if (selected) {
-                    m_selectedEntities.erase(
-                        std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
-                            [&](ECS::Entity e){
-                                return e.id == row.entity.id &&
-                                       e.generation == row.entity.generation;
-                            }),
-                        m_selectedEntities.end());
-                    if (m_selectedEntity.id == row.entity.id &&
-                        m_selectedEntity.generation == row.entity.generation)
-                        m_selectedEntity = {0, 0};
-                }
-                executeCommand(std::make_unique<DeleteEntityCmd>(world, row.entity));
+                m_selectedEntities.erase(
+                    std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                        [&](ECS::Entity se){ return se.id == e.id && se.generation == e.generation; }),
+                    m_selectedEntities.end());
+                if (m_selectedEntity.id == e.id && m_selectedEntity.generation == e.generation)
+                    m_selectedEntity = {0, 0};
+                executeCommand(std::make_unique<DeleteEntityCmd>(world, e));
             }
             ImGui::EndPopup();
+        }
+        ImGui::PopID();
+    }
+
+    // Drop zone at bottom of flat list
+    {
+        ImGui::PushID(999999);
+        ImGui::InvisibleButton("##dropbottom", ImVec2(-1.0f, 4.0f));
+        if (ImGui::BeginDragDropTarget()) {
+            if (auto* p = ImGui::AcceptDragDropPayload(k_dragTag)) {
+                uint32_t srcId = *(const uint32_t*)p->Data;
+                reorderFlat(srcId, (int)m_hierarchyOrder.size());
+            }
+            ImGui::EndDragDropTarget();
+        }
+        ImGui::PopID();
+    }
+
+    // -----------------------------------------------------------------------
+    // 7. Render groups
+    // -----------------------------------------------------------------------
+    if (!m_hierarchyGroups.empty())
+        ImGui::Separator();
+
+    for (int gi = 0; gi < (int)m_hierarchyGroups.size(); ++gi) {
+        auto& grp = m_hierarchyGroups[gi];
+        bool groupSel = (m_selectedGroupIdx == gi);
+
+        // --- Group rename mode ---
+        if (m_renamingGroupIdx == gi) {
+            ImGui::SetKeyboardFocusHere();
+            if (ImGui::InputText("##grprename", m_renameBuffer, sizeof(m_renameBuffer),
+                                 ImGuiInputTextFlags_EnterReturnsTrue |
+                                 ImGuiInputTextFlags_AutoSelectAll)) {
+                grp.name          = m_renameBuffer;
+                m_renamingGroupIdx = -1;
+            }
+            if (!ImGui::IsItemActive() && !ImGui::IsItemFocused())
+                m_renamingGroupIdx = -1;
+            continue;
+        }
+
+        // --- TreeNode header ---
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (groupSel) flags |= ImGuiTreeNodeFlags_Selected;
+
+        char grpLabel[160];
+        snprintf(grpLabel, sizeof(grpLabel), "%s  [sort base: %d]##grp%d",
+                 grp.name.c_str(), grp.sortOrderBase, gi);
+
+        bool open = ImGui::TreeNodeEx(grpLabel, flags);
+
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+            m_selectedGroupIdx = gi;
+            m_selectedEntities.clear();
+            m_selectedEntity = {0, 0};
+        }
+
+        // --- Drop entity onto group header → add to group ---
+        if (ImGui::BeginDragDropTarget()) {
+            if (auto* p = ImGui::AcceptDragDropPayload(k_dragTag)) {
+                uint32_t srcId = *(const uint32_t*)p->Data;
+                if (!groupedIds.count(srcId)) {
+                    grp.entityIds.push_back(srcId);
+                    groupedIds.insert(srcId); // keep set in sync
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // --- Group right-click menu ---
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Rename Group")) {
+                m_renamingGroupIdx = gi;
+                strncpy_s(m_renameBuffer, grp.name.c_str(), sizeof(m_renameBuffer) - 1);
+            }
+            if (ImGui::MenuItem("Disband (keep entities)")) {
+                for (uint32_t id : grp.entityIds) m_hierarchyOrder.push_back(id);
+                if (m_selectedGroupIdx == gi) m_selectedGroupIdx = -1;
+                else if (m_selectedGroupIdx > gi) --m_selectedGroupIdx;
+                m_hierarchyGroups.erase(m_hierarchyGroups.begin() + gi);
+                if (open) ImGui::TreePop();
+                ImGui::EndPopup();
+                --gi; continue;
+            }
+            if (ImGui::MenuItem("Delete Group + Entities")) {
+                for (uint32_t id : grp.entityIds) {
+                    auto it = idMap.find(id);
+                    if (it != idMap.end())
+                        executeCommand(std::make_unique<DeleteEntityCmd>(world, it->second));
+                }
+                if (m_selectedGroupIdx == gi) m_selectedGroupIdx = -1;
+                else if (m_selectedGroupIdx > gi) --m_selectedGroupIdx;
+                m_hierarchyGroups.erase(m_hierarchyGroups.begin() + gi);
+                if (open) ImGui::TreePop();
+                ImGui::EndPopup();
+                --gi; continue;
+            }
+            ImGui::EndPopup();
+        }
+
+        if (open) {
+            // --- Sort order base editor ---
+            int newBase = grp.sortOrderBase;
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::PushID(gi * 10000 + 5000);
+            if (ImGui::InputInt("Sort Order Base", &newBase)) {
+                int delta = newBase - grp.sortOrderBase;
+                grp.sortOrderBase = newBase;
+                for (uint32_t id : grp.entityIds) {
+                    auto it = idMap.find(id);
+                    if (it == idMap.end()) continue;
+                    if (auto* sr = world.getComponent<Components::SpriteRenderer>(it->second))
+                        sr->sortOrder += delta;
+                }
+            }
+            ImGui::PopID();
+
+            ImGui::Separator();
+
+            // --- Render group members ---
+            for (int mi = 0; mi < (int)grp.entityIds.size(); ++mi) {
+                uint32_t uid = grp.entityIds[mi];
+                auto mapIt = idMap.find(uid);
+                if (mapIt == idMap.end()) continue;
+                ECS::Entity e = mapIt->second;
+                ImGui::PushID(mi);
+
+                bool isHiddenMember = m_hiddenEntities.count(uid) > 0;
+                bool selected = isEntitySelected(e);
+                char rowLabel[160];
+                snprintf(rowLabel, sizeof(rowLabel), "  %s%s (ID:%u)##ge%u",
+                         isHiddenMember ? "[H] " : "", getDisplayName(e).c_str(), uid, uid);
+                if (isHiddenMember) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.45f, 1.0f));
+
+                if (ImGui::Selectable(rowLabel, selected, ImGuiSelectableFlags_AllowDoubleClick)) {
+                    ImGui::ClearActiveID();
+                    m_selectedGroupIdx = -1;
+                    bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+                    bool alt   = ImGui::IsKeyDown(ImGuiKey_LeftAlt)   || ImGui::IsKeyDown(ImGuiKey_RightAlt);
+
+                    if (shift && !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                        // Range select within this group's member list
+                        int anchorIdx = -1, clickIdx = -1;
+                        for (int vi = 0; vi < (int)grp.entityIds.size(); ++vi) {
+                            if (grp.entityIds[vi] == m_lastAnchorId) anchorIdx = vi;
+                            if (grp.entityIds[vi] == uid)            clickIdx  = vi;
+                        }
+
+                        if (anchorIdx < 0 || clickIdx < 0) {
+                            m_selectedEntities.clear();
+                            m_selectedEntity = e;
+                            m_selectedEntities.push_back(e);
+                            m_lastAnchorId   = uid;
+                        } else {
+                            int lo = std::min(anchorIdx, clickIdx);
+                            int hi = std::max(anchorIdx, clickIdx);
+                            m_selectedEntities.clear();
+                            for (int vi = lo; vi <= hi; ++vi) {
+                                auto it2 = idMap.find(grp.entityIds[vi]);
+                                if (it2 != idMap.end()) m_selectedEntities.push_back(it2->second);
+                            }
+                            auto anchorIt = idMap.find(m_lastAnchorId);
+                            m_selectedEntity = (anchorIt != idMap.end())
+                                ? anchorIt->second : m_selectedEntities.front();
+                        }
+                    } else if (alt && !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                        // Alt+click: toggle individual member without resetting anchor
+                        auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                            [&](ECS::Entity se){ return se.id == e.id; });
+                        if (it != m_selectedEntities.end()) {
+                            m_selectedEntities.erase(it);
+                            if (m_selectedEntity.id == e.id)
+                                m_selectedEntity = m_selectedEntities.empty()
+                                    ? ECS::Entity{0,0} : m_selectedEntities.front();
+                        } else {
+                            m_selectedEntities.push_back(e);
+                            if (!world.isValid(m_selectedEntity)) m_selectedEntity = e;
+                        }
+                    } else {
+                        m_selectedEntities.clear();
+                        m_selectedEntity = e;
+                        m_selectedEntities.push_back(e);
+                        m_lastAnchorId   = uid;
+                    }
+
+                    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                        m_isRenaming     = true;
+                        m_renamingEntity = e;
+                        if (auto* tag = world.getComponent<Components::Tag>(e))
+                            strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer) - 1);
+                    }
+                }
+                if (isHiddenMember) ImGui::PopStyleColor();
+
+                // Drag source (entity inside group can be dragged out)
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    ImGui::SetDragDropPayload(k_dragTag, &uid, sizeof(uint32_t));
+                    // Remove from group on drag (will land ungrouped or in another group)
+                    grp.entityIds.erase(grp.entityIds.begin() + mi);
+                    m_hierarchyOrder.push_back(uid); // add back to flat list
+                    ImGui::Text("  %s", getDisplayName(e).c_str());
+                    ImGui::EndDragDropSource();
+                    --mi; // compensate for erased element
+                }
+
+                // Right-click context in group
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Rename")) {
+                        m_isRenaming     = true;
+                        m_renamingEntity = e;
+                        if (auto* tag = world.getComponent<Components::Tag>(e))
+                            strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer) - 1);
+                    }
+                    if (ImGui::MenuItem("Remove from Group")) {
+                        grp.entityIds.erase(grp.entityIds.begin() + mi);
+                        m_hierarchyOrder.push_back(uid);
+                        ImGui::EndPopup();
+                        ImGui::PopID();
+                        --mi; continue;
+                    }
+                    ImGui::Separator();
+                    if (m_hiddenEntities.count(uid)) {
+                        if (ImGui::MenuItem("Show")) {
+                            m_hiddenEntities.erase(uid);
+                            if (auto* sr = world.getComponent<Components::SpriteRenderer>(e)) sr->visible = true;
+                            if (auto* tr = world.getComponent<Components::TextRenderer>(e))   tr->visible = true;
+                            if (auto* lt = world.getComponent<Components::Light>(e))           lt->active  = true;
+                        }
+                    } else {
+                        if (ImGui::MenuItem("Hide")) {
+                            m_hiddenEntities.insert(uid);
+                            if (auto* sr = world.getComponent<Components::SpriteRenderer>(e)) sr->visible = false;
+                            if (auto* tr = world.getComponent<Components::TextRenderer>(e))   tr->visible = false;
+                            if (auto* lt = world.getComponent<Components::Light>(e))           lt->active  = false;
+                        }
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete")) {
+                        m_selectedEntities.erase(
+                            std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                                [&](ECS::Entity se){ return se.id == e.id && se.generation == e.generation; }),
+                            m_selectedEntities.end());
+                        if (m_selectedEntity.id == e.id) m_selectedEntity = {0,0};
+                        grp.entityIds.erase(grp.entityIds.begin() + mi);
+                        executeCommand(std::make_unique<DeleteEntityCmd>(world, e));
+                        ImGui::EndPopup();
+                        ImGui::PopID();
+                        --mi; continue;
+                    }
+                    ImGui::EndPopup();
+                }
+                ImGui::PopID();
+            }
+            ImGui::TreePop();
         }
     }
 
@@ -1166,6 +1734,39 @@ void EditorState::renderInspector() {
     ImGui::Begin("Inspector");
 
     auto& world = m_scene.GetWorld();
+    auto execCmd = [this](std::unique_ptr<IEditorCommand> cmd) { executeCommand(std::move(cmd)); };
+
+    // --- Group inspector (shown when a group folder is selected) ---
+    if (m_selectedGroupIdx >= 0 && m_selectedGroupIdx < (int)m_hierarchyGroups.size()) {
+        auto& grp = m_hierarchyGroups[m_selectedGroupIdx];
+        ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.2f, 1.0f), "Group: %s", grp.name.c_str());
+        ImGui::Separator();
+
+        // Rename
+        static char grpNameBuf[128];
+        strncpy_s(grpNameBuf, grp.name.c_str(), sizeof(grpNameBuf) - 1);
+        if (ImGui::InputText("Name##grpname", grpNameBuf, sizeof(grpNameBuf),
+                             ImGuiInputTextFlags_EnterReturnsTrue))
+            grp.name = grpNameBuf;
+
+        // Sort order base — changing it offsets all member sortOrders
+        int newBase = grp.sortOrderBase;
+        if (ImGui::InputInt("Sort Order Base", &newBase)) {
+            int delta = newBase - grp.sortOrderBase;
+            grp.sortOrderBase = newBase;
+            for (uint32_t memberId : grp.entityIds) {
+                world.each<Components::Tag>([&](ECS::Entity e, Components::Tag&) {
+                    if (e.id == memberId) {
+                        if (auto* sr = world.getComponent<Components::SpriteRenderer>(e))
+                            sr->sortOrder += delta;
+                    }
+                });
+            }
+        }
+        ImGui::TextDisabled("(%d entities in group)", (int)grp.entityIds.size());
+        ImGui::End();
+        return;
+    }
 
     if (m_sceneMetaBuffersDirty) {
         strncpy_s(m_sceneBgmBuf, m_scene.getBGM().c_str(), sizeof(m_sceneBgmBuf) - 1);
@@ -1197,19 +1798,19 @@ void EditorState::renderInspector() {
 
     if (ImGui::BeginPopup("##AddComp")) {
         if (ImGui::BeginMenu("Core")) {
-            addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world);
-            addCompEntry<Components::Tag>("Tag", m_selectedEntity, world);
+            addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::Tag>("Tag", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Rendering")) {
-            addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world);
-            addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world);
-            addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world);
-            addCompEntry<Components::Light>("Light", m_selectedEntity, world);
+            addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::Light>("Light", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Physics")) {
-            addCompEntry<Components::Collider>("Collider", m_selectedEntity, world);
+            addCompEntry<Components::Collider>("Collider", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Audio")) {
@@ -1218,11 +1819,11 @@ void EditorState::renderInspector() {
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("UI")) {
-            addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world);
+            addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Camera")) {
-            addCompEntry<Components::CameraComponent>("CameraComponent", m_selectedEntity, world);
+            addCompEntry<Components::CameraComponent>("CameraComponent", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Scripting")) {
@@ -1232,7 +1833,7 @@ void EditorState::renderInspector() {
                     world.addComponent(m_selectedEntity, Components::LuaScript{});
                 world.getComponent<Components::LuaScript>(m_selectedEntity)->scripts.push_back({});
             }
-            addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world);
+            addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         ImGui::EndPopup();
@@ -1283,7 +1884,7 @@ void EditorState::renderInspector() {
                 t->scale = {scale[0], scale[1]};
 
             float pivot[2] = {t->pivot.x, t->pivot.y};
-            if (ImGui::DragFloat2("Pivot", pivot, 0.5f))
+            if (ImGui::DragFloat2("Offset", pivot, 0.5f))
                 t->pivot = {pivot[0], pivot[1]};
 
             ImGui::Checkbox("Snap to Grid##transform", &t->snapToGrid);
@@ -1292,8 +1893,13 @@ void EditorState::renderInspector() {
 
     // SpriteRenderer
     if (world.hasComponent<Components::SpriteRenderer>(m_selectedEntity)) {
-        auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
-        if (ImGui::CollapsingHeader("SpriteRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool rmSprite = false;
+        bool openSprite = ImGui::CollapsingHeader("SpriteRenderer##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rsr")) rmSprite = true;
+        if (openSprite) {
+            auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
             char texBuf[256];
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
             if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
@@ -1319,9 +1925,10 @@ void EditorState::renderInspector() {
             ImGui::Checkbox("Visible", &sr->visible);
             ImGui::DragInt("Sort Order", &sr->sortOrder);
         }
+        if (rmSprite) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteRenderer>>(world, m_selectedEntity));
     } else {
         if (ImGui::Button("+ Add SpriteRenderer"))
-            world.addComponent(m_selectedEntity, Components::SpriteRenderer{});
+            execCmd(std::make_unique<AddComponentCmd<Components::SpriteRenderer>>(world, m_selectedEntity));
     }
 
     // Collider
@@ -1383,7 +1990,7 @@ void EditorState::renderInspector() {
                 vel->velocity = {vv[0], vv[1]};
             ImGui::DragFloat("MoveSpeed##vel", &vel->moveSpeed, 1.0f);
         }
-        if (rm) world.removeComponent<Components::Velocity>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Velocity>>(world, m_selectedEntity));
     }
 
     if (world.hasComponent<Components::AudioSource>(m_selectedEntity)) {
@@ -1406,7 +2013,7 @@ void EditorState::renderInspector() {
             ImGui::SameLine();
             ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
         }
-        if (rm) world.removeComponent<Components::AudioSource>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::AudioSource>>(world, m_selectedEntity));
     }
 
     // FootstepAudio
@@ -1500,7 +2107,7 @@ void EditorState::renderInspector() {
             ImGui::SameLine();
             ImGui::Checkbox("Paused##sa", &sa->paused);
         }
-        if (rm) world.removeComponent<Components::SpriteAnimator>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteAnimator>>(world, m_selectedEntity));
     }
 
     if (world.hasComponent<Components::StateMachine>(m_selectedEntity)) {
@@ -1517,7 +2124,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("State Timer##sm", &sm->stateTimer, 0.0f);
             ImGui::EndDisabled();
         }
-        if (rm) world.removeComponent<Components::StateMachine>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::StateMachine>>(world, m_selectedEntity));
     }
 
     if (world.hasComponent<Components::LuaScript>(m_selectedEntity)) {
@@ -1649,31 +2256,41 @@ void EditorState::renderInspector() {
         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
         if (ImGui::SmallButton("X##rtr")) rm = true;
         if (open) {
-            auto* tr = world.getComponent<Components::TextRenderer>(m_selectedEntity);
-            char tbuf[512]; snprintf(tbuf, sizeof(tbuf), "%s", tr->text.c_str());
+            auto* textComp = world.getComponent<Components::TextRenderer>(m_selectedEntity);
+            char tbuf[512]; snprintf(tbuf, sizeof(tbuf), "%s", textComp->text.c_str());
             if (ImGui::InputTextMultiline("Text##tr", tbuf, sizeof(tbuf), ImVec2(-1, 60)))
-                tr->text = tbuf;
+                textComp->text = tbuf;
             {
                 auto fontKeys = Assets::ResourceManager<Assets::FontManager>::GetKeys();
                 std::sort(fontKeys.begin(), fontKeys.end());
                 int curIdx = 0;
                 for (int i = 0; i < (int)fontKeys.size(); ++i)
-                    if (fontKeys[i] == tr->fontId) { curIdx = i; break; }
+                    if (fontKeys[i] == textComp->fontId) { curIdx = i; break; }
                 std::vector<const char*> fontCStrs;
                 fontCStrs.reserve(fontKeys.size());
                 for (const auto& k : fontKeys) fontCStrs.push_back(k.c_str());
                 if (ImGui::Combo("Font ID##tr", &curIdx, fontCStrs.data(), (int)fontCStrs.size()))
-                    tr->fontId = fontKeys[curIdx];
+                    textComp->fontId = fontKeys[curIdx];
             }
-            ImGui::DragFloat("Font Size##tr", &tr->fontSize, 0.01f);
-            ImGui::ColorEdit3("Color##tr", glm::value_ptr(tr->color));
-            ImGui::Checkbox("Visible##tr", &tr->visible);
+            ImGui::DragFloat("Font Size##tr", &textComp->fontSize, 0.01f);
+            ImGui::ColorEdit3("Color##tr", glm::value_ptr(textComp->color));
+            ImGui::Checkbox("Visible##tr", &textComp->visible);
+            ImGui::SameLine();
+            ImGui::Checkbox("Show Box##tr", &m_showTextBoxes);
+            ImGui::DragFloat2("Box Size##tr", &textComp->boxSize.x, 1.0f, 0.0f, 0.0f, "%.0f");
+            ImGui::DragFloat2("Padding##tr", &textComp->padding.x, 0.5f, 0.0f, 0.0f, "%.1f");
             const char* alignItems[] = {"Left", "Center", "Right"};
-            int alignIdx = static_cast<int>(tr->alignment);
-            if (ImGui::Combo("Alignment##tr", &alignIdx, alignItems, 3))
-                tr->alignment = static_cast<Components::TextAlignment>(alignIdx);
+            int alignIdx = static_cast<int>(textComp->alignment);
+            if (ImGui::Combo("H Align##tr", &alignIdx, alignItems, 3))
+                textComp->alignment = static_cast<Components::TextAlignment>(alignIdx);
+            const char* vAlignItems[] = {"Top", "Middle", "Bottom"};
+            int vAlignIdx = static_cast<int>(textComp->verticalAlign);
+            if (ImGui::Combo("V Align##tr", &vAlignIdx, vAlignItems, 3))
+                textComp->verticalAlign = static_cast<Components::VerticalAlignment>(vAlignIdx);
+            ImGui::Checkbox("Word Wrap##tr", &textComp->wordWrap);
+            ImGui::DragFloat("Line Spacing##tr", &textComp->lineSpacing, 0.05f, 0.1f, 5.0f);
         }
-        if (rm) world.removeComponent<Components::TextRenderer>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::TextRenderer>>(world, m_selectedEntity));
     }
 
     // Light
@@ -1692,7 +2309,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("Angle##lt", &lt->angle, 0.5f, 0.0f, 360.0f);
             ImGui::SliderFloat("Intensity##lt", &lt->intensity, 0.0f, 1.0f);
         }
-        if (rm) world.removeComponent<Components::Light>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Light>>(world, m_selectedEntity));
     }
 
     // UIButton
@@ -1703,15 +2320,32 @@ void EditorState::renderInspector() {
         ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
         if (ImGui::SmallButton("X##ruib")) rm = true;
         if (open) {
-            auto* btn = world.getComponent<Components::UIButton>(m_selectedEntity);
-            char abuf[256]; snprintf(abuf, sizeof(abuf), "%s", btn->action.c_str());
-            if (ImGui::InputText("Action##uib", abuf, sizeof(abuf)))
-                btn->action = abuf;
-            ImGui::Checkbox("Interactable##uib", &btn->interactable);
-            ImGui::ColorEdit3("Normal Color##uib", glm::value_ptr(btn->normalColor));
-            ImGui::ColorEdit3("Hover Color##uib", glm::value_ptr(btn->hoverColor));
+            auto *btn = world.getComponent<Components::UIButton>(m_selectedEntity);
+            char sbuf[256]; snprintf(sbuf, sizeof(sbuf), "%s", btn->uiScript.c_str());
+            if (ImGui::InputText("UI Script##uib", sbuf, sizeof(sbuf)))
+                btn->uiScript = sbuf;
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+                    btn->uiScript = static_cast<const char*>(pl->Data);
+                ImGui::EndDragDropTarget();
+            }
+            ImGui::Checkbox("Interactable##uib",   &btn->interactable);
+            ImGui::Checkbox("Show Background##uib", &btn->showBackground);
+            ImGui::DragFloat2("Hit Size##uib",      &btn->size.x,   1.f);
+            ImGui::DragFloat2("Hit Offset##uib",    &btn->offset.x, 1.f);
+            if (ImGui::Button("Follow Sprite##uib")) {
+                auto *sprite = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+                if (sprite) {
+                    btn->size   = sprite->size;
+                    btn->offset = {0.f, 0.f};
+                }
+            }
+            ImGui::SameLine();
+            ImGui::Checkbox("Show Hit Area##uib",   &m_showUIButtons);
+            ImGui::ColorEdit3("Normal Color##uib",  glm::value_ptr(btn->normalColor));
+            ImGui::ColorEdit3("Hover Color##uib",   glm::value_ptr(btn->hoverColor));
         }
-        if (rm) world.removeComponent<Components::UIButton>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UIButton>>(world, m_selectedEntity));
     }
 
     // CameraComponent
@@ -1727,7 +2361,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("Zoom##cam", &cam->zoom, 0.01f, 0.01f, 20.0f);
             ImGui::DragFloat2("Offset##cam", &cam->offset.x, 1.0f);
         }
-        if (rm) world.removeComponent<Components::CameraComponent>(m_selectedEntity);
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::CameraComponent>>(world, m_selectedEntity));
     }
     ImGui::End();
 }
@@ -1796,6 +2430,7 @@ void EditorState::renderViewport() {
         bool  foundBounds = false;
 
         ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+            if (m_hiddenEntities.count(e.id)) return; // skip hidden entities
             vec2 center{t.position.x, t.position.y};
             auto* sr = ecs.getComponent<Components::SpriteRenderer>(e);
             if (sr) {
@@ -2629,6 +3264,7 @@ void EditorState::renderAssetBrowser() {
                 if (ImGui::ImageButton("##tb", (ImTextureID)(intptr_t)(tex?tex->id():0), ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0)))
                     m_selectedAsset = stem;
                 if (isSelected) ImGui::PopStyleColor();
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", stem.c_str());
 
                 if (ImGui::BeginDragDropSource()) {
                     std::string pstr = path.generic_string();
@@ -2693,6 +3329,37 @@ void EditorState::renderAnimationsBrowser() {
     if (ImGui::Button("New Folder##anim")) {
         m_newScriptFolderBuf[0] = '\0';
         ImGui::OpenPopup("##NewAnimFolder");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("New Animation")) {
+        memset(m_newAnimNameBuf, 0, sizeof(m_newAnimNameBuf));
+        m_newAnimModalOpen = true;
+    }
+
+    if (m_newAnimModalOpen) ImGui::OpenPopup("##NewAnimFile");
+    if (ImGui::BeginPopupModal("##NewAnimFile", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Animation name:");
+        ImGui::InputText("##animfilename", m_newAnimNameBuf, sizeof(m_newAnimNameBuf));
+        if (ImGui::Button("Create", ImVec2(100, 0)) && m_newAnimNameBuf[0] != '\0') {
+            namespace fs = std::filesystem;
+            std::error_code ec2;
+            std::string newPath = (fs::path(m_currentAnimDir) / (std::string(m_newAnimNameBuf) + ".json")).string();
+            std::ofstream f(newPath);
+            f << "{\"animations\":[]}";
+            f.close();
+            m_newAnimModalOpen = false;
+            m_editingAnimPath    = newPath;
+            m_editingAnimRelPath = fs::relative(newPath, "assets/animations", ec2).string();
+            m_animEditorAnim.clearAll();
+            m_animEdClip  = "";
+            m_animEdFrame = -1;
+            m_animEdPlaying = false;
+            m_animEditorOpen = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_newAnimModalOpen = false; ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
     }
 
     if (ImGui::BeginPopupModal("##NewAnimFolder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -2798,6 +3465,7 @@ void EditorState::renderAnimationsBrowser() {
                 dl->AddCircleFilled({cx+8, cy-8}, 3.0f, IM_COL32(50, 20, 80, 255));
                 dl->AddCircleFilled({cx-8, cy+8}, 3.0f, IM_COL32(50, 20, 80, 255));
                 dl->AddCircleFilled({cx+8, cy+8}, 3.0f, IM_COL32(50, 20, 80, 255));
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", fname.c_str());
 
                 if (ImGui::BeginDragDropSource()) {
                     ImGui::SetDragDropPayload("ANIMATION_ASSET", relPath.c_str(), relPath.size() + 1);
@@ -2806,6 +3474,17 @@ void EditorState::renderAnimationsBrowser() {
                 }
 
                 if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Edit")) {
+                        std::error_code ec2;
+                        m_editingAnimPath    = path.string();
+                        m_editingAnimRelPath = std::filesystem::relative(path, "assets/animations", ec2).string();
+                        m_animEditorAnim.clearAll();
+                        m_animEditorAnim.loadFromPath(m_editingAnimPath);
+                        m_animEdClip  = m_animEditorAnim.clips.empty() ? "" : m_animEditorAnim.clips.begin()->first;
+                        m_animEdFrame = -1;
+                        m_animEdPlaying = false;
+                        m_animEditorOpen = true;
+                    }
                     if (ImGui::MenuItem("Rename")) { m_renamingAnimPath = path.string(); strncpy_s(m_renameAnimBuf, fname.c_str(), sizeof(m_renameAnimBuf)-1); }
                     if (ImGui::MenuItem("Delete")) m_deletingAnimPath = path.string();
                     ImGui::EndPopup();
@@ -2816,6 +3495,211 @@ void EditorState::renderAnimationsBrowser() {
         }
         ImGui::EndTable();
     }
+    ImGui::End();
+}
+
+// ---------------------------------------------------------------------------
+// renderAnimationEditor
+// ---------------------------------------------------------------------------
+
+void EditorState::renderAnimationEditor() {
+    if (!m_animEditorOpen) return;
+
+    ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Animation Editor", &m_animEditorOpen)) { ImGui::End(); return; }
+
+    // ── Top row: texture picker (left) + preview image (right) ──────────────
+    ImGui::BeginGroup();
+    ImGui::Text("File: %s", m_editingAnimRelPath.c_str());
+
+    // Texture combo
+    {
+        auto texNames = Assets::TextureManager::GetLoadedTextureNames();
+        if (ImGui::BeginCombo("Texture##aned", m_animEdTexture.empty() ? "(none)" : m_animEdTexture.c_str())) {
+            for (auto& n : texNames) {
+                if (ImGui::Selectable(n.c_str(), n == m_animEdTexture))
+                    m_animEdTexture = n;
+            }
+            ImGui::EndCombo();
+        }
+    }
+    ImGui::EndGroup();
+
+    // Preview image — top-right corner, same line as the group above
+    ImGui::SameLine(ImGui::GetWindowWidth() - 148.f);
+    if (m_animPreviewFB.getTextureID() != 0) {
+        ImGui::Image(reinterpret_cast<void*>(static_cast<uint64_t>(
+                         m_animPreviewFB.getTextureID())),
+                     ImVec2(140.f, 140.f), ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+    } else {
+        ImGui::Dummy(ImVec2(140.f, 140.f));
+    }
+
+    ImGui::Separator();
+
+    // ── Clip selection ───────────────────────────────────────────────────────
+    {
+        std::vector<std::string> clipNames;
+        for (auto& [k, _] : m_animEditorAnim.clips) clipNames.push_back(k);
+        std::sort(clipNames.begin(), clipNames.end());
+
+        if (ImGui::BeginCombo("Clip##aned", m_animEdClip.c_str())) {
+            for (auto& n : clipNames) {
+                if (ImGui::Selectable(n.c_str(), n == m_animEdClip)) {
+                    m_animEdClip = n;
+                    m_animEdFrame = -1;
+                    m_animEdPlaying = false;
+                    m_animEdTimer = 0.f;
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+
+    ImGui::InputText("##newclipname", m_animEdNewClipName, sizeof(m_animEdNewClipName));
+    ImGui::SameLine();
+    if (ImGui::Button("Add Clip") && m_animEdNewClipName[0] != '\0') {
+        m_animEditorAnim.createClip(std::string(m_animEdNewClipName), m_animEdLoop);
+        m_animEdClip = std::string(m_animEdNewClipName);
+        m_animEdNewClipName[0] = '\0';
+        m_animEdFrame = -1;
+        m_animEdPlaying = false;
+    }
+    if (!m_animEdClip.empty()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Delete Clip")) {
+            m_animEditorAnim.removeClip(m_animEdClip);
+            m_animEdClip  = m_animEditorAnim.clips.empty() ? "" : m_animEditorAnim.clips.begin()->first;
+            m_animEdFrame = -1;
+            m_animEdPlaying = false;
+        }
+    }
+
+    // ── Playback controls ────────────────────────────────────────────────────
+    ImGui::Separator();
+    ImGui::Checkbox("Loop##aned", &m_animEdLoop);
+    ImGui::SameLine();
+    if (ImGui::Button(m_animEdPlaying ? "Pause##aned" : "Play##aned")) m_animEdPlaying = !m_animEdPlaying;
+    ImGui::SameLine();
+    if (ImGui::Button("Reset##aned")) { m_animEdFrame = 0; m_animEdTimer = 0.f; m_animEdPlaying = false; }
+
+    // Show current frame index
+    if (!m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
+            int total = static_cast<int>(clip->frames.size());
+            int disp  = (m_animEdFrame >= 0 && total > 0) ? m_animEdFrame : 0;
+            ImGui::SameLine();
+            ImGui::Text("Frame: %d / %d", disp, total);
+        }
+    }
+
+    // ── Frame list ───────────────────────────────────────────────────────────
+    ImGui::Separator();
+    if (!m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
+            if (ImGui::Button("Add Frame##aned")) {
+                Components::FrameData fd{};
+                fd.duration = 0.1f;
+                clip->frames.push_back(fd);
+            }
+            ImGui::SameLine();
+            if (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size())) {
+                if (ImGui::Button("Remove Frame##aned")) {
+                    clip->frames.erase(clip->frames.begin() + m_animEdFrame);
+                    m_animEdFrame = static_cast<int>(clip->frames.size()) > 0
+                                    ? std::min(m_animEdFrame, static_cast<int>(clip->frames.size()) - 1)
+                                    : -1;
+                }
+            }
+
+            ImGui::BeginChild("FrameList##aned", ImVec2(0, 120), true);
+            for (int i = 0; i < static_cast<int>(clip->frames.size()); ++i) {
+                char label[32];
+                snprintf(label, sizeof(label), "Frame %d (%.2fs)", i, clip->frames[i].duration);
+                if (ImGui::Selectable(label, m_animEdFrame == i))
+                    m_animEdFrame = i;
+            }
+            ImGui::EndChild();
+
+            // ── Selected frame editor ────────────────────────────────────────
+            if (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size())) {
+                auto& fd = clip->frames[m_animEdFrame];
+                ImGui::Separator();
+                ImGui::Text("Frame %d", m_animEdFrame);
+                ImGui::DragFloat("U##aned",        &fd.uv.x,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("V##aned",        &fd.uv.y,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("W##aned",        &fd.uv.z,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("H##aned",        &fd.uv.w,  0.001f, 0.f, 1.f, "%.3f");
+                ImGui::DragFloat("Duration##aned", &fd.duration, 0.01f, 0.01f, 5.f, "%.3f s");
+
+                // Preview: show UV rect as a coloured indicator
+                ImGui::Text("UV: (%.3f, %.3f)  Size: (%.3f, %.3f)", fd.uv.x, fd.uv.y, fd.uv.z, fd.uv.w);
+            }
+        }
+    }
+
+    // ── Grid generator ───────────────────────────────────────────────────────
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("Grid Generator##aned")) {
+        ImGui::InputInt("Sheet W##aned", &m_animEdSheetW);
+        ImGui::InputInt("Sheet H##aned", &m_animEdSheetH);
+        ImGui::InputInt("Cell W##aned",  &m_animEdCellW);
+        ImGui::InputInt("Cell H##aned",  &m_animEdCellH);
+        ImGui::InputInt("Start Frame##aned", &m_animEdStartF);
+        ImGui::InputInt("End Frame##aned",   &m_animEdEndF);
+
+        // Guard against zero/negative values
+        m_animEdSheetW = std::max(m_animEdSheetW, 1);
+        m_animEdSheetH = std::max(m_animEdSheetH, 1);
+        m_animEdCellW  = std::max(m_animEdCellW,  1);
+        m_animEdCellH  = std::max(m_animEdCellH,  1);
+        m_animEdStartF = std::max(m_animEdStartF, 0);
+        m_animEdEndF   = std::max(m_animEdEndF,   m_animEdStartF);
+
+        if (ImGui::Button("Generate Frames##aned") && !m_animEdClip.empty()) {
+            auto* clip = m_animEditorAnim.getClip(m_animEdClip);
+            if (!clip) {
+                m_animEditorAnim.createClip(m_animEdClip, m_animEdLoop);
+                clip = m_animEditorAnim.getClip(m_animEdClip);
+            }
+            clip->frames.clear();
+            int   cols = m_animEdSheetW / m_animEdCellW;
+            float uw   = static_cast<float>(m_animEdCellW) / static_cast<float>(m_animEdSheetW);
+            float uh   = static_cast<float>(m_animEdCellH) / static_cast<float>(m_animEdSheetH);
+            for (int fi = m_animEdStartF; fi <= m_animEdEndF; ++fi) {
+                int col = fi % cols;
+                int row = fi / cols;
+                Components::FrameData fd{};
+                fd.uv       = { col * uw, row * uh, uw, uh };
+                fd.duration = 0.1f;
+                clip->frames.push_back(fd);
+            }
+            m_animEdFrame = 0;
+        }
+    }
+
+    // ── Bulk duration ────────────────────────────────────────────────────────
+    if (!m_animEdClip.empty()) {
+        if (auto* clip = m_animEditorAnim.getClip(m_animEdClip); clip && !clip->frames.empty()) {
+            ImGui::Separator();
+            static float bulkDuration = 0.1f;
+            ImGui::DragFloat("Bulk Duration##aned", &bulkDuration, 0.01f, 0.01f, 5.f, "%.3f s");
+            ImGui::SameLine();
+            if (ImGui::Button("Apply to All##aned")) {
+                for (auto& fd : clip->frames) fd.duration = bulkDuration;
+            }
+        }
+    }
+
+    // ── Save ─────────────────────────────────────────────────────────────────
+    ImGui::Separator();
+    if (ImGui::Button("Save##aned") && !m_editingAnimPath.empty()) {
+        nlohmann::json j = m_animEditorAnim.serialize(m_editingAnimPath);
+        std::ofstream outf(m_editingAnimPath);
+        if (outf.is_open())
+            outf << j.dump(2);
+    }
+
     ImGui::End();
 }
 
@@ -3092,7 +3976,7 @@ void EditorState::renderScriptsBrowser() {
                     OpenInVSCode(fs::absolute(path).string());
                 }
             }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", isDir ? "Double-click to open folder" : "Double-click to edit");
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", isDir ? "Double-click to open folder" : fname.c_str());
 
             // Label
             std::string label = fname;
@@ -3843,6 +4727,7 @@ void EditorState::renderAudioBrowser() {
                 ImGui::Button("##icon", ImVec2(kIconW, kIconH));
                 ImGui::PopStyleColor();
                 DrawAudioIcon();
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", stem.c_str());
 
                 if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                     const bool ctrlHeld = ImGui::GetIO().KeyCtrl;
@@ -3938,6 +4823,81 @@ void EditorState::loadScene(const std::string& path) {
     m_redoStack.clear();
     m_selectedEntity = {0, 0};
     m_selectedEntities.clear();
+    m_hierarchyOrder.clear();
+    m_hierarchyGroups.clear();
+    m_hiddenEntities.clear();
+    m_selectedGroupIdx  = -1;
+    m_renamingGroupIdx  = -1;
+    m_lastAnchorId      = 0;
+
+    // Restore hierarchy groups + hidden entities from JSON (entity names → IDs)
+    {
+        using json = nlohmann::json;
+        std::ifstream fin(path);
+        if (fin.is_open()) {
+            json root;
+            fin >> root;
+            if (root.contains("hierarchyGroups") && root["hierarchyGroups"].is_array()) {
+                // Build name → entity ID map from world
+                auto& world = m_scene.GetWorld();
+                std::unordered_map<std::string, uint32_t> nameToId;
+                world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
+                    nameToId[tag.tag] = e.id;
+                });
+                for (auto& jgrp : root["hierarchyGroups"]) {
+                    HierarchyGroup grp;
+                    grp.name          = jgrp.value("name", "Group");
+                    grp.sortOrderBase = jgrp.value("sortOrderBase", 0);
+                    if (jgrp.contains("entities") && jgrp["entities"].is_array()) {
+                        for (auto& jname : jgrp["entities"]) {
+                            std::string n = jname.get<std::string>();
+                            auto it = nameToId.find(n);
+                            if (it != nameToId.end())
+                                grp.entityIds.push_back(it->second);
+                        }
+                    }
+                    m_hierarchyGroups.push_back(std::move(grp));
+                }
+            }
+            // Restore flat hierarchy display order
+            if (root.contains("hierarchyOrder") && root["hierarchyOrder"].is_array()) {
+                auto& world3 = m_scene.GetWorld();
+                std::unordered_map<std::string, uint32_t> nameToId3;
+                world3.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
+                    nameToId3[tag.tag] = e.id;
+                });
+                for (auto& jname : root["hierarchyOrder"]) {
+                    std::string n = jname.get<std::string>();
+                    auto it = nameToId3.find(n);
+                    if (it != nameToId3.end())
+                        m_hierarchyOrder.push_back(it->second);
+                }
+            }
+
+            // Restore hidden entities
+            if (root.contains("hiddenEntities") && root["hiddenEntities"].is_array()) {
+                auto& world2 = m_scene.GetWorld();
+                std::unordered_map<std::string, uint32_t> nameToId2;
+                world2.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
+                    nameToId2[tag.tag] = e.id;
+                });
+                for (auto& jname : root["hiddenEntities"]) {
+                    std::string n = jname.get<std::string>();
+                    auto it = nameToId2.find(n);
+                    if (it == nameToId2.end()) continue;
+                    uint32_t id = it->second;
+                    m_hiddenEntities.insert(id);
+                    // Re-apply visibility=false so the scene matches what was saved
+                    world2.each<Components::Tag>([&](ECS::Entity e, Components::Tag&) {
+                        if (e.id != id) return;
+                        if (auto* sr = world2.getComponent<Components::SpriteRenderer>(e)) sr->visible = false;
+                        if (auto* tr = world2.getComponent<Components::TextRenderer>(e))   tr->visible = false;
+                        if (auto* lt = world2.getComponent<Components::Light>(e))           lt->active  = false;
+                    });
+                }
+            }
+        }
+    }
 }
 
 void EditorState::saveScene() {
@@ -3949,6 +4909,57 @@ void EditorState::saveScene() {
     std::error_code ec;
     fs::create_directories(fs::path(m_sceneFilePath).parent_path(), ec);
     SceneSerializer::Serialize(m_scene, m_sceneFilePath);
+
+    // Append hierarchy groups metadata (entity names used as stable keys)
+    {
+        using json = nlohmann::json;
+        std::ifstream fin(m_sceneFilePath);
+        json root;
+        fin >> root;
+        fin.close();
+
+        // Build entity ID → tag name map
+        auto& world = m_scene.GetWorld();
+        std::unordered_map<uint32_t, std::string> idToName;
+        world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
+            idToName[e.id] = tag.tag;
+        });
+
+        json jGroups = json::array();
+        for (auto& grp : m_hierarchyGroups) {
+            json jg;
+            jg["name"]          = grp.name;
+            jg["sortOrderBase"] = grp.sortOrderBase;
+            jg["entities"]      = json::array();
+            for (uint32_t id : grp.entityIds) {
+                auto it = idToName.find(id);
+                if (it != idToName.end())
+                    jg["entities"].push_back(it->second);
+            }
+            jGroups.push_back(jg);
+        }
+        root["hierarchyGroups"] = jGroups;
+
+        // Save flat entity display order
+        json jOrder = json::array();
+        for (uint32_t id : m_hierarchyOrder) {
+            auto it = idToName.find(id);
+            if (it != idToName.end()) jOrder.push_back(it->second);
+        }
+        root["hierarchyOrder"] = jOrder;
+
+        // Save hidden entity names
+        json jHidden = json::array();
+        for (uint32_t id : m_hiddenEntities) {
+            auto it = idToName.find(id);
+            if (it != idToName.end()) jHidden.push_back(it->second);
+        }
+        root["hiddenEntities"] = jHidden;
+
+        std::ofstream fout(m_sceneFilePath);
+        fout << std::setw(4) << root << std::endl;
+    }
+
     std::cout << "[EditorState] Saved: " << m_sceneFilePath << "\n";
 }
 
@@ -4068,12 +5079,17 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
     if (auto* sm = world.getComponent<Components::StateMachine>(entity))
         comps["stateMachine"] = {{"currentState", sm->currentState}};
 
-    if (auto* tr = world.getComponent<Components::TextRenderer>(entity))
-        comps["textRenderer"] = {{"text", tr->text}, {"fontId", tr->fontId},
-                                  {"fontSize", tr->fontSize},
-                                  {"color", {{"r", tr->color.r}, {"g", tr->color.g}, {"b", tr->color.b}}},
-                                  {"visible", tr->visible},
-                                  {"alignment", static_cast<int>(tr->alignment)}};
+    if (auto* textComp = world.getComponent<Components::TextRenderer>(entity))
+        comps["textRenderer"] = {{"text", textComp->text}, {"fontId", textComp->fontId},
+                                  {"fontSize", textComp->fontSize},
+                                  {"color", {{"r", textComp->color.r}, {"g", textComp->color.g}, {"b", textComp->color.b}}},
+                                  {"visible", textComp->visible},
+                                  {"boxSize", {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
+                                  {"alignment", static_cast<int>(textComp->alignment)},
+                                  {"verticalAlignment", static_cast<int>(textComp->verticalAlign)},
+                                  {"wordWrap", textComp->wordWrap},
+                                  {"lineSpacing", textComp->lineSpacing},
+                                  {"padding", {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
 
     namespace fs = std::filesystem;
     std::string filepath = "assets/prefabs/" + name + ".json";
@@ -4218,19 +5234,30 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     }
 
     if (c.contains("textRenderer")) {
-        Components::TextRenderer tr;
-        tr.text      = c["textRenderer"].value("text", "");
-        tr.fontId    = c["textRenderer"].value("fontId", "Debug");
-        tr.fontSize  = c["textRenderer"].value("fontSize", 1.f);
-        tr.visible   = c["textRenderer"].value("visible", true);
-        tr.alignment = static_cast<Components::TextAlignment>(
-            c["textRenderer"].value("alignment", 0));
-        if (c["textRenderer"].contains("color")) {
-            tr.color.r = c["textRenderer"]["color"].value("r", 1.f);
-            tr.color.g = c["textRenderer"]["color"].value("g", 1.f);
-            tr.color.b = c["textRenderer"]["color"].value("b", 1.f);
+        auto& textRendererJson = c["textRenderer"];
+        Components::TextRenderer textComp;
+        textComp.text      = textRendererJson.value("text",    "");
+        textComp.fontId    = textRendererJson.value("fontId",  "Debug");
+        textComp.fontSize  = textRendererJson.value("fontSize", 1.f);
+        textComp.visible   = textRendererJson.value("visible",  true);
+        textComp.alignment = static_cast<Components::TextAlignment>(textRendererJson.value("alignment", 0));
+        textComp.verticalAlign = static_cast<Components::VerticalAlignment>(textRendererJson.value("verticalAlignment", 0));
+        textComp.wordWrap  = textRendererJson.value("wordWrap",    true);
+        textComp.lineSpacing = textRendererJson.value("lineSpacing", 1.f);
+        if (textRendererJson.contains("color")) {
+            textComp.color.r = textRendererJson["color"].value("r", 1.f);
+            textComp.color.g = textRendererJson["color"].value("g", 1.f);
+            textComp.color.b = textRendererJson["color"].value("b", 1.f);
         }
-        world.addComponent(entity, tr);
+        if (textRendererJson.contains("boxSize")) {
+            textComp.boxSize.x = textRendererJson["boxSize"].value("x", 200.f);
+            textComp.boxSize.y = textRendererJson["boxSize"].value("y", 100.f);
+        }
+        if (textRendererJson.contains("padding")) {
+            textComp.padding.x = textRendererJson["padding"].value("x", 0.f);
+            textComp.padding.y = textRendererJson["padding"].value("y", 0.f);
+        }
+        world.addComponent(entity, textComp);
     }
 
     return entity;

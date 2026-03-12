@@ -268,14 +268,35 @@ namespace Assets
 
     void FontManager::RenderTextInBox(const std::string &text, float x, float y,
                                        float boxWidth, float boxHeight, float scale,
-                                       glm::vec3 color, Graphics::Shader &shader, int alignment)
+                                       glm::vec3 color, Graphics::Shader &shader,
+                                       int hAlign, int vAlign,
+                                       bool wordWrap, float lineSpacing)
     {
-        std::vector<std::string> lines = WrapText(text, boxWidth, scale);
-        float lineHeight = GetLineHeight(scale);
+        // --- Build line list ---
+        std::vector<std::string> lines;
+        if (wordWrap) {
+            lines = WrapText(text, boxWidth, scale);
+        } else {
+            std::istringstream ss(text);
+            std::string ln;
+            while (std::getline(ss, ln)) lines.push_back(ln);
+            if (lines.empty()) lines.push_back(text);
+        }
 
-        // Start rendering from top of box, going downward
-        // y is the top-left of the box in world space (OpenGL: y increases upward)
-        float cursorY = y - lineHeight;
+        float lineH      = GetLineHeight(scale) * lineSpacing;
+        float totalTextH = static_cast<float>(lines.size()) * lineH;
+
+        // --- Compute vertical start (cursor = baseline of first line) ---
+        // textBlockTop = y-coordinate of the top of the first line (OpenGL y-up)
+        float textBlockTop;
+        if (vAlign == 1)      // Middle
+            textBlockTop = y - (boxHeight - totalTextH) * 0.5f;
+        else if (vAlign == 2) // Bottom
+            textBlockTop = y - boxHeight + totalTextH;
+        else                  // Top (default)
+            textBlockTop = y;
+
+        float cursorY = textBlockTop - lineH;
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -285,43 +306,37 @@ namespace Assets
 
         for (const auto &line : lines)
         {
-            // Stop rendering if we've gone past the bottom of the box
+            // Clip lines that fall outside the box bottom
             if (cursorY < y - boxHeight)
                 break;
 
-            // Calculate x offset based on alignment
+            // Horizontal alignment
             float lineWidth = MeasureTextWidth(line, scale);
-            float lineX = x; // Left aligned by default
+            float lineX = x;
+            if (hAlign == 1)       lineX = x + (boxWidth - lineWidth) * 0.5f;
+            else if (hAlign == 2)  lineX = x + boxWidth - lineWidth;
 
-            if (alignment == 1) // Center
-            {
-                lineX = x + (boxWidth - lineWidth) * 0.5f;
-            }
-            else if (alignment == 2) // Right
-            {
-                lineX = x + boxWidth - lineWidth;
-            }
-
-            // Render each character in the line
             float penX = lineX;
             for (auto c : line)
             {
-                Character ch = characters[c];
+                auto it = characters.find(c);
+                if (it == characters.end()) continue;
+                const Character &ch = it->second;
 
                 float xpos = penX + ch.Bearing.x * scale;
                 float ypos = cursorY - (ch.Size.y - ch.Bearing.y) * scale;
-
-                float w = ch.Size.x * scale;
-                float h = ch.Size.y * scale;
+                float w    = ch.Size.x * scale;
+                float h    = ch.Size.y * scale;
 
                 float vertices[6][4] = {
-                    {xpos, ypos + h, 0.0f, 0.0f},
-                    {xpos, ypos, 0.0f, 1.0f},
-                    {xpos + w, ypos, 1.0f, 1.0f},
+                    {xpos,     ypos + h, 0.0f, 0.0f},
+                    {xpos,     ypos,     0.0f, 1.0f},
+                    {xpos + w, ypos,     1.0f, 1.0f},
 
-                    {xpos, ypos + h, 0.0f, 0.0f},
-                    {xpos + w, ypos, 1.0f, 1.0f},
-                    {xpos + w, ypos + h, 1.0f, 0.0f}};
+                    {xpos,     ypos + h, 0.0f, 0.0f},
+                    {xpos + w, ypos,     1.0f, 1.0f},
+                    {xpos + w, ypos + h, 1.0f, 0.0f}
+                };
 
                 glBindTexture(GL_TEXTURE_2D, ch.TextureID);
                 glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -331,7 +346,7 @@ namespace Assets
                 penX += (ch.Advance >> 6) * scale;
             }
 
-            cursorY -= lineHeight;
+            cursorY -= lineH;
         }
 
         glBindVertexArray(0);

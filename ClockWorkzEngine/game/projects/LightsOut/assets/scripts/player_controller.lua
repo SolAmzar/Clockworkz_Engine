@@ -21,6 +21,7 @@ Properties = {
 local PlayerController = {}
 
 -- Runtime state (not inspector properties)
+PlayerController._isDead          = false   -- guard: prevents double game-over trigger
 PlayerController.walkSpeed        = 10.0
 PlayerController.sprintMultiplier = 2.0
 PlayerController.baseWalkSpeed    = 10.0
@@ -34,6 +35,9 @@ PlayerController._footstepTimer  = 0.0
 PlayerController._baseTorchOffX  = nil   -- captured once on first torch use
 PlayerController._baseTorchOffY  = nil
 PlayerController._torchActive    = false
+PlayerController._isDead         = false
+PlayerController._deathTimer     = 0.0
+local DEATH_RESPAWN_DELAY        = 2.8   -- seconds before level reloads
 
 function PlayerController:onStart(entity)
     entity.moveSpeed = self.walkSpeed
@@ -41,6 +45,13 @@ end
 
 function PlayerController:onUpdate(entity, dt)
     if not entity:isValid() then return end
+    if self._isDead then
+        self._deathTimer = self._deathTimer - dt
+        if self._deathTimer <= 0 then
+            World.loadLevel("level_save")
+        end
+        return
+    end
 
     local input        = Engine.input()
     local isSprinting  = input:isKeyDown(Keys.LEFT_SHIFT)
@@ -190,9 +201,13 @@ end
 
 function PlayerController:onCollisionEnter(entity, other)
     if other:getTagValue() == "Enemy" then
-        if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
-            entity:playAnimation("death")
-            entity:setColliderSolid(false)
+        if not self._isDead then
+            self._isDead = true
+            if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
+                entity:playAnimation("death")
+                entity:setColliderSolid(false)
+            end
+            Engine.triggerGameOver()
         end
     end
 end

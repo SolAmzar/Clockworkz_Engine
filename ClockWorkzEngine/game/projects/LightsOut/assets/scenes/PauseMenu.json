@@ -1,59 +1,402 @@
 {
-  "bgm": "",
-  "darknessColor": {
-    "b": 0.0,
-    "g": 0.0,
-    "r": 0.0
-  },
-  "darknessIntensity": 0.0,
-  "enableDarkness": false,
-  "sfxVolume": 1.0,
-  "spawnPoint": {
-    "x": 0.0,
-    "y": 0.0
-  },
-  "objects": [
-    {
-      "active": true,
-      "name": "PausePanel",
-      "components": {
-        "transform": {
-          "pivot": { "x": 0.0, "y": 0.0 },
-          "position": { "x": 0.0, "y": 0.0 },
-          "rotation": 0.0,
-          "scale": { "x": 1.0, "y": 1.0 },
-          "snapToGrid": false
-        },
-        "spriteRenderer": {
-          "color": { "a": 0.85, "b": 0.05, "g": 0.03, "r": 0.03 },
-          "size": { "x": 600.0, "y": 500.0 },
-          "sortOrder": 0,
-          "textureId": "",
-          "unlit": true,
-          "uv": [ 0.0, 0.0, 1.0, 1.0 ],
-          "visible": true
-        }
-      }
+    "bgm": "",
+    "darknessColor": {
+        "b": 0.0,
+        "g": 0.0,
+        "r": 0.0
     },
-    {
-      "active": true,
-      "name": "PauseBorder",
-      "components": {
-        "transform": {
-          "pivot": { "x": 0.0, "y": 0.0 },
-          "position": { "x": 0.0, "y": 0.0 },
-          "rotation": 0.0,
-          "scale": { "x": 1.0, "y": 1.0 },
-          "snapToGrid": false
+    "darknessIntensity": 0.0,
+    "enableDarkness": false,
+    "objects": [
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.8500000238418579,
+                        "b": 0.05000000074505806,
+                        "g": 0.029999999329447746,
+                        "r": 0.029999999329447746
+                    },
+                    "size": {
+                        "x": 600.0,
+                        "y": 600.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "PausePanel"
         },
-        "spriteRenderer": {
-          "color": { "a": 0.6, "b": 0.5, "g": 0.3, "r": 0.8 },
-          "size": { "x": 612.0, "y": 512.0 },
-          "sortOrder": -1,
-          "textureId": "",
-          "unlit": true,
-          "uv": [ 0.0, 0.0, 1.0, 1.0 ],
-          "visible": true
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.6000000238418579,
+                        "b": 0.5,
+                        "g": 0.30000001192092896,
+                        "r": 0.800000011920929
+                    },
+                    "size": {
+                        "x": 612.0,
+                        "y": 612.0
+                    },
+                    "sortOrder": -1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "PauseBorder"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 300.0,
+                        "y": 80.0
+                    },
+                    "color": {
+                        "b": 0.699999988079071,
+                        "g": 0.699999988079071,
+                        "r": 1.0
+                    },
+                    "fontId": "PauseMenu",
+                    "fontSize": 1.7999999523162842,
+                    "lineSpacing": 1.0,
+                    "text": "PAUSED",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 120.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "PauseTitleText"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.25,
+                        "g": 0.15000000596046448,
+                        "r": 0.10000000149011612
+                    },
+                    "size": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "PauseMenu",
+                    "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "text": "RESUME",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 30.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "resume",
+                    "hoverColor": {
+                        "b": 0.0,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": true,
+                    "size": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "uiScript": "ui/btn_resume.lua"
+                }
+            },
+            "name": "Btn_Resume"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.25,
+                        "g": 0.15000000596046448,
+                        "r": 0.10000000149011612
+                    },
+                    "size": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": false
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "PauseMenu",
+                    "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "text": "MAIN MENU",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -100.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "main_menu",
+                    "hoverColor": {
+                        "b": 0.0,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": true,
+                    "size": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "uiScript": "ui/btn_main_menu.lua"
+                }
+            },
+            "name": "Btn_MainMenu"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 0.25,
+                        "g": 0.15000000596046448,
+                        "r": 0.10000000149011612
+                    },
+                    "size": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "PauseMenu",
+                    "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "text": "SETTINGS",
+                    "verticalAlignment": 1,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -200.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "settings",
+                    "hoverColor": {
+                        "b": 0.0,
+                        "g": 0.800000011920929,
+                        "r": 1.0
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": true,
+                    "size": {
+                        "x": 350.0,
+                        "y": 70.0
+                    },
+                    "uiScript": "ui/btn_settings.lua"
+                }
+            },
+            "name": "Btn_Settings"
         }
       }
     },
@@ -190,5 +533,4 @@
         }
       }
     }
-  ]
 }

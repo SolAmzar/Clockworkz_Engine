@@ -15,6 +15,7 @@ reserved.
 #include "States/MenuState.hpp"
 #include "States/GamePlayState.hpp"
 #include "States/OptionsState.hpp"
+#include "Scripting/LuaManager.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
 #include "Assets/SoundManager.hpp"
@@ -37,6 +38,7 @@ reserved.
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "States/PlayState.hpp"
+#include "States/SettingsState.hpp"
 #include "States/SpriteEditorState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -425,7 +427,10 @@ void MenuState::update(double /*dt*/) {
         m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
         m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
       m_showingHowToPlay = false;
-      setOverlayVisible("howtoplay_overlay", false);
+      m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+          [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sprite) {
+            if (tag.tag == "howtoplay_overlay") sprite.visible = false;
+          });
     }
     return;
   }
@@ -603,6 +608,10 @@ void MenuState::update(double /*dt*/) {
     }
   }
 
+  // Deselect when mouse is not over any button
+  if (!mouseHover) m_selected = -1;
+
+  // Keyboard navigation
   if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
     Assets::SoundManager::Play("ui_move");
     if (--m_selected < 0) {
@@ -657,14 +666,7 @@ void MenuState::render(Core::Time * /*timer*/) {
 
   glm::mat4 vp = m_cam->viewProj();
 
-  m_renderer->beginScenePass(vp);
-  m_menuScene.Render(*m_renderer);
-  if (m_showingOptions) {
-    renderOptionsOverlay();
-  }
-  m_renderer->endScenePass();
-
-  m_menuScene.RenderText(*m_renderer);
+  m_menuScene.RenderAll(*m_renderer, vp);
 }
 
 void MenuState::renderImGui(Core::Time * /*timer*/) {
