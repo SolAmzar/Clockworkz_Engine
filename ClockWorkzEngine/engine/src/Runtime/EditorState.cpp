@@ -3354,6 +3354,16 @@ void EditorState::renderAudioBrowser() {
         ImGui::Checkbox("BGM##editaudio", &m_editAudioIsBGM);
         ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 1.0f);
         ImGui::SliderFloat("Pitch##editaudio", &m_editAudioPitch, 0.1f, 3.0f);
+        if (m_editAudioIs3D) {
+            ImGui::SeparatorText("3D Tuning");
+            ImGui::SliderFloat("Min Distance##editaudio", &m_editAudioMinDistance, 1.0f, 256.0f);
+            ImGui::SliderFloat("Max Distance##editaudio", &m_editAudioMaxDistance, 8.0f, 1024.0f);
+            ImGui::SliderFloat("Falloff Start##editaudio", &m_editAudioFalloffStart, 0.0f, 512.0f);
+            ImGui::SliderFloat("Falloff Amount##editaudio", &m_editAudioFalloffAmount, 0.0f, 0.98f);
+            ImGui::SliderFloat("Filter In Start##editaudio", &m_editAudioFilterInStart, 0.0f, 512.0f);
+            ImGui::SliderFloat("Filter Peak##editaudio", &m_editAudioFilterPeak, 1.0f, 768.0f);
+            ImGui::SliderFloat("Filter Release End##editaudio", &m_editAudioFilterReleaseEnd, 2.0f, 1024.0f);
+        }
 
         if (ImGui::Button("Save", ImVec2(100, 0))) {
             Assets::SoundConfig cfg;
@@ -3365,6 +3375,13 @@ void EditorState::renderAudioBrowser() {
             cfg.volume = m_editAudioVolume;
             cfg.pitch = m_editAudioPitch;
             cfg.group = m_editAudioIsBGM ? "BGM" : "SFX";
+            cfg.minDistance = m_editAudioMinDistance;
+            cfg.maxDistance = std::max(m_editAudioMinDistance + 1.0f, m_editAudioMaxDistance);
+            cfg.falloffStart = std::clamp(m_editAudioFalloffStart, 0.0f, cfg.maxDistance - 1.0f);
+            cfg.falloffAmount = std::clamp(m_editAudioFalloffAmount, 0.0f, 0.98f);
+            cfg.filterInStart = std::clamp(m_editAudioFilterInStart, 0.0f, cfg.maxDistance - 1.0f);
+            cfg.filterPeak = std::clamp(m_editAudioFilterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
+            cfg.filterReleaseEnd = std::clamp(m_editAudioFilterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
             if (Assets::SoundManager::UpdateConfig(m_editingAudio, cfg, kSoundConfig)) {
                 m_editingAudio.clear();
                 ImGui::CloseCurrentPopup();
@@ -3560,6 +3577,13 @@ void EditorState::renderAudioBrowser() {
                             m_editAudioVolume = cfg.volume;
                             m_editAudioPitch = cfg.pitch;
                             m_editAudioIsBGM = (cfg.group == "BGM");
+                            m_editAudioMinDistance = cfg.minDistance;
+                            m_editAudioMaxDistance = cfg.maxDistance;
+                            m_editAudioFalloffStart = cfg.falloffStart;
+                            m_editAudioFalloffAmount = cfg.falloffAmount;
+                            m_editAudioFilterInStart = cfg.filterInStart;
+                            m_editAudioFilterPeak = cfg.filterPeak;
+                            m_editAudioFilterReleaseEnd = cfg.filterReleaseEnd;
                         }
                     }
                     ImGui::Separator();
@@ -4361,6 +4385,10 @@ void EditorState::checkAssetHotReload() {
 }
 
 } // namespace Runtime
+
+
+
+
 
 
 

@@ -31,6 +31,13 @@ struct SoundConfig {
   float volume = 1.0f;
   float pitch = 1.0f;
   std::string group = "SFX";
+  float minDistance = 24.0f;
+  float maxDistance = 320.0f;
+  float falloffStart = 40.0f;
+  float falloffAmount = 0.62f;
+  float filterInStart = 48.0f;
+  float filterPeak = 140.0f;
+  float filterReleaseEnd = 260.0f;
 };
 
 class SoundManager {
@@ -133,5 +140,6 @@ private:
 };
 
 } // namespace Assets
+
 
 

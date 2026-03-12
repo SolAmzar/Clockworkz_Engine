@@ -215,6 +215,13 @@ private:
     float                   m_editAudioVolume{1.0f};
     float                   m_editAudioPitch{1.0f};
     bool                    m_editAudioIsBGM{false};
+    float                   m_editAudioMinDistance{24.0f};
+    float                   m_editAudioMaxDistance{320.0f};
+    float                   m_editAudioFalloffStart{40.0f};
+    float                   m_editAudioFalloffAmount{0.62f};
+    float                   m_editAudioFilterInStart{48.0f};
+    float                   m_editAudioFilterPeak{140.0f};
+    float                   m_editAudioFilterReleaseEnd{260.0f};
     std::string             m_deletingAudio;
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
@@ -279,4 +286,5 @@ private:
 };
 
 } // namespace Runtime
+
 

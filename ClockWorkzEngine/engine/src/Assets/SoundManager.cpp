@@ -211,6 +211,13 @@ bool SoundManager::LoadFromConfig(const std::string &configPath) {
         profile.pitch = cfg.pitch;
         profile.group =
             (cfg.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+        profile.minDistance = cfg.minDistance;
+        profile.maxDistance = cfg.maxDistance;
+        profile.falloffStart = cfg.falloffStart;
+        profile.falloffAmount = cfg.falloffAmount;
+        profile.filterInStart = cfg.filterInStart;
+        profile.filterPeak = cfg.filterPeak;
+        profile.filterReleaseEnd = cfg.filterReleaseEnd;
         s_audio->registerSoundProfile(cfg.name, profile);
       }
 
@@ -248,6 +255,13 @@ SoundManager::ParseConfig(const std::string &configPath) {
     cfg.volume = entry.value("volume", 1.0f);
     cfg.pitch = entry.value("pitch", 1.0f);
     cfg.group = entry.value("group", "SFX");
+    cfg.minDistance = entry.value("minDistance", 24.0f);
+    cfg.maxDistance = entry.value("maxDistance", 320.0f);
+    cfg.falloffStart = entry.value("falloffStart", 40.0f);
+    cfg.falloffAmount = entry.value("falloffAmount", 0.62f);
+    cfg.filterInStart = entry.value("filterInStart", 48.0f);
+    cfg.filterPeak = entry.value("filterPeak", 140.0f);
+    cfg.filterReleaseEnd = entry.value("filterReleaseEnd", 260.0f);
 
     if (!cfg.name.empty() && !cfg.path.empty())
       result.push_back(cfg);
@@ -335,6 +349,13 @@ bool SoundManager::GetConfig(const std::string &name, SoundConfig &outConfig,
     outConfig.volume = entry.value("volume", 1.0f);
     outConfig.pitch = entry.value("pitch", 1.0f);
     outConfig.group = entry.value("group", "SFX");
+    outConfig.minDistance = entry.value("minDistance", 24.0f);
+    outConfig.maxDistance = entry.value("maxDistance", 320.0f);
+    outConfig.falloffStart = entry.value("falloffStart", 40.0f);
+    outConfig.falloffAmount = entry.value("falloffAmount", 0.62f);
+    outConfig.filterInStart = entry.value("filterInStart", 48.0f);
+    outConfig.filterPeak = entry.value("filterPeak", 140.0f);
+    outConfig.filterReleaseEnd = entry.value("filterReleaseEnd", 260.0f);
     return true;
   }
 
@@ -371,6 +392,13 @@ bool SoundManager::UpdateConfig(const std::string &name,
     entry["volume"] = config.volume;
     entry["pitch"] = config.pitch;
     entry["group"] = config.group;
+    entry["minDistance"] = config.minDistance;
+    entry["maxDistance"] = config.maxDistance;
+    entry["falloffStart"] = config.falloffStart;
+    entry["falloffAmount"] = config.falloffAmount;
+    entry["filterInStart"] = config.filterInStart;
+    entry["filterPeak"] = config.filterPeak;
+    entry["filterReleaseEnd"] = config.filterReleaseEnd;
     changed = true;
     break;
   }
@@ -391,6 +419,13 @@ bool SoundManager::UpdateConfig(const std::string &name,
     profile.volume = config.volume;
     profile.pitch = config.pitch;
     profile.group = (config.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+    profile.minDistance = config.minDistance;
+    profile.maxDistance = config.maxDistance;
+    profile.falloffStart = config.falloffStart;
+    profile.falloffAmount = config.falloffAmount;
+    profile.filterInStart = config.filterInStart;
+    profile.filterPeak = config.filterPeak;
+    profile.filterReleaseEnd = config.filterReleaseEnd;
     s_audio->registerSoundProfile(name, profile);
   }
 
@@ -404,6 +439,13 @@ bool SoundManager::UpdateConfig(const std::string &name,
       profile.volume = config.volume;
       profile.pitch = config.pitch;
       profile.group = (config.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+      profile.minDistance = config.minDistance;
+      profile.maxDistance = config.maxDistance;
+      profile.falloffStart = config.falloffStart;
+      profile.falloffAmount = config.falloffAmount;
+      profile.filterInStart = config.filterInStart;
+      profile.filterPeak = config.filterPeak;
+      profile.filterReleaseEnd = config.filterReleaseEnd;
       s_audio->registerSoundProfile(name, profile);
     }
     s_configs[name] = config;
@@ -543,6 +585,13 @@ bool SoundManager::ImportSound(const std::string &sourcePath,
     profile.volume = config.volume;
     profile.pitch = config.pitch;
     profile.group = (config.group == "BGM") ? Audio::Group::BGM : Audio::Group::SFX;
+    profile.minDistance = config.minDistance;
+    profile.maxDistance = config.maxDistance;
+    profile.falloffStart = config.falloffStart;
+    profile.falloffAmount = config.falloffAmount;
+    profile.filterInStart = config.filterInStart;
+    profile.filterPeak = config.filterPeak;
+    profile.filterReleaseEnd = config.filterReleaseEnd;
     s_audio->registerSoundProfile(name, profile);
   }
 
@@ -594,5 +643,6 @@ bool SoundManager::DeleteFromDisk(const std::string &name,
 }
 
 } // namespace Assets
+
 
 

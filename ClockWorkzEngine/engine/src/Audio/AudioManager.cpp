@@ -20,6 +20,7 @@ reserved.
 
 #include "Audio/AudioManager.hpp"
 #include "Assets/SoundManager.hpp"
+#include <algorithm>
 #include <cassert>
 #include <fmod.hpp>
 #include <fmod_dsp.h>
@@ -291,27 +292,37 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
     FMOD_VECTOR p{pos.x, pos.y, pos.z};
     FMOD_VECTOR v{0.0f, 0.0f, 0.0f};
     it->second.ch->set3DAttributes(&p, &v);
-    it->second.ch->set3DMinMaxDistance(24.0f, 320.0f);
+
+    SoundProfile profile{};
+    auto profileIt = m_soundProfiles.find(id);
+    if (profileIt != m_soundProfiles.end()) {
+      profile = profileIt->second;
+    }
+
+    const float minDistance = std::max(1.0f, profile.minDistance);
+    const float maxDistance = std::max(minDistance + 1.0f, profile.maxDistance);
+    const float falloffStart = std::clamp(profile.falloffStart, 0.0f, maxDistance - 1.0f);
+    const float falloffAmount = std::clamp(profile.falloffAmount, 0.0f, 0.98f);
+    const float filterInStart = std::clamp(profile.filterInStart, 0.0f, maxDistance - 1.0f);
+    const float filterPeak = std::clamp(profile.filterPeak, filterInStart + 1.0f, maxDistance - 0.5f);
+    const float filterReleaseEnd = std::clamp(profile.filterReleaseEnd, filterPeak + 1.0f, maxDistance);
+
+    it->second.ch->set3DMinMaxDistance(minDistance, maxDistance);
 
     const vec3 delta = vec3{pos.x - m_listenerPos.x, pos.y - m_listenerPos.y,
                             pos.z - m_listenerPos.z};
     const float distance =
         std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
 
-    const float falloffStart = 40.0f;
-    const float falloffEnd = 320.0f;
     float distanceT = 0.0f;
     if (distance > falloffStart) {
-      distanceT = (distance - falloffStart) / (falloffEnd - falloffStart);
+      distanceT = (distance - falloffStart) / (maxDistance - falloffStart);
       distanceT = std::clamp(distanceT, 0.0f, 1.0f);
     }
 
-    const float shapedVolume = volume * (1.0f - (0.62f * distanceT * distanceT));
+    const float shapedVolume = volume * (1.0f - (falloffAmount * distanceT * distanceT));
     it->second.ch->setVolume(std::max(0.0f, shapedVolume));
 
-    const float filterInStart = 48.0f;
-    const float filterPeak = 140.0f;
-    const float filterReleaseEnd = 260.0f;
     float filterT = 0.0f;
     if (distance > filterInStart && distance < filterReleaseEnd) {
       if (distance <= filterPeak) {
@@ -577,6 +588,9 @@ void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
 //     m_channels[handle] = { ch };
 //     return handle;
 // }
+
+
+
 
 
 
