@@ -7,10 +7,10 @@
             "path": "projects/LightsOut"
         },
         {
-            "description": "New project",
-            "initialScene": "assets/scenes/Main.json",
-            "name": "testing",
-            "path": "projects/testing"
+            "description": "Batman game",
+            "initialScene": "assets/scenes/MainMenu.json",
+            "name": "Dark In 2",
+            "path": "projects/Dark In 2"
         }
     ]
 }

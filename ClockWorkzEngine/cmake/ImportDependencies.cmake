@@ -353,6 +353,17 @@ endmacro()
 macro(importDependencies)
     message(STATUS "Starting to import dependencies...")
 
+    # On Windows, force FindThreads to use Win32 native threads.
+    # Without this, the vcpkg toolchain wrapper intercepts find_package(Threads)
+    # and probes for pthreads.lib / pthread.lib, which don't exist on Windows
+    # unless the vcpkg pthreads port is installed. All threading in this project
+    # is Win32-native; pthreads is never needed.
+    if(WIN32)
+        set(CMAKE_THREAD_PREFER_PTHREAD    FALSE CACHE BOOL "" FORCE)
+        set(THREADS_PREFER_PTHREAD_FLAG    FALSE CACHE BOOL "" FORCE)
+        set(CMAKE_USE_WIN32_THREADS_INIT   1     CACHE INTERNAL "")
+    endif()
+
     message(STATUS "Importing GLFW...")
     import_glfw()
     message(STATUS "GLFW imported successfully.")

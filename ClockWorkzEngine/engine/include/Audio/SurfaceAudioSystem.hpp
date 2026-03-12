@@ -18,7 +18,7 @@ All content ? 2025 DigiPen Institute of Technology Singapore. All rights reserve
 #include "math/vec2.hpp"
 
 namespace Audio {
-	class  SurfaceAudioSystem {	
+	class  SurfaceAudioSystem {
 	public:
 		void playFootstep(Audio::AudioManager& audio, Gameplay::SurfaceType surface, float speed);
 

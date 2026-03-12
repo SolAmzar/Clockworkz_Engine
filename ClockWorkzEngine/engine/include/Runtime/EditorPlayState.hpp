@@ -27,7 +27,7 @@ namespace Runtime {
 class EditorPlayState final : public GameState {
 public:
     EditorPlayState(Platform::InputManager& input, GameStateManager& gsm,
-                    std::string scenePath);
+                    std::string scenePath, bool showColliders = false);
 
     const char* name() const override { return "EditorPlay"; }
 
@@ -49,6 +49,7 @@ private:
     int                     m_savedViewportW{0};
     int                     m_savedViewportH{0};
     bool                    m_pendingStop{false};
+    bool                    m_showColliders{false};
 };
 
 } // namespace Runtime

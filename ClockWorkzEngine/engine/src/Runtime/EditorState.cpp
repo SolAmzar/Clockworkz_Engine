@@ -358,7 +358,7 @@ void EditorState::update(double dt) {
         fs::create_directories(tempDir);
         std::string tempPath = (tempDir / "__playtest__.json").generic_string();
         SceneSerializer::Serialize(m_scene, tempPath);
-        m_gsm.push(std::make_shared<EditorPlayState>(m_input, m_gsm, tempPath));
+        m_gsm.push(std::make_shared<EditorPlayState>(m_input, m_gsm, tempPath, m_showColliders));
         return;
     }
 
@@ -1828,6 +1828,8 @@ void EditorState::renderInspector() {
             strncpy_s(buf, tag->tag.c_str(), sizeof(buf) - 1);
             if (ImGui::InputText("Name", buf, sizeof(buf)))
                 tag->tag = buf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
     }
 
@@ -1862,12 +1864,18 @@ void EditorState::renderInspector() {
             float scale[2] = {t->scale.x, t->scale.y};
             if (ImGui::DragFloat2("Scale", scale, 0.01f))
                 t->scale = {scale[0], scale[1]};
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
             float pivot[2] = {t->pivot.x, t->pivot.y};
             if (ImGui::DragFloat2("Offset", pivot, 0.5f))
                 t->pivot = {pivot[0], pivot[1]};
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
             ImGui::Checkbox("Snap to Grid##transform", &t->snapToGrid);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
     }
 
@@ -1884,9 +1892,14 @@ void EditorState::renderInspector() {
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
             if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
                 sr->textureId = texBuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+                    captureInspectorBefore();
                     sr->textureId = static_cast<const char*>(pl->Data);
+                    pushInspectorChange();
+                }
                 ImGui::EndDragDropTarget();
             }
 
@@ -1900,10 +1913,20 @@ void EditorState::renderInspector() {
             float sz[2] = {sr->size.x, sr->size.y};
             if (ImGui::DragFloat2("Size", sz, 1.0f))
                 sr->size = {sz[0], sz[1]};
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
             ImGui::ColorEdit4("Color", glm::value_ptr(sr->color));
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
             ImGui::Checkbox("Visible", &sr->visible);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
             ImGui::DragInt("Sort Order", &sr->sortOrder);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rmSprite) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteRenderer>>(world, m_selectedEntity));
     } else {
@@ -1921,22 +1944,43 @@ void EditorState::renderInspector() {
             // Shape selector — changing this affects collision logic immediately
             const char* shapeNames[] = {"Box", "Circle"};
             int currentShape = static_cast<int>(c->shape);
-            if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2))
+            if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2)) {
+                captureInspectorBefore();
                 c->shape = static_cast<Components::Collider::Shape>(currentShape);
+                pushInspectorChange();
+            }
 
             if (c->shape == Components::Collider::Shape::Box) {
                 ImGui::DragFloat2("Size##col", &c->size.x, 1.0f);
+                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             } else {
                 ImGui::DragFloat("Radius##col", &c->radius, 1.0f);
+                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             }
 
             ImGui::DragFloat2("Offset##col", &c->offset.x, 1.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
             ImGui::Checkbox("Solid##col",        &c->isSolid);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Trigger##col",      &c->isTrigger);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Blocks Light##col", &c->blocksLight);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Moveable##col",     &c->moveable);
-            if (c->moveable)
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+            if (c->moveable) {
                 ImGui::DragFloat("Mass##col", &c->mass, 0.1f);
+                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+            }
 
             if (ImGui::Button("Fit to Sprite##col")) {
                 auto* spr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
@@ -1969,7 +2013,11 @@ void EditorState::renderInspector() {
             float vv[2] = {vel->velocity.x, vel->velocity.y};
             if (ImGui::DragFloat2("Velocity##vel", vv, 0.5f))
                 vel->velocity = {vv[0], vv[1]};
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat("MoveSpeed##vel", &vel->moveSpeed, 1.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Velocity>>(world, m_selectedEntity));
     }
@@ -1985,15 +2033,26 @@ void EditorState::renderInspector() {
             auto* au = world.getComponent<Components::AudioSource>(m_selectedEntity);
             char sndbuf[256]; snprintf(sndbuf, sizeof(sndbuf), "%s", au->soundId.c_str());
             if (ImGui::InputText("Sound ID##au", sndbuf, sizeof(sndbuf))) au->soundId = sndbuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("AUDIO_ASSET"))
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
+                    captureInspectorBefore();
                     au->soundId = static_cast<const char*>(pl->Data);
+                    pushInspectorChange();
+                }
                 ImGui::EndDragDropTarget();
             }
             ImGui::SliderFloat("Volume##au", &au->volume, 0.0f, 1.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Loop##au", &au->loop);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::SameLine();
             ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::AudioSource>>(world, m_selectedEntity));
     }
@@ -2009,18 +2068,28 @@ void EditorState::renderInspector() {
             auto* sa = world.getComponent<Components::SpriteAnimator>(m_selectedEntity);
             char fbuf[256]; snprintf(fbuf, sizeof(fbuf), "%s", sa->filename.c_str());
             if (ImGui::InputText("File##sa", fbuf, sizeof(fbuf))) sa->filename = fbuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("ANIMATION_ASSET")) {
+                    captureInspectorBefore();
                     sa->filename = static_cast<const char*>(pl->Data);
                     sa->loadFromPath("assets/animations/" + sa->filename);
+                    pushInspectorChange();
                 }
                 ImGui::EndDragDropTarget();
             }
             char cbuf[128]; snprintf(cbuf, sizeof(cbuf), "%s", sa->currentClip.c_str());
             if (ImGui::InputText("Current Clip##sa", cbuf, sizeof(cbuf))) sa->currentClip = cbuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Playing##sa", &sa->playing);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::SameLine();
             ImGui::Checkbox("Paused##sa", &sa->paused);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteAnimator>>(world, m_selectedEntity));
     }
@@ -2036,6 +2105,8 @@ void EditorState::renderInspector() {
             auto* sm = world.getComponent<Components::StateMachine>(m_selectedEntity);
             char sbuf[128]; snprintf(sbuf, sizeof(sbuf), "%s", sm->currentState.c_str());
             if (ImGui::InputText("Current State##sm", sbuf, sizeof(sbuf))) sm->currentState = sbuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::BeginDisabled(true);
             ImGui::DragFloat("State Timer##sm", &sm->stateTimer, 0.0f);
             ImGui::EndDisabled();
@@ -2075,12 +2146,19 @@ void EditorState::renderInspector() {
                 char spbuf[256]; snprintf(spbuf, sizeof(spbuf), "%s", entry.scriptPath.c_str());
                 if (ImGui::InputText("Script Path##lse", spbuf, sizeof(spbuf)))
                     entry.scriptPath = spbuf;
+                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                 if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+                    if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET")) {
+                        captureInspectorBefore();
                         entry.scriptPath = static_cast<const char*>(pl->Data);
+                        pushInspectorChange();
+                    }
                     ImGui::EndDragDropTarget();
                 }
                 ImGui::Checkbox("Enabled##lse", &entry.enabled);
+                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
                 if (!entry.scriptPath.empty()) {
                     auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
@@ -2095,17 +2173,25 @@ void EditorState::renderInspector() {
                             if (def.type == "float") {
                                 float v = std::get<float>(val);
                                 if (ImGui::DragFloat(def.label.c_str(), &v, 0.1f)) val = v;
+                                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                             } else if (def.type == "int") {
                                 int v = std::get<int>(val);
                                 if (ImGui::DragInt(def.label.c_str(), &v)) val = v;
+                                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                             } else if (def.type == "bool") {
                                 bool v = std::get<bool>(val);
                                 if (ImGui::Checkbox(def.label.c_str(), &v)) val = v;
+                                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                             } else if (def.type == "string") {
                                 std::string sv = std::get<std::string>(val);
                                 char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
                                 if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
                                     val = std::string(strbuf);
+                                if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                             }
                         }
                     }
@@ -2134,6 +2220,8 @@ void EditorState::renderInspector() {
             char tbuf[512]; snprintf(tbuf, sizeof(tbuf), "%s", textComp->text.c_str());
             if (ImGui::InputTextMultiline("Text##tr", tbuf, sizeof(tbuf), ImVec2(-1, 60)))
                 textComp->text = tbuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             {
                 auto fontKeys = Assets::ResourceManager<Assets::FontManager>::GetKeys();
                 std::sort(fontKeys.begin(), fontKeys.end());
@@ -2143,26 +2231,49 @@ void EditorState::renderInspector() {
                 std::vector<const char*> fontCStrs;
                 fontCStrs.reserve(fontKeys.size());
                 for (const auto& k : fontKeys) fontCStrs.push_back(k.c_str());
-                if (ImGui::Combo("Font ID##tr", &curIdx, fontCStrs.data(), (int)fontCStrs.size()))
+                if (ImGui::Combo("Font ID##tr", &curIdx, fontCStrs.data(), (int)fontCStrs.size())) {
+                    captureInspectorBefore();
                     textComp->fontId = fontKeys[curIdx];
+                    pushInspectorChange();
+                }
             }
             ImGui::DragFloat("Font Size##tr", &textComp->fontSize, 0.01f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::ColorEdit3("Color##tr", glm::value_ptr(textComp->color));
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Visible##tr", &textComp->visible);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::SameLine();
             ImGui::Checkbox("Show Box##tr", &m_showTextBoxes);
             ImGui::DragFloat2("Box Size##tr", &textComp->boxSize.x, 1.0f, 0.0f, 0.0f, "%.0f");
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat2("Padding##tr", &textComp->padding.x, 0.5f, 0.0f, 0.0f, "%.1f");
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             const char* alignItems[] = {"Left", "Center", "Right"};
             int alignIdx = static_cast<int>(textComp->alignment);
-            if (ImGui::Combo("H Align##tr", &alignIdx, alignItems, 3))
+            if (ImGui::Combo("H Align##tr", &alignIdx, alignItems, 3)) {
+                captureInspectorBefore();
                 textComp->alignment = static_cast<Components::TextAlignment>(alignIdx);
+                pushInspectorChange();
+            }
             const char* vAlignItems[] = {"Top", "Middle", "Bottom"};
             int vAlignIdx = static_cast<int>(textComp->verticalAlign);
-            if (ImGui::Combo("V Align##tr", &vAlignIdx, vAlignItems, 3))
+            if (ImGui::Combo("V Align##tr", &vAlignIdx, vAlignItems, 3)) {
+                captureInspectorBefore();
                 textComp->verticalAlign = static_cast<Components::VerticalAlignment>(vAlignIdx);
+                pushInspectorChange();
+            }
             ImGui::Checkbox("Word Wrap##tr", &textComp->wordWrap);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat("Line Spacing##tr", &textComp->lineSpacing, 0.05f, 0.1f, 5.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::TextRenderer>>(world, m_selectedEntity));
     }
@@ -2177,11 +2288,23 @@ void EditorState::renderInspector() {
         if (open) {
             auto* lt = world.getComponent<Components::Light>(m_selectedEntity);
             ImGui::Checkbox("Active##lt", &lt->active);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat2("Offset##lt", &lt->offset.x, 1.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::ColorEdit3("Color##lt", &lt->color.r);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat("Radius##lt", &lt->radius, 1.0f, 0.0f, 2000.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat("Angle##lt", &lt->angle, 0.5f, 0.0f, 360.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::SliderFloat("Intensity##lt", &lt->intensity, 0.0f, 1.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Light>>(world, m_selectedEntity));
     }
@@ -2198,26 +2321,45 @@ void EditorState::renderInspector() {
             char sbuf[256]; snprintf(sbuf, sizeof(sbuf), "%s", btn->uiScript.c_str());
             if (ImGui::InputText("UI Script##uib", sbuf, sizeof(sbuf)))
                 btn->uiScript = sbuf;
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+                if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("SCRIPT_ASSET")) {
+                    captureInspectorBefore();
                     btn->uiScript = static_cast<const char*>(pl->Data);
+                    pushInspectorChange();
+                }
                 ImGui::EndDragDropTarget();
             }
             ImGui::Checkbox("Interactable##uib",   &btn->interactable);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::Checkbox("Show Background##uib", &btn->showBackground);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat2("Hit Size##uib",      &btn->size.x,   1.f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat2("Hit Offset##uib",    &btn->offset.x, 1.f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::Button("Follow Sprite##uib")) {
                 auto *sprite = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
                 if (sprite) {
+                    captureInspectorBefore();
                     btn->size   = sprite->size;
                     btn->offset = {0.f, 0.f};
+                    pushInspectorChange();
                 }
             }
             ImGui::SameLine();
             ImGui::Checkbox("Show Hit Area##uib",   &m_showUIButtons);
             ImGui::ColorEdit3("Normal Color##uib",  glm::value_ptr(btn->normalColor));
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::ColorEdit3("Hover Color##uib",   glm::value_ptr(btn->hoverColor));
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UIButton>>(world, m_selectedEntity));
     }
@@ -2232,8 +2374,14 @@ void EditorState::renderInspector() {
         if (open) {
             auto* cam = world.getComponent<Components::CameraComponent>(m_selectedEntity);
             ImGui::Checkbox("Is Main##cam",  &cam->isMain);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat("Zoom##cam",    &cam->zoom, 0.01f, 0.01f, 20.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             ImGui::DragFloat2("Offset##cam", &cam->offset.x, 1.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::CameraComponent>>(world, m_selectedEntity));
     }
@@ -3124,7 +3272,12 @@ void EditorState::renderAssetBrowser() {
             } else {
                 auto tex = Assets::TextureManager::Get(stem);
                 if (!tex || tex->id() == 0) {
-                    Assets::TextureManager::LoadTexture(stem, path.generic_string());
+                    // Automatically import if it's not in config but exists on disk in assets/textures
+                    if (Assets::TextureManager::GetFilePath(stem).empty()) {
+                        Assets::TextureManager::ImportTexture(path.generic_string(), stem);
+                    } else {
+                        Assets::TextureManager::LoadTexture(stem, path.generic_string());
+                    }
                     tex = Assets::TextureManager::Get(stem);
                 }
 
@@ -4466,6 +4619,20 @@ void EditorState::redo() {
     m_redoStack.pop_back();
     cmd->execute();
     m_undoStack.push_back(std::move(cmd));
+}
+
+void EditorState::captureInspectorBefore() {
+    m_inspectorBeforeEntity = m_selectedEntity;
+    m_inspectorBefore = EntitySnapshot::capture(m_scene.GetWorld(), m_selectedEntity);
+}
+
+void EditorState::pushInspectorChange() {
+    auto& world = m_scene.GetWorld();
+    if (!world.isValid(m_inspectorBeforeEntity)) return;
+    auto after = EntitySnapshot::capture(world, m_inspectorBeforeEntity);
+    executeCommand(std::make_unique<ModifyEntityCmd>(
+        world, m_inspectorBeforeEntity,
+        std::move(m_inspectorBefore), std::move(after)));
 }
 
 // ---------------------------------------------------------------------------

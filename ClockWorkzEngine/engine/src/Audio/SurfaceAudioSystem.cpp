@@ -78,7 +78,7 @@ namespace Audio {
             break;
         }
 
-        // add other surfaces here…
+        // add other surfaces here
 
         default:
         {

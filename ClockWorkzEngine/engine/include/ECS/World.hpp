@@ -299,7 +299,8 @@ public:
     */
     // -----------------------------------------------------------------------
     template <typename T> void addComponent(Entity entity, T component) {
-        getComponentArray<T>()->insert(entity, component);
+        auto* array = getComponentArray<T>();
+        if (array) array->insert(entity, component);
     }
 
     // -----------------------------------------------------------------------
@@ -310,7 +311,8 @@ public:
     */
     // -----------------------------------------------------------------------
     template <typename T> void removeComponent(Entity entity) {
-        getComponentArray<T>()->remove(entity);
+        auto* array = getComponentArray<T>();
+        if (array) array->remove(entity);
     }
 
     // -----------------------------------------------------------------------
@@ -322,14 +324,16 @@ public:
     */
     // -----------------------------------------------------------------------
     template <typename T> T* getComponent(Entity entity) {
-        return getComponentArray<T>()->get(entity);
+        auto* array = getComponentArray<T>();
+        return array ? array->get(entity) : nullptr;
     }
 
     /*!
     \brief  Const overload of getComponent().
     */
     template <typename T> const T* getComponent(Entity entity) const {
-        return getComponentArray<T>()->get(entity);
+        const auto* array = getComponentArray<T>();
+        return array ? array->get(entity) : nullptr;
     }
 
     // -----------------------------------------------------------------------

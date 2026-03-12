@@ -19,6 +19,7 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Scripting/LuaManager.hpp"
+#include "Components/Collider.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Tag.hpp"
@@ -34,8 +35,9 @@ namespace Runtime {
 
 EditorPlayState::EditorPlayState(Platform::InputManager& input,
                                  GameStateManager& gsm,
-                                 std::string scenePath)
-    : m_input(input), m_gsm(gsm), m_sceneFilePath(std::move(scenePath)) {}
+                                 std::string scenePath, bool showColliders)
+    : m_input(input), m_gsm(gsm), m_sceneFilePath(std::move(scenePath)),
+      m_showColliders(showColliders) {}
 
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -165,6 +167,43 @@ void EditorPlayState::render(Core::Time* timer) {
     auto& camera   = engine.camera();
 
     m_scene.RenderAll(renderer, camera.viewProj());
+
+    if (m_showColliders) {
+        renderer.beginDebugPass(camera.viewProj());
+        auto& world = m_scene.GetWorld();
+        world.each<Components::Transform, Components::Collider>(
+            [&](ECS::Entity, Components::Transform& t, Components::Collider& c) {
+                auto rotVec = [](glm::vec2 v, float a) {
+                    return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
+                                    v.x * std::sin(a) + v.y * std::cos(a));
+                };
+                glm::vec2 offset = rotVec(
+                    glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
+                    t.rotation);
+                glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
+
+                glm::vec3 col = c.isTrigger
+                    ? glm::vec3(1.f, 1.f, 0.f)
+                    : glm::vec3(0.f, 1.f, 0.f);
+
+                if (c.shape == Components::Collider::Shape::Box) {
+                    glm::vec2 half(c.size.x * t.scale.x * 0.5f,
+                                   c.size.y * t.scale.y * 0.5f);
+                    glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
+                    glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
+                    renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
+                    renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
+                    renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
+                    renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
+                } else {
+                    float r = c.radius * std::max(t.scale.x, t.scale.y);
+                    renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
+                }
+            });
+        renderer.endDebugPass();
+    }
 }
 
 // ---------------------------------------------------------------------------

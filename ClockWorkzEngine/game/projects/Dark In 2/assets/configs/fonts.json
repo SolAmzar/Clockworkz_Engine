@@ -1,0 +1,9 @@
+{
+    "fonts": [
+        {
+            "name": "Debug",
+            "path": "../fonts/MANIC1.ttf",
+            "size": 24
+        }
+    ]
+}
