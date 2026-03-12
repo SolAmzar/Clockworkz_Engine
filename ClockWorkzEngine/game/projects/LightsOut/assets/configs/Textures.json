@@ -927,158 +927,170 @@
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "Lose menu",
-            "path": "assets/textures/Lose menu.png"
+            "name": "assemblyhall_texture",
+            "path": "assets/textures/assemblyhall.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "background_texture",
-            "path": "assets/textures/background.jpg"
+            "name": "broom_texture",
+            "path": "assets/textures/broom.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "corridorfloor_texture",
-            "path": "assets/textures/corridorfloor.png"
+            "name": "chair sideways_texture",
+            "path": "assets/textures/chair sideways.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "energy 1_texture",
-            "path": "assets/textures/energy 1.png"
+            "name": "chair_texture",
+            "path": "assets/textures/chair.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "energy 2_texture",
-            "path": "assets/textures/energy 2.png"
+            "name": "chairflipped_texture",
+            "path": "assets/textures/chairflipped.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "energy 3_texture",
-            "path": "assets/textures/energy 3.png"
+            "name": "classroom wall_texture",
+            "path": "assets/textures/classroom wall.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "energy 4_texture",
-            "path": "assets/textures/energy 4.png"
+            "name": "classroom wall2_texture",
+            "path": "assets/textures/classroom wall2.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "energy flat_texture",
-            "path": "assets/textures/energy flat.png"
+            "name": "classroom wall3_texture",
+            "path": "assets/textures/classroom wall3.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "floor1_texture",
-            "path": "assets/textures/floor1.png"
+            "name": "classroom wall7_texture",
+            "path": "assets/textures/classroom wall7.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "floor2_texture",
-            "path": "assets/textures/floor2.png"
+            "name": "classroom wall9_texture",
+            "path": "assets/textures/classroom wall9.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "floor3_texture",
-            "path": "assets/textures/floor3.png"
+            "name": "dustpan_texture",
+            "path": "assets/textures/dustpan.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "floor4_texture",
-            "path": "assets/textures/floor4.png"
+            "name": "fan_texture",
+            "path": "assets/textures/fan.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "fragmentsample_texture",
-            "path": "assets/textures/fragmentsample.png"
+            "name": "hall speaker_texture",
+            "path": "assets/textures/hall speaker.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "gameover_texture",
-            "path": "assets/textures/gameover.png"
+            "name": "locker_texture",
+            "path": "assets/textures/locker.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "pause_texture",
-            "path": "assets/textures/pause.png"
+            "name": "locker2_texture",
+            "path": "assets/textures/locker2.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "player_old_texture",
-            "path": "assets/textures/player_old.png"
+            "name": "locker3_texture",
+            "path": "assets/textures/locker3.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "player_v2_texture",
-            "path": "assets/textures/player_v2.png"
+            "name": "piano_texture",
+            "path": "assets/textures/piano.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall1_texture",
-            "path": "assets/textures/wall1.png"
+            "name": "pinboard 2_texture",
+            "path": "assets/textures/pinboard 2.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall2_texture",
-            "path": "assets/textures/wall2.png"
+            "name": "pinboard_texture",
+            "path": "assets/textures/pinboard.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall3_texture",
-            "path": "assets/textures/wall3.png"
+            "name": "projector screen_texture",
+            "path": "assets/textures/projector screen.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall4_texture",
-            "path": "assets/textures/wall4.png"
+            "name": "school wall T_texture",
+            "path": "assets/textures/school wall T.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall6_texture",
-            "path": "assets/textures/wall6.png"
+            "name": "schoolfloor1_texture",
+            "path": "assets/textures/schoolfloor1.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall7_texture",
-            "path": "assets/textures/wall7.png"
+            "name": "schoolfloor2_texture",
+            "path": "assets/textures/schoolfloor2.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall8_texture",
-            "path": "assets/textures/wall8.png"
+            "name": "speaker_texture",
+            "path": "assets/textures/speaker.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall9_texture",
-            "path": "assets/textures/wall9.png"
+            "name": "stacked chairs_texture",
+            "path": "assets/textures/stacked chairs.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "wall_atlas_texture",
-            "path": "assets/textures/wall_atlas.png"
+            "name": "study bench_texture",
+            "path": "assets/textures/study bench.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "table flipped_texture",
+            "path": "assets/textures/table flipped.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "table upside down_texture",
+            "path": "assets/textures/table upside down.png"
         }
     ]
 }

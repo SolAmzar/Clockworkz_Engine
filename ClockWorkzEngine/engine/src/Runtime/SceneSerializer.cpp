@@ -161,7 +161,7 @@ static json SerializeWorld(ECS::World &world,
           {"padding",          {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
     }
 
-    // LuaScript — stored as a JSON array of script entries
+    // LuaScript ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â stored as a JSON array of script entries
     if (auto *ls = world.getComponent<Components::LuaScript>(entity)) {
       json arr = json::array();
       for (auto& entry : ls->scripts) {
@@ -191,6 +191,7 @@ static json SerializeWorld(ECS::World &world,
     // UIButton
     if (auto *ub = world.getComponent<Components::UIButton>(entity)) {
       obj["components"]["uiButton"] = {
+          {"action",         ub->action},
           {"uiScript",       ub->uiScript},
           {"interactable",   ub->interactable},
           {"showBackground", ub->showBackground},
@@ -242,6 +243,7 @@ void SceneSerializer::Serialize(Scene &scene, const std::string &filepath) {
 
   // Append Scene properties
   root["bgm"] = scene.getBGM();
+  root["musicContext"] = scene.getMusicContext();
   root["sfxVolume"] = scene.getSFXVolume();
   root["spawnPoint"] = {{"x", scene.getSpawnPoint().x},
                         {"y", scene.getSpawnPoint().y}};
@@ -436,7 +438,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         world.addComponent(entity, textComp);
       }
 
-      // LuaScript — supports new array format and old single-object format
+      // LuaScript ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â supports new array format and old single-object format
       if (components.contains("luaScript")) {
         auto& lsData = components["luaScript"];
         Components::LuaScript ls;
@@ -483,6 +485,7 @@ bool SceneSerializer::Deserialize(ECS::World &world,
       if (components.contains("uiButton")) {
         auto &ub = components["uiButton"];
         Components::UIButton btn;
+        btn.action         = ub.value("action", "");
         btn.uiScript       = ub.value("uiScript", "");
         btn.interactable   = ub.value("interactable", true);
         btn.showBackground = ub.value("showBackground", true);
@@ -567,6 +570,9 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
   if (root.contains("bgm")) {
     scene.setBGM(root["bgm"]);
   }
+  if (root.contains("musicContext")) {
+    scene.setMusicContext(root["musicContext"]);
+  }
   if (root.contains("sfxVolume")) {
     scene.setSFXVolume(root["sfxVolume"]);
   }
@@ -606,3 +612,4 @@ bool SceneSerializer::Deserialize(Scene &scene, const std::string &filepath) {
 }
 
 } // namespace Runtime
+

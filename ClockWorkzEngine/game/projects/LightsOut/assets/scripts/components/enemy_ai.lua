@@ -27,24 +27,6 @@ Properties = {
     { name = "_initialized",      type = "bool",  default = false,    label = "" },
 }
 
-local function dist2(ax, ay, bx, by)
-    local dx, dy = ax - bx, ay - by
-    return dx * dx + dy * dy
-end
-local function norm(dx, dy)
-    local len = math.sqrt(dx*dx + dy*dy)
-    if len < 0.0001 then return 0.0, 0.0 end
-    return dx/len, dy/len
-end
-local function inCone(px, py, tx, ty, rot, radius, fovDeg)
-    local dx, dy = px-tx, py-ty
-    if dx*dx + dy*dy > radius*radius then return false end
-    local dist = math.sqrt(dx*dx + dy*dy)
-    if dist < 0.0001 then return true end
-    local dot = math.cos(rot)*(dx/dist) + math.sin(rot)*(dy/dist)
-    return dot >= math.cos((fovDeg*math.pi/180.0)*0.5)
-end
-
 local Enemy = {}
 
 function Enemy:onStart(entity)

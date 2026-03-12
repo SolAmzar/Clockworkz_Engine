@@ -7,6 +7,7 @@
     },
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": true,
+    "musicContext": "",
     "hiddenEntities": [],
     "hierarchyGroups": [],
     "hierarchyOrder": [
@@ -2485,73 +2486,14 @@
         {
             "active": true,
             "components": {
-                "particleEmitter": {
-                    "acceleration": {
-                        "x": 0.0,
-                        "y": -200.0
-                    },
-                    "active": false,
-                    "colorEnd": {
-                        "a": 0.0,
-                        "b": 0.0,
-                        "g": 0.0,
-                        "r": 0.0
-                    },
-                    "colorStart": {
-                        "a": 1.0,
-                        "b": 255.0,
-                        "g": 255.0,
-                        "r": 255.0
-                    },
-                    "direction": {
-                        "x": 1.0,
-                        "y": 0.0
-                    },
-                    "lifeMax": 1.0,
-                    "lifeMin": 0.5,
-                    "localOffset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "looping": true,
-                    "rate": 200.0,
-                    "sizeEnd": 1.0,
-                    "sizeStart": 5.0,
-                    "speedMax": 120.0,
-                    "speedMin": 20.0,
-                    "spreadDeg": 45.0,
-                    "worldSpace": true
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 0,
-                    "textureId": "corridor floor1",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": -450.0,
-                        "y": 150.0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -2561,7 +2503,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete floor"
+            "name": "Entity 523"
         },
         {
             "active": true,
@@ -26606,6 +26548,20 @@
                     "shape": 1,
                     "width": 50.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_concrete_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 4,
+                    "volume": 0.22100000083446503,
+                    "woodPrefix": "fs_concrete_"
+                },
                 "light": {
                     "active": false,
                     "angle": 60.0,
@@ -43418,6 +43374,20 @@
                     "shape": 0,
                     "width": 100.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 5,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
                 "luaScript": [
                     {
                         "enabled": true,
@@ -43433,7 +43403,15 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "chaseSpeed": 150.0
+                            "_stateTimer": 0.0,
+                            "_wanderTimer": 0.0,
+                            "alertDuration": 3.0,
+                            "chaseSpeed": 3.299999952316284,
+                            "detectionRadius": 400.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "patrolSpeed": 14.899999618530273,
+                            "state": "Patrol",
+                            "wanderInterval": 2.0
                         },
                         "scriptPath": "components/moth_ai.lua"
                     },
@@ -45796,6 +45774,7 @@
                             "collected": false,
                             "fadeSpeed": 5.0,
                             "fragmentId": 0,
+                            "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
                         "scriptPath": "components/fragment.lua"
@@ -46636,14 +46615,36 @@
         {
             "active": true,
             "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "corridor floor1",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": -450.0,
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {

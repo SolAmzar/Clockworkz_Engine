@@ -22,6 +22,7 @@ reserved.
 #include "Assets/ResourceManager.hpp"
 #include "Gameplay/Prefab.hpp"
 #include "Assets/FontManager.hpp"
+#include "LevelMusicManager.hpp"
 #include "Graphics/Shader.hpp"
 #include "Memory/MemoryDebugRegistry.hpp"
 #include "Memory/IPoolStats.hpp"
@@ -68,11 +69,13 @@ reserved.
 // Engine components
 #include "Components/Velocity.hpp"
 #include "Components/AudioSource.hpp"
+#include "Components/FootstepAudio.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/CameraComponent.hpp"
 #include "Components/UIButton.hpp"
+#include "Components/UISlider.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Systems/LightRenderSystem.hpp"
@@ -235,7 +238,7 @@ void EditorState::onEnter() {
         fs::current_path(m_projectRoot, cwdEc);
     }
 
-    // Load shaders required by the rendering passes — use absolute paths since
+    // Load shaders required by the rendering passes ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â use absolute paths since
     // shaders live in game/assets/, not inside the project folder.
     Assets::ResourceManager<Graphics::Shader>::Load(
         "texture",
@@ -651,7 +654,7 @@ void EditorState::renderImGui(Core::Time* timer) {
 
     Core::Engine::Get().imguiManager().beginDockspace();
 
-    // One-time layout — must use "MyDockSpace" to match ImGuiManager
+    // One-time layout ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â must use "MyDockSpace" to match ImGuiManager
     ImGuiID dockId = ImGui::GetID("MyDockSpace");
     if (!m_dockLayoutInitialized) {
         m_dockLayoutInitialized = true;
@@ -668,7 +671,7 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderSplitNode(main,   ImGuiDir_Left,  0.20f, &left,      &center);
         ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.28f, &right,     &center);
         ImGui::DockBuilderSplitNode(center, ImGuiDir_Down,  0.28f, &centerBot, &centerTop);
-        // right column is a single node (Inspector + Stats tabs — no split needed)
+        // right column is a single node (Inspector + Stats tabs ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â no split needed)
         rightTop = right;
 
         ImGui::DockBuilderDockWindow("Hierarchy",              left);
@@ -895,7 +898,6 @@ void EditorState::renderStatsWindow() {
 
     auto& world = m_scene.GetWorld();
 
-    // ── ECS ─────────────────────────────────────────────────────────────────
     ImGui::SeparatorText("ECS");
     ImGui::Text("Entities : %u", world.entityCount());
     ImGui::Spacing();
@@ -912,7 +914,6 @@ void EditorState::renderStatsWindow() {
     ImGui::Text("FPS        : %.1f",      ImGui::GetIO().Framerate);
     ImGui::Text("Frame Time : %.3f ms",   1000.0f / ImGui::GetIO().Framerate);
 
-    // ── Memory ───────────────────────────────────────────────────────────────
     ImGui::Spacing();
     ImGui::SeparatorText("Memory");
 
@@ -1045,6 +1046,7 @@ void EditorState::renderLoadSceneWindow() {
                 f << "{\n"
                   << "    \"entities\": [],\n"
                   << "    \"bgm\": \"\",\n"
+                  << "    \"musicContext\": \"\",\n"
                   << "    \"sfxVolume\": 1.0,\n"
                   << "    \"spawnPoint\": {\"x\": 0, \"y\": 0},\n"
                   << "    \"enableDarkness\": false,\n"
@@ -1767,13 +1769,31 @@ void EditorState::renderInspector() {
         return;
     }
 
+    if (m_sceneMetaBuffersDirty) {
+        strncpy_s(m_sceneBgmBuf, m_scene.getBGM().c_str(), sizeof(m_sceneBgmBuf) - 1);
+        strncpy_s(m_sceneMusicContextBuf, m_scene.getMusicContext().c_str(), sizeof(m_sceneMusicContextBuf) - 1);
+        m_sceneMetaBuffersDirty = false;
+    }
+
+    if (ImGui::CollapsingHeader("Scene Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::InputText("Music Context##scene", m_sceneMusicContextBuf, sizeof(m_sceneMusicContextBuf)))
+            m_scene.setMusicContext(m_sceneMusicContextBuf);
+        if (ImGui::InputText("Legacy BGM##scene", m_sceneBgmBuf, sizeof(m_sceneBgmBuf)))
+            m_scene.setBGM(m_sceneBgmBuf);
+
+        float sfxVolume = m_scene.getSFXVolume();
+        if (ImGui::SliderFloat("Scene SFX Volume##scene", &sfxVolume, 0.0f, 1.0f))
+            m_scene.setSFXVolume(sfxVolume);
+    }
+
+    ImGui::Separator();
+
     if (!world.isValid(m_selectedEntity)) {
         ImGui::TextDisabled("No entity selected.");
         ImGui::End();
         return;
     }
 
-    // ── Add Component ───────────────────────────────────────────────────────
     if (ImGui::Button("Add Component", ImVec2(-1, 0)))
         ImGui::OpenPopup("##AddComp");
 
@@ -1796,10 +1816,12 @@ void EditorState::renderInspector() {
         }
         if (ImGui::BeginMenu("Audio")) {
             addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::FootstepAudio>("FootstepAudio", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("UI")) {
             addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::UISlider>("UISlider", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Camera")) {
@@ -1807,7 +1829,7 @@ void EditorState::renderInspector() {
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Scripting")) {
-            // LuaScript: always available — adds a new script slot each click
+            // LuaScript: always available ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â adds a new script slot each click
             if (ImGui::MenuItem("LuaScript")) {
                 if (!world.hasComponent<Components::LuaScript>(m_selectedEntity))
                     world.addComponent(m_selectedEntity, Components::LuaScript{});
@@ -1941,7 +1963,7 @@ void EditorState::renderInspector() {
             ImGui::Checkbox("Show Outline", &m_showColliders);
             ImGui::Separator();
 
-            // Shape selector — changing this affects collision logic immediately
+            // Shape selector ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â changing this affects collision logic immediately
             const char* shapeNames[] = {"Box", "Circle"};
             int currentShape = static_cast<int>(c->shape);
             if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2)) {
@@ -2001,7 +2023,6 @@ void EditorState::renderInspector() {
         }
     }
 
-    // ── Velocity ────────────────────────────────────────────────────────────
     if (world.hasComponent<Components::Velocity>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("Velocity##hdr",
@@ -2022,7 +2043,6 @@ void EditorState::renderInspector() {
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Velocity>>(world, m_selectedEntity));
     }
 
-    // ── AudioSource ─────────────────────────────────────────────────────────
     if (world.hasComponent<Components::AudioSource>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("AudioSource##hdr",
@@ -2057,7 +2077,74 @@ void EditorState::renderInspector() {
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::AudioSource>>(world, m_selectedEntity));
     }
 
-    // ── SpriteAnimator ──────────────────────────────────────────────────────
+    // FootstepAudio
+    if (world.hasComponent<Components::FootstepAudio>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("FootstepAudio##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rfa")) rm = true;
+        if (open) {
+            auto* fa = world.getComponent<Components::FootstepAudio>(m_selectedEntity);
+
+            static const char* presetLabels[] = {"Custom", "Concrete", "Tile", "Wood"};
+            int presetIndex = 0;
+            if (fa->soundPrefix == "fs_concrete_") presetIndex = 1;
+            else if (fa->soundPrefix == "fs_tile_") presetIndex = 2;
+            else if (fa->soundPrefix == "fs_wood_") presetIndex = 3;
+            if (ImGui::Combo("Preset##fa", &presetIndex, presetLabels, IM_ARRAYSIZE(presetLabels))) {
+                if (presetIndex == 1) {
+                    fa->soundPrefix = "fs_concrete_";
+                    fa->concretePrefix = "fs_concrete_";
+                    fa->tilePrefix = "fs_tile_";
+                    fa->woodPrefix = "fs_concrete_";
+                    fa->variationCount = 4;
+                } else if (presetIndex == 2) {
+                    fa->soundPrefix = "fs_tile_";
+                    fa->concretePrefix = "fs_concrete_";
+                    fa->tilePrefix = "fs_tile_";
+                    fa->woodPrefix = "fs_concrete_";
+                    fa->variationCount = 4;
+                } else if (presetIndex == 3) {
+                    fa->soundPrefix = "fs_concrete_";
+                    fa->concretePrefix = "fs_concrete_";
+                    fa->tilePrefix = "fs_tile_";
+                    fa->woodPrefix = "fs_concrete_";
+                    fa->variationCount = 4;
+                }
+            }
+
+            ImGui::Checkbox("Use Surface Sounds##fa", &fa->useSurfaceSounds);
+
+            char defaultBuf[256]; snprintf(defaultBuf, sizeof(defaultBuf), "%s", fa->soundPrefix.c_str());
+            if (ImGui::InputText("Default Prefix##fa", defaultBuf, sizeof(defaultBuf)))
+                fa->soundPrefix = defaultBuf;
+
+            char concreteBuf[256]; snprintf(concreteBuf, sizeof(concreteBuf), "%s", fa->concretePrefix.c_str());
+            if (ImGui::InputText("Concrete Prefix##fa", concreteBuf, sizeof(concreteBuf)))
+                fa->concretePrefix = concreteBuf;
+
+            char tileBuf[256]; snprintf(tileBuf, sizeof(tileBuf), "%s", fa->tilePrefix.c_str());
+            if (ImGui::InputText("Tile Prefix##fa", tileBuf, sizeof(tileBuf)))
+                fa->tilePrefix = tileBuf;
+
+            char woodBuf[256]; snprintf(woodBuf, sizeof(woodBuf), "%s", fa->woodPrefix.c_str());
+            if (ImGui::InputText("Wood Prefix##fa", woodBuf, sizeof(woodBuf)))
+                fa->woodPrefix = woodBuf;
+
+            ImGui::DragFloat("Interval##fa", &fa->interval, 0.01f, 0.01f, 10.0f);
+            ImGui::DragFloat("Sprint Scale##fa", &fa->sprintIntervalScale, 0.01f, 0.1f, 2.0f);
+            ImGui::DragFloat("Sprint Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
+            ImGui::DragFloat("Min Speed##fa", &fa->minSpeed, 0.01f, 0.0f, 1000.0f);
+            ImGui::DragFloat("Reset Delay##fa", &fa->resetDelay, 0.01f, 0.0f, 1.0f);
+            ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 1.0f);
+            ImGui::DragInt("Variations##fa", &fa->variationCount, 1.0f, 1, 16);
+            ImGui::BeginDisabled(true);
+            ImGui::DragFloat("Timer Remaining##fa", &fa->timerRemaining, 0.0f);
+            ImGui::EndDisabled();
+        }
+        if (rm) world.removeComponent<Components::FootstepAudio>(m_selectedEntity);
+    }
     if (world.hasComponent<Components::SpriteAnimator>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("SpriteAnimator##hdr",
@@ -2094,7 +2181,6 @@ void EditorState::renderInspector() {
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::SpriteAnimator>>(world, m_selectedEntity));
     }
 
-    // ── StateMachine ────────────────────────────────────────────────────────
     if (world.hasComponent<Components::StateMachine>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("StateMachine##hdr",
@@ -2114,7 +2200,6 @@ void EditorState::renderInspector() {
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::StateMachine>>(world, m_selectedEntity));
     }
 
-    // ── LuaScript (multi-slot) ───────────────────────────────────────────────
     if (world.hasComponent<Components::LuaScript>(m_selectedEntity)) {
         namespace fs = std::filesystem;
         auto* ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
@@ -2124,7 +2209,7 @@ void EditorState::renderInspector() {
             auto& entry = ls->scripts[si];
             ImGui::PushID(si);
 
-            // Header name: derive from script filename (e.g. "health.lua" → "Health")
+            // Header name: derive from script filename (e.g. "health.lua" ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ "Health")
             std::string headerName = "Script";
             if (!entry.scriptPath.empty()) {
                 std::string stem = fs::path(entry.scriptPath).stem().string();
@@ -2192,6 +2277,53 @@ void EditorState::renderInspector() {
                                     val = std::string(strbuf);
                                 if (ImGui::IsItemActivated()) captureInspectorBefore();
                                 if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+                                std::string loweredName = def.name;
+                                std::string loweredLabel = def.label;
+                                std::transform(loweredName.begin(), loweredName.end(), loweredName.begin(),
+                                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                                std::transform(loweredLabel.begin(), loweredLabel.end(), loweredLabel.begin(),
+                                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+                                const bool looksLikeSoundId =
+                                    loweredName.find("sfx") != std::string::npos ||
+                                    loweredName.find("sound") != std::string::npos ||
+                                    loweredName.find("audio") != std::string::npos ||
+                                    loweredLabel.find("sfx") != std::string::npos ||
+                                    loweredLabel.find("sound") != std::string::npos ||
+                                    loweredLabel.find("audio") != std::string::npos;
+
+                                if (looksLikeSoundId) {
+                                    auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
+                                    std::sort(soundNames.begin(), soundNames.end());
+                                    if (!sv.empty() && std::find(soundNames.begin(), soundNames.end(), sv) == soundNames.end())
+                                        soundNames.insert(soundNames.begin(), sv);
+
+                                    std::vector<const char*> items;
+                                    items.reserve(soundNames.size() + 1);
+                                    items.push_back("<none>");
+
+                                    int currentIndex = 0;
+                                    for (std::size_t soundIndex = 0; soundIndex < soundNames.size(); ++soundIndex) {
+                                        items.push_back(soundNames[soundIndex].c_str());
+                                        if (soundNames[soundIndex] == sv)
+                                            currentIndex = static_cast<int>(soundIndex) + 1;
+                                    }
+
+                                    std::string comboLabel = std::string(def.label) + "##soundprop";
+                                    if (ImGui::Combo(comboLabel.c_str(), &currentIndex, items.data(), static_cast<int>(items.size()))) {
+                                        val = currentIndex == 0 ? std::string() : soundNames[static_cast<std::size_t>(currentIndex - 1)];
+                                        sv = std::get<std::string>(val);
+                                    }
+
+                                    std::string inputLabel = std::string("Override ") + def.label + "##soundproptext";
+                                    char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                                    if (ImGui::InputText(inputLabel.c_str(), strbuf, sizeof(strbuf)))
+                                        val = std::string(strbuf);
+                                } else {
+                                    char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                                    if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                                        val = std::string(strbuf);
+                                }
                             }
                         }
                     }
@@ -2208,7 +2340,6 @@ void EditorState::renderInspector() {
         if (removeComponent) world.removeComponent<Components::LuaScript>(m_selectedEntity);
     }
 
-    // ── TextRenderer ────────────────────────────────────────────────────────
     if (world.hasComponent<Components::TextRenderer>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("TextRenderer##hdr",
@@ -2309,7 +2440,7 @@ void EditorState::renderInspector() {
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Light>>(world, m_selectedEntity));
     }
 
-    // ── UIButton ─────────────────────────────────────────────────────────────
+    // UIButton
     if (world.hasComponent<Components::UIButton>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("UIButton##hdr",
@@ -2364,7 +2495,32 @@ void EditorState::renderInspector() {
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UIButton>>(world, m_selectedEntity));
     }
 
-    // ── CameraComponent ───────────────────────────────────────────────────────
+
+    if (world.hasComponent<Components::UISlider>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("UISlider##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##ruisl")) rm = true;
+        if (open) {
+            auto *sl = world.getComponent<Components::UISlider>(m_selectedEntity);
+            char keyBuf[64]; snprintf(keyBuf, sizeof(keyBuf), "%s", sl->settingKey.c_str());
+            if (ImGui::InputText("Setting Key##uisl", keyBuf, sizeof(keyBuf)))
+                sl->settingKey = keyBuf;
+            ImGui::DragFloat("Min Value##uisl", &sl->minValue, 0.01f);
+            ImGui::DragFloat("Max Value##uisl", &sl->maxValue, 0.01f);
+            ImGui::SliderFloat("Value##uisl", &sl->value, sl->minValue, sl->maxValue);
+            ImGui::DragFloat("Track Width##uisl", &sl->trackWidth, 1.0f, 1.0f, 2000.0f);
+            ImGui::DragFloat("Track Height##uisl", &sl->trackHeight, 1.0f, 1.0f, 400.0f);
+            ImGui::DragFloat("Handle Size##uisl", &sl->handleSize, 1.0f, 0.0f, 400.0f);
+            ImGui::ColorEdit4("Track Color##uisl", glm::value_ptr(sl->trackColor));
+            ImGui::ColorEdit4("Fill Color##uisl", glm::value_ptr(sl->fillColor));
+            ImGui::ColorEdit4("Handle Color##uisl", glm::value_ptr(sl->handleColor));
+        }
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::UISlider>>(world, m_selectedEntity));
+    }
+
+    // CameraComponent
     if (world.hasComponent<Components::CameraComponent>(m_selectedEntity)) {
         bool rm = false;
         bool open = ImGui::CollapsingHeader("CameraComponent##hdr",
@@ -2385,7 +2541,6 @@ void EditorState::renderInspector() {
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::CameraComponent>>(world, m_selectedEntity));
     }
-
     ImGui::End();
 }
 
@@ -2463,7 +2618,7 @@ void EditorState::renderViewport() {
                 bool inside = (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
                                worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
                 if (inside) {
-                    // Higher sortOrder = rendered last = visually on top → prefer it
+                    // Higher sortOrder = rendered last = visually on top ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ prefer it
                     if (!foundBounds || sr->sortOrder > bestSort) {
                         bestSort    = sr->sortOrder;
                         bestEnt     = e;
@@ -2471,7 +2626,7 @@ void EditorState::renderViewport() {
                     }
                 }
             } else if (!foundBounds) {
-                // No sprite — fall back to proximity
+                // No sprite ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â fall back to proximity
                 float d = magnitude(center - worldPos);
                 if (d < bestDist) { bestDist = d; bestEnt = e; }
             }
@@ -2506,7 +2661,7 @@ void EditorState::renderViewport() {
                     [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
 
             if (!alreadySelected) {
-                // New entity — clear selection and select this one
+                // New entity ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â clear selection and select this one
                 m_selectedEntities.clear();
                 m_selectedEntity = bestEnt;
                 if (ecs.isValid(bestEnt)) m_selectedEntities.push_back(bestEnt);
@@ -2524,7 +2679,7 @@ void EditorState::renderViewport() {
                         m_gizmoGroupOriginalPos.push_back({se, {t->position.x, t->position.y}});
                 }
             } else {
-                // Clicked empty space — start box selection
+                // Clicked empty space ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â start box selection
                 m_pendingEntityDrag = false;
                 m_isDraggingEntity  = false;
                 m_isBoxSelecting    = true;
@@ -2641,11 +2796,11 @@ void EditorState::renderViewport() {
                         m_selectedEntity = m_selectedEntities.front();
                 }
             }
-            // Box too small = just a click on empty space → selection stays cleared
+            // Box too small = just a click on empty space ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ selection stays cleared
         }
     }
 
-    // ----- Drag-drop: texture / prefab from browsers → spawn entity -----
+    // ----- Drag-drop: texture / prefab from browsers ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ spawn entity -----
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
             const char* texName = static_cast<const char*>(pl->Data);
@@ -2819,7 +2974,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
         drawArrow(xEnd, normalize(xAxisScr), hoverX ? colHover : colX);
         drawArrow(yEnd, normalize(yAxisScr), hoverY ? colHover : colY);
 
-        // Start drag — capture group original positions
+        // Start drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â capture group original positions
         if (mouseClick && (hoverX || hoverY)) {
             m_gizmoActiveAxis   = hoverX ? 0 : 1;
             m_gizmoOriginalPos  = {trans->position.x, trans->position.y};
@@ -2831,7 +2986,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             }
         }
 
-        // Drag — move primary and apply same delta to group
+        // Drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â move primary and apply same delta to group
         if (mouseDown && m_gizmoActiveAxis != -1) {
             float dx = mousePos.x - m_gizmoClickOffset.x;
             float dy = mousePos.y - m_gizmoClickOffset.y;
@@ -2934,7 +3089,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
         drawBox(xEnd, hoverX ? colHover : colX);
         drawBox(yEnd, hoverY ? colHover : colY);
 
-        // Start drag — capture group original scales
+        // Start drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â capture group original scales
         if (mouseClick && (hoverX || hoverY)) {
             m_gizmoActiveAxis    = hoverX ? 0 : 1;
             m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
@@ -2946,7 +3101,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             }
         }
 
-        // Drag — project mouse movement onto axis, apply as scale delta
+        // Drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â project mouse movement onto axis, apply as scale delta
         if (mouseDown && m_gizmoActiveAxis != -1) {
             float dx = mousePos.x - m_gizmoClickOffset.x;
             float dy = mousePos.y - m_gizmoClickOffset.y;
@@ -2986,7 +3141,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
     // ----- Highlight secondary selected entities -----
     for (auto& e : m_selectedEntities) {
         if (e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation)
-            continue; // primary — already shown by gizmo or green outline elsewhere
+            continue; // primary ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â already shown by gizmo or green outline elsewhere
         auto* t = world.getComponent<Components::Transform>(e);
         if (!t) continue;
         vec2 sc = worldToScreen({t->position.x, t->position.y},
@@ -3011,7 +3166,6 @@ void EditorState::renderAssetBrowser() {
         fs::create_directories(assetsRoot, ec);
     }
 
-    // ── Handle file drops from Windows Explorer ───────────────────────────────
     {
         auto dropped = Core::Engine::Get().window().consumeDroppedFiles();
         for (const auto& filePath : dropped) {
@@ -3042,7 +3196,6 @@ void EditorState::renderAssetBrowser() {
         }
     }
 
-    // ── Navigation Bar ───────────────────────────────────────────────────────
     if (m_currentAssetDir != assetsRoot.generic_string()) {
         if (ImGui::Button("<- Back##assets")) {
             m_currentAssetDir = fs::path(m_currentAssetDir).parent_path().generic_string();
@@ -3106,7 +3259,6 @@ void EditorState::renderAssetBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Rename/Delete Modals ────────────────────────────────────────────────
     if (!m_renamingAsset.empty()) ImGui::OpenPopup("##RenameAsset");
     if (ImGui::BeginPopupModal("##RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Rename asset: %s", m_renamingAsset.c_str());
@@ -3144,7 +3296,6 @@ void EditorState::renderAssetBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Rename folder modal ───────────────────────────────────────────────────
     if (!m_renamingAssetDirPath.empty()) ImGui::OpenPopup("##RenameAssetDir");
     if (ImGui::BeginPopupModal("##RenameAssetDir", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Rename folder: %s", fs::path(m_renamingAssetDirPath).filename().string().c_str());
@@ -3162,7 +3313,6 @@ void EditorState::renderAssetBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Delete folder modal ───────────────────────────────────────────────────
     if (!m_deletingAssetDirPath.empty()) ImGui::OpenPopup("##DeleteAssetDir");
     if (ImGui::BeginPopupModal("##DeleteAssetDir", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete folder '%s' and all its contents?", fs::path(m_deletingAssetDirPath).filename().string().c_str());
@@ -3182,33 +3332,44 @@ void EditorState::renderAssetBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Move to folder modal ──────────────────────────────────────────────────
-    if (!m_movingAssetPath.empty()) ImGui::OpenPopup("##MoveAsset");
+    // Move asset modal
+    if (!m_movingAssetPath.empty()) {
+        ImGui::OpenPopup("##MoveAsset");
+    }
     if (ImGui::BeginPopupModal("##MoveAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Move '%s' to:", fs::path(m_movingAssetPath).filename().string().c_str());
+        const std::string movingAssetName = fs::path(m_movingAssetPath).filename().string();
+        ImGui::Text("Move '%s' to:", movingAssetName.c_str());
         ImGui::Separator();
+
         std::vector<std::string> assetFolders;
         assetFolders.push_back("(root)");
-        for (const auto& entry : fs::recursive_directory_iterator(assetsRoot, ec))
-            if (entry.is_directory())
+        for (const auto& entry : fs::recursive_directory_iterator(assetsRoot, ec)) {
+            if (entry.is_directory()) {
                 assetFolders.push_back(fs::relative(entry.path(), assetsRoot, ec).generic_string());
+            }
+        }
+
         for (const auto& folder : assetFolders) {
             if (ImGui::Selectable(folder.c_str())) {
-                fs::path destDir = (folder == "(root)") ? assetsRoot : assetsRoot / folder;
+                fs::path destDir = (folder == "(root)") ? assetsRoot : (assetsRoot / folder);
                 fs::path destFile = destDir / fs::path(m_movingAssetPath).filename();
-                if (!fs::exists(destFile)) fs::rename(fs::path(m_movingAssetPath), destFile, ec);
+                if (!fs::exists(destFile)) {
+                    fs::rename(fs::path(m_movingAssetPath), destFile, ec);
+                }
                 m_movingAssetPath.clear();
                 ImGui::CloseCurrentPopup();
             }
         }
+
         ImGui::Separator();
-        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_movingAssetPath.clear(); ImGui::CloseCurrentPopup(); }
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_movingAssetPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 
     ImGui::Separator();
-
-    // ── Grid ────────────────────────────────────────────────────────────────
     std::vector<fs::path> items;
     for (const auto& entry : fs::directory_iterator(m_currentAssetDir, ec)) {
         if (entry.is_directory()) {
@@ -3339,7 +3500,6 @@ void EditorState::renderAnimationsBrowser() {
         fs::create_directories(animRoot, ec);
     }
 
-    // ── Navigation Bar ───────────────────────────────────────────────────────
     if (m_currentAnimDir != animRoot.generic_string()) {
         if (ImGui::Button("<- Back##anim")) {
             m_currentAnimDir = fs::path(m_currentAnimDir).parent_path().generic_string();
@@ -3433,7 +3593,7 @@ void EditorState::renderAnimationsBrowser() {
 
     ImGui::Separator();
 
-    // ── Grid ────────────────────────────────────────────────────────────────
+
     std::vector<fs::path> items;
     for (const auto& entry : fs::directory_iterator(m_currentAnimDir, ec)) {
         if (entry.is_directory() || entry.path().extension() == ".json")
@@ -3733,7 +3893,6 @@ void EditorState::renderScriptsBrowser() {
     std::error_code ec;
     const fs::path scriptsRoot("assets/scripts");
 
-    // ── Navigation Bar ───────────────────────────────────────────────────────
     if (m_currentScriptDir != scriptsRoot.generic_string()) {
         if (ImGui::Button("<- Back")) {
             m_currentScriptDir = fs::path(m_currentScriptDir).parent_path().generic_string();
@@ -3743,7 +3902,6 @@ void EditorState::renderScriptsBrowser() {
     ImGui::Text("Location: %s", fs::relative(m_currentScriptDir, scriptsRoot, ec).generic_string().c_str());
     ImGui::Separator();
 
-    // ── Add Script button ────────────────────────────────────────────────────
     if (ImGui::Button("Add Script")) {
         m_newScriptBuf[0]       = '\0';
         m_newScriptFolderBuf[0] = '\0';
@@ -3820,7 +3978,6 @@ void EditorState::renderScriptsBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Rename modal ─────────────────────────────────────────────────────────
     if (!m_renamingScriptPath.empty())
         ImGui::OpenPopup("##RenameScript");
 
@@ -3851,7 +4008,6 @@ void EditorState::renderScriptsBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Move to folder modal ──────────────────────────────────────────────────
     if (!m_movingScriptPath.empty())
         ImGui::OpenPopup("##MoveScript");
 
@@ -3895,7 +4051,6 @@ void EditorState::renderScriptsBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Delete confirmation ───────────────────────────────────────────────────
     if (!m_deletingScriptPath.empty())
         ImGui::OpenPopup("##DeleteScript");
 
@@ -3923,7 +4078,7 @@ void EditorState::renderScriptsBrowser() {
 
     ImGui::Separator();
 
-    // ── Collect items in current directory ──────────────────────────────────
+
     std::vector<fs::path> items;
     for (const auto& entry : fs::directory_iterator(m_currentScriptDir, ec)) {
         if (entry.is_directory() || entry.path().extension() == ".lua")
@@ -3956,7 +4111,6 @@ void EditorState::renderScriptsBrowser() {
             float iconOX = (colW - kIconW) * 0.5f;
             if (iconOX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconOX);
 
-            // ── Icon button ──────────────────────────────────────────────
             bool isComp = relPath.find("components") != std::string::npos;
             ImVec4 btnBase = isDir ? ImVec4(0.3f, 0.3f, 0.1f, 1.0f) : (isComp ? ImVec4(0.10f, 0.22f, 0.12f, 1.0f) : ImVec4(0.14f, 0.16f, 0.32f, 1.0f));
             ImVec4 btnHov  = isDir ? ImVec4(0.4f, 0.4f, 0.15f, 1.0f) : (isComp ? ImVec4(0.16f, 0.34f, 0.20f, 1.0f) : ImVec4(0.22f, 0.28f, 0.55f, 1.0f));
@@ -4063,13 +4217,11 @@ void EditorState::renderFontBrowser() {
     namespace fs = std::filesystem;
     static constexpr const char* kFontConfig = "assets/configs/fonts.json";
 
-    // ── Handle pending font import from dropped files ─────────────────────
     if (m_pendingFontImportPopup) {
         m_pendingFontImportPopup = false;
         ImGui::OpenPopup("##AddFont");
     }
 
-    // ── Toolbar ───────────────────────────────────────────────────────────
     if (ImGui::Button("Add Font")) {
         m_newFontNameBuf[0] = '\0';
         m_newFontPathBuf[0] = '\0';
@@ -4080,7 +4232,6 @@ void EditorState::renderFontBrowser() {
     ImGui::TextDisabled("(drag .ttf/.otf here)");
     ImGui::Separator();
 
-    // ── Add Font modal ────────────────────────────────────────────────────
     if (ImGui::BeginPopupModal("##AddFont", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Import Font");
         ImGui::Separator();
@@ -4121,7 +4272,6 @@ void EditorState::renderFontBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Delete confirmation modal ─────────────────────────────────────────
     if (!m_deletingFont.empty()) ImGui::OpenPopup("##DeleteFont");
     if (ImGui::BeginPopupModal("##DeleteFont", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete font \"%s\"?", m_deletingFont.c_str());
@@ -4141,7 +4291,6 @@ void EditorState::renderFontBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Font list ─────────────────────────────────────────────────────────
     auto fontKeys = Assets::ResourceManager<Assets::FontManager>::GetKeys();
     std::sort(fontKeys.begin(), fontKeys.end());
 
@@ -4186,17 +4335,155 @@ void EditorState::renderAudioBrowser() {
     const fs::path audioRoot("assets/audio");
 
     if (!fs::exists(audioRoot)) fs::create_directories(audioRoot, ec);
+    const std::string kSoundConfig = "assets/configs/sounds.json";
 
-    // ── Navigation Bar ───────────────────────────────────────────────────────
     if (m_currentAudioDir != audioRoot.generic_string()) {
         if (ImGui::Button("<- Back##audio")) {
             m_currentAudioDir = fs::path(m_currentAudioDir).parent_path().generic_string();
+            m_selectedAudioAssets.clear();
         }
         ImGui::SameLine();
     }
     ImGui::Text("Location: %s", fs::relative(m_currentAudioDir, audioRoot, ec).generic_string().c_str());
     ImGui::Separator();
 
+    struct MusicContextEditorEntry {
+        char id[128]{};
+        char tracks[512]{};
+        float fadeOutSeconds{0.5f};
+    };
+    static std::vector<MusicContextEditorEntry> s_musicContextEntries;
+    static bool s_musicContextsLoaded = false;
+    auto reloadMusicContexts = [&]() {
+        s_musicContextEntries.clear();
+        for (const auto& ctx : Runtime::LevelMusicManager::GetContexts()) {
+            MusicContextEditorEntry entry{};
+            strncpy_s(entry.id, ctx.id.c_str(), sizeof(entry.id) - 1);
+            std::string joinedTracks;
+            for (size_t i = 0; i < ctx.layers.size(); ++i) {
+                if (i > 0) {
+                    joinedTracks += ", ";
+                }
+                joinedTracks += ctx.layers[i].track + ":" + std::to_string(ctx.layers[i].volume);
+            }
+            strncpy_s(entry.tracks, joinedTracks.c_str(), sizeof(entry.tracks) - 1);
+            entry.fadeOutSeconds = ctx.fadeOutSeconds;
+            s_musicContextEntries.push_back(entry);
+        }
+        s_musicContextsLoaded = true;
+    };
+    if (!s_musicContextsLoaded) {
+        reloadMusicContexts();
+    }
+    auto loadBatchAudioFromSelection = [&]() {
+        m_batchApplyLoop = false;
+        m_batchApplyStream = false;
+        m_batchApplyIs3D = false;
+        m_batchApplyGroup = false;
+        m_batchApplyVolume = false;
+        m_batchApplyPitch = false;
+        m_batchApplyMinDistance = false;
+        m_batchApplyMaxDistance = false;
+        m_batchApplyFalloffStart = false;
+        m_batchApplyFalloffAmount = false;
+        m_batchApplyFilterInStart = false;
+        m_batchApplyFilterPeak = false;
+        m_batchApplyFilterReleaseEnd = false;
+
+        if (m_selectedAudioAssets.empty()) {
+            return;
+        }
+
+        Assets::SoundConfig cfg;
+        if (!Assets::SoundManager::GetConfig(m_selectedAudioAssets.front(), cfg, kSoundConfig)) {
+            return;
+        }
+
+        m_batchAudioLoop = cfg.loop;
+        m_batchAudioStream = cfg.stream;
+        m_batchAudioIs3D = cfg.is3D;
+        m_batchAudioIsBGM = (cfg.group == "BGM");
+        m_batchAudioVolume = cfg.volume;
+        m_batchAudioPitch = cfg.pitch;
+        m_batchAudioMinDistance = cfg.minDistance;
+        m_batchAudioMaxDistance = cfg.maxDistance;
+        m_batchAudioFalloffStart = cfg.falloffStart;
+        m_batchAudioFalloffAmount = cfg.falloffAmount;
+        m_batchAudioFilterInStart = cfg.filterInStart;
+        m_batchAudioFilterPeak = cfg.filterPeak;
+        m_batchAudioFilterReleaseEnd = cfg.filterReleaseEnd;
+    };
+    if (ImGui::CollapsingHeader("Music Contexts", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Reload Contexts##musicctx")) {
+            reloadMusicContexts();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+ Add Context##musicctx")) {
+            s_musicContextEntries.push_back({});
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Save Contexts##musicctx")) {
+            std::vector<Runtime::MusicContextConfig> contexts;
+            contexts.reserve(s_musicContextEntries.size());
+            for (const auto& entry : s_musicContextEntries) {
+                Runtime::MusicContextConfig ctx;
+                ctx.id = entry.id;
+
+                const std::string rawTracks = entry.tracks;
+                size_t start = 0;
+                while (start < rawTracks.size()) {
+                    const size_t end = rawTracks.find_first_of(",\n\r", start);
+                    std::string token = rawTracks.substr(
+                        start, end == std::string::npos ? std::string::npos : end - start);
+                    const size_t first = token.find_first_not_of(" \t");
+                    const size_t last = token.find_last_not_of(" \t");
+                    if (first != std::string::npos && last != std::string::npos) {
+                        std::string layerText = token.substr(first, last - first + 1);
+                        float layerVolume = 1.0f;
+                        const size_t volumeSep = layerText.find(':');
+                        if (volumeSep != std::string::npos) {
+                            const std::string volumeText = layerText.substr(volumeSep + 1);
+                            layerText = layerText.substr(0, volumeSep);
+                            try {
+                                layerVolume = std::clamp(std::stof(volumeText), 0.0f, 1.0f);
+                            } catch (...) {
+                                layerVolume = 1.0f;
+                            }
+                        }
+                        ctx.layers.push_back({layerText, layerVolume});
+                    }
+                    if (end == std::string::npos) {
+                        break;
+                    }
+                    start = end + 1;
+                }
+
+                ctx.fadeOutSeconds = std::max(0.0f, entry.fadeOutSeconds);
+                if (!ctx.id.empty()) {
+                    contexts.push_back(std::move(ctx));
+                }
+            }
+            if (Runtime::LevelMusicManager::SetContexts(contexts)) {
+                reloadMusicContexts();
+            }
+        }
+
+        for (size_t i = 0; i < s_musicContextEntries.size(); ++i) {
+            auto& entry = s_musicContextEntries[i];
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::InputText("Context ID", entry.id, sizeof(entry.id));
+            ImGui::InputText("Track Layers", entry.tracks, sizeof(entry.tracks));
+            ImGui::TextDisabled("Format: track_id:volume, track_id:volume");
+            ImGui::SliderFloat("Fade Out (s)", &entry.fadeOutSeconds, 0.0f, 3.0f);
+            if (ImGui::Button("Remove##musicctx")) {
+                s_musicContextEntries.erase(s_musicContextEntries.begin() + static_cast<std::ptrdiff_t>(i));
+                ImGui::PopID();
+                break;
+            }
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+    }
     if (ImGui::Button("Import Audio")) {
         m_newAudioNameBuf[0] = '\0'; m_newAudioPathBuf[0] = '\0';
         m_newAudioLoop = false; m_newAudioStream = false; m_newAudioIs3D = false;
@@ -4264,7 +4551,192 @@ void EditorState::renderAudioBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Rename modal ──────────────────────────────────────────────────────────
+    if (!m_editingAudio.empty()) ImGui::OpenPopup("##EditAudio");
+    if (ImGui::BeginPopupModal("##EditAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Edit Audio: %s", m_editingAudio.c_str());
+        ImGui::Separator();
+        ImGui::InputText("Name##editaudio", m_editAudioNameBuf, sizeof(m_editAudioNameBuf));
+        ImGui::InputText("Path##editaudio", m_editAudioPathBuf, sizeof(m_editAudioPathBuf));
+        ImGui::Checkbox("Loop##editaudio", &m_editAudioLoop); ImGui::SameLine();
+        ImGui::Checkbox("Stream##editaudio", &m_editAudioStream); ImGui::SameLine();
+        ImGui::Checkbox("3D##editaudio", &m_editAudioIs3D);
+        ImGui::Checkbox("BGM##editaudio", &m_editAudioIsBGM);
+        ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Pitch##editaudio", &m_editAudioPitch, 0.1f, 3.0f);
+        if (m_editAudioIs3D) {
+            ImGui::SeparatorText("3D Tuning");
+            ImGui::SliderFloat("Min Distance##editaudio", &m_editAudioMinDistance, 1.0f, 256.0f);
+            ImGui::SliderFloat("Max Distance##editaudio", &m_editAudioMaxDistance, 8.0f, 1024.0f);
+            ImGui::SliderFloat("Falloff Start##editaudio", &m_editAudioFalloffStart, 0.0f, 512.0f);
+            ImGui::SliderFloat("Falloff Amount##editaudio", &m_editAudioFalloffAmount, 0.0f, 0.98f);
+            ImGui::SliderFloat("Filter In Start##editaudio", &m_editAudioFilterInStart, 0.0f, 512.0f);
+            ImGui::SliderFloat("Filter Peak##editaudio", &m_editAudioFilterPeak, 1.0f, 768.0f);
+            ImGui::SliderFloat("Filter Release End##editaudio", &m_editAudioFilterReleaseEnd, 2.0f, 1024.0f);
+        }
+
+        if (ImGui::Button("Save", ImVec2(100, 0))) {
+            Assets::SoundConfig cfg;
+            cfg.name = m_editAudioNameBuf;
+            cfg.path = m_editAudioPathBuf;
+            cfg.loop = m_editAudioLoop;
+            cfg.stream = m_editAudioStream;
+            cfg.is3D = m_editAudioIs3D;
+            cfg.volume = m_editAudioVolume;
+            cfg.pitch = m_editAudioPitch;
+            cfg.group = m_editAudioIsBGM ? "BGM" : "SFX";
+            cfg.minDistance = m_editAudioMinDistance;
+            cfg.maxDistance = std::max(m_editAudioMinDistance + 1.0f, m_editAudioMaxDistance);
+            cfg.falloffStart = std::clamp(m_editAudioFalloffStart, 0.0f, cfg.maxDistance - 1.0f);
+            cfg.falloffAmount = std::clamp(m_editAudioFalloffAmount, 0.0f, 0.98f);
+            cfg.filterInStart = std::clamp(m_editAudioFilterInStart, 0.0f, cfg.maxDistance - 1.0f);
+            cfg.filterPeak = std::clamp(m_editAudioFilterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
+            cfg.filterReleaseEnd = std::clamp(m_editAudioFilterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
+            if (Assets::SoundManager::UpdateConfig(m_editingAudio, cfg, kSoundConfig)) {
+                m_editingAudio.clear();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            m_editingAudio.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (m_openBatchEditAudioPopup && !m_selectedAudioAssets.empty()) {
+        ImGui::OpenPopup("##BatchEditAudio");
+        m_openBatchEditAudioPopup = false;
+    }
+    if (ImGui::BeginPopupModal("##BatchEditAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Edit %zu audio file(s)", m_selectedAudioAssets.size());
+        ImGui::TextDisabled("Enable only the settings you want to apply to the whole selection.");
+        ImGui::Separator();
+
+        ImGui::Checkbox("Apply Loop##batch", &m_batchApplyLoop);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_batchApplyLoop);
+        ImGui::Checkbox("Loop##batchvalue", &m_batchAudioLoop);
+        ImGui::EndDisabled();
+
+        ImGui::Checkbox("Apply Stream##batch", &m_batchApplyStream);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_batchApplyStream);
+        ImGui::Checkbox("Stream##batchvalue", &m_batchAudioStream);
+        ImGui::EndDisabled();
+
+        ImGui::Checkbox("Apply 3D##batch", &m_batchApplyIs3D);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_batchApplyIs3D);
+        ImGui::Checkbox("3D##batchvalue", &m_batchAudioIs3D);
+        ImGui::EndDisabled();
+
+        ImGui::Checkbox("Apply Group##batch", &m_batchApplyGroup);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_batchApplyGroup);
+        ImGui::Checkbox("BGM Group##batchvalue", &m_batchAudioIsBGM);
+        ImGui::EndDisabled();
+
+        ImGui::Checkbox("Apply Volume##batch", &m_batchApplyVolume);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_batchApplyVolume);
+        ImGui::SliderFloat("Volume##batchvalue", &m_batchAudioVolume, 0.0f, 1.0f);
+        ImGui::EndDisabled();
+
+        ImGui::Checkbox("Apply Pitch##batch", &m_batchApplyPitch);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_batchApplyPitch);
+        ImGui::SliderFloat("Pitch##batchvalue", &m_batchAudioPitch, 0.1f, 3.0f);
+        ImGui::EndDisabled();
+
+        const bool show3DTuning = m_batchAudioIs3D || m_batchApplyMinDistance || m_batchApplyMaxDistance ||
+                                  m_batchApplyFalloffStart || m_batchApplyFalloffAmount ||
+                                  m_batchApplyFilterInStart || m_batchApplyFilterPeak ||
+                                  m_batchApplyFilterReleaseEnd;
+        if (show3DTuning) {
+            ImGui::SeparatorText("3D Tuning");
+
+            ImGui::Checkbox("Apply Min Distance##batch", &m_batchApplyMinDistance);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyMinDistance);
+            ImGui::SliderFloat("Min Distance##batchvalue", &m_batchAudioMinDistance, 1.0f, 256.0f);
+            ImGui::EndDisabled();
+
+            ImGui::Checkbox("Apply Max Distance##batch", &m_batchApplyMaxDistance);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyMaxDistance);
+            ImGui::SliderFloat("Max Distance##batchvalue", &m_batchAudioMaxDistance, 8.0f, 1024.0f);
+            ImGui::EndDisabled();
+
+            ImGui::Checkbox("Apply Falloff Start##batch", &m_batchApplyFalloffStart);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyFalloffStart);
+            ImGui::SliderFloat("Falloff Start##batchvalue", &m_batchAudioFalloffStart, 0.0f, 512.0f);
+            ImGui::EndDisabled();
+
+            ImGui::Checkbox("Apply Falloff Amount##batch", &m_batchApplyFalloffAmount);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyFalloffAmount);
+            ImGui::SliderFloat("Falloff Amount##batchvalue", &m_batchAudioFalloffAmount, 0.0f, 0.98f);
+            ImGui::EndDisabled();
+
+            ImGui::Checkbox("Apply Filter In Start##batch", &m_batchApplyFilterInStart);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyFilterInStart);
+            ImGui::SliderFloat("Filter In Start##batchvalue", &m_batchAudioFilterInStart, 0.0f, 512.0f);
+            ImGui::EndDisabled();
+
+            ImGui::Checkbox("Apply Filter Peak##batch", &m_batchApplyFilterPeak);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyFilterPeak);
+            ImGui::SliderFloat("Filter Peak##batchvalue", &m_batchAudioFilterPeak, 1.0f, 768.0f);
+            ImGui::EndDisabled();
+
+            ImGui::Checkbox("Apply Filter Release End##batch", &m_batchApplyFilterReleaseEnd);
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!m_batchApplyFilterReleaseEnd);
+            ImGui::SliderFloat("Filter Release End##batchvalue", &m_batchAudioFilterReleaseEnd, 2.0f, 1024.0f);
+            ImGui::EndDisabled();
+        }
+
+        if (ImGui::Button("Apply To Selected", ImVec2(140, 0))) {
+            for (const auto& soundName : m_selectedAudioAssets) {
+                Assets::SoundConfig cfg;
+                if (!Assets::SoundManager::GetConfig(soundName, cfg, kSoundConfig)) {
+                    continue;
+                }
+
+                if (m_batchApplyLoop) cfg.loop = m_batchAudioLoop;
+                if (m_batchApplyStream) cfg.stream = m_batchAudioStream;
+                if (m_batchApplyIs3D) cfg.is3D = m_batchAudioIs3D;
+                if (m_batchApplyGroup) cfg.group = m_batchAudioIsBGM ? "BGM" : "SFX";
+                if (m_batchApplyVolume) cfg.volume = m_batchAudioVolume;
+                if (m_batchApplyPitch) cfg.pitch = m_batchAudioPitch;
+                if (m_batchApplyMinDistance) cfg.minDistance = m_batchAudioMinDistance;
+                if (m_batchApplyMaxDistance) cfg.maxDistance = m_batchAudioMaxDistance;
+                if (m_batchApplyFalloffStart) cfg.falloffStart = m_batchAudioFalloffStart;
+                if (m_batchApplyFalloffAmount) cfg.falloffAmount = m_batchAudioFalloffAmount;
+                if (m_batchApplyFilterInStart) cfg.filterInStart = m_batchAudioFilterInStart;
+                if (m_batchApplyFilterPeak) cfg.filterPeak = m_batchAudioFilterPeak;
+                if (m_batchApplyFilterReleaseEnd) cfg.filterReleaseEnd = m_batchAudioFilterReleaseEnd;
+
+                cfg.maxDistance = std::max(cfg.minDistance + 1.0f, cfg.maxDistance);
+                cfg.falloffStart = std::clamp(cfg.falloffStart, 0.0f, cfg.maxDistance - 1.0f);
+                cfg.falloffAmount = std::clamp(cfg.falloffAmount, 0.0f, 0.98f);
+                cfg.filterInStart = std::clamp(cfg.filterInStart, 0.0f, cfg.maxDistance - 1.0f);
+                cfg.filterPeak = std::clamp(cfg.filterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
+                cfg.filterReleaseEnd = std::clamp(cfg.filterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
+                Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig);
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel##batchaudio", ImVec2(100, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
     if (!m_renamingAudioPath.empty()) ImGui::OpenPopup("##RenameAudio");
     if (ImGui::BeginPopupModal("##RenameAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         fs::path renamePath(m_renamingAudioPath);
@@ -4275,7 +4747,12 @@ void EditorState::renderAudioBrowser() {
             if (m_renameAudioBuf[0]) {
                 fs::path dst = renamePath.parent_path() / m_renameAudioBuf;
                 if (!isAudioDir) dst.replace_extension(renamePath.extension());
+                const std::string soundName = isAudioDir
+                    ? std::string{}
+                    : Assets::SoundManager::GetNameForPath(renamePath.generic_string(), kSoundConfig);
                 fs::rename(renamePath, dst, ec);
+                if (!isAudioDir && ec.value() == 0 && !soundName.empty())
+                    Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
             }
             m_renamingAudioPath.clear();
             ImGui::CloseCurrentPopup();
@@ -4285,7 +4762,6 @@ void EditorState::renderAudioBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Delete folder modal ───────────────────────────────────────────────────
     if (!m_deletingAudioPath.empty()) ImGui::OpenPopup("##DeleteAudioDir");
     if (ImGui::BeginPopupModal("##DeleteAudioDir", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete folder '%s' and all its contents?", fs::path(m_deletingAudioPath).filename().string().c_str());
@@ -4305,7 +4781,6 @@ void EditorState::renderAudioBrowser() {
         ImGui::EndPopup();
     }
 
-    // ── Move to folder modal ──────────────────────────────────────────────────
     if (!m_movingAudioPath.empty()) ImGui::OpenPopup("##MoveAudio");
     if (ImGui::BeginPopupModal("##MoveAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Move '%s' to:", fs::path(m_movingAudioPath).filename().string().c_str());
@@ -4319,7 +4794,13 @@ void EditorState::renderAudioBrowser() {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
                 fs::path destFile = destDir / fs::path(m_movingAudioPath).filename();
-                if (!fs::exists(destFile)) fs::rename(fs::path(m_movingAudioPath), destFile, ec);
+                const std::string soundName =
+                    Assets::SoundManager::GetNameForPath(fs::path(m_movingAudioPath).generic_string(), kSoundConfig);
+                if (!fs::exists(destFile)) {
+                    fs::rename(fs::path(m_movingAudioPath), destFile, ec);
+                    if (ec.value() == 0 && !soundName.empty())
+                        Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
+                }
                 m_movingAudioPath.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -4331,7 +4812,20 @@ void EditorState::renderAudioBrowser() {
 
     ImGui::Separator();
 
-    // ── Grid ────────────────────────────────────────────────────────────────
+    if (!m_selectedAudioAssets.empty()) {
+        ImGui::Text("Selected: %zu", m_selectedAudioAssets.size());
+        ImGui::SameLine();
+        if (ImGui::Button("Edit Selected Settings##audio")) {
+            loadBatchAudioFromSelection();
+            m_openBatchEditAudioPopup = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear Selection##audio")) {
+            m_selectedAudioAssets.clear();
+        }
+        ImGui::Separator();
+    }
+
     std::vector<fs::path> items;
     for (const auto& entry : fs::directory_iterator(m_currentAudioDir, ec)) {
         if (entry.is_directory()) {
@@ -4359,6 +4853,10 @@ void EditorState::renderAudioBrowser() {
             std::string fname = path.filename().string();
             std::string stem = path.stem().string();
             bool isDir = fs::is_directory(path);
+            std::string soundName = isDir
+                ? std::string{}
+                : Assets::SoundManager::GetNameForPath(path.generic_string(), kSoundConfig);
+            const std::string& soundKey = soundName.empty() ? stem : soundName;
             ImGui::PushID(fname.c_str());
 
             float colW = ImGui::GetContentRegionAvail().x;
@@ -4370,17 +4868,26 @@ void EditorState::renderAudioBrowser() {
                 ImGui::Button("##icon", ImVec2(kIconW, kIconH));
                 ImGui::PopStyleColor();
                 DrawFolderIcon();
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                     m_currentAudioDir = path.generic_string();
+                    m_selectedAudioAssets.clear();
+                }
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("AUDIO_ASSET_FILE")) {
                         fs::path src((const char*)payloadFile->Data);
-                        fs::rename(src, path / src.filename(), ec);
+                        const std::string movedName = Assets::SoundManager::GetNameForPath(src.generic_string(), kSoundConfig);
+                        fs::path dest = path / src.filename();
+                        fs::rename(src, dest, ec);
+                        if (ec.value() == 0 && !movedName.empty())
+                            Assets::SoundManager::UpdatePathInConfig(movedName, dest.generic_string(), kSoundConfig);
                     } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
-                        std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data);
+                        std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data, kSoundConfig);
                         if (!srcPath.empty()) {
                             fs::path src(srcPath);
-                            fs::rename(src, path / src.filename(), ec);
+                            fs::path dest = path / src.filename();
+                            fs::rename(src, dest, ec);
+                            if (ec.value() == 0)
+                                Assets::SoundManager::UpdatePathInConfig((const char*)payloadAsset->Data, dest.generic_string(), kSoundConfig);
                         }
                     }
                     ImGui::EndDragDropTarget();
@@ -4395,24 +4902,69 @@ void EditorState::renderAudioBrowser() {
                     ImGui::EndPopup();
                 }
             } else {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.25f, 0.18f, 1.0f));
+                const bool isSelected = std::find(m_selectedAudioAssets.begin(), m_selectedAudioAssets.end(), soundKey) != m_selectedAudioAssets.end();
+                ImVec4 buttonColor = isSelected
+                    ? ImVec4(0.22f, 0.45f, 0.72f, 1.0f)
+                    : ImVec4(0.12f, 0.25f, 0.18f, 1.0f);
+                ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
                 ImGui::Button("##icon", ImVec2(kIconW, kIconH));
                 ImGui::PopStyleColor();
                 DrawAudioIcon();
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", stem.c_str());
 
+                if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                    const bool ctrlHeld = ImGui::GetIO().KeyCtrl;
+                    if (ctrlHeld) {
+                        auto selectedIt = std::find(m_selectedAudioAssets.begin(), m_selectedAudioAssets.end(), soundKey);
+                        if (selectedIt != m_selectedAudioAssets.end()) {
+                            m_selectedAudioAssets.erase(selectedIt);
+                        } else {
+                            m_selectedAudioAssets.push_back(soundKey);
+                        }
+                    } else {
+                        m_selectedAudioAssets.clear();
+                        m_selectedAudioAssets.push_back(soundKey);
+                    }
+                }
+
                 if (ImGui::BeginDragDropSource()) {
                     std::string pstr = path.generic_string();
                     ImGui::SetDragDropPayload("AUDIO_ASSET_FILE", pstr.c_str(), pstr.size() + 1);
-                    ImGui::SetDragDropPayload("AUDIO_ASSET", stem.c_str(), stem.size() + 1);
-                    ImGui::Text("%s", stem.c_str());
+                    ImGui::SetDragDropPayload("AUDIO_ASSET", soundKey.c_str(), soundKey.size() + 1);
+                    ImGui::Text("%s", soundKey.c_str());
                     ImGui::EndDragDropSource();
                 }
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) Assets::SoundManager::Play(stem);
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) Assets::SoundManager::Play(soundKey);
 
                 if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("Play")) Assets::SoundManager::Play(stem);
-                    if (ImGui::MenuItem("Stop")) Assets::SoundManager::Stop(stem);
+                    if (ImGui::MenuItem("Play")) Assets::SoundManager::Play(soundKey);
+                    if (ImGui::MenuItem("Stop")) Assets::SoundManager::Stop(soundKey);
+                    if (std::find(m_selectedAudioAssets.begin(), m_selectedAudioAssets.end(), soundKey) != m_selectedAudioAssets.end() &&
+                        m_selectedAudioAssets.size() > 1 && ImGui::MenuItem("Edit Selected Settings")) {
+                        loadBatchAudioFromSelection();
+                        m_openBatchEditAudioPopup = true;
+                    }
+                    if (ImGui::MenuItem("Edit Settings")) {
+                        Assets::SoundConfig cfg;
+                        if (Assets::SoundManager::GetConfig(soundKey, cfg, kSoundConfig)) {
+                            m_editingAudio = soundKey;
+                            strncpy_s(m_editAudioNameBuf, cfg.name.c_str(), sizeof(m_editAudioNameBuf) - 1);
+                            strncpy_s(m_editAudioPathBuf, cfg.path.c_str(), sizeof(m_editAudioPathBuf) - 1);
+                            m_editAudioLoop = cfg.loop;
+                            m_editAudioStream = cfg.stream;
+                            m_editAudioIs3D = cfg.is3D;
+                            m_editAudioVolume = cfg.volume;
+                            m_editAudioPitch = cfg.pitch;
+                            m_editAudioIsBGM = (cfg.group == "BGM");
+                            m_editAudioMinDistance = cfg.minDistance;
+                            m_editAudioMaxDistance = cfg.maxDistance;
+                            m_editAudioFalloffStart = cfg.falloffStart;
+                            m_editAudioFalloffAmount = cfg.falloffAmount;
+                            m_editAudioFilterInStart = cfg.filterInStart;
+                            m_editAudioFilterPeak = cfg.filterPeak;
+                            m_editAudioFilterReleaseEnd = cfg.filterReleaseEnd;
+                        }
+                    }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Rename")) {
                         m_renamingAudioPath = path.string();
@@ -4428,7 +4980,7 @@ void EditorState::renderAudioBrowser() {
                         fs::copy_file(src, dst, ec);
                     }
                     ImGui::Separator();
-                    if (ImGui::MenuItem("Delete")) m_deletingAudio = stem;
+                    if (ImGui::MenuItem("Delete")) m_deletingAudio = soundKey;
                     ImGui::EndPopup();
                 }
             }
@@ -4449,6 +5001,7 @@ void EditorState::loadScene(const std::string& path) {
     std::cout << "[EditorState] Loading: " << path << "\n";
     if (!m_scene.LoadFromFile(path))
         std::cerr << "[EditorState] Failed to load: " << path << "\n";
+    m_sceneMetaBuffersDirty = true;
     m_undoStack.clear();
     m_redoStack.clear();
     m_selectedEntity = {0, 0};
@@ -4532,7 +5085,7 @@ void EditorState::loadScene(const std::string& path) {
 
 void EditorState::saveScene() {
     if (m_sceneFilePath.empty()) {
-        std::cerr << "[EditorState] No file path — cannot save.\n";
+        std::cerr << "[EditorState] No file path ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â cannot save.\n";
         return;
     }
     namespace fs = std::filesystem;
@@ -5368,3 +5921,33 @@ void EditorState::checkAssetHotReload() {
 }
 
 } // namespace Runtime
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

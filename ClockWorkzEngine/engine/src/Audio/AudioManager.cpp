@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
@@ -13,15 +13,18 @@
 pausing
                                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content � 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 
 #include "Audio/AudioManager.hpp"
 #include "Assets/SoundManager.hpp"
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <fmod.hpp>
+#include <fmod_dsp.h>
 #include <fmod_errors.h>
 #include <iostream>
 #include <objbase.h> // CoInitializeEx / CoUninitialize
@@ -92,7 +95,7 @@ bool AudioManager::init(int maxChannels) {
   // FMOD requires COM to be initialised on the calling thread before
   // System_Create. COINIT_APARTMENTTHREADED is the mode FMOD recommends.
   // We track the result so we only call CoUninitialize() if WE initialised it
-  // (S_FALSE means COM was already initialised — we still own a reference).
+  // (S_FALSE means COM was already initialised � we still own a reference).
   HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
   m_comInitialized = SUCCEEDED(hr);
 
@@ -273,6 +276,96 @@ int AudioManager::play(const std::string &id, Group g, float volume,
   return 0;
 }
 
+int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
+                         float volume, bool paused) {
+  int handle = play(id, g, volume, true);
+  if (handle <= 0)
+    return handle;
+
+  auto it = m_channels.find(handle);
+  if (it == m_channels.end() || !it->second.ch)
+    return handle;
+
+  auto clip = Assets::SoundManager::Get(id);
+  FMOD::Sound *sound = clip ? clip->GetRaw() : nullptr;
+  FMOD_MODE mode = 0;
+  if (sound && sound->getMode(&mode) == FMOD_OK && (mode & FMOD_3D)) {
+    FMOD_VECTOR p{pos.x, pos.y, pos.z};
+    FMOD_VECTOR v{0.0f, 0.0f, 0.0f};
+    it->second.ch->set3DAttributes(&p, &v);
+
+    SoundProfile profile{};
+    auto profileIt = m_soundProfiles.find(id);
+    if (profileIt != m_soundProfiles.end()) {
+      profile = profileIt->second;
+    }
+
+    const auto clampf = [](float value, float minValue, float maxValue) {
+      return std::max(minValue, std::min(value, maxValue));
+    };
+
+    const float minDistance = std::max(1.0f, profile.minDistance);
+    const float maxDistance = std::max(minDistance + 1.0f, profile.maxDistance);
+    const float falloffStart = clampf(profile.falloffStart, 0.0f, maxDistance - 1.0f);
+    const float falloffAmount = clampf(profile.falloffAmount, 0.0f, 0.98f);
+    const float filterInStart = clampf(profile.filterInStart, 0.0f, maxDistance - 1.0f);
+    const float filterPeak = clampf(profile.filterPeak, filterInStart + 1.0f, maxDistance - 0.5f);
+    const float filterReleaseEnd = clampf(profile.filterReleaseEnd, filterPeak + 1.0f, maxDistance);
+
+    it->second.ch->set3DMinMaxDistance(minDistance, maxDistance);
+
+    const vec3 delta = vec3{pos.x - m_listenerPos.x, pos.y - m_listenerPos.y,
+                            pos.z - m_listenerPos.z};
+    const float distance =
+        std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+
+    float distanceT = 0.0f;
+    if (distance > falloffStart) {
+      distanceT = (distance - falloffStart) / (maxDistance - falloffStart);
+      distanceT = clampf(distanceT, 0.0f, 1.0f);
+    }
+
+    const float shapedDistanceT = std::pow(distanceT, 0.6f);
+    const float shapedVolume = volume * (1.0f - (falloffAmount * shapedDistanceT));
+    it->second.ch->setVolume(std::max(0.0f, shapedVolume));
+
+    float filterT = 0.0f;
+    if (distance > filterInStart && distance < filterReleaseEnd) {
+      if (distance <= filterPeak) {
+        filterT = (distance - filterInStart) / (filterPeak - filterInStart);
+      } else {
+        filterT = 1.0f - ((distance - filterPeak) / (filterReleaseEnd - filterPeak));
+      }
+      filterT = clampf(filterT, 0.0f, 1.0f);
+    }
+
+    if (filterT > 0.01f && m_system) {
+      FMOD::DSP *lowpass = nullptr;
+      if (m_system->createDSPByType(FMOD_DSP_TYPE_LOWPASS, &lowpass) == FMOD_OK &&
+          lowpass) {
+        const float cutoff = 18000.0f - (16200.0f * filterT);
+        lowpass->setParameterFloat(FMOD_DSP_LOWPASS_CUTOFF,
+                                   std::max(650.0f, cutoff));
+        lowpass->setParameterFloat(FMOD_DSP_LOWPASS_RESONANCE, 1.02f);
+        it->second.ch->addDSP(0, lowpass);
+        lowpass->release();
+      }
+
+      FMOD::DSP *highpass = nullptr;
+      if (m_system->createDSPByType(FMOD_DSP_TYPE_HIGHPASS, &highpass) == FMOD_OK &&
+          highpass) {
+        const float cutoff = 20.0f + (140.0f * filterT);
+        highpass->setParameterFloat(FMOD_DSP_HIGHPASS_CUTOFF, cutoff);
+        highpass->setParameterFloat(FMOD_DSP_HIGHPASS_RESONANCE, 1.0f);
+        it->second.ch->addDSP(1, highpass);
+        highpass->release();
+      }
+    }
+  }
+
+  it->second.ch->setPaused(paused);
+  return handle;
+}
 void AudioManager::registerSoundProfile(const std::string &name,
                                         const SoundProfile &profile) {
   m_soundProfiles[name] = profile;
@@ -356,6 +449,24 @@ void AudioManager::playOneShot(const std::string &id, Group g, float volume) {
   (void)h;
 }
 
+void AudioManager::playOneShotLocal(const std::string &id, Group g,
+                                    float volume) {
+  int h = play(id, g, volume, false);
+  if (h <= 0)
+    return;
+
+  auto it = m_channels.find(h);
+  if (it == m_channels.end() || !it->second.ch)
+    return;
+
+  it->second.ch->setMode(FMOD_2D);
+}
+
+void AudioManager::playOneShotAt(const std::string &id, const vec3 &pos,
+                                 Group g, float volume) {
+  int h = playAt(id, pos, g, volume, false);
+  (void)h;
+}
 void AudioManager::stop(int h) {
   auto it = m_channels.find(h);
   if (it == m_channels.end())
@@ -483,3 +594,14 @@ void AudioManager::setListener(const vec3 &pos, const vec3 &vel,
 //     m_channels[handle] = { ch };
 //     return handle;
 // }
+
+
+
+
+
+
+
+
+
+
+

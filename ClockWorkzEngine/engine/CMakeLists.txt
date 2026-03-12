@@ -1,4 +1,4 @@
-# engine/CMakeLists.txt — CWZEngine static library
+# engine/CMakeLists.txt � CWZEngine static library
 #
 # All engine sources live in engine/src/ and engine/include/.
 # Game-specific components (EnemyAI, Battery, etc.) live in each game
@@ -64,6 +64,8 @@ endif()
 
 # --- Include directories ---
 # SYSTEM PUBLIC: game inherits these; SYSTEM suppresses 3rd-party warnings
+# LightsOut include is currently needed because some engine/runtime files and
+# editor UI still reference project-specific components.
 target_include_directories(CWZEngine
   SYSTEM PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"

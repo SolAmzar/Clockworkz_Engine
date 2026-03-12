@@ -3,7 +3,7 @@
 \file           main_game.cpp
 \project        Lights Out
 \author(s)      [Lebon]
-\brief          Entry point for LightsOut.exe — game executable.
+\brief          Entry point for LightsOut.exe ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â game executable.
                 Boots straight to MenuState. All game logic lives in Lua scripts.
                 No C++ game systems needed.
 
@@ -27,9 +27,13 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Systems/LightRenderSystem.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
+#include "Components/FootstepAudio.hpp"
+#include "Audio/FootstepAudioRuntime.hpp"
 #include "Systems/CollisionSystem.hpp"
 #include "Components/Tag.hpp"
 #include "States/MenuState.hpp"
+#include "GlobalAudioSettings.hpp"
+#include "LevelMusicManager.hpp"
 #include <memory>
 #include <iostream>
 
@@ -39,17 +43,18 @@ int main()
 
     Core::Engine engine;
 
-    // Register components that have no Lua equivalent yet (ParticleEmitter, SurfaceComponent).
+    // Register components that have no Lua equivalent yet (ParticleEmitter, SurfaceComponent, FootstepAudio).
     // All other game components (Battery, Door, Fragment, etc.) live purely in Lua scripts.
     engine.setComponentRegistrar([](ECS::World& world) {
         world.registerComponent<Components::ParticleEmitter>();
         world.registerComponent<Gameplay::SurfaceComponent>();
+        world.registerComponent<Components::FootstepAudio>();
     });
 
     // Extend EntityRef with game-component accessors backed by Lua script properties.
     engine.setLuaExtensionRegistrar(Scripting::RegisterGameBindings);
 
-    // Serializer extensions for components that still live in C++ (ParticleEmitter, SurfaceComponent).
+    // Serializer extensions for components that still live in C++.
     Runtime::SceneSerializer::setExtensions(
         [](ECS::Entity entity, ECS::World& world, void* rawComponents) {
             using json = nlohmann::json;
@@ -71,6 +76,21 @@ int main()
             }
             if (auto* sc = world.getComponent<Gameplay::SurfaceComponent>(entity))
                 comps["surface"] = {{"type", static_cast<int>(sc->type())}};
+            if (auto* fa = world.getComponent<Components::FootstepAudio>(entity)) {
+                comps["footstepAudio"] = {
+                    {"interval", fa->interval},
+                    {"sprintIntervalScale", fa->sprintIntervalScale},
+                    {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
+                    {"minSpeed", fa->minSpeed},
+                    {"resetDelay", fa->resetDelay},
+                    {"volume", fa->volume},
+                    {"variationCount", fa->variationCount},
+                    {"useSurfaceSounds", fa->useSurfaceSounds},
+                    {"soundPrefix", fa->soundPrefix},
+                    {"concretePrefix", fa->concretePrefix},
+                    {"tilePrefix", fa->tilePrefix},
+                    {"woodPrefix", fa->woodPrefix}};
+            }
         },
         [](ECS::Entity entity, ECS::World& world, const void* rawComponents) {
             using json = nlohmann::json;
@@ -104,6 +124,23 @@ int main()
                     world.addComponent(entity, col);
                 }
             }
+            if (c.contains("footstepAudio")) {
+                const auto& fac = c["footstepAudio"];
+                Components::FootstepAudio fa;
+                fa.interval = fac.value("interval", fa.interval);
+                fa.sprintIntervalScale = fac.value("sprintIntervalScale", fa.sprintIntervalScale);
+                fa.sprintSpeedThreshold = fac.value("sprintSpeedThreshold", fa.sprintSpeedThreshold);
+                fa.minSpeed = fac.value("minSpeed", fa.minSpeed);
+                fa.resetDelay = fac.value("resetDelay", fa.resetDelay);
+                fa.volume = fac.value("volume", fa.volume);
+                fa.variationCount = fac.value("variationCount", fa.variationCount);
+                fa.useSurfaceSounds = fac.value("useSurfaceSounds", fa.useSurfaceSounds);
+                fa.soundPrefix = fac.value("soundPrefix", fa.soundPrefix);
+                fa.concretePrefix = fac.value("concretePrefix", fa.concretePrefix);
+                fa.tilePrefix = fac.value("tilePrefix", fa.tilePrefix);
+                fa.woodPrefix = fac.value("woodPrefix", fa.woodPrefix);
+                world.addComponent(entity, fa);
+            }
         }
     );
 
@@ -111,7 +148,7 @@ int main()
     // Player/AI/portal/door logic all live in Lua scripts now.
     engine.setSceneSetup([](Runtime::Scene& scene) {
         scene.setGameCallbacks(
-            // onUpdate: particle emitters
+            // onUpdate: particle emitters + footstep audio
             [](ECS::World& world, double dt, Systems::CollisionSystem&, Runtime::Scene&) {
                 world.each<Components::Transform, Components::ParticleEmitter>(
                     [dt](ECS::Entity, Components::Transform& t, Components::ParticleEmitter& pe) {
@@ -120,6 +157,8 @@ int main()
                             pe.update(pos, dt);
                         }
                     });
+                Audio::UpdateFootstepListener(world);
+                Audio::UpdateFootstepAudio(world, dt);
             },
             // onRender: particles + darkness/light pass
             [](ECS::World& world, Graphics::RenderingManager& renderer) {
@@ -133,11 +172,13 @@ int main()
                 Systems::renderLightPass(world, renderer);
             },
             // onLoad: reset player position to spawn
-            [](ECS::World& world, const vec2& spawn) {
+            [](ECS::World& world, const vec2& spawn, Runtime::Scene& scene) {
                 world.each<Components::Tag, Components::Transform>(
                     [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
                         if (tag.tag == "Player") t.position = spawn;
                     });
+                Runtime::GlobalAudioSettings::Apply(Core::Engine::Get().audio());
+                Runtime::LevelMusicManager::ApplySceneMusic(scene, Core::Engine::Get().audio());
             },
             // onRespawn: restore player state
             [](ECS::World& world, const vec2& spawn) {
@@ -162,3 +203,10 @@ int main()
 
     return engine.Run();
 }
+
+
+
+
+
+
+

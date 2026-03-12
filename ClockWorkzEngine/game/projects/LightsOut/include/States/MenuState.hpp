@@ -57,9 +57,20 @@ public:
 
 private:
   void updateLayout(int w, int h);
-  void handleButton(const Components::UIButton &btn);
-  void collectButtons();     // gathers UIButton entities in scene order
-  void applyHoverColors();   // writes normalColor/hoverColor to SpriteRenderer each frame
+  void handleAction(const std::string &action);
+  void collectButtons();
+  void applyHoverColors();
+  void setOverlayVisible(const std::string &tag, bool visible);
+  void setMenuButtonsVisible(bool visible);
+  void openOptions();
+  void closeOptions();
+  void syncOptionsSlidersInScene();
+  void adjustOptionVolume(float delta);
+  void setOptionVolume(int optionIndex, float value);
+  void updateOptionsOverlayText();
+  void renderOptionsOverlay();
+  void renderVolumeBar(float centerX, float centerY, float width,
+                       float height, float value, bool selected);
 
   GameStateManager         &m_gsm;
   Platform::InputManager   &m_input;
@@ -71,15 +82,24 @@ private:
 
   Runtime::Scene             m_menuScene;
 
-  // Ordered list of button entities (filled from world.each<UIButton> at load)
   std::vector<ECS::Entity>   m_buttonEntities;
-  int                        m_selected{0};       // keyboard-nav index into m_buttonEntities
+  int                        m_selected{0};
+  int                        m_optionsSelected{0};
   bool                       m_showingHowToPlay{false};
+  bool                       m_showingOptions{false};
   bool                       m_debug{false};
 
   int   m_bgmChannel{0};
   bool  m_bgmPaused{false};
-  float m_bgmVol{1.4f};
 };
 
 } // namespace Runtime
+
+
+
+
+
+
+
+
+

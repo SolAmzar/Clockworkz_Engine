@@ -26,12 +26,14 @@ reserved.
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
+#include "GlobalAudioSettings.hpp"
 #include "IMGUI/imgui.h"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Runtime/SceneSerializer.hpp"
 #include "States/MenuState.hpp"
+#include "States/OptionsState.hpp"
 #include "States/SettingsState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -86,6 +88,14 @@ void PauseState::onEnter() {
           updateLayout(e.width, e.height);
       });
 
+  GlobalAudioSettings::Load();
+  m_bgmVolumeBeforePause = GlobalAudioSettings::GetBGMVolume();
+  m_sfxVolumeBeforePause = GlobalAudioSettings::GetSFXVolume();
+  m_bgmVolumeDuringPause = m_bgmVolumeBeforePause * 0.4f;
+  m_sfxVolumeDuringPause = m_sfxVolumeBeforePause * 0.4f;
+  m_audio.setGroupVolume(Audio::Group::BGM, m_bgmVolumeDuringPause);
+  m_audio.setGroupVolume(Audio::Group::SFX, m_sfxVolumeDuringPause);
+
   std::cout << "[PauseState] Ready\n";
 }
 
@@ -103,6 +113,18 @@ void PauseState::collectButtons() {
       [this](ECS::Entity e, Components::UIButton &) {
         m_buttonEntities.push_back(e);
       });
+
+  std::sort(m_buttonEntities.begin(), m_buttonEntities.end(),
+            [this](ECS::Entity lhs, ECS::Entity rhs) {
+              const auto *lhsTransform =
+                  m_pauseScene.GetWorld().getComponent<Components::Transform>(lhs);
+              const auto *rhsTransform =
+                  m_pauseScene.GetWorld().getComponent<Components::Transform>(rhs);
+
+              const float lhsY = lhsTransform ? lhsTransform->position.y : 0.0f;
+              const float rhsY = rhsTransform ? rhsTransform->position.y : 0.0f;
+              return lhsY > rhsY;
+            });
 }
 
 void PauseState::applyHoverColors() {
@@ -125,15 +147,19 @@ void PauseState::handleButton(const Components::UIButton &btn) {
     sol::state &ls = lua.GetState();
     ls["GSM"] = ls.create_table_with(
       "pop", [&]() {
+        GlobalAudioSettings::Apply(m_audio);
         m_gsm.pop();
       },
       "switch_to_menu", [&]() {
+        GlobalAudioSettings::Apply(m_audio);
         m_gsm.switchToAndClear(std::make_shared<MenuState>(
           m_gsm, m_input,
           Core::Engine::Get().window(),
           Core::Engine::Get().audio()));
       },
       "push_settings", [&]() {
+           std::cout << "[PauseState] Opening options...\n";
+          GlobalAudioSettings::Apply(m_audio);
         m_gsm.push(std::make_shared<SettingsState>(
           m_gsm, m_input, Core::Engine::Get().window(), m_audio));
       }
@@ -152,6 +178,7 @@ void PauseState::update(double /*dt*/) {
   // ESC always resumes
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
     std::cout << "[PauseState] ESC pressed - resuming\n";
+    GlobalAudioSettings::Apply(m_audio);
     m_gsm.pop();
     return;
   }
@@ -161,6 +188,7 @@ void PauseState::update(double /*dt*/) {
   bool clicked    = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
   bool mouseHover = false;
 
+  int hoveredIndex = -1;
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
     ECS::Entity e = m_buttonEntities[i];
     auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(e);
@@ -174,13 +202,21 @@ void PauseState::update(double /*dt*/) {
     bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
                     mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
     if (hovered) {
-      mouseHover = true;
-      if (m_selected != i) {
-        m_selected = i;
-        m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
-      }
-      if (clicked) {
-        m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
+      hoveredIndex = i;
+      break;
+    }
+  }
+
+  if (hoveredIndex >= 0) {
+    if (m_selected != hoveredIndex) {
+      m_selected = hoveredIndex;
+      m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
+    }
+    if (clicked) {
+      m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
+      auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(
+          m_buttonEntities[hoveredIndex]);
+      if (btn) {
         handleButton(*btn);
         return;
       }
@@ -188,6 +224,7 @@ void PauseState::update(double /*dt*/) {
   }
 
   // Deselect when mouse is not over any button
+  mouseHover = (hoveredIndex >= 0);
   if (!mouseHover) m_selected = -1;
 
   // Keyboard navigation
@@ -219,10 +256,11 @@ void PauseState::update(double /*dt*/) {
 }
 
 void PauseState::render(Core::Time * /*timer*/) {
-  // NO glClear — framebuffer persistence keeps the frozen game frame visible behind the overlay
+  // NO glClear - framebuffer persistence keeps the frozen game frame visible behind the overlay
   glm::mat4 vp = m_cam->viewProj();
 
   m_pauseScene.RenderAll(*m_renderer, vp);
+  m_pauseScene.RenderText(*m_renderer);
 }
 
 void PauseState::renderImGui(Core::Time * /*timer*/) {
@@ -250,3 +288,8 @@ void PauseState::onExit() {
 }
 
 } // namespace Runtime
+
+
+
+
+

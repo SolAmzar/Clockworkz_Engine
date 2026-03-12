@@ -12,7 +12,11 @@ function onUpdate(self, entity, dt)
         if dist <= self.pickupRadius then
             World.setScriptProp(frag.id, "collected", true)
             self.collectedCount = self.collectedCount + 1
-            Audio.playOneShot("fragment_pickup")
+
+            local pickupSfx = World.getScriptProp(frag.id, "pickupSfx") or ""
+            if pickupSfx ~= "" then
+                Audio.playOneShot(pickupSfx)
+            end
         end
     end)
 end

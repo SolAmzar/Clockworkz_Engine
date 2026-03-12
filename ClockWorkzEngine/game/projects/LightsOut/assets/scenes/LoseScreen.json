@@ -7,6 +7,15 @@
     },
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": false,
+    "hiddenEntities": [],
+    "hierarchyGroups": [],
+    "hierarchyOrder": [
+        "Lose menu",
+        "btn_Restart",
+        "btn_MainMenu",
+        "Title"
+    ],
+    "musicContext": "",
     "objects": [
         {
             "active": true,
@@ -95,6 +104,7 @@
                     "snapToGrid": false
                 },
                 "uiButton": {
+                    "action": "",
                     "hoverColor": {
                         "b": 0.0,
                         "g": 0.800000011920929,
@@ -163,6 +173,7 @@
                     "snapToGrid": false
                 },
                 "uiButton": {
+                    "action": "",
                     "hoverColor": {
                         "b": 0.0,
                         "g": 0.800000011920929,

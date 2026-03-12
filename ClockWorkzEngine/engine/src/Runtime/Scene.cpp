@@ -124,9 +124,7 @@ bool Scene::isLayerEnabled(int layer) const {
 }
 
 void Scene::Clear() {
-  // Stop BGM when clearing scene
-  std::cout << "[Scene] Clearing Scene... Stopping BGM Group.\n";
-  Core::Engine::Get().audio().stopGroup(Audio::Group::BGM);
+  std::cout << "[Scene] Clearing Scene...\n";
 
   m_scriptSystem.clear();
 
@@ -143,10 +141,14 @@ void Scene::Clear() {
   m_darknessIntensity = 0.8f;
   m_darknessColor = glm::vec3(0.7f, 0.7f, 0.9f);
   m_bgm.clear();
+  m_musicContext.clear();
 }
 
 bool Scene::LoadFromFile(const std::string &path) {
   Clear();
+  // Re-wire load-level callback cleared by Clear() so scripts can still call
+  // World.loadLevel() after a level transition (e.g. player respawn in level 2).
+  m_scriptSystem.setLoadLevelFn([this](const std::string& name) { SetPendingLevel(name); });
   if (std::filesystem::exists(path)) {
     if (SceneSerializer::Deserialize(*this, path)) {
       m_currentLevelPath = path;
@@ -155,7 +157,7 @@ bool Scene::LoadFromFile(const std::string &path) {
                 << m_spawnPoint.x << ", " << m_spawnPoint.y << ")\n";
 
       // Let game-side code reset game entities (e.g. player spawn point)
-      if (m_onLoad) m_onLoad(m_world, m_spawnPoint);
+      if (m_onLoad) m_onLoad(m_world, m_spawnPoint, *this);
 
       return true;
     } else {
@@ -276,3 +278,4 @@ void Scene::RespawnPlayer() {
 }
 
 } // namespace Runtime
+
