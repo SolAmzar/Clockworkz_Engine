@@ -1,9 +1,8 @@
-# engine/CMakeLists.txt — CWZEngine static library
+# engine/CMakeLists.txt ï¿½ CWZEngine static library
 #
 # All engine sources live in engine/src/ and engine/include/.
-# The top-level include/ is still on the include path because a small number of
-# engine files (Scene.cpp, SceneSerializer.cpp, EntityRef.cpp) reference game-specific
-# component headers that have not yet been fully decoupled.
+# Game-specific components (EnemyAI, Battery, etc.) live in each game
+# project's own include/ folder and are NOT part of the engine library.
 
 # --- Sources & Headers ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
@@ -13,8 +12,6 @@ file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
 file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
-  "${CMAKE_SOURCE_DIR}/include/*.h"
-  "${CMAKE_SOURCE_DIR}/include/*.hpp"
 )
 
 # Ensure LuaBindings.cpp is included (workaround if glob didn't pick it up due to casing/path issues)
@@ -26,6 +23,14 @@ endif()
 
 # --- Static library target ---
 add_library(CWZEngine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+
+# Embed CMake build/source dirs and current config so EditorHub can
+# trigger a cmake reconfigure + build at runtime after creating new projects.
+target_compile_definitions(CWZEngine PRIVATE
+    CWZ_CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    CWZ_CMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
+    CWZ_BUILD_CONFIG="$<CONFIG>"
+)
 
 # --- Lua / Sol2 ---
 import_lua(CWZEngine)
@@ -67,8 +72,6 @@ endif()
 target_include_directories(CWZEngine
   SYSTEM PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/game/projects/LightsOut/include"
   PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )

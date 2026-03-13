@@ -109,6 +109,10 @@ private:
     void undo();
     void redo();
 
+    // ----- Inspector undo helpers -----
+    void captureInspectorBefore();   ///< snapshot entity state at widget activation
+    void pushInspectorChange();      ///< diff against current state and push ModifyEntityCmd
+
     // ----- References -----
     Platform::InputManager& m_input;
     GameStateManager&       m_gsm;
@@ -180,6 +184,10 @@ private:
     static constexpr size_t MAX_UNDO = 50;
     std::vector<std::unique_ptr<IEditorCommand>> m_undoStack;
     std::vector<std::unique_ptr<IEditorCommand>> m_redoStack;
+
+    // ----- Inspector undo tracking -----
+    EntitySnapshot  m_inspectorBefore{};
+    ECS::Entity     m_inspectorBeforeEntity{0, 0};
 
     // ----- Deferred actions -----
     bool                    m_pendingReturnToHub{false};

@@ -15,6 +15,19 @@ reserved.
 #include "Components/Tag.hpp"
 #include "Components/Transform.hpp"
 #include "Components/SpriteRenderer.hpp"
+#include "Components/AudioSource.hpp"
+#include "Components/CameraComponent.hpp"
+#include "Components/Collider.hpp"
+#include "Components/Layer.hpp"
+#include "Components/Light.hpp"
+#include "Components/LuaScript.hpp"
+#include "Components/SpriteAnimator.hpp"
+#include "Components/StateMachine.hpp"
+#include "Components/TextRenderer.hpp"
+#include "Components/UIButton.hpp"
+#include "Components/UISlider.hpp"
+#include "Components/Velocity.hpp"
+#include "Components/Health.hpp"
 #include "ECS/Entity.hpp"
 #include "ECS/World.hpp"
 #include "Math/Vec2.hpp"
@@ -40,8 +53,21 @@ struct IEditorCommand {
 struct EntitySnapshot {
     std::string               tagName{"Entity"};
     Components::Transform     transform{};
-    bool                      hasSpriteRenderer{false};
-    Components::SpriteRenderer spriteRenderer{};
+
+    bool hasSpriteRenderer{false};  Components::SpriteRenderer spriteRenderer{};
+    bool hasAudioSource{false};     Components::AudioSource    audioSource{};
+    bool hasCameraComponent{false}; Components::CameraComponent cameraComponent{};
+    bool hasCollider{false};        Components::Collider        collider{};
+    bool hasLayer{false};           Components::Layer           layer{};
+    bool hasLight{false};           Components::Light           light{};
+    bool hasLuaScript{false};       Components::LuaScript       luaScript{};
+    bool hasSpriteAnimator{false};  Components::SpriteAnimator  spriteAnimator{};
+    bool hasStateMachine{false};    Components::StateMachine    stateMachine{};
+    bool hasTextRenderer{false};    Components::TextRenderer    textRenderer{};
+    bool hasUIButton{false};        Components::UIButton        uiButton{};
+    bool hasUISlider{false};        Components::UISlider        uiSlider{};
+    bool hasVelocity{false};        Components::Velocity        velocity{};
+    bool hasHealth{false};          Components::Health          health{};
 
     /// Capture all engine-level components from an entity.
     static EntitySnapshot capture(ECS::World& world, ECS::Entity entity);
@@ -49,6 +75,10 @@ struct EntitySnapshot {
     /// Recreate an entity from this snapshot in the given world.
     /// Returns the new entity handle (may differ from original ID).
     ECS::Entity restore(ECS::World& world) const;
+
+    /// Apply snapshot data onto an EXISTING entity (in-place update).
+    /// Adds/removes optional components to match the snapshot.
+    void restoreInPlace(ECS::World& world, ECS::Entity entity) const;
 };
 
 // ---------------------------------------------------------------------------
@@ -179,6 +209,43 @@ struct RemoveComponentCmd final : IEditorCommand {
     void execute() override { world.removeComponent<T>(entity); }
     void undo()    override { world.addComponent(entity, saved); }
     const char* label() const override { return "Remove Component"; }
+};
+
+// ---------------------------------------------------------------------------
+// ModifyComponentCmd<T> — records a before/after change to one component
+// ---------------------------------------------------------------------------
+
+template<typename T>
+struct ModifyComponentCmd final : IEditorCommand {
+    ECS::World& world;
+    ECS::Entity entity;
+    T           before{};
+    T           after{};
+
+    ModifyComponentCmd(ECS::World& w, ECS::Entity e, T b, T a)
+        : world(w), entity(e), before(std::move(b)), after(std::move(a)) {}
+
+    void execute() override { if (auto* c = world.getComponent<T>(entity)) *c = after; }
+    void undo()    override { if (auto* c = world.getComponent<T>(entity)) *c = before; }
+    const char* label() const override { return "Modify Component"; }
+};
+
+// ---------------------------------------------------------------------------
+// ModifyEntityCmd — whole-entity snapshot diff for inspector drags
+// ---------------------------------------------------------------------------
+
+struct ModifyEntityCmd final : IEditorCommand {
+    ECS::World&    world;
+    ECS::Entity    entity;
+    EntitySnapshot before;
+    EntitySnapshot after;
+
+    ModifyEntityCmd(ECS::World& w, ECS::Entity e, EntitySnapshot b, EntitySnapshot a)
+        : world(w), entity(e), before(std::move(b)), after(std::move(a)) {}
+
+    void execute() override;  ///< applies 'after' component state in-place
+    void undo()    override;  ///< applies 'before' component state in-place
+    const char* label() const override { return "Modify Entity"; }
 };
 
 } // namespace Runtime

@@ -16,7 +16,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 
 #include "Core/Engine.hpp"
 #include "GlobalAudioSettings.hpp"
-#include "LevelMusicManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Platform/InputManager.hpp"

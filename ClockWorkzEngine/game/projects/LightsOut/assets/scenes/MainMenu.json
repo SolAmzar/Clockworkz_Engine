@@ -12,6 +12,7 @@
     ],
     "hierarchyGroups": [],
     "hierarchyOrder": [
+        "btn_LoadLevel",
         "Btn_HowToPlay",
         "Btn_Option",
         "Btn_Exit",
@@ -56,7 +57,7 @@
                         "y": 1080.0
                     },
                     "sortOrder": 0,
-                    "textureId": "menu_bg_texture",
+                    "textureId": "main menu final",
                     "unlit": true,
                     "uv": [
                         0.0,
@@ -224,7 +225,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": true
+                    "visible": false
                 },
                 "textRenderer": {
                     "alignment": 1,
@@ -255,8 +256,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -564.291015625,
-                        "y": 235.91258239746094
+                        "x": -554.291015625,
+                        "y": 254.91299438476563
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -266,7 +267,7 @@
                     "snapToGrid": false
                 },
                 "uiButton": {
-                    "action": "start_game",
+                    "action": "",
                     "hoverColor": {
                         "b": 0.0,
                         "g": 0.800000011920929,
@@ -280,14 +281,14 @@
                     },
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -34.0
                     },
                     "showBackground": false,
                     "size": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 377.0,
+                        "y": 83.0
                     },
-                    "uiScript": ""
+                    "uiScript": "ui/btn_start_game.lua"
                 }
             },
             "name": "Btn_StartGame"
@@ -315,7 +316,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": true
+                    "visible": false
                 },
                 "textRenderer": {
                     "alignment": 1,
@@ -347,7 +348,7 @@
                     },
                     "position": {
                         "x": -728.296875,
-                        "y": -71.19715881347656
+                        "y": -64.1969985961914
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -357,7 +358,7 @@
                     "snapToGrid": false
                 },
                 "uiButton": {
-                    "action": "how_to_play",
+                    "action": "",
                     "hoverColor": {
                         "b": 0.0,
                         "g": 0.800000011920929,
@@ -371,14 +372,14 @@
                     },
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -30.0
                     },
                     "showBackground": false,
                     "size": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 350.0,
+                        "y": 104.0
                     },
-                    "uiScript": ""
+                    "uiScript": "ui/btn_how_to_play.lua"
                 }
             },
             "name": "Btn_HowToPlay"
@@ -406,7 +407,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": true
+                    "visible": false
                 },
                 "textRenderer": {
                     "alignment": 1,
@@ -437,7 +438,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -508.02484130859375,
+                        "x": -514.0250244140625,
                         "y": -281.3265686035156
                     },
                     "rotation": 0.0,
@@ -448,7 +449,7 @@
                     "snapToGrid": false
                 },
                 "uiButton": {
-                    "action": "exit",
+                    "action": "",
                     "hoverColor": {
                         "b": 0.0,
                         "g": 0.800000011920929,
@@ -462,14 +463,14 @@
                     },
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -34.0
                     },
                     "showBackground": false,
                     "size": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 197.0,
+                        "y": 87.0
                     },
-                    "uiScript": ""
+                    "uiScript": "ui/btn_exit.lua"
                 }
             },
             "name": "Btn_Exit"
@@ -486,7 +487,7 @@
                     },
                     "size": {
                         "x": 1920.0,
-                        "y": 1080.0
+                        "y": 1984.0
                     },
                     "sortOrder": 10,
                     "textureId": "",
@@ -525,11 +526,11 @@
                 "transform": {
                     "pivot": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": 10.5
                     },
                     "position": {
-                        "x": 5.0,
-                        "y": 4.0
+                        "x": 0.0,
+                        "y": 323.9020080566406
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -608,7 +609,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": true
+                    "visible": false
                 },
                 "textRenderer": {
                     "alignment": 1,
@@ -639,7 +640,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -720.965576171875,
+                        "x": -734.9660034179688,
                         "y": -222.4970703125
                     },
                     "rotation": 0.0,
@@ -650,7 +651,7 @@
                     "snapToGrid": false
                 },
                 "uiButton": {
-                    "action": "options",
+                    "action": "",
                     "hoverColor": {
                         "b": 0.0,
                         "g": 0.800000011920929,
@@ -664,14 +665,14 @@
                     },
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -28.0
                     },
                     "showBackground": false,
                     "size": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 217.0,
+                        "y": 84.0
                     },
-                    "uiScript": ""
+                    "uiScript": "ui/btn_settings.lua"
                 }
             },
             "name": "Btn_Option"
@@ -1266,6 +1267,75 @@
                 }
             },
             "name": "options_master_value"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 367.0,
+                        "y": 100.0
+                    },
+                    "color": {
+                        "b": 0.5338078737258911,
+                        "g": 0.5338078737258911,
+                        "r": 0.5338078737258911
+                    },
+                    "fontId": "Selection",
+                    "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "text": "LOAD LEVEL",
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -709.0,
+                        "y": 107.88899993896484
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "uiButton": {
+                    "action": "",
+                    "hoverColor": {
+                        "b": 0.5333333611488342,
+                        "g": 0.5333333611488342,
+                        "r": 0.5333333611488342
+                    },
+                    "interactable": true,
+                    "normalColor": {
+                        "b": 0.5333333611488342,
+                        "g": 0.5333333611488342,
+                        "r": 0.5333333611488342
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "showBackground": true,
+                    "size": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uiScript": ""
+                }
+            },
+            "name": "btn_LoadLevel"
         }
     ],
     "sfxVolume": 1.0,

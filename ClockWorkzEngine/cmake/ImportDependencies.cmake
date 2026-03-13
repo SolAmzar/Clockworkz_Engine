@@ -139,7 +139,7 @@ macro(import_freetype)
     # - GIT_TAG VER-2-13-3 ensures we use a stable version
     FetchContent_Declare(
       freetype
-      GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+      GIT_REPOSITORY https://github.com/freetype/freetype.git
       GIT_TAG VER-2-13-3
     )
 
@@ -345,6 +345,11 @@ macro(import_fmod target)
       set_target_properties(${target} PROPERTIES BUILD_RPATH "$ORIGIN")
     endif()
 
+    # Mark FMOD headers as system includes so VS IntelliSense treats them as
+    # external and suppresses false-positive E0020 errors (e.g. FMOD_BOOL).
+    set_property(TARGET FMOD::fmod APPEND PROPERTY
+      INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${FMOD_INCLUDE_DIR}")
+
     target_link_libraries(${target} PUBLIC FMOD::fmod)
   endif()
 endmacro()
@@ -403,6 +408,17 @@ endmacro()
 # Macro to import all dependencies
 macro(importDependencies)
     message(STATUS "Starting to import dependencies...")
+
+    # On Windows, force FindThreads to use Win32 native threads.
+    # Without this, the vcpkg toolchain wrapper intercepts find_package(Threads)
+    # and probes for pthreads.lib / pthread.lib, which don't exist on Windows
+    # unless the vcpkg pthreads port is installed. All threading in this project
+    # is Win32-native; pthreads is never needed.
+    if(WIN32)
+        set(CMAKE_THREAD_PREFER_PTHREAD    FALSE CACHE BOOL "" FORCE)
+        set(THREADS_PREFER_PTHREAD_FLAG    FALSE CACHE BOOL "" FORCE)
+        set(CMAKE_USE_WIN32_THREADS_INIT   1     CACHE INTERNAL "")
+    endif()
 
     message(STATUS "Importing GLFW...")
     import_glfw()

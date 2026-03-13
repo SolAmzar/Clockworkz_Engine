@@ -29,8 +29,8 @@ All content � 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include <map>
 #include <glm/glm.hpp>
 #include <ft2build.h> // Free Type Library
+#include <freetype/freetype.h>
 #include "Graphics/Shader.hpp"
-#include FT_FREETYPE_H
 
 namespace Assets
 {

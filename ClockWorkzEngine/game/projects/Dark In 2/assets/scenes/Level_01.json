@@ -1,0 +1,66 @@
+{
+    "bgm": "",
+    "darknessColor": {
+        "b": 0.8999999761581421,
+        "g": 0.699999988079071,
+        "r": 0.699999988079071
+    },
+    "darknessIntensity": 0.800000011920929,
+    "enableDarkness": false,
+    "hiddenEntities": [],
+    "hierarchyGroups": [],
+    "hierarchyOrder": [
+        "Sprite"
+    ],
+    "objects": [
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -429.7523498535156,
+                        "y": 203.92169189453125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Sprite"
+        }
+    ],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": 0.0,
+        "y": 0.0
+    }
+}

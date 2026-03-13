@@ -272,18 +272,17 @@ void OptionsState::update(double /*dt*/) {
     ECS::Entity e = m_buttonEntities[i];
     auto *btn = m_scene.GetWorld().getComponent<Components::UIButton>(e);
     auto *tf = m_scene.GetWorld().getComponent<Components::Transform>(e);
-    auto *sr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    if (!btn || !tf || !sr || !btn->interactable) {
+    if (!btn || !tf || !btn->interactable) {
       continue;
     }
 
-    const float halfW = sr->size.x * 0.5f;
-    const float halfH = sr->size.y * 0.5f;
+    float cx    = tf->position.x + btn->offset.x;
+    float cy    = tf->position.y + btn->offset.y;
+    float halfW = btn->size.x * 0.5f;
+    float halfH = btn->size.y * 0.5f;
     const bool hovered =
-        mouseWorld.x >= tf->position.x - halfW &&
-        mouseWorld.x <= tf->position.x + halfW &&
-        mouseWorld.y >= tf->position.y - halfH &&
-        mouseWorld.y <= tf->position.y + halfH;
+        mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
+        mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH;
     if (hovered) {
       hoveredIndex = i;
       break;

@@ -12,6 +12,7 @@
 // Engine components
 #include "Components/AudioSource.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Health.hpp"
 #include "Components/Layer.hpp"
 #include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
@@ -76,7 +77,7 @@ float Scene::getSoundVolumeOverride(const std::string &name,
 
 void Scene::Init() {
   // Pre-allocate memory pool registry entries at load time (25 component types).
-  Memory::MemoryManager::Get().preallocateForScene(25);
+  Memory::MemoryManager::Get().preallocateForScene(26);
 
   // Register engine-level component types.
   m_world.registerComponent<Components::Transform>();
@@ -94,6 +95,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::UIButton>();
   m_world.registerComponent<Components::UISlider>();
   m_world.registerComponent<Components::CameraComponent>();
+  m_world.registerComponent<Components::Health>();
 
   // Let the game register its own component types (set via Engine::setComponentRegistrar).
   Core::Engine::Get().invokeComponentRegistrar(m_world);
