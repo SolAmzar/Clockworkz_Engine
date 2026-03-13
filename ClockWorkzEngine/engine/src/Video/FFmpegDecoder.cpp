@@ -17,14 +17,14 @@ reserved.
 #include <chrono>
 #include <iostream>
 
-
+#if CWZ_HAS_FFMPEG
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
-
 }
+#endif
 
 namespace Video {
 
@@ -34,6 +34,8 @@ FFmpegDecoder::~FFmpegDecoder() {
   stopWorkerThread();
   cleanup();
 }
+
+#if CWZ_HAS_FFMPEG
 
 void FFmpegDecoder::cleanup() {
   if (m_swsContext) {
@@ -120,7 +122,7 @@ bool FFmpegDecoder::load(const std::string &path) {
   if (stream->time_base.den != 0) {
     m_timeBase = av_q2d(stream->time_base);
   } else {
-    m_timeBase = 1.0 / m_fps; // Fallback
+    m_timeBase = 1.0 / m_fps;
   }
 
   m_duration = static_cast<double>(m_formatContext->duration) / AV_TIME_BASE;
@@ -237,7 +239,6 @@ bool FFmpegDecoder::readFrameInternal(FrameData &outFrame) {
         return false;
       }
 
-      // We got a frame! Convert to RGBA
       sws_scale(m_swsContext, m_frame->data, m_frame->linesize, 0, m_height,
                 m_rgbFrame->data, m_rgbFrame->linesize);
 
@@ -261,11 +262,10 @@ bool FFmpegDecoder::readFrameInternal(FrameData &outFrame) {
     }
     av_packet_unref(m_packet);
   }
-  return false; // EOF
+  return false;
 }
 
 void FFmpegDecoder::decodeLoop() {
-  // Basic decode loop logic
   while (!m_stopThread) {
     if (m_state == State::Stopped || m_state == State::Error ||
         m_state == State::Finished) {
@@ -284,7 +284,6 @@ void FFmpegDecoder::decodeLoop() {
       m_seekRequested = false;
     }
 
-    // Limit queue size to avoid filling up RAM
     if (m_frameQueue.size() >= 10) {
       std::this_thread::sleep_for(std::chrono::milliseconds(2));
       continue;
@@ -292,16 +291,104 @@ void FFmpegDecoder::decodeLoop() {
 
     FrameData fd;
     if (readFrameInternal(fd)) {
-      // Push frame to queue. The playback system will check timestamps and
-      // decide when to pull. But we must update currentTime somewhere.
-      // Generally, the consumer (VideoPlaybackSystem) tells us what the ideal
-      // time is, or we just push frames. For now we just push.
       m_frameQueue.push(std::move(fd));
     } else {
-      // EOF
       m_state = State::Finished;
     }
   }
 }
+
+#else
+
+void FFmpegDecoder::cleanup() {}
+
+bool FFmpegDecoder::load(const std::string &path) {
+  stopWorkerThread();
+  cleanup();
+  m_filepath = path;
+  m_state = State::Error;
+  m_currentTime = 0.0;
+  m_frameQueue.clear();
+  std::cerr << "FFmpegDecoder: FFmpeg support is not available in this build\n";
+  return false;
+}
+
+void FFmpegDecoder::startWorkerThread() {}
+
+void FFmpegDecoder::stopWorkerThread() {
+  m_stopThread = true;
+  if (m_workerThread.joinable()) {
+    m_workerThread.join();
+  }
+}
+
+void FFmpegDecoder::play() {
+  if (m_state != State::Error) {
+    m_state = State::Playing;
+  }
+}
+
+void FFmpegDecoder::pause() {
+  if (m_state == State::Playing) {
+    m_state = State::Paused;
+  }
+}
+
+void FFmpegDecoder::stop() {
+  m_state = State::Stopped;
+  m_seekTarget = 0.0;
+  m_seekRequested = false;
+}
+
+void FFmpegDecoder::restart() {
+  stop();
+  play();
+}
+
+void FFmpegDecoder::setPlaybackSpeed(float multiplier) {
+  m_playbackSpeed = multiplier;
+}
+
+void FFmpegDecoder::seek(float timeInSeconds) {
+  m_seekTarget = static_cast<double>(timeInSeconds);
+  m_currentTime = m_seekTarget.load();
+}
+
+float FFmpegDecoder::getDuration() const {
+  return static_cast<float>(m_duration);
+}
+
+float FFmpegDecoder::getCurrentTime() const {
+  return static_cast<float>(m_currentTime.load());
+}
+
+int FFmpegDecoder::getWidth() const { return m_width; }
+int FFmpegDecoder::getHeight() const { return m_height; }
+float FFmpegDecoder::getFps() const { return m_fps; }
+
+std::string FFmpegDecoder::getPlaybackState() const {
+  switch (m_state.load()) {
+  case State::Stopped:
+    return "Stopped";
+  case State::Playing:
+    return "Playing";
+  case State::Paused:
+    return "Paused";
+  case State::Finished:
+    return "Finished";
+  case State::Error:
+    return "Error";
+  }
+  return "Unknown";
+}
+
+bool FFmpegDecoder::readFrameInternal(FrameData &outFrame) {
+  (void)outFrame;
+  return false;
+}
+
+void FFmpegDecoder::decodeLoop() {}
+
+#endif
 
 } // namespace Video

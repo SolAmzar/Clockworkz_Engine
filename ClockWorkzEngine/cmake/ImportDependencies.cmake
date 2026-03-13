@@ -110,7 +110,7 @@ macro(import_glm)
     # Actually download GLM and make it available.
     # After this line, you can link it with:
     #   target_link_libraries(your_project PRIVATE glm::glm)
-    # Note: "glm::glm" is the target name defined inside GLM’s own CMakeLists.txt,
+    # Note: "glm::glm" is the target name defined inside GLMâ€™s own CMakeLists.txt,
     #       it is not the same as the "glm" handle above.
     FetchContent_MakeAvailable(glm)
 
@@ -360,20 +360,39 @@ macro(import_ffmpeg target)
       set(FFMPEG_BIN_DIR "${FFMPEG_DIR}/bin")
       
       set(_FFMPEG_LIBS avcodec avdevice avfilter avformat avutil swresample swscale)
+      set(_FFMPEG_READY TRUE)
       foreach(_lib ${_FFMPEG_LIBS})
+        if(NOT EXISTS "${FFMPEG_LIB_DIR}/${_lib}.lib")
+          set(_FFMPEG_READY FALSE)
+        endif()
         file(GLOB _dll_path "${FFMPEG_BIN_DIR}/${_lib}-*.dll")
-        add_library(FFmpeg::${_lib} SHARED IMPORTED)
-        set_target_properties(FFmpeg::${_lib} PROPERTIES
-          IMPORTED_IMPLIB "${FFMPEG_LIB_DIR}/${_lib}.lib"
-          IMPORTED_LOCATION "${_dll_path}"
-          INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_INCLUDE_DIR}"
-        )
-        target_link_libraries(${target} PUBLIC FFmpeg::${_lib})
+        if(NOT _dll_path)
+          set(_FFMPEG_READY FALSE)
+        endif()
       endforeach()
 
-      # Cache the DLLs for copying in the game executable project
-      file(GLOB FFMPEG_DLLS "${FFMPEG_BIN_DIR}/*.dll")
-      set(FFMPEG_DLLS "${FFMPEG_DLLS}" CACHE INTERNAL "FFmpeg DLL paths" FORCE)
+      if(_FFMPEG_READY)
+        foreach(_lib ${_FFMPEG_LIBS})
+          file(GLOB _dll_path "${FFMPEG_BIN_DIR}/${_lib}-*.dll")
+          add_library(FFmpeg::${_lib} SHARED IMPORTED)
+          set_target_properties(FFmpeg::${_lib} PROPERTIES
+            IMPORTED_IMPLIB "${FFMPEG_LIB_DIR}/${_lib}.lib"
+            IMPORTED_LOCATION "${_dll_path}"
+            INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_INCLUDE_DIR}"
+          )
+          target_link_libraries(${target} PUBLIC FFmpeg::${_lib})
+        endforeach()
+
+        target_compile_definitions(${target} PUBLIC CWZ_HAS_FFMPEG=1)
+
+        # Cache the DLLs for copying in the game executable project
+        file(GLOB FFMPEG_DLLS "${FFMPEG_BIN_DIR}/*.dll")
+        set(FFMPEG_DLLS "${FFMPEG_DLLS}" CACHE INTERNAL "FFmpeg DLL paths" FORCE)
+      else()
+        message(WARNING "FFmpeg import libraries or DLLs were not found. Building without FFmpeg runtime support.")
+        target_compile_definitions(${target} PUBLIC CWZ_HAS_FFMPEG=0)
+        set(FFMPEG_DLLS "" CACHE INTERNAL "FFmpeg DLL paths" FORCE)
+      endif()
     endif()
   endif()
 endmacro()
