@@ -1091,6 +1091,12 @@
             "flipY": true,
             "name": "table upside down_texture",
             "path": "assets/textures/table upside down.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "completedMonster 2 export_texture",
+            "path": "assets/textures/completedMonster 2 export.png"
         }
     ]
 }
