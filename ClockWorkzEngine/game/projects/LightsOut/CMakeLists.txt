@@ -44,6 +44,7 @@ macro(configure_lightsout_target TARGET_NAME)
     RUNTIME_OUTPUT_DIRECTORY         "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_BINARY_DIR}/bin/Debug"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release"
+    VS_DEBUGGER_WORKING_DIRECTORY    "$<TARGET_FILE_DIR:${TARGET_NAME}>"
   )
 endmacro()
 
@@ -63,6 +64,16 @@ endif()
 if(TARGET CopySharedAssets)
   add_dependencies(CWZEditor CopySharedAssets)
   add_dependencies(LightsOut CopySharedAssets)
+if(WIN32 AND FFMPEG_DLLS)
+  add_custom_target(CopyFFmpegDll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${FFMPEG_DLLS}
+      "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
+    COMMENT "Copying FFmpeg runtime DLLs"
+    VERBATIM
+  )
+  add_dependencies(CWZEditor CopyFFmpegDll)
+  add_dependencies(LightsOut CopyFFmpegDll)
 endif()
 
 configure_lightsout_target(CWZEditor)

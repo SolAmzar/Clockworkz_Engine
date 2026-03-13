@@ -354,6 +354,35 @@ macro(import_fmod target)
   endif()
 endmacro()
 
+# Macro to import ffmpeg
+macro(import_ffmpeg target)
+  if(NOT TARGET FFmpeg::avcodec)
+    set(FFMPEG_DIR "${CMAKE_SOURCE_DIR}/ffmpeg")
+    set(FFMPEG_INCLUDE_DIR "${FFMPEG_DIR}/include")
+    
+    if(WIN32)
+      set(FFMPEG_LIB_DIR "${FFMPEG_DIR}/lib")
+      set(FFMPEG_BIN_DIR "${FFMPEG_DIR}/bin")
+      
+      set(_FFMPEG_LIBS avcodec avdevice avfilter avformat avutil swresample swscale)
+      foreach(_lib ${_FFMPEG_LIBS})
+        file(GLOB _dll_path "${FFMPEG_BIN_DIR}/${_lib}-*.dll")
+        add_library(FFmpeg::${_lib} SHARED IMPORTED)
+        set_target_properties(FFmpeg::${_lib} PROPERTIES
+          IMPORTED_IMPLIB "${FFMPEG_LIB_DIR}/${_lib}.lib"
+          IMPORTED_LOCATION "${_dll_path}"
+          INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_INCLUDE_DIR}"
+        )
+        target_link_libraries(${target} PUBLIC FFmpeg::${_lib})
+      endforeach()
+
+      # Cache the DLLs for copying in the game executable project
+      file(GLOB FFMPEG_DLLS "${FFMPEG_BIN_DIR}/*.dll")
+      set(FFMPEG_DLLS "${FFMPEG_DLLS}" CACHE INTERNAL "FFmpeg DLL paths" FORCE)
+    endif()
+  endif()
+endmacro()
+
 # Macro to import all dependencies
 macro(importDependencies)
     message(STATUS "Starting to import dependencies...")

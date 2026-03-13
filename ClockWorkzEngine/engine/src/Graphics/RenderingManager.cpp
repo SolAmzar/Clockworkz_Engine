@@ -422,17 +422,18 @@ void RenderingManager::beginLightPass(
   shader->setFloat("uRadius", radius);
   shader->setVec3("uLightColor", color);
 
-  // Clamped visual battery so it doesn't get too dim to see
-  float visualBattery = std::max(batteryFactor, 0.35f);
+  // Let the cone visibly dim as the battery approaches zero.
+  float visualBattery = std::clamp(batteryFactor, 0.0f, 1.0f);
   shader->setFloat("uBattery", visualBattery);
   shader->setFloat("uIntensity", intensity);
 
   float flicker = 1.0f;
 
-  if (batteryFactor <= 0.125f) {
-    // More obvious flicker: wider range, brighter peaks, lower dips
-    float low = 0.2f;
-    float high = 1.8f;
+  if (batteryFactor <= 0.25f) {
+    // Increase instability as the battery gets low.
+    float severity = 1.0f - std::clamp(batteryFactor / 0.25f, 0.0f, 1.0f);
+    float low = 1.0f - (0.9f * severity);
+    float high = 1.0f + (1.2f * severity);
     flicker = low + static_cast<float>(rand()) / RAND_MAX * (high - low);
   }
 
