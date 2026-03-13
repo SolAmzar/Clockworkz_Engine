@@ -64,6 +64,8 @@ endif()
 if(TARGET CopySharedAssets)
   add_dependencies(CWZEditor CopySharedAssets)
   add_dependencies(LightsOut CopySharedAssets)
+endif()
+
 if(WIN32 AND FFMPEG_DLLS)
   add_custom_target(CopyFFmpegDll
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

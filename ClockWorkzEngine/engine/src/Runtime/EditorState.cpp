@@ -2343,13 +2343,13 @@ void EditorState::renderInspector() {
                                     }
 
                                     std::string inputLabel = std::string("Override ") + def.label + "##soundproptext";
-                                    char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
-                                    if (ImGui::InputText(inputLabel.c_str(), strbuf, sizeof(strbuf)))
-                                        val = std::string(strbuf);
+                                    char soundbuf[256]; snprintf(soundbuf, sizeof(soundbuf), "%s", sv.c_str());
+                                    if (ImGui::InputText(inputLabel.c_str(), soundbuf, sizeof(soundbuf)))
+                                        val = std::string(soundbuf);
                                 } else {
-                                    char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
-                                    if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
-                                        val = std::string(strbuf);
+                                    char soundbuf[256]; snprintf(soundbuf, sizeof(soundbuf), "%s", sv.c_str());
+                                    if (ImGui::InputText(def.label.c_str(), soundbuf, sizeof(soundbuf)))
+                                        val = std::string(soundbuf);
                                 }
                             }
                         }
