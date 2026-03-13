@@ -46,6 +46,7 @@ reserved.
 #include <Gameplay/Components/SpriteAnimator.hpp>
 #include <Gameplay/Components/SpriteRenderer.hpp>
 #include <Gameplay/Components/SurfaceComponent.hpp>
+#include <Gameplay/Components/VideoPlayerComponent.hpp>
 #include <Gameplay/WallTiles.hpp>
 #include <IMGUI/imgui.h>
 #include <IMGUI/imgui_internal.h>
@@ -3191,6 +3192,84 @@ void LevelEditor::renderProperties() {
         markLevelDirty();
       }
     }
+
+    using Gameplay::VideoPlayerComponent;
+    if (auto *vp = m_selectedObject->getComponent<VideoPlayerComponent>()) {
+      if (ImGui::TreeNode("Video Player")) {
+        auto &data = vp->data();
+
+        char pathBuffer[256];
+        strncpy(pathBuffer, data.filepath.c_str(), sizeof(pathBuffer));
+        if (ImGui::InputText("Filepath", pathBuffer, sizeof(pathBuffer))) {
+          const_cast<Components::VideoPlayer &>(data).filepath =
+              pathBuffer; // Note: if loadVideo isn't called it won't reload
+                          // automatically here. The update loop checks string
+                          // changes though.
+          markLevelDirty();
+        }
+
+        bool loop = data.loop;
+        if (ImGui::Checkbox("Loop", &loop)) {
+          const_cast<Components::VideoPlayer &>(data).loop = loop;
+          markLevelDirty();
+        }
+        ImGui::SameLine();
+        bool autoplay = data.autoplay;
+        if (ImGui::Checkbox("Autoplay", &autoplay)) {
+          const_cast<Components::VideoPlayer &>(data).autoplay = autoplay;
+          markLevelDirty();
+        }
+
+        float speed = data.playbackSpeed;
+        if (ImGui::SliderFloat("Speed", &speed, 0.1f, 2.0f)) {
+          const_cast<Components::VideoPlayer &>(data).playbackSpeed = speed;
+          markLevelDirty();
+        }
+
+        ImGui::Text("State: %s", data.playbackState.c_str());
+        ImGui::Text("Resolution: %dx%d (%.1f fps)", data.width, data.height,
+                    data.fps);
+
+        float cTime = data.currentTime;
+        if (ImGui::SliderFloat("Time", &cTime, 0.0f,
+                               data.duration > 0 ? data.duration : 100.0f)) {
+          if (ImGui::IsItemDeactivatedAfterEdit()) {
+            vp->seek(cTime);
+          }
+        }
+        ImGui::Text("Duration: %.2f", data.duration);
+
+        if (ImGui::Button("Play")) {
+          vp->play();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Pause")) {
+          vp->pause();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop")) {
+          vp->stop();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Restart")) {
+          vp->restart();
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Remove Video Player")) {
+          m_selectedObject->removeComponent<VideoPlayerComponent>();
+          markLevelDirty();
+          ImGui::TreePop();
+          return;
+        }
+        ImGui::TreePop();
+      }
+    } else {
+      if (ImGui::Button("Add Video Player Component")) {
+        m_selectedObject->addComponent<Gameplay::VideoPlayerComponent>();
+        markLevelDirty();
+      }
+    }
   }
 
   ImGui::Separator();
@@ -3243,6 +3322,14 @@ void LevelEditor::copyComponents(Gameplay::GameObject *source,
         }
       }
     }
+  }
+
+  // Copy VideoPlayer
+  if (auto *srcVideo = source->getComponent<Gameplay::VideoPlayerComponent>()) {
+    auto *destVideo = dest->addComponent<Gameplay::VideoPlayerComponent>();
+    destVideo->data() = srcVideo->data(); // Copy data struct settings
+    destVideo->data().isPlaying = false;  // Reset playback state
+    destVideo->data().playbackState = "Stopped";
   }
 }
 

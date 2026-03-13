@@ -39,6 +39,9 @@ if(ENGINE_ENABLE_FMOD)
   set(FMOD_DLL_RELEASE "${FMOD_DLL_RELEASE}" CACHE INTERNAL "FMOD release DLL path" FORCE)
 endif()
 
+# --- FFmpeg ---
+import_ffmpeg(CWZEngine)
+
 # --- MSVC compile options ---
 if(MSVC)
   target_compile_options(CWZEngine PRIVATE
