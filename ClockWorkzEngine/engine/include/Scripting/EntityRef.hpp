@@ -31,7 +31,7 @@ namespace Scripting {
  * missing; every setter silently no-ops if the component is missing.
  */
 class EntityRef {
-  
+
 public:
   /**
    * @brief Construct an EntityRef.
@@ -54,14 +54,12 @@ public:
   vec2 getScale() const;
   void setScale(const vec2 &scale);
 
-
   // Velocity accessors
 
   vec2 getVelocity() const;
   void setVelocity(const vec2 &vel);
   float getMoveSpeed() const;
   void setMoveSpeed(float speed);
-
 
   // Health accessors
 
@@ -70,36 +68,35 @@ public:
   float getMaxHp() const;
   bool isDead() const;
 
-
   // Component-existence checks
   bool hasTransform() const;
   bool hasVelocity() const;
   bool hasHealth() const;
 
   // --- Light ---
-  bool  hasLight() const;
-  bool  isLightActive() const;
-  void  setLightActive(bool v);
+  bool hasLight() const;
+  bool isLightActive() const;
+  void setLightActive(bool v);
   float getLightRadius() const;
   float getLightAngle() const;
   float getLightOffsetX() const;
   float getLightOffsetY() const;
-  void  setLightOffsetX(float x);
-  void  setLightOffsetY(float y);
+  void setLightOffsetX(float x);
+  void setLightOffsetY(float y);
 
   // --- TextRenderer ---
-  bool        hasTextRenderer() const;
+  bool hasTextRenderer() const;
   std::string getText() const;
-  void        setText(const std::string& t);
+  void setText(const std::string &t);
 
   // --- SpriteRenderer ---
-  bool        hasSpriteRenderer() const;
+  bool hasSpriteRenderer() const;
   std::string getSpriteTextureId() const;
-  void        setSpriteTextureId(const std::string &id);
-  float       getSpriteAlpha() const;
-  void        setSpriteAlpha(float a);
-  bool        isSpriteUnlit() const;
-  void        setSpriteUnlit(bool v);
+  void setSpriteTextureId(const std::string &id);
+  float getSpriteAlpha() const;
+  void setSpriteAlpha(float a);
+  bool isSpriteUnlit() const;
+  void setSpriteUnlit(bool v);
 
   // --- Collider ---
   bool hasCollider() const;
@@ -109,26 +106,28 @@ public:
   void setColliderMoveable(bool v);
 
   // --- Tag ---
-  bool        hasTag() const;
+  bool hasTag() const;
   std::string getTagValue() const;
 
   // --- SpriteAnimator ---
-  bool        hasSpriteAnimator() const;
-  void        playAnimation(const std::string& clipName, bool force = false);
+  bool hasSpriteAnimator() const;
+  void playAnimation(const std::string &clipName, bool force = false);
   std::string getCurrentAnimationClip() const;
-  bool        isAnimationPlaying() const;
-  float       getAnimationPlaybackSpeed() const;
-  void        setAnimationPlaybackSpeed(float speed);
+  bool isAnimationPlaying() const;
+  float getAnimationPlaybackSpeed() const;
+  void setAnimationPlaybackSpeed(float speed);
 
-  // --- Generic script property access (Unity-like: game components as pure Lua) ---
-  bool hasScript(const std::string& scriptPath) const;
-  Components::LuaScriptEntry*       findScriptEntry(const std::string& scriptPath);
-  const Components::LuaScriptEntry* findScriptEntry(const std::string& scriptPath) const;
+  // --- Generic script property access (Unity-like: game components as pure
+  // Lua) ---
+  bool hasScript(const std::string &scriptPath) const;
+  Components::LuaScriptEntry *findScriptEntry(const std::string &scriptPath);
+  const Components::LuaScriptEntry *
+  findScriptEntry(const std::string &scriptPath) const;
 
   // Raw ECS accessors — for game-side Lua extension lambdas that need to reach
   // game-specific components without coupling the engine to them.
-  ECS::Entity  getEntity() const { return m_entity; }
-  ECS::World*  getWorld()  const { return m_world; }
+  ECS::Entity getEntity() const { return m_entity; }
+  ECS::World *getWorld() const { return m_world; }
 
 private:
   ECS::Entity m_entity;

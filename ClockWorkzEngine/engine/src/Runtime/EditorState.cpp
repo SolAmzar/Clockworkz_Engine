@@ -76,6 +76,7 @@ reserved.
 #include "Components/CameraComponent.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/UISlider.hpp"
+#include "Components/VideoPlayer.hpp"
 #include "Components/LuaScript.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Systems/LightRenderSystem.hpp"
@@ -121,7 +122,7 @@ static void DrawAudioIcon() {
     ImVec2 bMin = ImGui::GetItemRectMin();
     ImVec2 bMax = ImGui::GetItemRectMax();
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    
+
     float cx = (bMin.x + bMax.x) * 0.5f;
     float cy = (bMin.y + bMax.y) * 0.5f - 4.0f;
     ImU32 col = IM_COL32(120, 220, 160, 255);
@@ -503,7 +504,14 @@ void EditorState::render(Core::Time* timer) {
     auto& renderer = engine.rendering();
     auto& camera   = engine.camera();
 
-    renderer.beginScenePass(camera.viewProj(), glm::vec4(1.0f));
+    glm::vec4 sceneTint(1.0f);
+    if (m_scene.isDarknessEnabled()) {
+        float intensity = std::clamp(m_scene.getDarknessIntensity(), 0.0f, 1.0f);
+        glm::vec3 tintRgb = glm::mix(glm::vec3(1.0f), m_scene.getDarknessColor(), intensity);
+        sceneTint = glm::vec4(tintRgb, 1.0f);
+    }
+
+    renderer.beginScenePass(camera.viewProj(), sceneTint);
     m_scene.Render(renderer);
     renderer.endScenePass();
     m_scene.RenderText(renderer);
@@ -882,6 +890,24 @@ void EditorState::renderSystemsWindow() {
     ImGui::Checkbox("StateMachine", &m_scene.m_stateMachineSystemEnabled);
     ImGui::Checkbox("TextRender",   &m_scene.m_textRenderSystemEnabled);
     ImGui::Checkbox("Script",       &m_scene.m_scriptSystemEnabled);
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("Scene Darkness");
+
+    bool darknessEnabled = m_scene.isDarknessEnabled();
+    if (ImGui::Checkbox("Enable Darkness Tint", &darknessEnabled)) {
+        m_scene.setDarknessEnabled(darknessEnabled);
+    }
+
+    float darknessIntensity = m_scene.getDarknessIntensity();
+    if (ImGui::SliderFloat("Darkness Level", &darknessIntensity, 0.0f, 1.0f, "%.2f")) {
+        m_scene.setDarknessIntensity(darknessIntensity);
+    }
+
+    glm::vec3 darknessColor = m_scene.getDarknessColor();
+    if (ImGui::ColorEdit3("Darkness Color", glm::value_ptr(darknessColor))) {
+        m_scene.setDarknessColor(darknessColor);
+    }
 
     ImGui::Spacing();
     ImGui::Text("Entity count: %u", m_scene.GetWorld().entityCount());
@@ -1807,6 +1833,7 @@ void EditorState::renderInspector() {
             addCompEntry<Components::SpriteRenderer>("SpriteRenderer", m_selectedEntity, world, execCmd);
             addCompEntry<Components::SpriteAnimator>("SpriteAnimator", m_selectedEntity, world, execCmd);
             addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::VideoPlayer>("VideoPlayer", m_selectedEntity, world, execCmd);
             addCompEntry<Components::Light>("Light", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
@@ -2315,6 +2342,47 @@ void EditorState::renderInspector() {
             ImGui::SliderFloat("Intensity##lt", &lt->intensity, 0.0f, 1.0f);
         }
         if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::Light>>(world, m_selectedEntity));
+    }
+
+    if (world.hasComponent<Components::VideoPlayer>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("VideoPlayer##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rvp")) rm = true;
+        if (open) {
+            auto *vp = world.getComponent<Components::VideoPlayer>(m_selectedEntity);
+            char pathBuf[256];
+            snprintf(pathBuf, sizeof(pathBuf), "%s", vp->filepath.c_str());
+            if (ImGui::InputText("Filepath##vp", pathBuf, sizeof(pathBuf)))
+                vp->filepath = pathBuf;
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload *pl = ImGui::AcceptDragDropPayload("VIDEO_ASSET"))
+                    vp->filepath = static_cast<const char *>(pl->Data);
+                ImGui::EndDragDropTarget();
+            }
+
+            ImGui::Checkbox("Loop##vp", &vp->loop);
+            ImGui::SameLine();
+            ImGui::Checkbox("Autoplay##vp", &vp->autoplay);
+            ImGui::SliderFloat("Speed##vp", &vp->playbackSpeed, 0.1f, 2.0f);
+
+            float cTime = vp->currentTime;
+            ImGui::SliderFloat("Time##vp", &cTime, 0.0f,
+                               vp->duration > 0.0f ? vp->duration : 100.0f);
+            ImGui::Text("Duration: %.2f", vp->duration);
+            ImGui::Text("Resolution: %d x %d", vp->width, vp->height);
+            ImGui::Text("FPS: %.2f", vp->fps);
+            ImGui::Text("State: %s", vp->playbackState.c_str());
+
+            bool playing = vp->isPlaying;
+            if (ImGui::Checkbox("Is Playing##vp", &playing))
+                vp->isPlaying = playing;
+        }
+        if (rm)
+            execCmd(std::make_unique<RemoveComponentCmd<Components::VideoPlayer>>(
+                world, m_selectedEntity));
     }
 
     // UIButton
@@ -3494,7 +3562,7 @@ void EditorState::renderAnimationsBrowser() {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.15f, 0.35f, 1.0f));
                 ImGui::Button("##icon", ImVec2(kIconW, kIconH));
                 ImGui::PopStyleColor();
-                
+
                 // Anim icon (simple reel shape)
                 ImVec2 bMin = ImGui::GetItemRectMin(), bMax = ImGui::GetItemRectMax();
                 ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -3961,7 +4029,7 @@ void EditorState::renderScriptsBrowser() {
             bool isDir = fs::is_directory(path);
             std::string fname = path.filename().string();
             std::string relPath = fs::relative(path, scriptsRoot, ec).generic_string();
-            
+
             ImGui::PushID(relPath.c_str());
             float colW = ImGui::GetContentRegionAvail().x;
             float iconOX = (colW - kIconW) * 0.5f;
@@ -3974,9 +4042,9 @@ void EditorState::renderScriptsBrowser() {
             ImGui::PushStyleColor(ImGuiCol_Button, btnBase);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, btnHov);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
-            
+
             ImGui::Button("##icon", ImVec2(kIconW, kIconH));
-            
+
             ImGui::PopStyleVar();
             ImGui::PopStyleColor(2);
 

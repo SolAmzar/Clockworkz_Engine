@@ -31,6 +31,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Audio/FootstepAudioRuntime.hpp"
 #include "Systems/CollisionSystem.hpp"
 #include "Components/Tag.hpp"
+#include "States/IntroCutsceneState.hpp"
 #include "States/MenuState.hpp"
 #include "GlobalAudioSettings.hpp"
 #include "LevelMusicManager.hpp"
@@ -196,9 +197,10 @@ int main()
         );
     });
 
-    // Boot directly to main menu.
+    // Boot to a skippable intro cutscene before the menu.
     engine.setBootstrap([](Core::Engine& e) -> std::shared_ptr<Runtime::GameState> {
-        return std::make_shared<Runtime::MenuState>(e.gsm(), e.input(), e.window(), e.audio());
+        return std::make_shared<Runtime::IntroCutsceneState>(
+            e.gsm(), e.input(), e.window(), e.audio());
     });
 
     return engine.Run();

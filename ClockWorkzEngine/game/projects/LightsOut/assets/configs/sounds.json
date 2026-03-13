@@ -30,6 +30,15 @@
         {
             "group": "BGM",
             "is3D": false,
+            "loop": false,
+            "name": "intro_cutscene",
+            "path": "assets/audio/IntroCutscene.wav",
+            "stream": true,
+            "volume": 1.0
+        },
+        {
+            "group": "BGM",
+            "is3D": false,
             "loop": true,
             "name": "level_bgm",
             "path": "assets/audio/level_bgm.wav",

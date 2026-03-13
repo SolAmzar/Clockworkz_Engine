@@ -28,6 +28,7 @@ reserved.
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -167,7 +168,14 @@ void EditorPlayState::render(Core::Time* timer) {
     auto& renderer = engine.rendering();
     auto& camera   = engine.camera();
 
-    m_scene.RenderAll(renderer, camera.viewProj());
+    glm::vec4 sceneTint(1.0f);
+    if (m_scene.isDarknessEnabled()) {
+        float intensity = std::clamp(m_scene.getDarknessIntensity(), 0.0f, 1.0f);
+        glm::vec3 tintRgb = glm::mix(glm::vec3(1.0f), m_scene.getDarknessColor(), intensity);
+        sceneTint = glm::vec4(tintRgb, 1.0f);
+    }
+
+    m_scene.RenderAll(renderer, camera.viewProj(), sceneTint);
 }
 
 // ---------------------------------------------------------------------------
