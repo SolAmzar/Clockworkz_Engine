@@ -345,6 +345,11 @@ macro(import_fmod target)
       set_target_properties(${target} PROPERTIES BUILD_RPATH "$ORIGIN")
     endif()
 
+    # Mark FMOD headers as system includes so VS IntelliSense treats them as
+    # external and suppresses false-positive E0020 errors (e.g. FMOD_BOOL).
+    set_property(TARGET FMOD::fmod APPEND PROPERTY
+      INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${FMOD_INCLUDE_DIR}")
+
     target_link_libraries(${target} PUBLIC FMOD::fmod)
   endif()
 endmacro()

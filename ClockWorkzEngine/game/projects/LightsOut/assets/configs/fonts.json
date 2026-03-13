@@ -19,6 +19,11 @@
             "name": "BodyText",
             "path": "../fonts/ANUNE___.TTF",
             "size": 32
+        },
+        {
+            "name": "PauseMenu",
+            "path": "../fonts/MANIC1.ttf",
+            "size": 48
         }
     ]
 }

@@ -22,7 +22,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Components/LuaScript.hpp"
 #include "Components/FootstepAudio.hpp"
 #include "Core/Engine.hpp"
-#include "LevelMusicManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 
 namespace Scripting {
 

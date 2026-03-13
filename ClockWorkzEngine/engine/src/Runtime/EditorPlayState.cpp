@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 #include "Runtime/EditorPlayState.hpp"
 #include "Runtime/GameStateManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
 #include "Graphics/Camera2D.hpp"
@@ -24,6 +25,7 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Tag.hpp"
 #include "Components/SpriteRenderer.hpp"
+#include "Components/TextRenderer.hpp"
 #include "IMGUI/imgui.h"
 
 #include <GL/glew.h>
@@ -71,6 +73,7 @@ void EditorPlayState::onEnter() {
 }
 
 void EditorPlayState::onExit() {
+    Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
     m_scene.Clear();
 
     // Restore the editor camera to how it was before play
@@ -124,23 +127,35 @@ void EditorPlayState::update(double dt) {
                 // Register GSM: state transitions stop play mode; overlay ops work on the scene.
                 Scripting::LuaManager& lua = engine.lua();
                 sol::state& ls = lua.GetState();
+                auto setOverlayVisible = [&](const std::string& tag, bool visible) {
+                    m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+                        [&](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
+                            if (t.tag == tag) s.visible = visible;
+                        });
+                    m_scene.GetWorld().each<Components::Tag, Components::TextRenderer>(
+                        [&](ECS::Entity, Components::Tag& t, Components::TextRenderer& tr) {
+                            if (t.tag == tag) tr.visible = visible;
+                        });
+                };
                 ls["GSM"] = ls.create_table_with(
                     "pop",                [&]() { m_pendingStop = true; },
                     "switch_to_gameplay", [&]() { m_pendingStop = true; },
                     "switch_to_menu",     [&]() { m_pendingStop = true; },
                     "push_settings",      [&]() { m_pendingStop = true; },
+                    "open_options",       [&]() { m_pendingStop = true; },
                     "quit",               [&]() { m_pendingStop = true; },
-                    "show_overlay", [&](const std::string& tag) {
-                        m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-                            [&tag](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
-                                if (t.tag == tag) s.visible = true;
+                    "show_how_to_play", [&, setOverlayVisible]() {
+                        m_scene.GetWorld().each<Components::Transform, Components::UIButton>(
+                            [](ECS::Entity, Components::Transform&, Components::UIButton& btn) {
+                                btn.interactable = false;
                             });
+                        setOverlayVisible("howtoplay_overlay", true);
                     },
-                    "hide_overlay", [&](const std::string& tag) {
-                        m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-                            [&tag](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
-                                if (t.tag == tag) s.visible = false;
-                            });
+                    "show_overlay", [&, setOverlayVisible](const std::string& tag) {
+                        setOverlayVisible(tag, true);
+                    },
+                    "hide_overlay", [&, setOverlayVisible](const std::string& tag) {
+                        setOverlayVisible(tag, false);
                     }
                 );
                 if (lua.ExecuteScript("assets/scripts/" + btn.uiScript))

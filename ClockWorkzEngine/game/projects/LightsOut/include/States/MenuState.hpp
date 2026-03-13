@@ -57,7 +57,7 @@ public:
 
 private:
   void updateLayout(int w, int h);
-  void handleAction(const std::string &action);
+  void activateButton(const Components::UIButton &btn);
   void collectButtons();
   void applyHoverColors();
   void setOverlayVisible(const std::string &tag, bool visible);
