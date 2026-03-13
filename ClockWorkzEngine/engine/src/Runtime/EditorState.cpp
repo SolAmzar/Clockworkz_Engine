@@ -1876,16 +1876,16 @@ void EditorState::renderInspector() {
     ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
     if (ImGui::SmallButton("X##ruib"))
       rm = true;
-    if (open) {
-      auto *btn = world.getComponent<Components::UIButton>(m_selectedEntity);
-      char abuf[256];
-      snprintf(abuf, sizeof(abuf), "%s", btn->action.c_str());
-      if (ImGui::InputText("Action##uib", abuf, sizeof(abuf)))
-        btn->action = abuf;
-      ImGui::Checkbox("Interactable##uib", &btn->interactable);
-      ImGui::ColorEdit3("Normal Color##uib", glm::value_ptr(btn->normalColor));
-      ImGui::ColorEdit3("Hover Color##uib", glm::value_ptr(btn->hoverColor));
-    }
+    //if (open) {
+    //  auto *btn = world.getComponent<Components::UIButton>(m_selectedEntity);
+    //  char abuf[256];
+    //  snprintf(abuf, sizeof(abuf), "%s", btn->action.c_str());
+    //  if (ImGui::InputText("Action##uib", abuf, sizeof(abuf)))
+    //    btn->action = abuf;
+    //  ImGui::Checkbox("Interactable##uib", &btn->interactable);
+    //  ImGui::ColorEdit3("Normal Color##uib", glm::value_ptr(btn->normalColor));
+    //  ImGui::ColorEdit3("Hover Color##uib", glm::value_ptr(btn->hoverColor));
+    //}
     if (rm)
       world.removeComponent<Components::UIButton>(m_selectedEntity);
   }
