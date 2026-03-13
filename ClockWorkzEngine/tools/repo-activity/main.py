@@ -17,6 +17,9 @@ from typing import Optional
 
 import typer
 from tabulate import tabulate
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
 
 
 # ---------------------------------------------------------------------------
@@ -270,6 +273,66 @@ def _build_pivot(
 
 
 # ---------------------------------------------------------------------------
+# Excel export
+# ---------------------------------------------------------------------------
+
+def _export_excel(
+    headers: list[str],
+    rows: list[list],
+    path: str,
+    branch: str,
+    since: str,
+    until: str,
+    mode_label: str,
+) -> None:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "repo-activity"
+
+    # Metadata rows
+    ws.append([f"Branch: {branch}"])
+    ws.append([f"Since: {since}   Until: {until}   Mode: {mode_label}"])
+    ws.append([])  # blank spacer
+
+    header_fill = PatternFill("solid", fgColor="1F4E79")
+    header_font = Font(bold=True, color="FFFFFF")
+    total_fill  = PatternFill("solid", fgColor="D9E1F2")
+    total_font  = Font(bold=True)
+
+    # Header row
+    ws.append(headers)
+    header_row_idx = ws.max_row
+    for col_idx, _ in enumerate(headers, start=1):
+        cell = ws.cell(row=header_row_idx, column=col_idx)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    # Data rows (all but last which is TOTAL)
+    data_rows = rows[:-1]
+    total_row  = rows[-1]
+
+    for row in data_rows:
+        ws.append(row)
+
+    # Separator is just the TOTAL row styled differently
+    ws.append([])  # blank line before totals
+    ws.append(total_row)
+    total_row_idx = ws.max_row
+    for col_idx in range(1, len(total_row) + 1):
+        cell = ws.cell(row=total_row_idx, column=col_idx)
+        cell.fill = total_fill
+        cell.font = total_font
+
+    # Auto-width columns
+    for col_idx, col_cells in enumerate(ws.columns, start=1):
+        max_len = max((len(str(c.value or "")) for c in col_cells), default=10)
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 2, 60)
+
+    wb.save(path)
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
@@ -280,6 +343,7 @@ def main(
     until:    Optional[str]  = typer.Option(None, "--until", "-u", help="End date"),
     net:      Optional[bool] = typer.Option(None, "--net/--no-net", "-n", help="Show net lines (added - deleted)"),
     comments: Optional[bool] = typer.Option(None, "--comments/--no-comments", "-c", help="Count comment lines only"),
+    excel:    Optional[str]  = typer.Option(None, "--excel", "-e", help="Export to Excel file (e.g. out.xlsx)"),
 ) -> None:
     # --- Interactive prompts for any missing flags ---
     if branch is None:
@@ -337,6 +401,12 @@ def main(
     lines.insert(-1, sep_line)
 
     typer.echo("\n" + "\n".join(lines) + "\n")
+
+    if excel:
+        out_path = excel if excel.endswith(".xlsx") else excel + ".xlsx"
+        _export_excel(headers, rows, out_path, branch, since_parsed, until_parsed, mode_label)
+        typer.echo(f"Exported to: {out_path}\n")
+
     input("Press Enter to close...")
 
 
