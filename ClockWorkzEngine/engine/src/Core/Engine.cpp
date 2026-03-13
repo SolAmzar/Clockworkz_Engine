@@ -489,10 +489,10 @@ int Engine::Run() {
       m_accuml += m_time->delta();
       if (m_accuml >= 0.5) {
         m_accuml = 0.0;
-        double fps = m_time->fps();
-        double frameTime = m_time->frameTimeMs();
         std::string title = "Lights Out";
 #ifdef _DEBUG
+        double fps = m_time->fps();
+        double frameTime = m_time->frameTimeMs();
         title = "Lights Out  |  FPS: " + std::to_string((int)fps) + "  (" +
                 std::to_string(frameTime).substr(0, 5) + " ms)";
 #endif

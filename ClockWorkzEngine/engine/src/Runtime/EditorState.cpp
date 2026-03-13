@@ -2700,6 +2700,7 @@ void EditorState::renderViewport() {
                 }
             } else if (!foundBounds) {
                 // No sprite
+                float d = glm::length(glm::vec2(worldPos.x - center.x, worldPos.y - center.y));
                 if (d < bestDist) { bestDist = d; bestEnt = e; }
             }
         });
