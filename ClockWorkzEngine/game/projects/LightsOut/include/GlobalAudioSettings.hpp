@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+\file           GlobalAudioSettings.hpp
+\project        Lights Out
+\author(s)      [Sol-Amzar] 100%
+\brief          Declares helpers for applying and persisting global audio
+                settings for the game.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include "Audio/AudioManager.hpp"

@@ -1,3 +1,15 @@
+/******************************************************************************/
+/*!
+\file           GlobalAudioSettings.cpp
+\project        Lights Out
+\author(s)      [Sol-Amzar] 100%
+\brief          Implements application of global game audio settings.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #include "GlobalAudioSettings.hpp"
 
 #include "Core/json.hpp"

@@ -2,7 +2,7 @@
 /*!
 \file           PauseState.cpp
 \project        Lights Out
-\author(s)      [Syafiq], 95%  [Lebon], 5%
+\author(s)      [Syafiq] 61% [Sol-Amzar] 37% [Lebon] 2%
 \brief          Pause menu. Loads PauseMenu.json scene from the level editor
                 and renders it as a semi-transparent overlay on top of the
                 frozen game frame. Camera is saved on enter and restored on exit.

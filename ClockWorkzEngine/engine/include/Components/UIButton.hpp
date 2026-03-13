@@ -2,7 +2,7 @@
 /*!
 \file           UIButton.hpp
 \project        Lights Out
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 68% [Sol-Amzar] 32%
 \brief          UIButton component for editor-authored interactive menu buttons.
                 Attach to any entity with Transform + SpriteRenderer to make
                 it a clickable button. The legacy 'action' string is kept for
