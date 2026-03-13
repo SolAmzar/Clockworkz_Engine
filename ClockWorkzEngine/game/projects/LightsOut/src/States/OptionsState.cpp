@@ -2,7 +2,12 @@
 /*!
 \file           OptionsState.cpp
 \project        Lights Out
-\brief          Dedicated options menu state backed by OptionsMenu.json.
+\author(s)      [Sol-Amzar] 100%
+\brief          Implements the options/settings menu state for Lights Out,
+                backed by OptionsMenu.json.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
 */
 /******************************************************************************/
 

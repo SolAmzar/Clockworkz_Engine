@@ -2,7 +2,7 @@
 /*!
 \file           main_game.cpp
 \project        Lights Out
-\author(s)      [Lebon]
+\author(s)      [Syafiq] 73% [Sol-Amzar] 25% [Lebon] 2%
 \brief          Entry point for LightsOut.exe ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â game executable.
                 Boots straight to MenuState. All game logic lives in Lua scripts.
                 No C++ game systems needed.

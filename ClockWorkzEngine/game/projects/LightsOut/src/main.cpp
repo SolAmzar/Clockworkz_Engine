@@ -2,7 +2,7 @@
 /*!
 \file           main.cpp
 \project        Lights Out
-\author(s)      [Lebon], [Syafiq]
+\author(s)      [Syafiq] 81% [Sol-Amzar] 19%
 \brief          Entry point for CWZEditor.exe ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â editor executable.
                 Boots to EditorHubState. All game logic lives in Lua scripts.
 

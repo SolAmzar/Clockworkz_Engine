@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+\file           FootstepAudioRuntime.hpp
+\project        Lights Out
+\author(s)      [Sol-Amzar] 100%
+\brief          Declares runtime helpers for footstep surface audio playback in
+                Lights Out.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include "Audio/AudioManager.hpp"

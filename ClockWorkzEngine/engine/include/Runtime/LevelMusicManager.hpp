@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+\file           LevelMusicManager.hpp
+\project        Lights Out
+\author(s)      [Sol-Amzar] 100%
+\brief          Declares level music context and layered music management
+                helpers for Lights Out.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include "Audio/AudioManager.hpp"

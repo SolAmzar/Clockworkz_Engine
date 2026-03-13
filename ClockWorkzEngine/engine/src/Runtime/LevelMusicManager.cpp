@@ -1,4 +1,16 @@
-#include "Runtime/LevelMusicManager.hpp"
+/******************************************************************************/
+/*!
+\file           LevelMusicManager.cpp
+\project        Lights Out
+\author(s)      [Sol-Amzar] 100%
+\brief          Implements level music context and layered music management.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
+#include "LevelMusicManager.hpp"
 
 #include "Assets/SoundManager.hpp"
 

@@ -1,3 +1,16 @@
+/******************************************************************************/
+/*!
+\file           Scene.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 57% [Syafiq] 25% [Sol-Amzar] 15% [Yusuf] 3%
+\brief          Declares the runtime scene container, system orchestration, and
+                scene-level settings used by the engine and game states.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
+
 #pragma once
 
 #include <functional>
