@@ -249,3 +249,4 @@ struct ModifyEntityCmd final : IEditorCommand {
 };
 
 } // namespace Runtime
+

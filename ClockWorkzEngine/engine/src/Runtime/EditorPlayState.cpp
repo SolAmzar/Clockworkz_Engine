@@ -21,6 +21,7 @@ reserved.
 #include "Platform/WindowManager.hpp"
 #include "Scripting/LuaManager.hpp"
 #include "Components/Collider.hpp"
+#include "LevelMusicManager.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Tag.hpp"
@@ -47,6 +48,7 @@ EditorPlayState::EditorPlayState(Platform::InputManager& input,
 // ---------------------------------------------------------------------------
 
 void EditorPlayState::onEnter() {
+    Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio(), 0.0f);
     // EditorState (below us on the stack) already set the CWD and loaded all
     // assets — do not reload or change CWD here.
 
@@ -74,7 +76,7 @@ void EditorPlayState::onEnter() {
 }
 
 void EditorPlayState::onExit() {
-    Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
+    Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio(), 0.0f);
     m_scene.Clear();
 
     // Restore the editor camera to how it was before play
@@ -271,3 +273,4 @@ void EditorPlayState::renderImGui(Core::Time* timer) {
 }
 
 } // namespace Runtime
+

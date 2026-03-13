@@ -185,3 +185,4 @@ void DeleteEntityCmd::undo() {
 }
 
 } // namespace Runtime
+
