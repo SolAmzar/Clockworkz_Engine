@@ -2,7 +2,7 @@
 /*!
 \file           EditorPlayState.cpp
 \project        ClockWorkz Engine
-\author         [Syafiq]
+\author(s)      [Syafiq] 96% [Lebon] 4%
 \brief          Editor play-mode state implementation.
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights

@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author         [Syafiq]
+\author(s)      [Syafiq] 97% [Lebon] 3%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
