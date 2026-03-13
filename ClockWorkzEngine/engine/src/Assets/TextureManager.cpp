@@ -221,13 +221,17 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
   fs::create_directories("assets/textures");
 
   // 4. Copy file to assets folder
-  try {
-    fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
-    std::cout << "[TextureManager] Copied file to: " << destPath << std::endl;
-  } catch (const fs::filesystem_error &e) {
-    std::cerr << "[TextureManager] Failed to copy file: " << e.what()
-              << std::endl;
-    return false;
+  if (fs::absolute(sourcePath) != fs::absolute(destPath)) {
+    try {
+      fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
+      std::cout << "[TextureManager] Copied file to: " << destPath << std::endl;
+    } catch (const fs::filesystem_error &e) {
+      std::cerr << "[TextureManager] Failed to copy file: " << e.what()
+                << std::endl;
+      return false;
+    }
+  } else {
+    std::cout << "[TextureManager] Source and destination are the same, skipping copy." << std::endl;
   }
 
   // 5. Add entry to JSON config
@@ -286,6 +290,7 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
 
 std::string TextureManager::GetFilePath(const std::string &name,
                                         const std::string &configPath) {
+  const std::string key = normalize(name);
   std::ifstream file(configPath);
   if (!file.is_open())
     return "";
@@ -301,7 +306,7 @@ std::string TextureManager::GetFilePath(const std::string &name,
     return "";
 
   for (const auto &entry : j["textures"]) {
-    if (entry.value("name", "") == name) {
+    if (entry.value("name", "") == key || entry.value("name", "") == name) {
       return entry.value("path", "");
     }
   }

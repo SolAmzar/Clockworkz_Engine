@@ -41,7 +41,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Components/FootstepAudio.hpp"
 #include "Audio/FootstepAudioRuntime.hpp"
-#include "LevelMusicManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 #include <memory>
 #include <iostream>
 #ifdef _DEBUG

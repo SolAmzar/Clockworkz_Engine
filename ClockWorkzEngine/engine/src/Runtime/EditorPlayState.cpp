@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 #include "Runtime/EditorPlayState.hpp"
 #include "Runtime/GameStateManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
 #include "Graphics/Camera2D.hpp"
@@ -19,10 +20,12 @@ reserved.
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Scripting/LuaManager.hpp"
+#include "Components/Collider.hpp"
 #include "Components/UIButton.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Tag.hpp"
 #include "Components/SpriteRenderer.hpp"
+#include "Components/TextRenderer.hpp"
 #include "IMGUI/imgui.h"
 
 #include <GL/glew.h>
@@ -35,8 +38,9 @@ namespace Runtime {
 
 EditorPlayState::EditorPlayState(Platform::InputManager& input,
                                  GameStateManager& gsm,
-                                 std::string scenePath)
-    : m_input(input), m_gsm(gsm), m_sceneFilePath(std::move(scenePath)) {}
+                                 std::string scenePath, bool showColliders)
+    : m_input(input), m_gsm(gsm), m_sceneFilePath(std::move(scenePath)),
+      m_showColliders(showColliders) {}
 
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -70,6 +74,7 @@ void EditorPlayState::onEnter() {
 }
 
 void EditorPlayState::onExit() {
+    Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
     m_scene.Clear();
 
     // Restore the editor camera to how it was before play
@@ -123,23 +128,35 @@ void EditorPlayState::update(double dt) {
                 // Register GSM: state transitions stop play mode; overlay ops work on the scene.
                 Scripting::LuaManager& lua = engine.lua();
                 sol::state& ls = lua.GetState();
+                auto setOverlayVisible = [&](const std::string& tag, bool visible) {
+                    m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
+                        [&](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
+                            if (t.tag == tag) s.visible = visible;
+                        });
+                    m_scene.GetWorld().each<Components::Tag, Components::TextRenderer>(
+                        [&](ECS::Entity, Components::Tag& t, Components::TextRenderer& tr) {
+                            if (t.tag == tag) tr.visible = visible;
+                        });
+                };
                 ls["GSM"] = ls.create_table_with(
                     "pop",                [&]() { m_pendingStop = true; },
                     "switch_to_gameplay", [&]() { m_pendingStop = true; },
                     "switch_to_menu",     [&]() { m_pendingStop = true; },
                     "push_settings",      [&]() { m_pendingStop = true; },
+                    "open_options",       [&]() { m_pendingStop = true; },
                     "quit",               [&]() { m_pendingStop = true; },
-                    "show_overlay", [&](const std::string& tag) {
-                        m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-                            [&tag](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
-                                if (t.tag == tag) s.visible = true;
+                    "show_how_to_play", [&, setOverlayVisible]() {
+                        m_scene.GetWorld().each<Components::Transform, Components::UIButton>(
+                            [](ECS::Entity, Components::Transform&, Components::UIButton& btn) {
+                                btn.interactable = false;
                             });
+                        setOverlayVisible("howtoplay_overlay", true);
                     },
-                    "hide_overlay", [&](const std::string& tag) {
-                        m_scene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-                            [&tag](ECS::Entity, Components::Tag& t, Components::SpriteRenderer& s) {
-                                if (t.tag == tag) s.visible = false;
-                            });
+                    "show_overlay", [&, setOverlayVisible](const std::string& tag) {
+                        setOverlayVisible(tag, true);
+                    },
+                    "hide_overlay", [&, setOverlayVisible](const std::string& tag) {
+                        setOverlayVisible(tag, false);
                     }
                 );
                 if (lua.ExecuteScript("assets/scripts/" + btn.uiScript))
@@ -173,6 +190,44 @@ void EditorPlayState::render(Core::Time* timer) {
     }
 
     m_scene.RenderAll(renderer, camera.viewProj(), sceneTint);
+
+    if (m_showColliders) {
+        renderer.beginDebugPass(camera.viewProj());
+        auto& world = m_scene.GetWorld();
+        world.each<Components::Transform, Components::Collider>(
+            [&](ECS::Entity, Components::Transform& t, Components::Collider& c) {
+                auto rotVec = [](glm::vec2 v, float a) {
+                    return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
+                                    v.x * std::sin(a) + v.y * std::cos(a));
+                };
+                glm::vec2 offset = rotVec(
+                    glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
+                    t.rotation);
+                glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
+
+                glm::vec3 col = c.isTrigger
+                    ? glm::vec3(1.f, 1.f, 0.f)
+                    : glm::vec3(0.f, 1.f, 0.f);
+
+                if (c.shape == Components::Collider::Shape::Box) {
+                    glm::vec2 half(c.size.x * t.scale.x * 0.5f,
+                                   c.size.y * t.scale.y * 0.5f);
+                    glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
+                    glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
+                    renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
+                    renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
+                    renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
+                    renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
+                } else {
+                    float r = c.radius * std::max(t.scale.x, t.scale.y);
+                    renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
+                }
+            });
+        renderer.endDebugPass();
+    }
+
 }
 
 // ---------------------------------------------------------------------------

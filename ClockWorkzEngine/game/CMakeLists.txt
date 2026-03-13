@@ -14,6 +14,37 @@ set(ACTIVE_PROJECT "" CACHE STRING
 # Path to shared engine assets (shaders, fonts) — consumed by each project's CMakeLists.txt
 set(GAME_SHARED_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 
+# ---------------------------------------------------------------------------
+# Global Shared Copy Targets
+# ---------------------------------------------------------------------------
+# These are defined once here to prevent duplicate-target errors and parallel
+# build races when multiple projects are built into the same shared bin/ folder.
+
+# 1. FMOD directory
+set(_fmod_dir "${CMAKE_SOURCE_DIR}/fmod")
+if(EXISTS "${_fmod_dir}" AND NOT TARGET CopyFmod)
+  add_custom_target(CopyFmod
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${_fmod_dir}" "${CMAKE_BINARY_DIR}/fmod"
+    COMMENT "Copying FMOD directory" VERBATIM)
+endif()
+
+# 2. FMOD Runtime DLL
+if(ENGINE_ENABLE_FMOD AND WIN32 AND NOT TARGET CopyFmodDll)
+  add_custom_target(CopyFmodDll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<IF:$<CONFIG:Debug>,${FMOD_DLL_DEBUG},${FMOD_DLL_RELEASE}>"
+      "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
+    COMMENT "Copying FMOD runtime DLL" VERBATIM)
+endif()
+
+# 3. Shared engine assets (shaders, fonts, engine_config)
+if(EXISTS "${GAME_SHARED_ASSETS_DIR}" AND NOT TARGET CopySharedAssets)
+  add_custom_target(CopySharedAssets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${GAME_SHARED_ASSETS_DIR}" "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/assets"
+    COMMENT "Copying shared game assets" VERBATIM)
+endif()
+
 # --- Discover and add project subdirectories ---
 file(GLOB PROJECT_DIRS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/projects"
      "${CMAKE_CURRENT_SOURCE_DIR}/projects/*")

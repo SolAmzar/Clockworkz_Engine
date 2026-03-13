@@ -257,7 +257,7 @@ void MenuState::setMenuButtonsVisible(bool visible) {
 
   m_menuScene.GetWorld().each<Components::Tag, Components::TextRenderer>(
       [&](ECS::Entity, Components::Tag &tag, Components::TextRenderer &tr) {
-        if (tag.tag == "TitleText" || tag.tag == "SubtitleText") {
+        if (tag.tag == "TitleText" || tag.tag == "SubtitleText" || tag.tag == "btn_LoadLevel") {
           tr.visible = visible;
         }
       });
@@ -390,26 +390,31 @@ void MenuState::renderVolumeBar(float centerX, float centerY, float width,
 void MenuState::renderOptionsOverlay() {}
 
 
-void MenuState::handleAction(const std::string &action) {
-  if (action == "start_game") {
-    m_gsm.switchTo(std::make_shared<GamePlayState>(m_gsm, m_input, m_window));
+void MenuState::activateButton(const Components::UIButton &btn) {
+  if (btn.uiScript.empty()) {
+    std::cerr << "[MenuState] Button has no uiScript assigned\n";
     return;
   }
-  if (action == "exit") {
-    Core::Engine::Get().events().publish(Core::QuitGameEvent());
-    return;
-  }
-  if (action == "how_to_play") {
-    m_showingHowToPlay = true;
-    setOverlayVisible("howtoplay_overlay", true);
-    return;
-  }
-  if (action == "options" || action == "option") {
-    openOptions();
-    return;
-  }
-
-  std::cout << "[MenuState] Action: " << action << " (not implemented)\n";
+  Scripting::LuaManager &lua = Core::Engine::Get().lua();
+  sol::state &ls = lua.GetState();
+  ls["GSM"] = ls.create_table_with(
+      "switch_to_gameplay", [&]() {
+        m_gsm.switchTo(std::make_shared<GamePlayState>(m_gsm, m_input, m_window));
+      },
+      "quit", [&]() {
+        Core::Engine::Get().events().publish(Core::QuitGameEvent());
+      },
+      "show_how_to_play", [&]() {
+        m_showingHowToPlay = true;
+        setMenuButtonsVisible(false);
+        setOverlayVisible("howtoplay_overlay", true);
+      },
+      "open_options", [&]() {
+        openOptions();
+      }
+  );
+  if (lua.ExecuteScript("assets/scripts/" + btn.uiScript))
+    lua.CallFunction("on_click");
 }
 
 void MenuState::update(double /*dt*/) {
@@ -422,10 +427,8 @@ void MenuState::update(double /*dt*/) {
         m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
         m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
       m_showingHowToPlay = false;
-      m_menuScene.GetWorld().each<Components::Tag, Components::SpriteRenderer>(
-          [](ECS::Entity, Components::Tag &tag, Components::SpriteRenderer &sprite) {
-            if (tag.tag == "howtoplay_overlay") sprite.visible = false;
-          });
+      setOverlayVisible("howtoplay_overlay", false);
+      setMenuButtonsVisible(true);
     }
     return;
   }
@@ -584,15 +587,16 @@ void MenuState::update(double /*dt*/) {
     ECS::Entity e = m_buttonEntities[i];
     auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(e);
     auto *tf = m_menuScene.GetWorld().getComponent<Components::Transform>(e);
-    auto *sr = m_menuScene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    if (!btn || !tf || !sr || !btn->interactable) {
+    if (!btn || !tf || !btn->interactable) {
       continue;
     }
 
-    bool hovered = (mouseWorld.x >= tf->position.x &&
-                    mouseWorld.x <= tf->position.x + sr->size.x &&
-                    mouseWorld.y >= tf->position.y - sr->size.y &&
-                    mouseWorld.y <= tf->position.y);
+    float cx    = tf->position.x + btn->offset.x;
+    float cy    = tf->position.y + btn->offset.y;
+    float halfW = btn->size.x * 0.5f;
+    float halfH = btn->size.y * 0.5f;
+    bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
+                    mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
     if (hovered) {
       hoveredIndex = i;
       break;
@@ -609,7 +613,7 @@ void MenuState::update(double /*dt*/) {
       auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[hoveredIndex]);
       if (btn) {
-        handleAction(btn->action);
+        activateButton(*btn);
         return;
       }
     }
@@ -639,7 +643,7 @@ void MenuState::update(double /*dt*/) {
       auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[m_selected]);
       if (btn) {
-        handleAction(btn->action);
+        activateButton(*btn);
         return;
       }
     }

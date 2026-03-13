@@ -1091,6 +1091,156 @@
             "flipY": true,
             "name": "table upside down_texture",
             "path": "assets/textures/table upside down.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "Lose menu_texture",
+            "path": "assets/textures/Lose menu.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "background_texture",
+            "path": "assets/textures/background.jpg"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "energy 1_texture",
+            "path": "assets/textures/energy 1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "energy 2_texture",
+            "path": "assets/textures/energy 2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "energy 3_texture",
+            "path": "assets/textures/energy 3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "energy 4_texture",
+            "path": "assets/textures/energy 4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "energy flat_texture",
+            "path": "assets/textures/energy flat.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor1_texture",
+            "path": "assets/textures/floor1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor2_texture",
+            "path": "assets/textures/floor2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor3_texture",
+            "path": "assets/textures/floor3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "floor4_texture",
+            "path": "assets/textures/floor4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "fragmentsample_texture",
+            "path": "assets/textures/fragmentsample.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "gameover_texture",
+            "path": "assets/textures/gameover.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pause_texture",
+            "path": "assets/textures/pause.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "player_old_texture",
+            "path": "assets/textures/player_old.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "player_v2_texture",
+            "path": "assets/textures/player_v2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall1_texture",
+            "path": "assets/textures/wall1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall2_texture",
+            "path": "assets/textures/wall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall3_texture",
+            "path": "assets/textures/wall3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall4_texture",
+            "path": "assets/textures/wall4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall6_texture",
+            "path": "assets/textures/wall6.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall7_texture",
+            "path": "assets/textures/wall7.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall8_texture",
+            "path": "assets/textures/wall8.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall9_texture",
+            "path": "assets/textures/wall9.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "wall_atlas_texture",
+            "path": "assets/textures/wall_atlas.png"
         }
     ]
 }

@@ -34,7 +34,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "States/IntroCutsceneState.hpp"
 #include "States/MenuState.hpp"
 #include "GlobalAudioSettings.hpp"
-#include "LevelMusicManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 #include <memory>
 #include <iostream>
 

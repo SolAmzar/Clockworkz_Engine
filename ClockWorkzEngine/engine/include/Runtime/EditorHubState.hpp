@@ -13,7 +13,10 @@ reserved.
 /******************************************************************************/
 #pragma once
 #include "Runtime/GameState.hpp"
+#include <atomic>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace Platform { class InputManager; }
@@ -46,6 +49,7 @@ private:
     void saveRegistry();
     void openProject(const ProjectEntry& project);
     void createNewProject(const std::string& projectName, const std::string& description);
+    void triggerProjectBuild(const std::string& projectName);
     std::string resolveAbsoluteScenePath(const ProjectEntry& project) const;
     static std::string getSourceRoot();
 
@@ -67,6 +71,12 @@ private:
     char                      m_editNameBuf[128]{};
     char                      m_editDescBuf[512]{};
     int                       m_deletingIdx{-1};
+
+    // Background cmake build state
+    std::thread               m_buildThread;
+    std::atomic<bool>         m_buildInProgress{false};
+    std::mutex                m_buildStatusMutex;
+    std::string               m_buildStatus;
 };
 
 } // namespace Runtime

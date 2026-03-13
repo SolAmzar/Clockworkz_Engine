@@ -639,7 +639,6 @@ public:
     try {
       fs::path fpath(vFilePathName);
       // date
-      size_t len{};
       const auto lastWriteTime = fs::last_write_time(fpath);
       const auto sctp =
           std::chrono::time_point_cast<std::chrono::system_clock::duration>( //
@@ -1214,8 +1213,8 @@ bool IGFD::Utils::NaturalCompare(const std::string &vA, const std::string &vB,
   const auto &as = vA.size();
   const auto &bs = vB.size();
   while (ia < as && ib < bs) {
-    const char &ca = vInsensitiveCase ? std::tolower(vA[ia]) : vA[ia];
-    const char &cb = vInsensitiveCase ? std::tolower(vB[ib]) : vB[ib];
+    const char ca = static_cast<char>(vInsensitiveCase ? std::tolower(vA[ia]) : vA[ia]);
+    const char cb = static_cast<char>(vInsensitiveCase ? std::tolower(vB[ib]) : vB[ib]);
     // we cannot start a number extraction from suffixs
     const auto rA = M_ExtractNumFromStringAtPos(vA, ia, nA);
     const auto rB = M_ExtractNumFromStringAtPos(vB, ib, nB);

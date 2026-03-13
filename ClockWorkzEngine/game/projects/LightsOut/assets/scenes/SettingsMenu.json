@@ -7,6 +7,20 @@
     },
     "darknessIntensity": 0.0,
     "enableDarkness": false,
+    "hiddenEntities": [],
+    "hierarchyGroups": [],
+    "hierarchyOrder": [
+        "SettingsPanel",
+        "SettingsTitle",
+        "Label_Master",
+        "Slider_Master",
+        "Label_BGM",
+        "Slider_BGM",
+        "Label_SFX",
+        "Slider_SFX",
+        "Btn_Back"
+    ],
+    "musicContext": "",
     "objects": [
         {
             "active": true,
@@ -69,6 +83,10 @@
                     "fontId": "Title",
                     "fontSize": 1.399999976158142,
                     "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "AUDIO SETTINGS",
                     "verticalAlignment": 1,
                     "visible": true,
@@ -110,6 +128,10 @@
                     "fontId": "Selection",
                     "fontSize": 0.6000000238418579,
                     "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "MASTER",
                     "verticalAlignment": 1,
                     "visible": true,
@@ -200,6 +222,10 @@
                     "fontId": "Selection",
                     "fontSize": 0.6000000238418579,
                     "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "MUSIC",
                     "verticalAlignment": 1,
                     "visible": true,
@@ -290,6 +316,10 @@
                     "fontId": "Selection",
                     "fontSize": 0.6000000238418579,
                     "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "EFFECTS",
                     "verticalAlignment": 1,
                     "visible": true,
@@ -402,6 +432,10 @@
                     "fontId": "Selection",
                     "fontSize": 0.8500000238418579,
                     "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
                     "text": "BACK",
                     "verticalAlignment": 1,
                     "visible": true,
@@ -438,7 +472,7 @@
                     },
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -30.0
                     },
                     "showBackground": true,
                     "size": {

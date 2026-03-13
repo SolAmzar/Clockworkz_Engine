@@ -21,7 +21,7 @@ reserved.
 #include "Components/FootstepAudio.hpp"
 #include "Components/LuaScript.hpp"
 #include "Core/Engine.hpp"
-#include "LevelMusicManager.hpp"
+#include "Runtime/LevelMusicManager.hpp"
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
 
