@@ -110,7 +110,7 @@ macro(import_glm)
     # Actually download GLM and make it available.
     # After this line, you can link it with:
     #   target_link_libraries(your_project PRIVATE glm::glm)
-    # Note: "glm::glm" is the target name defined inside GLMâ€™s own CMakeLists.txt,
+    # Note: "glm::glm" is the target name defined inside GLMÃ¢â‚¬â„¢s own CMakeLists.txt,
     #       it is not the same as the "glm" handle above.
     FetchContent_MakeAvailable(glm)
 
@@ -365,10 +365,6 @@ macro(import_ffmpeg target)
         if(NOT EXISTS "${FFMPEG_LIB_DIR}/${_lib}.lib")
           set(_FFMPEG_READY FALSE)
         endif()
-        file(GLOB _dll_path "${FFMPEG_BIN_DIR}/${_lib}-*.dll")
-        if(NOT _dll_path)
-          set(_FFMPEG_READY FALSE)
-        endif()
       endforeach()
 
       if(_FFMPEG_READY)
@@ -377,9 +373,13 @@ macro(import_ffmpeg target)
           add_library(FFmpeg::${_lib} SHARED IMPORTED)
           set_target_properties(FFmpeg::${_lib} PROPERTIES
             IMPORTED_IMPLIB "${FFMPEG_LIB_DIR}/${_lib}.lib"
-            IMPORTED_LOCATION "${_dll_path}"
             INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_INCLUDE_DIR}"
           )
+          if(_dll_path)
+            set_target_properties(FFmpeg::${_lib} PROPERTIES
+              IMPORTED_LOCATION "${_dll_path}"
+            )
+          endif()
           target_link_libraries(${target} PUBLIC FFmpeg::${_lib})
         endforeach()
 
@@ -388,8 +388,11 @@ macro(import_ffmpeg target)
         # Cache the DLLs for copying in the game executable project
         file(GLOB FFMPEG_DLLS "${FFMPEG_BIN_DIR}/*.dll")
         set(FFMPEG_DLLS "${FFMPEG_DLLS}" CACHE INTERNAL "FFmpeg DLL paths" FORCE)
+        if(NOT FFMPEG_DLLS)
+          message(WARNING "FFmpeg import libraries were found, but no FFmpeg DLLs were found under ${FFMPEG_BIN_DIR}. Video will compile, but playback will require those DLLs at runtime.")
+        endif()
       else()
-        message(WARNING "FFmpeg import libraries or DLLs were not found. Building without FFmpeg runtime support.")
+        message(WARNING "FFmpeg import libraries were not found. Building without FFmpeg runtime support.")
         target_compile_definitions(${target} PUBLIC CWZ_HAS_FFMPEG=0)
         set(FFMPEG_DLLS "" CACHE INTERNAL "FFmpeg DLL paths" FORCE)
       endif()
