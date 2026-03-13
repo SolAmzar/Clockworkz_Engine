@@ -304,6 +304,7 @@ private:
     std::string             m_deletingAudio;
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
+    bool                    m_openMoveSelectedAudioPopup{false};
 
     // ----- Font browser -----
     char                     m_newFontNameBuf[128]{};
@@ -368,6 +369,7 @@ private:
 };
 
 } // namespace Runtime
+
 
 
 

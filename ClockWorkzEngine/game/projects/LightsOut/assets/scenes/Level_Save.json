@@ -1,5 +1,5 @@
 {
-    "bgm": "level_bgm",
+    "bgm": "",
     "darknessColor": {
         "b": 0.9074733257293701,
         "g": 0.34555044770240784,
@@ -7,7 +7,6 @@
     },
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": true,
-    "musicContext": "",
     "hiddenEntities": [],
     "hierarchyGroups": [],
     "hierarchyOrder": [
@@ -80,6 +79,8 @@
         "Entity 518",
         "Entity 522",
         "Entity 523",
+        "fragment",
+        "fragmentManager",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -114,49 +115,7 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
-        "concrete floor",
-        "concrete floor",
-        "marble",
+        "Entity 523",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -182,6 +141,49 @@
         "marble",
         "concrete floor",
         "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "marble",
+        "concrete floor",
+        "concrete floor",
+        "Enemy",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -534,10 +536,9 @@
         "Fragment",
         "Fragment",
         "marble l",
-        "marble l",
-        "fragment",
-        "fragmentManager"
+        "marble l"
     ],
+    "musicContext": "level_default",
     "objects": [
         {
             "active": true,
@@ -26550,7 +26551,7 @@
                 },
                 "footstepAudio": {
                     "concretePrefix": "fs_concrete_",
-                    "interval": 0.6000000238418579,
+                    "interval": 0.36000001430511475,
                     "minSpeed": 0.10000000149011612,
                     "resetDelay": 0.05000000074505806,
                     "soundPrefix": "fs_concrete_",
@@ -26653,8 +26654,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1150.0,
-                        "y": 150.0
+                        "x": -1150.856689453125,
+                        "y": 149.33575439453125
                     },
                     "rotation": 2.2303144931793213,
                     "scale": {
@@ -43403,15 +43404,16 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "_stateTimer": 0.0,
-                            "_wanderTimer": 0.0,
-                            "alertDuration": 3.0,
-                            "chaseSpeed": 3.299999952316284,
-                            "detectionRadius": 400.0,
-                            "lightSensitivity": 0.30000001192092896,
-                            "patrolSpeed": 14.899999618530273,
-                            "state": "Patrol",
-                            "wanderInterval": 2.0
+                            "chaseSpeed": 13.600000381469727,
+                            "chaseStateSfx": "",
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfx": "",
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "idleStateSfx": "",
+                            "idleStateSfxPrefix": "",
+                            "idleStateSfxVariations": 1
                         },
                         "scriptPath": "components/moth_ai.lua"
                     },
@@ -46797,6 +46799,107 @@
                 }
             },
             "name": "fragmentManager"
+        },
+        {
+            "active": true,
+            "components": {
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.2199999988079071,
+                    "minSpeed": 0.05000000074505806,
+                    "resetDelay": 0.019999999552965164,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.7900000214576721,
+                    "sprintSpeedThreshold": 9.399999618530273,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 3,
+                    "volume": 0.6579999923706055,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "hp": 10.0,
+                            "invulnerable": false,
+                            "isDead": false,
+                            "maxHp": 10.0,
+                            "regenRate": 0.0
+                        },
+                        "scriptPath": "components/health.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "",
+                            "alertStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 100.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 645.0617065429688,
+                        "y": 150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 42.0,
+                    "x": 0.0,
+                    "y": 0.0
+                }
+            },
+            "name": "Enemy"
         }
     ],
     "sfxVolume": 1.0,

@@ -182,3 +182,4 @@ struct RemoveComponentCmd final : IEditorCommand {
 };
 
 } // namespace Runtime
+

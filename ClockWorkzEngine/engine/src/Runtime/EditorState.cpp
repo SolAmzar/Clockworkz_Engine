@@ -238,7 +238,7 @@ void EditorState::onEnter() {
         fs::current_path(m_projectRoot, cwdEc);
     }
 
-    // Load shaders required by the rendering passes ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â use absolute paths since
+    // Load shaders required by the rendering passes ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â use absolute paths since
     // shaders live in game/assets/, not inside the project folder.
     Assets::ResourceManager<Graphics::Shader>::Load(
         "texture",
@@ -591,7 +591,7 @@ void EditorState::render(Core::Time* timer) {
                     }
                     float boxTop = t.position.y;
 
-                    // Outer box — magenta
+                    // Outer box â€” magenta
                     float r = boxLeft, l = boxLeft + boxW;
                     float top = boxTop, bot = boxTop - boxH;
                     renderer.drawLine(r,   top, l,   top, 1.f, 0.f, 1.f);
@@ -599,7 +599,7 @@ void EditorState::render(Core::Time* timer) {
                     renderer.drawLine(l,   bot, r,   bot, 1.f, 0.f, 1.f);
                     renderer.drawLine(r,   bot, r,   top, 1.f, 0.f, 1.f);
 
-                    // Inner padding area — orange (only when padding is non-zero)
+                    // Inner padding area â€” orange (only when padding is non-zero)
                     float padX = text.padding.x * t.scale.x;
                     float padY = text.padding.y * t.scale.y;
                     if (padX > 0.f || padY > 0.f) {
@@ -618,7 +618,7 @@ void EditorState::render(Core::Time* timer) {
 
     m_framebuffer.unbind();
 
-    // Animation editor preview — render current frame into m_animPreviewFB
+    // Animation editor preview â€” render current frame into m_animPreviewFB
     if (m_animEditorOpen && !m_animEdTexture.empty() && !m_animEdClip.empty()) {
         auto* clip = m_animEditorAnim.getClip(m_animEdClip);
         if (clip && !clip->frames.empty()) {
@@ -654,7 +654,7 @@ void EditorState::renderImGui(Core::Time* timer) {
 
     Core::Engine::Get().imguiManager().beginDockspace();
 
-    // One-time layout ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â must use "MyDockSpace" to match ImGuiManager
+    // One-time layout ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â must use "MyDockSpace" to match ImGuiManager
     ImGuiID dockId = ImGui::GetID("MyDockSpace");
     if (!m_dockLayoutInitialized) {
         m_dockLayoutInitialized = true;
@@ -671,7 +671,7 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderSplitNode(main,   ImGuiDir_Left,  0.20f, &left,      &center);
         ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.28f, &right,     &center);
         ImGui::DockBuilderSplitNode(center, ImGuiDir_Down,  0.28f, &centerBot, &centerTop);
-        // right column is a single node (Inspector + Stats tabs ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â no split needed)
+        // right column is a single node (Inspector + Stats tabs ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â no split needed)
         rightTop = right;
 
         ImGui::DockBuilderDockWindow("Hierarchy",              left);
@@ -1107,7 +1107,7 @@ void EditorState::renderHierarchy() {
     auto& world = m_scene.GetWorld();
 
     // -----------------------------------------------------------------------
-    // 1. Build id → full-entity map (needed to call world APIs)
+    // 1. Build id â†’ full-entity map (needed to call world APIs)
     // -----------------------------------------------------------------------
     std::unordered_map<uint32_t, ECS::Entity> idMap;
     world.each<Components::Transform>([&](ECS::Entity e, Components::Transform&) {
@@ -1191,7 +1191,7 @@ void EditorState::renderHierarchy() {
         for (auto& se : m_selectedEntities) selSet.insert(se.id);
 
         if (!selSet.count(draggedId)) {
-            // Dragging an unselected entity — move it alone
+            // Dragging an unselected entity â€” move it alone
             auto it = std::find(m_hierarchyOrder.begin(), m_hierarchyOrder.end(), draggedId);
             if (it == m_hierarchyOrder.end()) return;
             int srcIdx = (int)(it - m_hierarchyOrder.begin());
@@ -1202,7 +1202,7 @@ void EditorState::renderHierarchy() {
             return;
         }
 
-        // Dragging a selected entity — move all selected together.
+        // Dragging a selected entity â€” move all selected together.
         // 1. Record selected IDs in their current relative order.
         std::vector<uint32_t> toMove;
         for (uint32_t id : m_hierarchyOrder)
@@ -1348,7 +1348,7 @@ void EditorState::renderHierarchy() {
                 }
 
                 if (anchorIdx < 0 || clickIdx < 0) {
-                    // No valid anchor yet — fall back to plain select
+                    // No valid anchor yet â€” fall back to plain select
                     m_selectedEntities.clear();
                     m_selectedEntity   = e;
                     m_selectedEntities.push_back(e);
@@ -1524,7 +1524,7 @@ void EditorState::renderHierarchy() {
             m_selectedEntity = {0, 0};
         }
 
-        // --- Drop entity onto group header → add to group ---
+        // --- Drop entity onto group header â†’ add to group ---
         if (ImGui::BeginDragDropTarget()) {
             if (auto* p = ImGui::AcceptDragDropPayload(k_dragTag)) {
                 uint32_t srcId = *(const uint32_t*)p->Data;
@@ -1750,7 +1750,7 @@ void EditorState::renderInspector() {
                              ImGuiInputTextFlags_EnterReturnsTrue))
             grp.name = grpNameBuf;
 
-        // Sort order base — changing it offsets all member sortOrders
+        // Sort order base â€” changing it offsets all member sortOrders
         int newBase = grp.sortOrderBase;
         if (ImGui::InputInt("Sort Order Base", &newBase)) {
             int delta = newBase - grp.sortOrderBase;
@@ -1829,7 +1829,7 @@ void EditorState::renderInspector() {
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Scripting")) {
-            // LuaScript: always available ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â adds a new script slot each click
+            // LuaScript: always available ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â adds a new script slot each click
             if (ImGui::MenuItem("LuaScript")) {
                 if (!world.hasComponent<Components::LuaScript>(m_selectedEntity))
                     world.addComponent(m_selectedEntity, Components::LuaScript{});
@@ -1940,7 +1940,7 @@ void EditorState::renderInspector() {
             ImGui::Checkbox("Show Outline", &m_showColliders);
             ImGui::Separator();
 
-            // Shape selector ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â changing this affects collision logic immediately
+            // Shape selector ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â changing this affects collision logic immediately
             const char* shapeNames[] = {"Box", "Circle"};
             int currentShape = static_cast<int>(c->shape);
             if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2))
@@ -2138,7 +2138,7 @@ void EditorState::renderInspector() {
             auto& entry = ls->scripts[si];
             ImGui::PushID(si);
 
-            // Header name: derive from script filename (e.g. "health.lua" ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ "Health")
+            // Header name: derive from script filename (e.g. "health.lua" ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ "Health")
             std::string headerName = "Script";
             if (!entry.scriptPath.empty()) {
                 std::string stem = fs::path(entry.scriptPath).stem().string();
@@ -2203,7 +2203,10 @@ void EditorState::renderInspector() {
                                     loweredLabel.find("sound") != std::string::npos ||
                                     loweredLabel.find("audio") != std::string::npos;
 
-                                if (looksLikeSoundId) {
+                                const bool looksLikeSoundPrefix =
+                                    loweredName.find("prefix") != std::string::npos ||
+                                    loweredLabel.find("prefix") != std::string::npos;
+                                if (looksLikeSoundId && !looksLikeSoundPrefix) {
                                     auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
                                     std::sort(soundNames.begin(), soundNames.end());
                                     if (!sv.empty() && std::find(soundNames.begin(), soundNames.end(), sv) == soundNames.end())
@@ -2467,7 +2470,7 @@ void EditorState::renderViewport() {
                 bool inside = (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
                                worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
                 if (inside) {
-                    // Higher sortOrder = rendered last = visually on top ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ prefer it
+                    // Higher sortOrder = rendered last = visually on top ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ prefer it
                     if (!foundBounds || sr->sortOrder > bestSort) {
                         bestSort    = sr->sortOrder;
                         bestEnt     = e;
@@ -2475,7 +2478,7 @@ void EditorState::renderViewport() {
                     }
                 }
             } else if (!foundBounds) {
-                // No sprite ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â fall back to proximity
+                // No sprite ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â fall back to proximity
                 float d = magnitude(center - worldPos);
                 if (d < bestDist) { bestDist = d; bestEnt = e; }
             }
@@ -2510,7 +2513,7 @@ void EditorState::renderViewport() {
                     [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
 
             if (!alreadySelected) {
-                // New entity ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â clear selection and select this one
+                // New entity ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â clear selection and select this one
                 m_selectedEntities.clear();
                 m_selectedEntity = bestEnt;
                 if (ecs.isValid(bestEnt)) m_selectedEntities.push_back(bestEnt);
@@ -2528,7 +2531,7 @@ void EditorState::renderViewport() {
                         m_gizmoGroupOriginalPos.push_back({se, {t->position.x, t->position.y}});
                 }
             } else {
-                // Clicked empty space ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â start box selection
+                // Clicked empty space ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â start box selection
                 m_pendingEntityDrag = false;
                 m_isDraggingEntity  = false;
                 m_isBoxSelecting    = true;
@@ -2645,11 +2648,11 @@ void EditorState::renderViewport() {
                         m_selectedEntity = m_selectedEntities.front();
                 }
             }
-            // Box too small = just a click on empty space ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ selection stays cleared
+            // Box too small = just a click on empty space ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ selection stays cleared
         }
     }
 
-    // ----- Drag-drop: texture / prefab from browsers ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ spawn entity -----
+    // ----- Drag-drop: texture / prefab from browsers ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ spawn entity -----
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
             const char* texName = static_cast<const char*>(pl->Data);
@@ -2823,7 +2826,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
         drawArrow(xEnd, normalize(xAxisScr), hoverX ? colHover : colX);
         drawArrow(yEnd, normalize(yAxisScr), hoverY ? colHover : colY);
 
-        // Start drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â capture group original positions
+        // Start drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â capture group original positions
         if (mouseClick && (hoverX || hoverY)) {
             m_gizmoActiveAxis   = hoverX ? 0 : 1;
             m_gizmoOriginalPos  = {trans->position.x, trans->position.y};
@@ -2835,7 +2838,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             }
         }
 
-        // Drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â move primary and apply same delta to group
+        // Drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â move primary and apply same delta to group
         if (mouseDown && m_gizmoActiveAxis != -1) {
             float dx = mousePos.x - m_gizmoClickOffset.x;
             float dy = mousePos.y - m_gizmoClickOffset.y;
@@ -2938,7 +2941,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
         drawBox(xEnd, hoverX ? colHover : colX);
         drawBox(yEnd, hoverY ? colHover : colY);
 
-        // Start drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â capture group original scales
+        // Start drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â capture group original scales
         if (mouseClick && (hoverX || hoverY)) {
             m_gizmoActiveAxis    = hoverX ? 0 : 1;
             m_gizmoOriginalScale = {trans->scale.x, trans->scale.y};
@@ -2950,7 +2953,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             }
         }
 
-        // Drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â project mouse movement onto axis, apply as scale delta
+        // Drag ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â project mouse movement onto axis, apply as scale delta
         if (mouseDown && m_gizmoActiveAxis != -1) {
             float dx = mousePos.x - m_gizmoClickOffset.x;
             float dy = mousePos.y - m_gizmoClickOffset.y;
@@ -2990,7 +2993,7 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
     // ----- Highlight secondary selected entities -----
     for (auto& e : m_selectedEntities) {
         if (e.id == m_selectedEntity.id && e.generation == m_selectedEntity.generation)
-            continue; // primary ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â already shown by gizmo or green outline elsewhere
+            continue; // primary ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â already shown by gizmo or green outline elsewhere
         auto* t = world.getComponent<Components::Transform>(e);
         if (!t) continue;
         vec2 sc = worldToScreen({t->position.x, t->position.y},
@@ -3017,9 +3020,11 @@ void EditorState::renderAssetBrowser() {
 
     {
         auto dropped = Core::Engine::Get().window().consumeDroppedFiles();
+        std::vector<std::string> unhandledDrops;
         for (const auto& filePath : dropped) {
             std::string ext = fs::path(filePath).extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            bool handled = false;
             static const char* kImgExts[] = {".png", ".jpg", ".jpeg", ".bmp", ".tga"};
             for (auto e : kImgExts) {
                 if (ext == e) {
@@ -3029,6 +3034,7 @@ void EditorState::renderAssetBrowser() {
                     Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
                     // If imported to a different location than the manager's default,
                     // we might need to handle the move, but ImportTexture handles the copy to assets/textures.
+                    handled = true;
                     break;
                 }
             }
@@ -3041,8 +3047,14 @@ void EditorState::renderAssetBrowser() {
                 }
                 m_newFontSize = 32;
                 m_pendingFontImportPopup = true;
+                handled = true;
+            }
+            if (!handled) {
+                unhandledDrops.push_back(filePath);
             }
         }
+        auto& remainingDrops = Core::Engine::Get().window().droppedFilesMutable();
+        remainingDrops.insert(remainingDrops.end(), unhandledDrops.begin(), unhandledDrops.end());
     }
 
     if (m_currentAssetDir != assetsRoot.generic_string()) {
@@ -3535,7 +3547,7 @@ void EditorState::renderAnimationEditor() {
     ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Animation Editor", &m_animEditorOpen)) { ImGui::End(); return; }
 
-    // ── Top row: texture picker (left) + preview image (right) ──────────────
+    // â”€â”€ Top row: texture picker (left) + preview image (right) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ImGui::BeginGroup();
     ImGui::Text("File: %s", m_editingAnimRelPath.c_str());
 
@@ -3552,7 +3564,7 @@ void EditorState::renderAnimationEditor() {
     }
     ImGui::EndGroup();
 
-    // Preview image — top-right corner, same line as the group above
+    // Preview image â€” top-right corner, same line as the group above
     ImGui::SameLine(ImGui::GetWindowWidth() - 148.f);
     if (m_animPreviewFB.getTextureID() != 0) {
         ImGui::Image(reinterpret_cast<void*>(static_cast<uint64_t>(
@@ -3564,7 +3576,7 @@ void EditorState::renderAnimationEditor() {
 
     ImGui::Separator();
 
-    // ── Clip selection ───────────────────────────────────────────────────────
+    // â”€â”€ Clip selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
         std::vector<std::string> clipNames;
         for (auto& [k, _] : m_animEditorAnim.clips) clipNames.push_back(k);
@@ -3602,7 +3614,7 @@ void EditorState::renderAnimationEditor() {
         }
     }
 
-    // ── Playback controls ────────────────────────────────────────────────────
+    // â”€â”€ Playback controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ImGui::Separator();
     ImGui::Checkbox("Loop##aned", &m_animEdLoop);
     ImGui::SameLine();
@@ -3620,7 +3632,7 @@ void EditorState::renderAnimationEditor() {
         }
     }
 
-    // ── Frame list ───────────────────────────────────────────────────────────
+    // â”€â”€ Frame list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ImGui::Separator();
     if (!m_animEdClip.empty()) {
         if (auto* clip = m_animEditorAnim.getClip(m_animEdClip)) {
@@ -3648,7 +3660,7 @@ void EditorState::renderAnimationEditor() {
             }
             ImGui::EndChild();
 
-            // ── Selected frame editor ────────────────────────────────────────
+            // â”€â”€ Selected frame editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (m_animEdFrame >= 0 && m_animEdFrame < static_cast<int>(clip->frames.size())) {
                 auto& fd = clip->frames[m_animEdFrame];
                 ImGui::Separator();
@@ -3665,7 +3677,7 @@ void EditorState::renderAnimationEditor() {
         }
     }
 
-    // ── Grid generator ───────────────────────────────────────────────────────
+    // â”€â”€ Grid generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ImGui::Separator();
     if (ImGui::CollapsingHeader("Grid Generator##aned")) {
         ImGui::InputInt("Sheet W##aned", &m_animEdSheetW);
@@ -3705,7 +3717,7 @@ void EditorState::renderAnimationEditor() {
         }
     }
 
-    // ── Bulk duration ────────────────────────────────────────────────────────
+    // â”€â”€ Bulk duration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!m_animEdClip.empty()) {
         if (auto* clip = m_animEditorAnim.getClip(m_animEdClip); clip && !clip->frames.empty()) {
             ImGui::Separator();
@@ -3718,7 +3730,7 @@ void EditorState::renderAnimationEditor() {
         }
     }
 
-    // ── Save ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ImGui::Separator();
     if (ImGui::Button("Save##aned") && !m_editingAnimPath.empty()) {
         nlohmann::json j = m_animEditorAnim.serialize(m_editingAnimPath);
@@ -4181,6 +4193,67 @@ void EditorState::renderAudioBrowser() {
     if (!fs::exists(audioRoot)) fs::create_directories(audioRoot, ec);
     const std::string kSoundConfig = "assets/configs/sounds.json";
 
+    {
+        auto dropped = Core::Engine::Get().window().consumeDroppedFiles();
+        std::vector<std::string> unhandledDrops;
+        std::vector<std::string> importedSounds;
+        for (const auto& filePath : dropped) {
+            std::string ext = fs::path(filePath).extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            const bool isAudioDrop = (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac");
+            if (!isAudioDrop) {
+                unhandledDrops.push_back(filePath);
+                continue;
+            }
+
+            fs::path sourcePath(filePath);
+            std::string baseName = sourcePath.stem().string();
+            if (baseName.empty()) {
+                baseName = "audio";
+            }
+
+            Assets::SoundConfig existingCfg;
+            std::string uniqueName = baseName;
+            int duplicateIndex = 1;
+            while (Assets::SoundManager::GetConfig(uniqueName, existingCfg, kSoundConfig)) {
+                uniqueName = baseName + "_" + std::to_string(duplicateIndex++);
+            }
+
+            Assets::SoundConfig cfg;
+            cfg.name = uniqueName;
+            cfg.path = filePath;
+            cfg.group = "SFX";
+
+            if (!Assets::SoundManager::ImportSound(filePath, uniqueName, cfg, kSoundConfig)) {
+                continue;
+            }
+
+            fs::path importedPath = audioRoot / sourcePath.filename();
+            if (fs::exists(importedPath) && fs::path(m_currentAudioDir) != audioRoot) {
+                fs::create_directories(fs::path(m_currentAudioDir), ec);
+                fs::path destPath = fs::path(m_currentAudioDir) / sourcePath.filename();
+                int pathDuplicateIndex = 1;
+                while (fs::exists(destPath)) {
+                    destPath = fs::path(m_currentAudioDir) /
+                        (sourcePath.stem().string() + "_" + std::to_string(pathDuplicateIndex++) + sourcePath.extension().string());
+                }
+                fs::rename(importedPath, destPath, ec);
+                if (!ec) {
+                    Assets::SoundManager::UpdatePathInConfig(uniqueName, destPath.generic_string(), kSoundConfig);
+                }
+            }
+
+            importedSounds.push_back(uniqueName);
+        }
+
+        if (!importedSounds.empty()) {
+            m_selectedAudioAssets = importedSounds;
+        }
+
+        auto& remainingDrops = Core::Engine::Get().window().droppedFilesMutable();
+        remainingDrops.insert(remainingDrops.end(), unhandledDrops.begin(), unhandledDrops.end());
+    }
+
     if (m_currentAudioDir != audioRoot.generic_string()) {
         if (ImGui::Button("<- Back##audio")) {
             m_currentAudioDir = fs::path(m_currentAudioDir).parent_path().generic_string();
@@ -4625,6 +4698,36 @@ void EditorState::renderAudioBrowser() {
         ImGui::EndPopup();
     }
 
+    auto moveAudioFileToFolder = [&](const std::string& soundName, const fs::path& srcPath, const fs::path& destDir) {
+        if (soundName.empty() || srcPath.empty() || destDir.empty()) {
+            return;
+        }
+
+        std::error_code moveEc;
+        fs::create_directories(destDir, moveEc);
+        if (moveEc) {
+            return;
+        }
+
+        const fs::path normalizedSrc = srcPath.lexically_normal();
+        const fs::path normalizedDestDir = destDir.lexically_normal();
+        if (normalizedSrc.parent_path() == normalizedDestDir) {
+            return;
+        }
+
+        fs::path destFile = normalizedDestDir / normalizedSrc.filename();
+        int duplicateIndex = 1;
+        while (fs::exists(destFile)) {
+            destFile = normalizedDestDir /
+                (normalizedSrc.stem().string() + "_" + std::to_string(duplicateIndex++) + normalizedSrc.extension().string());
+        }
+
+        fs::rename(normalizedSrc, destFile, moveEc);
+        if (!moveEc) {
+            Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
+        }
+    };
+
     if (!m_movingAudioPath.empty()) ImGui::OpenPopup("##MoveAudio");
     if (ImGui::BeginPopupModal("##MoveAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Move '%s' to:", fs::path(m_movingAudioPath).filename().string().c_str());
@@ -4637,20 +4740,43 @@ void EditorState::renderAudioBrowser() {
         for (const auto& folder : audioFolders) {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
-                fs::path destFile = destDir / fs::path(m_movingAudioPath).filename();
                 const std::string soundName =
                     Assets::SoundManager::GetNameForPath(fs::path(m_movingAudioPath).generic_string(), kSoundConfig);
-                if (!fs::exists(destFile)) {
-                    fs::rename(fs::path(m_movingAudioPath), destFile, ec);
-                    if (ec.value() == 0 && !soundName.empty())
-                        Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
-                }
+                moveAudioFileToFolder(soundName, fs::path(m_movingAudioPath), destDir);
                 m_movingAudioPath.clear();
                 ImGui::CloseCurrentPopup();
             }
         }
         ImGui::Separator();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_movingAudioPath.clear(); ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    if (m_openMoveSelectedAudioPopup && !m_selectedAudioAssets.empty()) {
+        ImGui::OpenPopup("##MoveSelectedAudio");
+        m_openMoveSelectedAudioPopup = false;
+    }
+    if (ImGui::BeginPopupModal("##MoveSelectedAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Move %zu selected audio file(s) to:", m_selectedAudioAssets.size());
+        ImGui::Separator();
+        std::vector<std::string> audioFolders;
+        audioFolders.push_back("(root)");
+        for (const auto& entry : fs::recursive_directory_iterator(audioRoot, ec))
+            if (entry.is_directory())
+                audioFolders.push_back(fs::relative(entry.path(), audioRoot, ec).generic_string());
+        for (const auto& folder : audioFolders) {
+            if (ImGui::Selectable(folder.c_str())) {
+                fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
+                for (const auto& soundName : m_selectedAudioAssets) {
+                    std::string srcPath = Assets::SoundManager::GetFilePath(soundName, kSoundConfig);
+                    if (srcPath.empty()) continue;
+                    moveAudioFileToFolder(soundName, fs::path(srcPath), destDir);
+                }
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::Separator();
+        if (ImGui::Button("Cancel##moveselectedaudio", ImVec2(100, 0))) { ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
 
@@ -4662,6 +4788,10 @@ void EditorState::renderAudioBrowser() {
         if (ImGui::Button("Edit Selected Settings##audio")) {
             loadBatchAudioFromSelection();
             m_openBatchEditAudioPopup = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Move Selected##audio")) {
+            m_openMoveSelectedAudioPopup = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("Clear Selection##audio")) {
@@ -4788,6 +4918,10 @@ void EditorState::renderAudioBrowser() {
                         loadBatchAudioFromSelection();
                         m_openBatchEditAudioPopup = true;
                     }
+                    if (std::find(m_selectedAudioAssets.begin(), m_selectedAudioAssets.end(), soundKey) != m_selectedAudioAssets.end() &&
+                        m_selectedAudioAssets.size() > 1 && ImGui::MenuItem("Move Selected")) {
+                        m_openMoveSelectedAudioPopup = true;
+                    }
                     if (ImGui::MenuItem("Edit Settings")) {
                         Assets::SoundConfig cfg;
                         if (Assets::SoundManager::GetConfig(soundKey, cfg, kSoundConfig)) {
@@ -4857,7 +4991,7 @@ void EditorState::loadScene(const std::string& path) {
     m_renamingGroupIdx  = -1;
     m_lastAnchorId      = 0;
 
-    // Restore hierarchy groups + hidden entities from JSON (entity names → IDs)
+    // Restore hierarchy groups + hidden entities from JSON (entity names â†’ IDs)
     {
         using json = nlohmann::json;
         std::ifstream fin(path);
@@ -4865,7 +4999,7 @@ void EditorState::loadScene(const std::string& path) {
             json root;
             fin >> root;
             if (root.contains("hierarchyGroups") && root["hierarchyGroups"].is_array()) {
-                // Build name → entity ID map from world
+                // Build name â†’ entity ID map from world
                 auto& world = m_scene.GetWorld();
                 std::unordered_map<std::string, uint32_t> nameToId;
                 world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
@@ -4929,7 +5063,7 @@ void EditorState::loadScene(const std::string& path) {
 
 void EditorState::saveScene() {
     if (m_sceneFilePath.empty()) {
-        std::cerr << "[EditorState] No file path ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â cannot save.\n";
+        std::cerr << "[EditorState] No file path ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â cannot save.\n";
         return;
     }
     namespace fs = std::filesystem;
@@ -4945,7 +5079,7 @@ void EditorState::saveScene() {
         fin >> root;
         fin.close();
 
-        // Build entity ID → tag name map
+        // Build entity ID â†’ tag name map
         auto& world = m_scene.GetWorld();
         std::unordered_map<uint32_t, std::string> idToName;
         world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
@@ -5751,6 +5885,7 @@ void EditorState::checkAssetHotReload() {
 }
 
 } // namespace Runtime
+
 
 
 

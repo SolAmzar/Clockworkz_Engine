@@ -7,6 +7,23 @@
     },
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": false,
+    "hiddenEntities": [],
+    "hierarchyGroups": [],
+    "hierarchyOrder": [
+        "Entity_4",
+        "Player",
+        "Entity_6",
+        "Fragment",
+        "Entity_5",
+        "Enemy Test",
+        "Fragment",
+        "Fragment",
+        "Entity 9",
+        "FragmentManager",
+        "HUD_Battery",
+        "HUD_FragmentCounter"
+    ],
+    "musicContext": "",
     "objects": [
         {
             "active": true,
