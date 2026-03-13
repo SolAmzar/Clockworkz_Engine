@@ -1241,6 +1241,8 @@
             "flipY": true,
             "name": "wall_atlas_texture",
             "path": "assets/textures/wall_atlas.png"
+            "name": "completedMonster 2 export_texture",
+            "path": "assets/textures/completedMonster 2 export.png"
         }
     ]
 }

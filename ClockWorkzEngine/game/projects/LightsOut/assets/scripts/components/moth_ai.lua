@@ -6,22 +6,13 @@
 -------------------------------------------------------------------------------
 
 Properties = {
-    { name = "chaseSpeed",             type = "float",  default = 180.0, label = "Chase Speed" },
-    { name = "idleStateSfxVariations",  type = "int",    default = 1,     label = "Idle SFX Variations" },
-    { name = "chaseStateSfxVariations", type = "int",    default = 1,     label = "Chase SFX Variations" },
-    { name = "deathStateSfxVariations", type = "int",    default = 1,     label = "Death SFX Variations" },
-    { name = "idleStateSfxPrefix",     type = "string", default = "",    label = "Idle SFX Prefix" },
-    { name = "chaseStateSfxPrefix",    type = "string", default = "",    label = "Chase SFX Prefix" },
-    { name = "deathStateSfxPrefix",    type = "string", default = "",    label = "Death SFX Prefix" },
-    { name = "idleStateSfx",           type = "string", default = "",    label = "" },
-    { name = "chaseStateSfx",          type = "string", default = "",    label = "" },
-    { name = "deathStateSfx",          type = "string", default = "",    label = "" },
-    -- Internal
+    { name = "chaseSpeed",  type = "float", default = 180.0, label = "Chase Speed" },
+    { name = "attackRange", type = "float", default = 40.0,  label = "Attack Range" },
+
     { name = "_state",            type = "string", default = "Idle",  label = "" },
     { name = "_alpha",            type = "float",  default = 1.0,     label = "" },
     { name = "_deathSfxPlayed",   type = "bool",   default = false,   label = "" },
     { name = "_colliderDisabled", type = "bool",   default = false,   label = "" },
-    { name = "_initialized",      type = "bool",   default = false,   label = "" },
 }
 
 local function norm(dx, dy)
@@ -97,12 +88,17 @@ end
 function Moth:onUpdate(entity, dt)
     if not entity:isValid() then return end
 
+    ---------------------------------------------------------------------------
+    -- Death state (from player killing it — not from light)
+    ---------------------------------------------------------------------------
     if self._state == "Death" then
         entity.velocity = Vec2(0.0, 0.0)
+
         if not self._colliderDisabled then
             self._colliderDisabled = true
             entity:setColliderSolid(false)
         end
+
         if not self._deathSfxPlayed then
             self._deathSfxPlayed = true
             if (self.deathStateSfxPrefix == nil or self.deathStateSfxPrefix == "") and
@@ -110,14 +106,57 @@ function Moth:onUpdate(entity, dt)
                 Audio.playOneShot("enemy_death_" .. math.random(1, 3))
             end
         end
-        self._alpha = math.max(0.0, self._alpha - 2.0 * dt)
+
+        self._alpha = math.max(0.0, self._alpha - 2.0*dt)
         entity:setSpriteAlpha(self._alpha)
         return
     end
 
-    local player = World.findByTag("Player")
+    ---------------------------------------------------------------------------
+    -- Attack state: play attack animation, deal damage, then return to Idle
+    ---------------------------------------------------------------------------
+    if self._state == "Attack" then
+        entity.velocity = Vec2(0.0, 0.0)
+
+        -- Kill player if still within attack range (covers missed collision cases)
+        local aplayer = World.findByTag("Player")
+        if aplayer ~= nil and aplayer:isValid() then
+            local dx = aplayer.position.x - entity.position.x
+            local dy = aplayer.position.y - entity.position.y
+            if dx*dx + dy*dy <= self.attackRange * self.attackRange then
+                local isDead = World.getScriptProp(aplayer.id, "_isDead")
+                if not isDead then
+                    World.setScriptProp(aplayer.id, "_isDead", true)
+                    if aplayer:hasSpriteAnimator() and aplayer:getCurrentClip() ~= "death" then
+                        aplayer:playAnimation("death")
+                        aplayer:setColliderSolid(false)
+                    end
+                    Engine.triggerGameOver()
+                end
+            end
+        end
+
+        if entity:hasSpriteAnimator() then
+            if entity:getCurrentClip() ~= "attack" then
+                entity:playAnimation("attack")
+            end
+            if not entity:isAnimationPlaying() then
+                self._state = "Idle"
+            end
+        else
+            self._state = "Idle"
+        end
+
+        return
+    end
+
+    ---------------------------------------------------------------------------
+    -- Find player
+    ---------------------------------------------------------------------------
+    local player      = World.findByTag("Player")
     local playerFound = player ~= nil and player:isValid()
-    local px, py = 0.0, 0.0
+    local px, py      = 0.0, 0.0
+
     if playerFound then
         if player:getCurrentClip() == "death" then
             playerFound = false
@@ -128,55 +167,98 @@ function Moth:onUpdate(entity, dt)
 
     local ex, ey = entity.position.x, entity.position.y
 
+    ---------------------------------------------------------------------------
+    -- Check if any active torch is shining on this enemy
+    ---------------------------------------------------------------------------
     local inLight = false
     World.eachLight(function(t)
         if inLight or not t:isValid() then return end
         if not t:isLightActive() then return end
         if t:hasBattery() and t:getBatteryCharge() <= 0.0 then return end
+
         local rot = t.rotation
         local c, s = math.cos(rot), math.sin(rot)
         local ox, oy = t:getLightOffsetX(), t:getLightOffsetY()
-        local tx = t.position.x + ox * c - oy * s
-        local ty = t.position.y + ox * s + oy * c
+        local tx = t.position.x + ox*c - oy*s
+        local ty = t.position.y + ox*s + oy*c
+
         if inCone(ex, ey, tx, ty, rot, t:getLightRadius(), t:getLightAngle()) then
             inLight = true
         end
     end)
 
+    ---------------------------------------------------------------------------
+    -- State: Idle ↔ Chase (light is the trigger, NOT proximity)
+    ---------------------------------------------------------------------------
     if self._state == "Idle" then
         if inLight and playerFound then
             setState(self, entity, "Chase")
         end
+
         entity.velocity = Vec2(0.0, 0.0)
 
+        -- IDLE ANIMATION
+        if entity:hasSpriteAnimator() then
+            if entity:getCurrentClip() ~= "idle" then
+                entity:playAnimation("idle")      -- looped idle clip
+            end
+        end
+
     elseif self._state == "Chase" then
-        if not inLight or not playerFound then
-            setState(self, entity, "Idle")
-            entity.velocity = Vec2(0.0, 0.0)
-            return
-        end
+    if not inLight or not playerFound then
+        self._state = "Idle"
+        entity.velocity = Vec2(0.0, 0.0)
+        return
+    end
 
-        local dx, dy = norm(px - ex, py - ey)
-        entity.velocity = Vec2(dx, dy)
-        entity.moveSpeed = self.chaseSpeed
+    local dxp = px - ex
+    local dyp = py - ey
+    local dist = math.sqrt(dxp*dxp + dyp*dyp)
 
-        local sx = entity.scale.x
-        if dx > 0.1 and sx < 0.0 then
-            entity.scale = Vec2(-sx, entity.scale.y)
-        elseif dx < -0.1 and sx > 0.0 then
-            entity.scale = Vec2(-sx, entity.scale.y)
-        end
+    -- Attack when close
+    if dist <= self.attackRange then
+        self._state = "Attack"
+        entity.velocity = Vec2(0.0, 0.0)
 
         if entity:hasSpriteAnimator() then
+            entity:playAnimation("attack")
+        end
+        return
+    end
+
+    -- Move toward player
+    local dx, dy = norm(dxp, dyp)
+    entity.velocity = Vec2(dx * self.chaseSpeed, dy * self.chaseSpeed)
+
+    -- Flip sprite
+    local sx = entity.scale.x
+    if dx > 0.1 and sx < 0.0 then
+        entity.scale = Vec2(-sx, entity.scale.y)
+    elseif dx < -0.1 and sx > 0.0 then
+        entity.scale = Vec2(-sx, entity.scale.y)
+    end
+
+    -- Walk animation
+    if entity:hasSpriteAnimator() then
+        if entity:getCurrentClip() ~= "walk" then
             entity:playAnimation("walk")
         end
     end
+end
 end
 
 function Moth:onCollisionEnter(entity, other)
     if self._state == "Death" then return end
     if not other:isValid() then return end
+
     if other:hasPlayerController() then
+        -- Enter ATTACK state for moth (plays attack animation)
+        self._state = "Attack"
+        if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "attack" then
+            entity:playAnimation("attack")
+        end
+
+        -- Kill player and trigger game over
         local isDead = World.getScriptProp(other.id, "_isDead")
         if not isDead then
             World.setScriptProp(other.id, "_isDead", true)
