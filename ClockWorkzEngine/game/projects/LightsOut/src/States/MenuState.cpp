@@ -21,6 +21,7 @@ reserved.
 #include "Assets/SoundManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Audio/AudioManager.hpp"
+#include "Audio/AudioSettings.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
 #include "Components/TextRenderer.hpp"
@@ -97,6 +98,7 @@ MenuState::MenuState(GameStateManager &gsm, Platform::InputManager &input,
 void MenuState::onEnter() {
   m_selected = 0;
   m_optionsSelected = 0;
+  syncOptionsSlidersInScene();
   m_showingHowToPlay = false;
   m_showingOptions = false;
   m_buttonEntities.clear();
@@ -125,6 +127,11 @@ void MenuState::onEnter() {
   s_menuMasterVolume = GlobalAudioSettings::GetMasterVolume();
   s_menuBgmVolume = GlobalAudioSettings::GetBGMVolume();
   s_menuSfxVolume = GlobalAudioSettings::GetSFXVolume();
+  auto &audioSettings = Audio::AudioSettings::Get();
+  audioSettings.master = s_menuMasterVolume;
+  audioSettings.bgm = s_menuBgmVolume;
+  audioSettings.sfx = s_menuSfxVolume;
+  syncOptionsSlidersInScene();
   updateOptionsOverlayText();
   GlobalAudioSettings::Apply(m_audio);
 
@@ -239,6 +246,38 @@ void MenuState::syncOptionsSlidersInScene() {
         }
       });
 }
+
+void MenuState::applyOptionsSliderSettings() {
+  bool changed = false;
+  auto &audioSettings = Audio::AudioSettings::Get();
+
+  m_menuScene.GetWorld().each<Components::Tag, Components::UISlider>(
+      [&](ECS::Entity, Components::Tag &tag, Components::UISlider &sl) {
+        const float clamped = clampVolume(sl.value);
+        if (tag.tag == "options_master_bar" && s_menuMasterVolume != clamped) {
+          s_menuMasterVolume = clamped;
+          GlobalAudioSettings::SetMasterVolume(clamped);
+          audioSettings.master = clamped;
+          changed = true;
+        } else if (tag.tag == "options_bgm_bar" && s_menuBgmVolume != clamped) {
+          s_menuBgmVolume = clamped;
+          GlobalAudioSettings::SetBGMVolume(clamped);
+          audioSettings.bgm = clamped;
+          changed = true;
+        } else if (tag.tag == "options_sfx_bar" && s_menuSfxVolume != clamped) {
+          s_menuSfxVolume = clamped;
+          GlobalAudioSettings::SetSFXVolume(clamped);
+          audioSettings.sfx = clamped;
+          changed = true;
+        }
+      });
+
+  if (changed) {
+    GlobalAudioSettings::Apply(m_audio);
+    GlobalAudioSettings::Save();
+    updateOptionsOverlayText();
+  }
+}
 void MenuState::setMenuButtonsVisible(bool visible) {
   for (ECS::Entity entity : m_buttonEntities) {
     if (auto *sr =
@@ -288,6 +327,7 @@ void MenuState::updateOptionsOverlayText() {
 void MenuState::openOptions() {
   m_showingOptions = true;
   m_optionsSelected = 0;
+  syncOptionsSlidersInScene();
   updateOptionsOverlayText();
   setMenuButtonsVisible(false);
   setOverlayVisible("options_overlay", true);
@@ -329,6 +369,7 @@ void MenuState::closeOptions() {
 
 void MenuState::setOptionVolume(int optionIndex, float value) {
   const float clampedValue = clampVolume(value);
+  auto &audioSettings = Audio::AudioSettings::Get();
 
   if (optionIndex == 0) {
     if (s_menuMasterVolume == clampedValue) {
@@ -336,18 +377,21 @@ void MenuState::setOptionVolume(int optionIndex, float value) {
     }
     s_menuMasterVolume = clampedValue;
     GlobalAudioSettings::SetMasterVolume(s_menuMasterVolume);
+    audioSettings.master = s_menuMasterVolume;
   } else if (optionIndex == 1) {
     if (s_menuBgmVolume == clampedValue) {
       return;
     }
     s_menuBgmVolume = clampedValue;
     GlobalAudioSettings::SetBGMVolume(s_menuBgmVolume);
+    audioSettings.bgm = s_menuBgmVolume;
   } else if (optionIndex == 2) {
     if (s_menuSfxVolume == clampedValue) {
       return;
     }
     s_menuSfxVolume = clampedValue;
     GlobalAudioSettings::SetSFXVolume(s_menuSfxVolume);
+    audioSettings.sfx = s_menuSfxVolume;
   } else {
     return;
   }
@@ -438,6 +482,10 @@ void MenuState::update(double /*dt*/) {
     const bool mousePressed = m_input.wasMousePressed(GLFW_MOUSE_BUTTON_LEFT);
     const bool mouseDown = m_input.isMouseDown(GLFW_MOUSE_BUTTON_LEFT);
     bool movedSelection = false;
+
+    m_sliderSystem.update(m_menuScene.GetWorld(), m_input, *m_cam, (float)w,
+                          (float)h);
+    applyOptionsSliderSettings();
 
     auto getSpriteRectByTag = [this](const char *tagName, const RectBounds &fallback) {
       RectBounds rect = fallback;
@@ -709,6 +757,7 @@ void MenuState::onExit() {
 }
 
 } // namespace Runtime
+
 
 
 

@@ -1149,7 +1149,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 15,
-                    "textureId": "pause_bg_texture",
+                    "textureId": "pause",
                     "unlit": true,
                     "uv": [
                         0.0,
