@@ -118,7 +118,6 @@
         "Entity 523",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
         "marble",
         "concrete floor",
         "concrete floor",
@@ -533,8 +532,6 @@
         "marble",
         "marble",
         "marble",
-        "Fragment",
-        "Fragment",
         "Fragment",
         "Fragment",
         "marble l",
@@ -43465,13 +43462,7 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "chaseSpeed": 3.299999952316284,
-                            "chaseStateSfxPrefix": "",
-                            "chaseStateSfxVariations": 1,
-                            "deathStateSfxPrefix": "",
-                            "deathStateSfxVariations": 1,
-                            "idleStateSfxPrefix": "",
-                            "idleStateSfxVariations": 1
+                            "chaseSpeed": 3.299999952316284
                         },
                         "scriptPath": "components/moth_ai.lua"
                     },
