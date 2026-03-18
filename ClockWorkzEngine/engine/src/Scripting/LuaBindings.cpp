@@ -530,15 +530,15 @@ void RegisterEntityRef(sol::state &lua) {
       "hasTag", &Scripting::EntityRef::hasTag, "getTagValue",
       &Scripting::EntityRef::getTagValue,
 
-      // SpriteAnimator
-      "hasSpriteAnimator", &Scripting::EntityRef::hasSpriteAnimator,
-      "playAnimation", sol::overload(&playAnimation1, &playAnimation2),
-      "getCurrentClip", &Scripting::EntityRef::getCurrentAnimationClip,
-      "isAnimationPlaying", &Scripting::EntityRef::isAnimationPlaying,
-      "getAnimationPlaybackSpeed",
-      &Scripting::EntityRef::getAnimationPlaybackSpeed,
-      "setAnimationPlaybackSpeed",
-      &Scripting::EntityRef::setAnimationPlaybackSpeed,
+            // SpriteAnimator
+            "hasSpriteAnimator", &Scripting::EntityRef::hasSpriteAnimator,
+            "playAnimation", sol::overload(&playAnimation1, &playAnimation2),
+            "loadAnimationFile",       &Scripting::EntityRef::loadAnimationFile,
+            "getAnimationFile",        &Scripting::EntityRef::getAnimationFile,
+            "getCurrentClip",    &Scripting::EntityRef::getCurrentAnimationClip,
+            "isAnimationPlaying",      &Scripting::EntityRef::isAnimationPlaying,
+            "getAnimationPlaybackSpeed",&Scripting::EntityRef::getAnimationPlaybackSpeed,
+            "setAnimationPlaybackSpeed",&Scripting::EntityRef::setAnimationPlaybackSpeed,
 
       // Generic script property access (Unity-like: game components as pure
       // Lua)

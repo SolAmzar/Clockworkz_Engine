@@ -89,7 +89,7 @@ const std::vector<ScriptProperty>& ScriptPropertyReader::read(const std::string&
         } else if (type == "bool") {
             auto opt = entry->get<sol::optional<bool>>("default");
             defVal = opt ? *opt : false;
-        } else if (type == "string") {
+        } else if (type == "string" || type == "texture" || type == "animation") {
             auto opt = entry->get<sol::optional<std::string>>("default");
             defVal = opt ? *opt : std::string{};
         } else {

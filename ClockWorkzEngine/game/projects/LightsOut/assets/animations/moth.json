@@ -122,7 +122,7 @@
           "w": 0.20000000298023224
         }
       ],
-      "loop": true,
+      "loop": false,
       "name": "attack"
     },
     {
