@@ -1,0 +1,116 @@
+{
+    "category": "Entity",
+    "components": {
+        "collider": {
+            "blocksLight": false,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 100.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": true,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 100.0
+        },
+        "footstepAudio": {
+            "concretePrefix": "fs_concrete_",
+            "interval": 0.7099999785423279,
+            "minSpeed": 0.10000000149011612,
+            "resetDelay": 0.23999999463558197,
+            "soundPrefix": "fs_monster_",
+            "sprintIntervalScale": 1.0800000429153442,
+            "sprintSpeedThreshold": 19.0,
+            "tilePrefix": "fs_tile_",
+            "useSurfaceSounds": true,
+            "variationCount": 2,
+            "volume": 1.0,
+            "woodPrefix": "fs_concrete_"
+        },
+        "luaScript": [
+            {
+                "enabled": true,
+                "properties": {
+                    "alertDuration": 3.0,
+                    "alertStateSfxPrefix": "attack_monster2_",
+                    "alertStateSfxVariations": 1,
+                    "attackStateSfxPrefix": "attack_monster_",
+                    "attackStateSfxVariations": 1,
+                    "chaseSpeed": 150.0,
+                    "chaseStateSfxPrefix": "idle_monster_",
+                    "chaseStateSfxVariations": 1,
+                    "deathStateSfxPrefix": "enemy_death_",
+                    "deathStateSfxVariations": 1,
+                    "detectionRadius": 300.0,
+                    "lightSensitivity": 0.30000001192092896,
+                    "maxHp": 50.0,
+                    "patrolSpeed": 50.0,
+                    "patrolStateSfxPrefix": "idle_monster2_",
+                    "patrolStateSfxVariations": 1,
+                    "state": "Patrol",
+                    "stateSfxVolume": 1.0,
+                    "usePositionalStateSfx": true,
+                    "wanderInterval": 2.0
+                },
+                "scriptPath": "components/enemy_ai.lua"
+            }
+        ],
+        "spriteAnimator": {
+            "currentClip": "attack",
+            "filename": "enemy.json"
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 150.0,
+                "y": 150.0
+            },
+            "sortOrder": 0,
+            "textureId": "monster_texture",
+            "unlit": false,
+            "uv": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "Enemy"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": 433.5,
+                "y": 34.0
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        },
+        "velocity": {
+            "moveSpeed": 50.0,
+            "x": -0.7609743475914001,
+            "y": 0.648781955242157
+        }
+    },
+    "name": "Enemy Type 1"
+}
