@@ -1097,6 +1097,12 @@
             "flipY": true,
             "name": "completedMonster 2 export_texture",
             "path": "assets/textures/completedMonster 2 export.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pushing-export_texture",
+            "path": "assets/textures/pushing-export.png"
         }
     ]
 }

@@ -453,7 +453,9 @@ bool SceneSerializer::Deserialize(ECS::World &world,
               if      (def.type == "float")  entry.properties[def.name] = jv.get<float>();
               else if (def.type == "int")    entry.properties[def.name] = jv.get<int>();
               else if (def.type == "bool")   entry.properties[def.name] = jv.get<bool>();
-              else if (def.type == "string") entry.properties[def.name] = jv.get<std::string>();
+              else if (def.type == "string"   ||
+                       def.type == "texture"  ||
+                       def.type == "animation") entry.properties[def.name] = jv.get<std::string>();
             }
           }
           return entry;

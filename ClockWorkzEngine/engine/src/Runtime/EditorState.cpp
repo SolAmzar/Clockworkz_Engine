@@ -1783,6 +1783,30 @@ void EditorState::renderInspector() {
                 snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
                 if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
                   val = std::string(strbuf);
+              } else if (def.type == "texture") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+                if (ImGui::BeginDragDropTarget()) {
+                  if (const ImGuiPayload *pl =
+                          ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+                    val = std::string(static_cast<const char *>(pl->Data));
+                  ImGui::EndDragDropTarget();
+                }
+              } else if (def.type == "animation") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+                if (ImGui::BeginDragDropTarget()) {
+                  if (const ImGuiPayload *pl =
+                          ImGui::AcceptDragDropPayload("ANIMATION_ASSET"))
+                    val = std::string(static_cast<const char *>(pl->Data));
+                  ImGui::EndDragDropTarget();
+                }
               }
             }
           }

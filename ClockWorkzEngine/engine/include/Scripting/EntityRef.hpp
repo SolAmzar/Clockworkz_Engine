@@ -115,6 +115,8 @@ public:
   // --- SpriteAnimator ---
   bool        hasSpriteAnimator() const;
   void        playAnimation(const std::string& clipName, bool force = false);
+  void        loadAnimationFile(const std::string& filename);
+  std::string getAnimationFile() const;
   std::string getCurrentAnimationClip() const;
   bool        isAnimationPlaying() const;
   float       getAnimationPlaybackSpeed() const;

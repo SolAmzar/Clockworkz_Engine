@@ -562,6 +562,8 @@ namespace Scripting {
             // SpriteAnimator
             "hasSpriteAnimator", &Scripting::EntityRef::hasSpriteAnimator,
             "playAnimation", sol::overload(&playAnimation1, &playAnimation2),
+            "loadAnimationFile",       &Scripting::EntityRef::loadAnimationFile,
+            "getAnimationFile",        &Scripting::EntityRef::getAnimationFile,
             "getCurrentClip",    &Scripting::EntityRef::getCurrentAnimationClip,
             "isAnimationPlaying",      &Scripting::EntityRef::isAnimationPlaying,
             "getAnimationPlaybackSpeed",&Scripting::EntityRef::getAnimationPlaybackSpeed,

@@ -172,6 +172,8 @@ std::string EntityRef::getTagValue() const { auto* t = m_world ? m_world->getCom
 // --- SpriteAnimator ---
 bool EntityRef::hasSpriteAnimator() const { return m_world && m_world->hasComponent<Components::SpriteAnimator>(m_entity); }
 void EntityRef::playAnimation(const std::string& name, bool force) { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; if (a) a->play(name, force); }
+void EntityRef::loadAnimationFile(const std::string& filename) { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; if (a && !filename.empty()) { a->loadFromPath("assets/animations/" + filename); a->filename = filename; } }
+std::string EntityRef::getAnimationFile() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->filename : std::string{}; }
 std::string EntityRef::getCurrentAnimationClip() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->currentClip : std::string{}; }
 bool EntityRef::isAnimationPlaying() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a && a->playing; }
 float EntityRef::getAnimationPlaybackSpeed() const { auto* a = m_world ? m_world->getComponent<Components::SpriteAnimator>(m_entity) : nullptr; return a ? a->playbackSpeed : 1.f; }
