@@ -18203,7 +18203,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -18500,7 +18500,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -27361,7 +27361,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -31918,8 +31918,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1760.7908935546875,
-                        "y": 218.73114013671875
+                        "x": 1703.8828125,
+                        "y": 210.01547241210938
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -32998,7 +32998,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
