@@ -33,61 +33,91 @@ inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
                                                   ECS::World& world) {
     std::vector<glm::vec2> points;
     points.push_back(origin);
-    const int numRays  = 100;
-    float startAngle   = angleCenter - fovRad * 0.5f;
+    const int numRays   = 100;
+    float startAngle    = angleCenter - fovRad * 0.5f;
 
-    for (int i = 0; i < numRays; ++i) {
-        float a = startAngle + fovRad * (float(i) / (numRays - 1));
-        glm::vec2 dir = {std::cos(a), std::sin(a)};
-        glm::vec2 hit = origin + dir * radius;
-        float closestDist = radius;
+    for (int rayIndex = 0; rayIndex < numRays; ++rayIndex) {
+        float rayAngle      = startAngle + fovRad * (float(rayIndex) / (numRays - 1));
+        glm::vec2 rayDir    = { std::cos(rayAngle), std::sin(rayAngle) };
+        glm::vec2 hitPoint  = origin + rayDir * radius;
+        float closestDist   = radius;
 
         world.each<Components::Transform, Components::Collider>(
-            [&](ECS::Entity, Components::Transform& t, Components::Collider& c) {
-                if (!c.blocksLight) return;
+            [&](ECS::Entity, Components::Transform& transform, Components::Collider& collider) {
+                if (!collider.blocksLight) return;
 
-                glm::vec2 center = glm::vec2(t.position.x, t.position.y) +
-                                   glm::vec2(c.offset.x, c.offset.y);
+                // Compute world-space collider center — matches CollisionSystem exactly:
+                // rotate (offset - pivot) by entity rotation, then add to position.
+                float cosAngle = std::cos(transform.rotation);
+                float sinAngle = std::sin(transform.rotation);
+                auto rotateByEntityAngle = [&](glm::vec2 vec) -> glm::vec2 {
+                    return {
+                        vec.x * cosAngle - vec.y * sinAngle,
+                        vec.x * sinAngle + vec.y * cosAngle
+                    };
+                };
+                glm::vec2 pivotAdjustedOffset = glm::vec2(
+                    collider.offset.x - transform.pivot.x,
+                    collider.offset.y - transform.pivot.y);
+                glm::vec2 colliderCenter = glm::vec2(transform.position.x, transform.position.y)
+                                         + rotateByEntityAngle(pivotAdjustedOffset);
 
-                if (c.shape == Components::Collider::Shape::Box) {
-                    float hx = c.size.x * 0.5f * t.scale.x;
-                    float hy = c.size.y * 0.5f * t.scale.y;
+                if (collider.shape == Components::Collider::Shape::Box) {
+                    float halfWidth  = collider.size.x * 0.5f * transform.scale.x;
+                    float halfHeight = collider.size.y * 0.5f * transform.scale.y;
 
-                    // Skip if light origin is inside this box — slab method returns
-                    // tmin=0, collapsing the polygon to a point and hiding the light.
-                    if (origin.x >= center.x - hx && origin.x <= center.x + hx &&
-                        origin.y >= center.y - hy && origin.y <= center.y + hy) return;
+                    // Transform ray into box local space using the INVERSE rotation
+                    // (rotate by -angle). Both origin and direction use the same transform.
+                    glm::vec2 originToCenter = origin - colliderCenter;
+                    glm::vec2 localRayOrigin = {
+                         originToCenter.x * cosAngle + originToCenter.y * sinAngle,
+                        -originToCenter.x * sinAngle + originToCenter.y * cosAngle
+                    };
+                    glm::vec2 localRayDir = {
+                         rayDir.x * cosAngle + rayDir.y * sinAngle,
+                        -rayDir.x * sinAngle + rayDir.y * cosAngle
+                    };
 
-                    glm::vec2 invDir;
-                    invDir.x = (std::abs(dir.x) < 1e-6f) ? 1e6f : 1.0f / dir.x;
-                    invDir.y = (std::abs(dir.y) < 1e-6f) ? 1e6f : 1.0f / dir.y;
-                    glm::vec2 t1 = (center - glm::vec2(hx, hy) - origin) * invDir;
-                    glm::vec2 t2 = (center + glm::vec2(hx, hy) - origin) * invDir;
-                    float tmin = std::max(0.0f, std::max(std::min(t1.x, t2.x), std::min(t1.y, t2.y)));
-                    float tmax = std::min(std::max(t1.x, t2.x), std::max(t1.y, t2.y));
-                    if (tmax >= tmin && tmin < closestDist) {
-                        closestDist = tmin;
-                        hit = origin + dir * tmin;
+                    // Skip if the light origin is inside the box.
+                    if (localRayOrigin.x >= -halfWidth  && localRayOrigin.x <= halfWidth &&
+                        localRayOrigin.y >= -halfHeight && localRayOrigin.y <= halfHeight) return;
+
+                    // Slab method: find entry/exit distances along X and Y axes.
+                    float invDirX = (std::abs(localRayDir.x) < 1e-6f) ? 1e6f : 1.0f / localRayDir.x;
+                    float invDirY = (std::abs(localRayDir.y) < 1e-6f) ? 1e6f : 1.0f / localRayDir.y;
+                    float slabXEntry = (-halfWidth  - localRayOrigin.x) * invDirX;
+                    float slabXExit  = ( halfWidth  - localRayOrigin.x) * invDirX;
+                    float slabYEntry = (-halfHeight - localRayOrigin.y) * invDirY;
+                    float slabYExit  = ( halfHeight - localRayOrigin.y) * invDirY;
+                    float entryDist  = std::max(0.0f, std::max(std::min(slabXEntry, slabXExit),
+                                                               std::min(slabYEntry, slabYExit)));
+                    float exitDist   = std::min(std::max(slabXEntry, slabXExit),
+                                                std::max(slabYEntry, slabYExit));
+                    if (exitDist >= entryDist && entryDist < closestDist) {
+                        closestDist = entryDist;
+                        hitPoint    = origin + rayDir * entryDist;
                     }
                 }
-                else if (c.shape == Components::Collider::Shape::Circle) {
-                    float r = c.radius * std::max(t.scale.x, t.scale.y);
+                else if (collider.shape == Components::Collider::Shape::Circle) {
+                    float scaledRadius = collider.radius * std::max(transform.scale.x, transform.scale.y);
 
-                    glm::vec2 oc = origin - center;
-                    float b    = 2.0f * glm::dot(oc, dir);
-                    float cval = glm::dot(oc, oc) - r * r;
-                    float disc = b * b - 4.0f * cval;
-                    if (disc < 0.0f) return;
+                    // Quadratic ray-circle intersection.
+                    // Solving: |origin + t*rayDir - colliderCenter|^2 = scaledRadius^2
+                    glm::vec2 originToCenter  = origin - colliderCenter;
+                    float     linearCoeff     = 2.0f * glm::dot(originToCenter, rayDir);
+                    float     constantCoeff   = glm::dot(originToCenter, originToCenter) - scaledRadius * scaledRadius;
+                    float     discriminant    = linearCoeff * linearCoeff - 4.0f * constantCoeff;
+                    if (discriminant < 0.0f) return;
 
-                    float t1 = (-b - std::sqrt(disc)) * 0.5f;
-                    if (t1 > 0.0f && t1 < closestDist) {
-                        closestDist = t1;
-                        hit = origin + dir * t1;
+                    float entryDist = (-linearCoeff - std::sqrt(discriminant)) * 0.5f;
+                    if (entryDist > 0.0f && entryDist < closestDist) {
+                        closestDist = entryDist;
+                        hitPoint    = origin + rayDir * entryDist;
                     }
                 }
             });
 
-        points.push_back(hit);
+        points.push_back(hitPoint);
     }
     return points;
 }
@@ -98,22 +128,22 @@ inline void renderLightPass(ECS::World& world,
     auto& camera = Core::Engine::Get().camera();
 
     world.each<Components::Transform, Components::Light>(
-        [&](ECS::Entity, Components::Transform& trans, Components::Light& lt) {
-            if (!lt.active) return;
+        [&](ECS::Entity, Components::Transform& transform, Components::Light& light) {
+            if (!light.active) return;
 
-            float angle = trans.rotation;
-            glm::vec2 offset = {
-                lt.offset.x * std::cos(angle) - lt.offset.y * std::sin(angle),
-                lt.offset.x * std::sin(angle) + lt.offset.y * std::cos(angle)
+            float lightAngle = transform.rotation;
+            glm::vec2 lightOffset = {
+                light.offset.x * std::cos(lightAngle) - light.offset.y * std::sin(lightAngle),
+                light.offset.x * std::sin(lightAngle) + light.offset.y * std::cos(lightAngle)
             };
-            glm::vec2 origin = glm::vec2(trans.position.x, trans.position.y) + offset;
+            glm::vec2 lightOrigin = glm::vec2(transform.position.x, transform.position.y) + lightOffset;
 
-            float fovRad   = glm::radians(lt.angle);
-            auto lightPoly = buildLightPolygon(origin, angle, fovRad, lt.radius, world);
+            float fovRad    = glm::radians(light.angle);
+            auto lightPoly  = buildLightPolygon(lightOrigin, lightAngle, fovRad, light.radius, world);
 
-            renderer.beginLightPass(camera.viewProj(), origin, lt.color,
-                                    lt.radius, angle, lt.angle, batteryFactor, lt.intensity);
-            renderer.drawLightCone(origin, lightPoly, lt.color);
+            renderer.beginLightPass(camera.viewProj(), lightOrigin, light.color,
+                                    light.radius, lightAngle, light.angle, batteryFactor, light.intensity);
+            renderer.drawLightCone(lightOrigin, lightPoly, light.color);
             renderer.endLightPass();
         });
 }
