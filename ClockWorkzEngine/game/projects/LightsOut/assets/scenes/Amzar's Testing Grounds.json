@@ -15,7 +15,8 @@
         "Entity",
         "Enemy",
         "Enemy",
-        "Enemy"
+        "Enemy",
+        "Fragment"
     ],
     "musicContext": "",
     "objects": [
@@ -671,6 +672,69 @@
                 }
             },
             "name": "Entity"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 0,
+                            "pickupSfx": "fragment_collect_1",
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragmentsample",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -9.375,
+                        "y": 293.75
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment"
         }
     ],
     "sfxVolume": 1.0,
