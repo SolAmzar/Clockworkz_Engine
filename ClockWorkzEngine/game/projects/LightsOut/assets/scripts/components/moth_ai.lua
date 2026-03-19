@@ -1,9 +1,9 @@
 -- moth_ai.lua
 
 Properties = {
-    { name = "chaseSpeed",    type = "float", default = 180.0, label = "Chase Speed" },
-    { name = "attackRange",   type = "float", default = 40.0,  label = "Attack Range" },
-    { name = "dashSpeed",     type = "float", default = 400.0, label = "Dash Speed" },
+    { name = "chaseSpeed",    type = "float", default = 3.30, label = "Chase Speed" },
+    { name = "attackRange",   type = "float", default = 182.0,  label = "Attack Range" },
+    { name = "dashSpeed",     type = "float", default = 10.0, label = "Dash Speed" },
     { name = "dashDuration",  type = "float", default = 0.25,  label = "Dash Duration (s)" },
 
     { name = "_state",            type = "string", default = "Idle",  label = "" },

@@ -1,4 +1,4 @@
-j/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
@@ -39,6 +39,7 @@ reserved.
 #include "Platform/WindowManager.hpp"
 #include "IMGUI/imgui.h"
 #include "IMGUI/imgui_internal.h"
+#include "IMGUI/ImGuiFileDialog.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -1854,57 +1855,6 @@ void EditorState::renderInspector() {
                              ImGuiInputTextFlags_EnterReturnsTrue))
             grp.name = grpNameBuf;
 
-  if (ImGui::BeginPopup("##AddComp")) {
-    if (ImGui::BeginMenu("Core")) {
-      addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world);
-      addCompEntry<Components::Tag>("Tag", m_selectedEntity, world);
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Rendering")) {
-      addCompEntry<Components::SpriteRenderer>("SpriteRenderer",
-                                               m_selectedEntity, world);
-      addCompEntry<Components::SpriteAnimator>("SpriteAnimator",
-                                               m_selectedEntity, world);
-      addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity,
-                                             world);
-      addCompEntry<Components::VideoPlayer>("VideoPlayer", m_selectedEntity,
-                                            world);
-      addCompEntry<Components::Light>("Light", m_selectedEntity, world);
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Physics")) {
-      addCompEntry<Components::Collider>("Collider", m_selectedEntity, world);
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Audio")) {
-      addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity,
-                                            world);
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("UI")) {
-      addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world);
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Camera")) {
-      addCompEntry<Components::CameraComponent>("CameraComponent",
-                                                m_selectedEntity, world);
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Scripting")) {
-      // LuaScript: always available — adds a new script slot each click
-      if (ImGui::MenuItem("LuaScript")) {
-        if (!world.hasComponent<Components::LuaScript>(m_selectedEntity))
-          world.addComponent(m_selectedEntity, Components::LuaScript{});
-        world.getComponent<Components::LuaScript>(m_selectedEntity)
-            ->scripts.push_back({});
-      }
-      addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity,
-                                             world);
-      ImGui::EndMenu();
-    }
-    ImGui::EndPopup();
-  }
-
   ImGui::Separator();
 
   // Tag
@@ -2315,6 +2265,13 @@ void EditorState::renderInspector() {
               }
             }
         }
+        }       // close if (!entry.scriptPath.empty())
+      }         // close if (open)
+      ImGui::PopID();
+    }           // close for (int si = 0; ...)
+    if (removeComponent)
+      world.removeComponent<Components::LuaScript>(m_selectedEntity);
+  }             // close if (world.hasComponent<LuaScript>)
         ImGui::TextDisabled("(%d entities in group)", (int)grp.entityIds.size());
         ImGui::End();
         return;
