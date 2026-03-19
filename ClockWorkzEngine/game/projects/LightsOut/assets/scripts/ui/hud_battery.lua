@@ -9,9 +9,9 @@
 -- *****************************************************************************
 
 Properties = {
-    -- Position relative to player (= camera centre) in world units
-    { name = "offsetX",    type = "float", default = 800.0, label = "Screen Offset X"     },
-    { name = "offsetY",    type = "float", default =  -420.0, label = "Screen Offset Y"     },
+    -- Margin (in world units) inward from the bottom-right corner of the screen
+    { name = "marginX",    type = "float", default =  80.0,  label = "Margin from Right"   },
+    { name = "marginY",    type = "float", default =  60.0,  label = "Margin from Bottom"  },
     -- Charge % above which each texture is shown (battery.lua charge is 0–100)
     { name = "threshold4", type = "float", default =  75.0,  label = "Full Threshold %"    },
     { name = "threshold3", type = "float", default =  50.0,  label = "3/4 Threshold %"     },
@@ -36,8 +36,12 @@ function HudBattery:onUpdate(entity, dt)
     if not player or not player:isValid() then return end
 
     -- Keep HUD at a fixed screen position by tracking player (= camera) position
-    entity.position = Vec2(player.position.x + self.offsetX,
-                           player.position.y + self.offsetY)
+    -- Bottom-right corner: offset = +(halfW - marginX, -(halfH - marginY))
+    local zoom  = Engine.cameraZoom()
+    local halfW = Engine.screenWidth()  * 0.5 / zoom
+    local halfH = Engine.screenHeight() * 0.5 / zoom
+    entity.position = Vec2(player.position.x + halfW - self.marginX,
+                           player.position.y - halfH + self.marginY)
 
     -- Throttle the texture-swap check
     self._timer = self._timer + dt

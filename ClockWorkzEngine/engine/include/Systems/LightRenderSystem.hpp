@@ -26,6 +26,68 @@ reserved.
 
 namespace Systems {
 
+// ---------------------------------------------------------------------------
+// If lightOrigin falls inside a blocking box collider (e.g. because the light
+// offset on the player entity pushes it into an adjacent wall), push it out to
+// the nearest face of that box.  This prevents the "skip-if-inside" guard in
+// buildLightPolygon from treating the wall as transparent.
+// ---------------------------------------------------------------------------
+inline glm::vec2 clampLightOriginOutsideBlockers(glm::vec2 origin, ECS::World& world) {
+    static constexpr float kSurfaceBias = 1.0f; // push 1 world-unit outside the face
+
+    world.each<Components::Transform, Components::Collider>(
+        [&](ECS::Entity, Components::Transform& transform, Components::Collider& collider) {
+            if (!collider.blocksLight) return;
+            if (collider.shape != Components::Collider::Shape::Box) return;
+
+            float halfWidth  = collider.size.x * 0.5f * transform.scale.x;
+            float halfHeight = collider.size.y * 0.5f * transform.scale.y;
+
+            float cosA = std::cos(transform.rotation);
+            float sinA = std::sin(transform.rotation);
+
+            glm::vec2 pivotAdjustedOffset = {
+                collider.offset.x - transform.pivot.x,
+                collider.offset.y - transform.pivot.y
+            };
+            glm::vec2 boxCenter = glm::vec2(transform.position.x, transform.position.y)
+                + glm::vec2(pivotAdjustedOffset.x * cosA - pivotAdjustedOffset.y * sinA,
+                            pivotAdjustedOffset.x * sinA + pivotAdjustedOffset.y * cosA);
+
+            // Transform origin into box local space.
+            glm::vec2 delta      = origin - boxCenter;
+            glm::vec2 localOrigin = {
+                 delta.x * cosA + delta.y * sinA,
+                -delta.x * sinA + delta.y * cosA
+            };
+
+            // Not inside — nothing to do.
+            if (localOrigin.x < -halfWidth  || localOrigin.x > halfWidth)  return;
+            if (localOrigin.y < -halfHeight || localOrigin.y > halfHeight) return;
+
+            // Inside the box: find which face is nearest and push out through it.
+            float overlapRight  = halfWidth  - localOrigin.x;  // dist to +X face
+            float overlapLeft   = halfWidth  + localOrigin.x;  // dist to -X face
+            float overlapBottom = halfHeight - localOrigin.y;  // dist to +Y face
+            float overlapTop    = halfHeight + localOrigin.y;  // dist to -Y face
+
+            float minOverlap = std::min({overlapRight, overlapLeft, overlapBottom, overlapTop});
+
+            glm::vec2 localPushed = localOrigin;
+            if      (minOverlap == overlapRight)  localPushed.x =  halfWidth  + kSurfaceBias;
+            else if (minOverlap == overlapLeft)   localPushed.x = -halfWidth  - kSurfaceBias;
+            else if (minOverlap == overlapBottom) localPushed.y =  halfHeight + kSurfaceBias;
+            else                                  localPushed.y = -halfHeight - kSurfaceBias;
+
+            // Transform the pushed position back to world space.
+            origin = boxCenter + glm::vec2(
+                localPushed.x * cosA - localPushed.y * sinA,
+                localPushed.x * sinA + localPushed.y * cosA);
+        });
+
+    return origin;
+}
+
 inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
                                                   float angleCenter,
                                                   float fovRad,
@@ -137,6 +199,8 @@ inline void renderLightPass(ECS::World& world,
                 light.offset.x * std::sin(lightAngle) + light.offset.y * std::cos(lightAngle)
             };
             glm::vec2 lightOrigin = glm::vec2(transform.position.x, transform.position.y) + lightOffset;
+            // If the light offset pushed the origin inside a wall, pull it back to the surface.
+            lightOrigin = clampLightOriginOutsideBlockers(lightOrigin, world);
 
             float fovRad    = glm::radians(light.angle);
             auto lightPoly  = buildLightPolygon(lightOrigin, lightAngle, fovRad, light.radius, world);

@@ -480,17 +480,17 @@
             "components": {
                 "spriteRenderer": {
                     "color": {
-                        "a": 0.9200000166893005,
-                        "b": 0.0,
-                        "g": 0.0,
-                        "r": 0.0
+                        "a": 0.9215686321258545,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
                     },
                     "size": {
                         "x": 1920.0,
-                        "y": 1984.0
+                        "y": 1080.0
                     },
-                    "sortOrder": 10,
-                    "textureId": "",
+                    "sortOrder": 20,
+                    "textureId": "how_to_play",
                     "unlit": true,
                     "uv": [
                         0.0,
@@ -498,30 +498,7 @@
                         1.0,
                         1.0
                     ],
-                    "visible": false
-                },
-                "textRenderer": {
-                    "alignment": 1,
-                    "boxSize": {
-                        "x": 900.0,
-                        "y": 700.0
-                    },
-                    "color": {
-                        "b": 0.800000011920929,
-                        "g": 0.800000011920929,
-                        "r": 1.0
-                    },
-                    "fontId": "BodyText",
-                    "fontSize": 1.2000000476837158,
-                    "lineSpacing": 1.0,
-                    "padding": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "text": "HOW TO PLAY\n\nWASD / Arrow Keys - Move\nE - Interact\nEsc - Pause\n\nCollect all fragments to open the door.\nStay out of the light!\n\nPress any key to close.",
-                    "verticalAlignment": 0,
-                    "visible": false,
-                    "wordWrap": true
+                    "visible": true
                 },
                 "transform": {
                     "pivot": {
@@ -530,7 +507,7 @@
                     },
                     "position": {
                         "x": 0.0,
-                        "y": 323.9020080566406
+                        "y": 0.0
                     },
                     "rotation": 0.0,
                     "scale": {
