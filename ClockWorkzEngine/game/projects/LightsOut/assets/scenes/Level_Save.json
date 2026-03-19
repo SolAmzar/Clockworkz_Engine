@@ -77,7 +77,6 @@
         "marble top right",
         "Player",
         "Syrofoam box",
-        "Syrofoam box (Clone)",
         "window",
         "marble",
         "TilemapMergedCollider",
@@ -115,7 +114,7 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
+        "Entity 523",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -366,7 +365,6 @@
         "concrete floor",
         "concrete floor",
         "concrete bottom left wall",
-        "TilemapMergedCollider",
         "marble l",
         "concrete l wall",
         "concrete top right wall",
@@ -383,6 +381,7 @@
         "marble -",
         "concrete bottom right wall",
         "concrete l wall",
+        "TilemapMergedCollider",
         "marble l",
         "marble",
         "concrete -",
@@ -539,6 +538,7 @@
         "marble",
         "Fragment",
         "Fragment",
+        "Syrofoam box",
         "marble l",
         "marble l",
         "TilemapMergedCollider",
@@ -19094,8 +19094,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1751.9827880859375,
-                        "y": 51.37834548950195
+                        "x": 1770.2274169921875,
+                        "y": 61.240272521972656
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -29619,7 +29619,7 @@
                     },
                     "position": {
                         "x": 1750.0,
-                        "y": 57.04643249511719
+                        "y": 50.0
                     },
                     "rotation": 0.0,
                     "scale": {
