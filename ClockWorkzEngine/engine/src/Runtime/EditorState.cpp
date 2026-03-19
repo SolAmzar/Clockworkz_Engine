@@ -63,6 +63,7 @@ reserved.
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <iomanip>
 #include <unordered_set>
 #include <cmath>
@@ -1226,6 +1227,55 @@ void EditorState::renderHierarchy() {
         return buf;
     };
 
+    auto getDraggedEntityIds = [&](uint32_t draggedId) {
+        std::unordered_set<uint32_t> selSet;
+        for (auto& se : m_selectedEntities) {
+            if (world.isValid(se))
+                selSet.insert(se.id);
+        }
+
+        std::vector<uint32_t> draggedIds;
+        std::unordered_set<uint32_t> seen;
+        if (!selSet.count(draggedId)) {
+            draggedIds.push_back(draggedId);
+            return draggedIds;
+        }
+
+        for (auto& se : m_selectedEntities) {
+            if (!world.isValid(se)) continue;
+            if (!seen.insert(se.id).second) continue;
+            draggedIds.push_back(se.id);
+        }
+        if (draggedIds.empty())
+            draggedIds.push_back(draggedId);
+        return draggedIds;
+    };
+
+    auto moveEntitiesIntoGroup = [&](const std::vector<uint32_t>& draggedIds, HierarchyGroup& targetGroup) {
+        if (draggedIds.empty()) return;
+
+        std::unordered_set<uint32_t> draggedSet(draggedIds.begin(), draggedIds.end());
+        for (auto& otherGroup : m_hierarchyGroups) {
+            otherGroup.entityIds.erase(
+                std::remove_if(otherGroup.entityIds.begin(), otherGroup.entityIds.end(),
+                    [&](uint32_t id) { return draggedSet.count(id) > 0; }),
+                otherGroup.entityIds.end());
+        }
+
+        m_hierarchyOrder.erase(
+            std::remove_if(m_hierarchyOrder.begin(), m_hierarchyOrder.end(),
+                [&](uint32_t id) { return draggedSet.count(id) > 0; }),
+            m_hierarchyOrder.end());
+
+        for (uint32_t id : draggedIds) {
+            if (std::find(targetGroup.entityIds.begin(), targetGroup.entityIds.end(), id) ==
+                targetGroup.entityIds.end()) {
+                targetGroup.entityIds.push_back(id);
+            }
+            groupedIds.insert(id);
+        }
+    };
+
     // Reorder: if the dragged entity is selected, move ALL selected entities
     // together (maintaining relative order) to the drop position.
     // If dragging an unselected entity, move only that one.
@@ -1304,6 +1354,7 @@ void EditorState::renderHierarchy() {
     if (ImGui::Button("+ Group")) {
         HierarchyGroup grp;
         grp.name = "Group";
+        grp.parentGroupIdx = m_selectedGroupIdx;
         for (auto& e : m_selectedEntities) grp.entityIds.push_back(e.id);
         m_hierarchyGroups.push_back(std::move(grp));
         m_selectedGroupIdx = (int)m_hierarchyGroups.size() - 1;
@@ -1316,8 +1367,9 @@ void EditorState::renderHierarchy() {
     // -----------------------------------------------------------------------
     // 6. Render ungrouped entities with drag-drop reorder
     // -----------------------------------------------------------------------
-    // Drop-zone payload tag
+    // Drop-zone payload tags
     static constexpr char k_dragTag[] = "HRC_ENTITY";
+    static constexpr char k_groupDragTag[] = "HRC_GROUP";
 
     for (int i = 0; i < (int)m_hierarchyOrder.size(); ++i) {
         uint32_t uid = m_hierarchyOrder[i];
@@ -1536,9 +1588,120 @@ void EditorState::renderHierarchy() {
     if (!m_hierarchyGroups.empty())
         ImGui::Separator();
 
-    for (int gi = 0; gi < (int)m_hierarchyGroups.size(); ++gi) {
+    auto isDescendantGroup = [&](int potentialChildIdx, int potentialAncestorIdx) {
+        int parentIdx = potentialChildIdx;
+        while (parentIdx >= 0 && parentIdx < (int)m_hierarchyGroups.size()) {
+            if (parentIdx == potentialAncestorIdx) return true;
+            parentIdx = m_hierarchyGroups[parentIdx].parentGroupIdx;
+        }
+        return false;
+    };
+
+    auto reindexGroupsAfterErase = [&](int removedIdx) {
+        for (auto& group : m_hierarchyGroups) {
+            if (group.parentGroupIdx == removedIdx) {
+                group.parentGroupIdx = -1;
+            } else if (group.parentGroupIdx > removedIdx) {
+                --group.parentGroupIdx;
+            }
+        }
+
+        if (m_selectedGroupIdx == removedIdx) m_selectedGroupIdx = -1;
+        else if (m_selectedGroupIdx > removedIdx) --m_selectedGroupIdx;
+
+        if (m_renamingGroupIdx == removedIdx) m_renamingGroupIdx = -1;
+        else if (m_renamingGroupIdx > removedIdx) --m_renamingGroupIdx;
+    };
+
+    auto remapGroupIndices = [&](const std::vector<int>& oldToNew) {
+        for (auto& group : m_hierarchyGroups) {
+            if (group.parentGroupIdx >= 0 &&
+                group.parentGroupIdx < (int)oldToNew.size()) {
+                group.parentGroupIdx = oldToNew[group.parentGroupIdx];
+            }
+        }
+
+        if (m_selectedGroupIdx >= 0 && m_selectedGroupIdx < (int)oldToNew.size())
+            m_selectedGroupIdx = oldToNew[m_selectedGroupIdx];
+        else if (m_selectedGroupIdx >= 0)
+            m_selectedGroupIdx = -1;
+
+        if (m_renamingGroupIdx >= 0 && m_renamingGroupIdx < (int)oldToNew.size())
+            m_renamingGroupIdx = oldToNew[m_renamingGroupIdx];
+        else if (m_renamingGroupIdx >= 0)
+            m_renamingGroupIdx = -1;
+    };
+
+    auto moveGroupBefore = [&](int fromIdx, int beforeIdx) {
+        if (fromIdx < 0 || beforeIdx < 0 ||
+            fromIdx >= (int)m_hierarchyGroups.size() ||
+            beforeIdx >= (int)m_hierarchyGroups.size() ||
+            fromIdx == beforeIdx) {
+            return;
+        }
+
+        std::vector<HierarchyGroup> reordered;
+        reordered.reserve(m_hierarchyGroups.size());
+        std::vector<int> oldToNew(m_hierarchyGroups.size(), -1);
+        HierarchyGroup movedGroup = m_hierarchyGroups[fromIdx];
+
+        for (int oldIdx = 0; oldIdx < (int)m_hierarchyGroups.size(); ++oldIdx) {
+            if (oldIdx == beforeIdx && oldToNew[fromIdx] == -1) {
+                oldToNew[fromIdx] = (int)reordered.size();
+                reordered.push_back(movedGroup);
+            }
+            if (oldIdx == fromIdx) continue;
+            oldToNew[oldIdx] = (int)reordered.size();
+            reordered.push_back(m_hierarchyGroups[oldIdx]);
+        }
+
+        if (oldToNew[fromIdx] == -1) {
+            oldToNew[fromIdx] = (int)reordered.size();
+            reordered.push_back(movedGroup);
+        }
+
+        m_hierarchyGroups = std::move(reordered);
+        remapGroupIndices(oldToNew);
+    };
+
+    std::function<void(int)> eraseGroupRecursive = [&](int rootIdx) {
+        if (rootIdx < 0 || rootIdx >= (int)m_hierarchyGroups.size()) return;
+
+        for (int childIdx = (int)m_hierarchyGroups.size() - 1; childIdx >= 0; --childIdx) {
+            if (m_hierarchyGroups[childIdx].parentGroupIdx == rootIdx)
+                eraseGroupRecursive(childIdx);
+        }
+
+        m_hierarchyGroups.erase(m_hierarchyGroups.begin() + rootIdx);
+        reindexGroupsAfterErase(rootIdx);
+    };
+
+    std::vector<int> groupDepths(m_hierarchyGroups.size(), 0);
+    for (int idx = 0; idx < (int)m_hierarchyGroups.size(); ++idx) {
+        int parentIdx = m_hierarchyGroups[idx].parentGroupIdx;
+        if (parentIdx == idx || parentIdx >= (int)m_hierarchyGroups.size())
+            m_hierarchyGroups[idx].parentGroupIdx = -1;
+    }
+    std::function<void(int, int, std::vector<int>&)> appendGroupOrder =
+        [&](int parentIdx, int depth, std::vector<int>& out) {
+            for (int idx = 0; idx < (int)m_hierarchyGroups.size(); ++idx) {
+                if (m_hierarchyGroups[idx].parentGroupIdx != parentIdx) continue;
+                groupDepths[idx] = depth;
+                out.push_back(idx);
+                appendGroupOrder(idx, depth + 1, out);
+            }
+        };
+
+    std::vector<int> groupRenderOrder;
+    groupRenderOrder.reserve(m_hierarchyGroups.size());
+    appendGroupOrder(-1, 0, groupRenderOrder);
+
+    for (int orderIdx = 0; orderIdx < (int)groupRenderOrder.size(); ++orderIdx) {
+        int gi = groupRenderOrder[orderIdx];
         auto& grp = m_hierarchyGroups[gi];
         bool groupSel = (m_selectedGroupIdx == gi);
+        float groupIndent = 16.0f * (float)groupDepths[gi];
+        if (groupIndent > 0.0f) ImGui::Indent(groupIndent);
 
         // --- Group rename mode ---
         if (m_renamingGroupIdx == gi) {
@@ -1551,6 +1714,7 @@ void EditorState::renderHierarchy() {
             }
             if (!ImGui::IsItemActive() && !ImGui::IsItemFocused())
                 m_renamingGroupIdx = -1;
+            if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
             continue;
         }
 
@@ -1563,7 +1727,34 @@ void EditorState::renderHierarchy() {
         snprintf(grpLabel, sizeof(grpLabel), "%s  [sort base: %d]##grp%d",
                  grp.name.c_str(), grp.sortOrderBase, gi);
 
+        ImGui::PushID(200000 + gi);
+        ImGui::InvisibleButton("##groupdropbefore", ImVec2(-1.0f, 4.0f));
+        if (ImGui::BeginDragDropTarget()) {
+            if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
+                int draggedGroupIdx = *(const int*)p->Data;
+                if (draggedGroupIdx >= 0 &&
+                    draggedGroupIdx < (int)m_hierarchyGroups.size() &&
+                    draggedGroupIdx != gi &&
+                    m_hierarchyGroups[draggedGroupIdx].parentGroupIdx == grp.parentGroupIdx) {
+                    moveGroupBefore(draggedGroupIdx, gi);
+                    ImGui::EndDragDropTarget();
+                    ImGui::PopID();
+                    if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+                    break;
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::GetWindowDrawList()->AddLine(
+                ImGui::GetItemRectMin(),
+                ImVec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMin().y),
+                IM_COL32(100, 180, 255, 200), 2.0f);
+        ImGui::PopID();
+
+        ImGui::SetNextItemOpen(!grp.collapsed, ImGuiCond_Always);
         bool open = ImGui::TreeNodeEx(grpLabel, flags);
+        grp.collapsed = !open;
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
             m_selectedGroupIdx = gi;
@@ -1571,13 +1762,25 @@ void EditorState::renderHierarchy() {
             m_selectedEntity = {0, 0};
         }
 
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+            ImGui::SetDragDropPayload(k_groupDragTag, &gi, sizeof(int));
+            ImGui::Text("%s", grp.name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
         // --- Drop entity onto group header â†’ add to group ---
         if (ImGui::BeginDragDropTarget()) {
             if (auto* p = ImGui::AcceptDragDropPayload(k_dragTag)) {
                 uint32_t srcId = *(const uint32_t*)p->Data;
-                if (!groupedIds.count(srcId)) {
-                    grp.entityIds.push_back(srcId);
-                    groupedIds.insert(srcId); // keep set in sync
+                moveEntitiesIntoGroup(getDraggedEntityIds(srcId), grp);
+            }
+            if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
+                int draggedGroupIdx = *(const int*)p->Data;
+                if (draggedGroupIdx != gi &&
+                    draggedGroupIdx >= 0 &&
+                    draggedGroupIdx < (int)m_hierarchyGroups.size() &&
+                    !isDescendantGroup(gi, draggedGroupIdx)) {
+                    m_hierarchyGroups[draggedGroupIdx].parentGroupIdx = gi;
                 }
             }
             ImGui::EndDragDropTarget();
@@ -1589,27 +1792,53 @@ void EditorState::renderHierarchy() {
                 m_renamingGroupIdx = gi;
                 strncpy_s(m_renameBuffer, grp.name.c_str(), sizeof(m_renameBuffer) - 1);
             }
+            if (ImGui::MenuItem("Add Subgroup")) {
+                HierarchyGroup child;
+                child.name = "Group";
+                child.parentGroupIdx = gi;
+                m_hierarchyGroups.push_back(std::move(child));
+                m_selectedGroupIdx = (int)m_hierarchyGroups.size() - 1;
+                m_selectedEntities.clear();
+                m_selectedEntity = {0, 0};
+                ImGui::EndPopup();
+                if (open) ImGui::TreePop();
+                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+                break;
+            }
+            if (grp.parentGroupIdx != -1 && ImGui::MenuItem("Move To Root"))
+                grp.parentGroupIdx = -1;
             if (ImGui::MenuItem("Disband (keep entities)")) {
                 for (uint32_t id : grp.entityIds) m_hierarchyOrder.push_back(id);
-                if (m_selectedGroupIdx == gi) m_selectedGroupIdx = -1;
-                else if (m_selectedGroupIdx > gi) --m_selectedGroupIdx;
+                for (auto& otherGroup : m_hierarchyGroups) {
+                    if (otherGroup.parentGroupIdx == gi)
+                        otherGroup.parentGroupIdx = grp.parentGroupIdx;
+                }
                 m_hierarchyGroups.erase(m_hierarchyGroups.begin() + gi);
+                reindexGroupsAfterErase(gi);
                 if (open) ImGui::TreePop();
                 ImGui::EndPopup();
-                --gi; continue;
+                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+                break;
             }
             if (ImGui::MenuItem("Delete Group + Entities")) {
-                for (uint32_t id : grp.entityIds) {
+                std::vector<uint32_t> idsToDelete = grp.entityIds;
+                for (int groupIdx = 0; groupIdx < (int)m_hierarchyGroups.size(); ++groupIdx) {
+                    if (groupIdx == gi) continue;
+                    if (!isDescendantGroup(groupIdx, gi)) continue;
+                    idsToDelete.insert(idsToDelete.end(),
+                                       m_hierarchyGroups[groupIdx].entityIds.begin(),
+                                       m_hierarchyGroups[groupIdx].entityIds.end());
+                }
+                for (uint32_t id : idsToDelete) {
                     auto it = idMap.find(id);
                     if (it != idMap.end())
                         executeCommand(std::make_unique<DeleteEntityCmd>(world, it->second));
                 }
-                if (m_selectedGroupIdx == gi) m_selectedGroupIdx = -1;
-                else if (m_selectedGroupIdx > gi) --m_selectedGroupIdx;
-                m_hierarchyGroups.erase(m_hierarchyGroups.begin() + gi);
+                eraseGroupRecursive(gi);
                 if (open) ImGui::TreePop();
                 ImGui::EndPopup();
-                --gi; continue;
+                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+                break;
             }
             ImGui::EndPopup();
         }
@@ -1713,6 +1942,7 @@ void EditorState::renderHierarchy() {
                     ImGui::SetDragDropPayload(k_dragTag, &uid, sizeof(uint32_t));
                     // Remove from group on drag (will land ungrouped or in another group)
                     grp.entityIds.erase(grp.entityIds.begin() + mi);
+                    groupedIds.erase(uid);
                     m_hierarchyOrder.push_back(uid); // add back to flat list
                     ImGui::Text("  %s", getDisplayName(e).c_str());
                     ImGui::EndDragDropSource();
@@ -1729,6 +1959,7 @@ void EditorState::renderHierarchy() {
                     }
                     if (ImGui::MenuItem("Remove from Group")) {
                         grp.entityIds.erase(grp.entityIds.begin() + mi);
+                        groupedIds.erase(uid);
                         m_hierarchyOrder.push_back(uid);
                         ImGui::EndPopup();
                         ImGui::PopID();
@@ -1758,6 +1989,7 @@ void EditorState::renderHierarchy() {
                             m_selectedEntities.end());
                         if (m_selectedEntity.id == e.id) m_selectedEntity = {0,0};
                         grp.entityIds.erase(grp.entityIds.begin() + mi);
+                        groupedIds.erase(uid);
                         executeCommand(std::make_unique<DeleteEntityCmd>(world, e));
                         ImGui::EndPopup();
                         ImGui::PopID();
@@ -1769,6 +2001,18 @@ void EditorState::renderHierarchy() {
             }
             ImGui::TreePop();
         }
+
+        if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+    }
+
+    ImGui::InvisibleButton("##grouprootdrop", ImVec2(-1.0f, 8.0f));
+    if (ImGui::BeginDragDropTarget()) {
+        if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
+            int draggedGroupIdx = *(const int*)p->Data;
+            if (draggedGroupIdx >= 0 && draggedGroupIdx < (int)m_hierarchyGroups.size())
+                m_hierarchyGroups[draggedGroupIdx].parentGroupIdx = -1;
+        }
+        ImGui::EndDragDropTarget();
     }
 
     // -----------------------------------------------------------------------
@@ -5801,7 +6045,9 @@ void EditorState::loadScene(const std::string& path) {
                 for (auto& jgrp : root["hierarchyGroups"]) {
                     HierarchyGroup grp;
                     grp.name          = jgrp.value("name", "Group");
+                    grp.collapsed     = jgrp.value("collapsed", false);
                     grp.sortOrderBase = jgrp.value("sortOrderBase", 0);
+                    grp.parentGroupIdx = jgrp.value("parentGroupIdx", -1);
                     if (jgrp.contains("entities") && jgrp["entities"].is_array()) {
                         for (auto& jname : jgrp["entities"]) {
                             std::string n = jname.get<std::string>();
@@ -5914,7 +6160,9 @@ void EditorState::saveScene() {
         for (auto& grp : m_hierarchyGroups) {
             json jg;
             jg["name"]          = grp.name;
+            jg["collapsed"]     = grp.collapsed;
             jg["sortOrderBase"] = grp.sortOrderBase;
+            jg["parentGroupIdx"] = grp.parentGroupIdx;
             jg["entities"]      = json::array();
             for (uint32_t id : grp.entityIds) {
                 auto it = idToName.find(id);

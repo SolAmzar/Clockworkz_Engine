@@ -92,6 +92,7 @@ private:
         std::vector<uint32_t> entityIds;   // stored as IDs (generation-independent)
         bool                  collapsed{false};
         int                   sortOrderBase{0};
+        int                   parentGroupIdx{-1};
     };
     enum class PaintMode { Paint, Erase, Select };
 
