@@ -8,7 +8,13 @@
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": true,
     "hiddenEntities": [],
-    "hierarchyGroups": [],
+    "hierarchyGroups": [
+        {
+            "entities": [],
+            "name": "Group",
+            "sortOrderBase": 0
+        }
+    ],
     "hierarchyOrder": [
         "Carpet",
         "concrete -",
@@ -44367,7 +44373,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 0,
+                            "fragmentId": 4,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -45652,7 +45658,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 0,
+                            "fragmentId": 3,
                             "pickupSfx": "",
                             "requiresLight": true
                         },
@@ -45715,7 +45721,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 0,
+                            "fragmentId": 5,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -45778,7 +45784,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 0,
+                            "fragmentId": 2,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -45841,7 +45847,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 0,
+                            "fragmentId": 1,
                             "pickupSfx": "",
                             "requiresLight": true
                         },
@@ -46791,6 +46797,8 @@
                     {
                         "enabled": true,
                         "properties": {
+                            "groupMaxFragments": 7,
+                            "levelGroupId": "Zone1",
                             "marginX": 60.0,
                             "marginY": 70.0
                         },
