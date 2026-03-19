@@ -1,5 +1,5 @@
 {
-    "bgm": "level_bgm",
+    "bgm": "",
     "darknessColor": {
         "b": 0.9074733257293701,
         "g": 0.34555044770240784,
@@ -557,7 +557,7 @@
         "TilemapMergedCollider",
         "TilemapMergedCollider"
     ],
-    "musicContext": "",
+    "musicContext": "level_default",
     "objects": [
         {
             "active": true,
@@ -43463,16 +43463,6 @@
                             "dashSpeed": 10.0
                         },
                         "scriptPath": "components/moth_ai.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "properties": {
-                            "exposureTime": 0.0,
-                            "inLight": false,
-                            "isDangerous": false,
-                            "maxExposureTime": 10.0
-                        },
-                        "scriptPath": "components/light_exposure.lua"
                     }
                 ],
                 "spriteAnimator": {
@@ -43506,7 +43496,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -700.3048095703125,
+                        "x": -672.4213256835938,
                         "y": 150.0
                     },
                     "rotation": 0.0,
@@ -43846,12 +43836,12 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 50.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -43874,7 +43864,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 0,
                     "textureId": "bottlerack",
                     "unlit": false,
                     "uv": [
@@ -45957,11 +45947,24 @@
                             "_stateTimer": 0.0,
                             "_wanderTimer": 0.0,
                             "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "",
+                            "attackStateSfxVariations": 1,
                             "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
                             "detectionRadius": 400.0,
                             "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 100.0,
                             "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "",
+                            "patrolStateSfxVariations": 1,
                             "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
                             "wanderInterval": 2.0
                         },
                         "scriptPath": "components/enemy_ai.lua"
@@ -46030,12 +46033,12 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 50.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,

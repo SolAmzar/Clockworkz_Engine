@@ -2662,13 +2662,24 @@ void EditorState::renderInspector() {
             if (ImGui::InputText("Wood Prefix##fa", woodBuf, sizeof(woodBuf)))
                 fa->woodPrefix = woodBuf;
 
-            ImGui::DragFloat("Interval##fa", &fa->interval, 0.01f, 0.01f, 10.0f);
-            ImGui::DragFloat("Sprint Scale##fa", &fa->sprintIntervalScale, 0.01f, 0.1f, 2.0f);
-            ImGui::DragFloat("Sprint Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
+            ImGui::DragFloat("Base Interval##fa", &fa->interval, 0.01f, 0.01f, 10.0f);
+            ImGui::DragFloat("Fast Speed Scale##fa", &fa->sprintIntervalScale, 0.01f, 0.1f, 2.0f);
+            ImGui::DragFloat("Target Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
             ImGui::DragFloat("Min Speed##fa", &fa->minSpeed, 0.01f, 0.0f, 1000.0f);
             ImGui::DragFloat("Reset Delay##fa", &fa->resetDelay, 0.01f, 0.0f, 1.0f);
             ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 1.0f);
             ImGui::DragInt("Variations##fa", &fa->variationCount, 1.0f, 1, 16);
+            const float previewSpeed = std::max(fa->minSpeed, fa->sprintSpeedThreshold);
+            float previewInterval = fa->interval;
+            if (fa->sprintSpeedThreshold > fa->minSpeed) {
+                const float normalizedSpeed = (previewSpeed - fa->minSpeed) /
+                    (fa->sprintSpeedThreshold - fa->minSpeed);
+                const float intervalScale = 1.0f + (fa->sprintIntervalScale - 1.0f) * normalizedSpeed;
+                previewInterval *= intervalScale;
+            } else {
+                previewInterval *= fa->sprintIntervalScale;
+            }
+            ImGui::TextDisabled("At target speed, footsteps play every %.3fs", previewInterval);
             ImGui::BeginDisabled(true);
             ImGui::DragFloat("Timer Remaining##fa", &fa->timerRemaining, 0.0f);
             ImGui::EndDisabled();
@@ -2802,11 +2813,29 @@ void EditorState::renderInspector() {
                                 if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                             } else if (def.type == "string") {
                                 std::string sv = std::get<std::string>(val);
-                                char strbuf[256]; snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
-                                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
-                                    val = std::string(strbuf);
-                                if (ImGui::IsItemActivated()) captureInspectorBefore();
-                                if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+                                const bool isActivationZoneActionType =
+                                    entry.scriptPath == "components/activation_zone.lua" &&
+                                    def.name == "actionType";
+                                if (isActivationZoneActionType) {
+                                    static const char* actionTypes[] = {
+                                        "None",
+                                        "PlayAudio",
+                                        "ChangeScene"
+                                    };
+                                    int currentIndex = 0;
+                                    for (int idx = 0; idx < IM_ARRAYSIZE(actionTypes); ++idx) {
+                                        if (sv == actionTypes[idx]) {
+                                            currentIndex = idx;
+                                            break;
+                                        }
+                                    }
+                                    if (ImGui::Combo(def.label.c_str(), &currentIndex, actionTypes, IM_ARRAYSIZE(actionTypes))) {
+                                        val = std::string(actionTypes[currentIndex]);
+                                    }
+                                    if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                    if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+                                    continue;
+                                }
                                 std::string loweredName = def.name;
                                 std::string loweredLabel = def.label;
                                 std::transform(loweredName.begin(), loweredName.end(), loweredName.begin(),
@@ -2825,6 +2854,29 @@ void EditorState::renderInspector() {
                                 const bool looksLikeSoundPrefix =
                                     loweredName.find("prefix") != std::string::npos ||
                                     loweredLabel.find("prefix") != std::string::npos;
+                                auto applyDroppedAudio = [&](bool asPrefix) {
+                                    if (!ImGui::BeginDragDropTarget())
+                                        return false;
+
+                                    bool changed = false;
+                                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
+                                        std::string droppedSound = static_cast<const char*>(payload->Data);
+                                        if (asPrefix) {
+                                            while (!droppedSound.empty() &&
+                                                std::isdigit(static_cast<unsigned char>(droppedSound.back()))) {
+                                                droppedSound.pop_back();
+                                            }
+                                            if (!droppedSound.empty() &&
+                                                (droppedSound.back() == '_' || droppedSound.back() == '-')) {
+                                                // Keep a single separator at the end so variation indices append cleanly.
+                                            }
+                                        }
+                                        val = droppedSound;
+                                        changed = true;
+                                    }
+                                    ImGui::EndDragDropTarget();
+                                    return changed;
+                                };
                                 if (looksLikeSoundId && !looksLikeSoundPrefix) {
                                     auto soundNames = Assets::SoundManager::GetLoadedSoundNames();
                                     std::sort(soundNames.begin(), soundNames.end());
@@ -2847,15 +2899,27 @@ void EditorState::renderInspector() {
                                         val = currentIndex == 0 ? std::string() : soundNames[static_cast<std::size_t>(currentIndex - 1)];
                                         sv = std::get<std::string>(val);
                                     }
+                                    if (applyDroppedAudio(false))
+                                        sv = std::get<std::string>(val);
+                                    if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                    if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
                                     std::string inputLabel = std::string("Override ") + def.label + "##soundproptext";
                                     char soundbuf[256]; snprintf(soundbuf, sizeof(soundbuf), "%s", sv.c_str());
                                     if (ImGui::InputText(inputLabel.c_str(), soundbuf, sizeof(soundbuf)))
                                         val = std::string(soundbuf);
+                                    if (applyDroppedAudio(false))
+                                        sv = std::get<std::string>(val);
+                                    if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                    if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                                 } else {
                                     char soundbuf[256]; snprintf(soundbuf, sizeof(soundbuf), "%s", sv.c_str());
                                     if (ImGui::InputText(def.label.c_str(), soundbuf, sizeof(soundbuf)))
                                         val = std::string(soundbuf);
+                                    if (applyDroppedAudio(looksLikeSoundPrefix))
+                                        sv = std::get<std::string>(val);
+                                    if (ImGui::IsItemActivated()) captureInspectorBefore();
+                                    if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
                                 }
                             }
                         }
@@ -4981,13 +5045,6 @@ void EditorState::renderAudioBrowser() {
         remainingDrops.insert(remainingDrops.end(), unhandledDrops.begin(), unhandledDrops.end());
     }
 
-    if (m_currentAudioDir != audioRoot.generic_string()) {
-        if (ImGui::Button("<- Back##audio")) {
-            m_currentAudioDir = fs::path(m_currentAudioDir).parent_path().generic_string();
-            m_selectedAudioAssets.clear();
-        }
-        ImGui::SameLine();
-    }
     ImGui::Text("Location: %s", fs::relative(m_currentAudioDir, audioRoot, ec).generic_string().c_str());
     ImGui::Separator();
 
@@ -5138,6 +5195,13 @@ void EditorState::renderAudioBrowser() {
     if (ImGui::Button("New Folder##audio")) {
         m_newScriptFolderBuf[0] = '\0';
         ImGui::OpenPopup("##NewAudioFolder");
+    }
+    if (m_currentAudioDir != audioRoot.generic_string()) {
+        ImGui::SameLine();
+        if (ImGui::Button("<- Back##audio")) {
+            m_currentAudioDir = fs::path(m_currentAudioDir).parent_path().generic_string();
+            m_selectedAudioAssets.clear();
+        }
     }
 
     if (ImGui::BeginPopupModal("##ImportAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -5958,23 +6022,30 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
         comps["transform"] = {
             {"position", {{"x", t->position.x}, {"y", t->position.y}}},
             {"rotation", t->rotation},
-            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}}};
+            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}},
+            {"pivot",    {{"x", t->pivot.x},    {"y", t->pivot.y}}},
+            {"snapToGrid", t->snapToGrid}};
 
     if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity))
         comps["spriteRenderer"] = {
             {"textureId", sr->textureId},
+            {"uv",    {sr->uv.x, sr->uv.y, sr->uv.z, sr->uv.w}},
             {"size",  {{"x", sr->size.x},  {"y", sr->size.y}}},
             {"color", {{"r", sr->color.r}, {"g", sr->color.g},
                        {"b", sr->color.b}, {"a", sr->color.a}}},
+            {"visible", sr->visible},
+            {"unlit", sr->unlit},
             {"sortOrder", sr->sortOrder}};
 
     if (auto* c = world.getComponent<Components::Collider>(entity))
         comps["collider"] = {
             {"shape",    static_cast<int>(c->shape)},
             {"width",    c->size.x}, {"height",  c->size.y},
+            {"offset",   {{"x", c->offset.x}, {"y", c->offset.y}}},
             {"radius",   c->radius},
             {"isSolid",  c->isSolid},  {"isTrigger",   c->isTrigger},
-            {"blocksLight", c->blocksLight}, {"moveable", c->moveable},
+            {"blocksLight", c->blocksLight}, {"isHazard", c->isHazard},
+            {"moveable", c->moveable},
             {"mass",     c->mass},
             {"collisionCategory", c->collisionCategory},
             {"collisionMask",     c->collisionMask}};
@@ -6026,6 +6097,63 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
                                   {"lineSpacing", textComp->lineSpacing},
                                   {"padding", {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
 
+    if (auto* lt = world.getComponent<Components::Light>(entity))
+        comps["light"] = {
+            {"active", lt->active},
+            {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
+            {"color", {{"r", lt->color.r}, {"g", lt->color.g}, {"b", lt->color.b}}},
+            {"radius", lt->radius},
+            {"angle", lt->angle},
+            {"intensity", lt->intensity}};
+
+    if (auto* fa = world.getComponent<Components::FootstepAudio>(entity))
+        comps["footstepAudio"] = {
+            {"interval", fa->interval},
+            {"sprintIntervalScale", fa->sprintIntervalScale},
+            {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
+            {"minSpeed", fa->minSpeed},
+            {"resetDelay", fa->resetDelay},
+            {"volume", fa->volume},
+            {"variationCount", fa->variationCount},
+            {"useSurfaceSounds", fa->useSurfaceSounds},
+            {"soundPrefix", fa->soundPrefix},
+            {"concretePrefix", fa->concretePrefix},
+            {"tilePrefix", fa->tilePrefix},
+            {"woodPrefix", fa->woodPrefix}};
+
+    if (auto* btn = world.getComponent<Components::UIButton>(entity))
+        comps["uiButton"] = {
+            {"action", btn->action},
+            {"uiScript", btn->uiScript},
+            {"interactable", btn->interactable},
+            {"showBackground", btn->showBackground},
+            {"size", {{"x", btn->size.x}, {"y", btn->size.y}}},
+            {"offset", {{"x", btn->offset.x}, {"y", btn->offset.y}}},
+            {"normalColor", {{"r", btn->normalColor.r}, {"g", btn->normalColor.g}, {"b", btn->normalColor.b}}},
+            {"hoverColor", {{"r", btn->hoverColor.r}, {"g", btn->hoverColor.g}, {"b", btn->hoverColor.b}}}};
+
+    if (auto* sl = world.getComponent<Components::UISlider>(entity))
+        comps["uiSlider"] = {
+            {"settingKey", sl->settingKey},
+            {"minValue", sl->minValue},
+            {"maxValue", sl->maxValue},
+            {"value", sl->value},
+            {"trackWidth", sl->trackWidth},
+            {"trackHeight", sl->trackHeight},
+            {"handleSize", sl->handleSize},
+            {"trackColor", {{"r", sl->trackColor.r}, {"g", sl->trackColor.g},
+                            {"b", sl->trackColor.b}, {"a", sl->trackColor.a}}},
+            {"fillColor", {{"r", sl->fillColor.r}, {"g", sl->fillColor.g},
+                           {"b", sl->fillColor.b}, {"a", sl->fillColor.a}}},
+            {"handleColor", {{"r", sl->handleColor.r}, {"g", sl->handleColor.g},
+                             {"b", sl->handleColor.b}, {"a", sl->handleColor.a}}}};
+
+    if (auto* cam = world.getComponent<Components::CameraComponent>(entity))
+        comps["cameraComponent"] = {
+            {"isMain", cam->isMain},
+            {"zoom", cam->zoom},
+            {"offset", {{"x", cam->offset.x}, {"y", cam->offset.y}}}};
+
     namespace fs = std::filesystem;
     std::string filepath = "assets/prefabs/" + name + ".json";
     fs::create_directories(fs::path(filepath).parent_path());
@@ -6056,10 +6184,12 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     auto& world  = m_scene.GetWorld();
     auto  entity = world.createEntity();
 
-    world.addComponent(entity, Components::Tag{prefabName});
-
     if (!pj.contains("components")) return entity;
     const auto& c = pj["components"];
+
+    std::string entityTag = prefabName;
+    if (c.contains("tag")) entityTag = c["tag"].value("tag", prefabName);
+    world.addComponent(entity, Components::Tag{entityTag});
 
     if (c.contains("transform")) {
         Components::Transform t;
@@ -6069,6 +6199,11 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
             t.scale.x = c["transform"]["scale"].value("x", 1.f);
             t.scale.y = c["transform"]["scale"].value("y", 1.f);
         }
+        if (c["transform"].contains("pivot")) {
+            t.pivot.x = c["transform"]["pivot"].value("x", 0.f);
+            t.pivot.y = c["transform"]["pivot"].value("y", 0.f);
+        }
+        t.snapToGrid = c["transform"].value("snapToGrid", false);
         world.addComponent(entity, t);
     } else {
         Components::Transform t; t.position = position;
@@ -6078,6 +6213,16 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     if (c.contains("spriteRenderer")) {
         Components::SpriteRenderer sr;
         sr.textureId = c["spriteRenderer"].value("textureId", "");
+        if (c["spriteRenderer"].contains("uv") &&
+            c["spriteRenderer"]["uv"].is_array() &&
+            c["spriteRenderer"]["uv"].size() == 4) {
+            sr.uv = {
+                c["spriteRenderer"]["uv"][0],
+                c["spriteRenderer"]["uv"][1],
+                c["spriteRenderer"]["uv"][2],
+                c["spriteRenderer"]["uv"][3]
+            };
+        }
         if (c["spriteRenderer"].contains("size")) {
             sr.size.x = c["spriteRenderer"]["size"].value("x", 50.f);
             sr.size.y = c["spriteRenderer"]["size"].value("y", 50.f);
@@ -6088,6 +6233,8 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
             sr.color.b = c["spriteRenderer"]["color"].value("b", 1.f);
             sr.color.a = c["spriteRenderer"]["color"].value("a", 1.f);
         }
+        sr.visible = c["spriteRenderer"].value("visible", true);
+        sr.unlit = c["spriteRenderer"].value("unlit", false);
         sr.sortOrder = c["spriteRenderer"].value("sortOrder", 0);
         world.addComponent(entity, sr);
     }
@@ -6097,10 +6244,15 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
         col.shape   = static_cast<Components::Collider::Shape>(c["collider"].value("shape", 0));
         col.size.x  = c["collider"].value("width",  50.f);
         col.size.y  = c["collider"].value("height", 50.f);
+        if (c["collider"].contains("offset")) {
+            col.offset.x = c["collider"]["offset"].value("x", 0.f);
+            col.offset.y = c["collider"]["offset"].value("y", 0.f);
+        }
         col.radius  = c["collider"].value("radius", 25.f);
         col.isSolid     = c["collider"].value("isSolid",     true);
         col.isTrigger   = c["collider"].value("isTrigger",   false);
         col.blocksLight = c["collider"].value("blocksLight",  false);
+        col.isHazard    = c["collider"].value("isHazard",    false);
         col.moveable    = c["collider"].value("moveable",    false);
         col.mass        = c["collider"].value("mass",        1.f);
         col.collisionCategory = c["collider"].value("collisionCategory", 1);
@@ -6193,6 +6345,114 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
             textComp.padding.y = textRendererJson["padding"].value("y", 0.f);
         }
         world.addComponent(entity, textComp);
+    }
+
+    if (c.contains("light")) {
+        auto& lc = c["light"];
+        Components::Light lt;
+        lt.active = lc.value("active", true);
+        if (lc.contains("offset")) {
+            lt.offset.x = lc["offset"].value("x", lt.offset.x);
+            lt.offset.y = lc["offset"].value("y", lt.offset.y);
+        }
+        if (lc.contains("color")) {
+            lt.color.r = lc["color"].value("r", lt.color.r);
+            lt.color.g = lc["color"].value("g", lt.color.g);
+            lt.color.b = lc["color"].value("b", lt.color.b);
+        }
+        lt.radius = lc.value("radius", lt.radius);
+        lt.angle = lc.value("angle", lt.angle);
+        lt.intensity = lc.value("intensity", lt.intensity);
+        world.addComponent(entity, lt);
+    }
+
+    if (c.contains("footstepAudio")) {
+        auto& fac = c["footstepAudio"];
+        Components::FootstepAudio fa;
+        fa.interval = fac.value("interval", fa.interval);
+        fa.sprintIntervalScale = fac.value("sprintIntervalScale", fa.sprintIntervalScale);
+        fa.sprintSpeedThreshold = fac.value("sprintSpeedThreshold", fa.sprintSpeedThreshold);
+        fa.minSpeed = fac.value("minSpeed", fa.minSpeed);
+        fa.resetDelay = fac.value("resetDelay", fa.resetDelay);
+        fa.volume = fac.value("volume", fa.volume);
+        fa.variationCount = fac.value("variationCount", fa.variationCount);
+        fa.useSurfaceSounds = fac.value("useSurfaceSounds", fa.useSurfaceSounds);
+        fa.soundPrefix = fac.value("soundPrefix", fa.soundPrefix);
+        fa.concretePrefix = fac.value("concretePrefix", fa.concretePrefix);
+        fa.tilePrefix = fac.value("tilePrefix", fa.tilePrefix);
+        fa.woodPrefix = fac.value("woodPrefix", fa.woodPrefix);
+        world.addComponent(entity, fa);
+    }
+
+    if (c.contains("uiButton")) {
+        auto& ub = c["uiButton"];
+        Components::UIButton btn;
+        btn.action = ub.value("action", "");
+        btn.uiScript = ub.value("uiScript", "");
+        btn.interactable = ub.value("interactable", true);
+        btn.showBackground = ub.value("showBackground", true);
+        if (ub.contains("size")) {
+            btn.size.x = ub["size"].value("x", 0.f);
+            btn.size.y = ub["size"].value("y", 0.f);
+        }
+        if (ub.contains("offset")) {
+            btn.offset.x = ub["offset"].value("x", 0.f);
+            btn.offset.y = ub["offset"].value("y", 0.f);
+        }
+        if (ub.contains("normalColor")) {
+            btn.normalColor.r = ub["normalColor"].value("r", 1.f);
+            btn.normalColor.g = ub["normalColor"].value("g", 1.f);
+            btn.normalColor.b = ub["normalColor"].value("b", 1.f);
+        }
+        if (ub.contains("hoverColor")) {
+            btn.hoverColor.r = ub["hoverColor"].value("r", 1.f);
+            btn.hoverColor.g = ub["hoverColor"].value("g", 0.8f);
+            btn.hoverColor.b = ub["hoverColor"].value("b", 0.f);
+        }
+        world.addComponent(entity, btn);
+    }
+
+    if (c.contains("uiSlider")) {
+        auto& us = c["uiSlider"];
+        Components::UISlider sl;
+        sl.settingKey = us.value("settingKey", "");
+        sl.minValue = us.value("minValue", 0.f);
+        sl.maxValue = us.value("maxValue", 1.f);
+        sl.value = us.value("value", 1.f);
+        sl.trackWidth = us.value("trackWidth", 400.f);
+        sl.trackHeight = us.value("trackHeight", 18.f);
+        sl.handleSize = us.value("handleSize", 22.f);
+        if (us.contains("trackColor")) {
+            sl.trackColor.r = us["trackColor"].value("r", sl.trackColor.r);
+            sl.trackColor.g = us["trackColor"].value("g", sl.trackColor.g);
+            sl.trackColor.b = us["trackColor"].value("b", sl.trackColor.b);
+            sl.trackColor.a = us["trackColor"].value("a", sl.trackColor.a);
+        }
+        if (us.contains("fillColor")) {
+            sl.fillColor.r = us["fillColor"].value("r", sl.fillColor.r);
+            sl.fillColor.g = us["fillColor"].value("g", sl.fillColor.g);
+            sl.fillColor.b = us["fillColor"].value("b", sl.fillColor.b);
+            sl.fillColor.a = us["fillColor"].value("a", sl.fillColor.a);
+        }
+        if (us.contains("handleColor")) {
+            sl.handleColor.r = us["handleColor"].value("r", sl.handleColor.r);
+            sl.handleColor.g = us["handleColor"].value("g", sl.handleColor.g);
+            sl.handleColor.b = us["handleColor"].value("b", sl.handleColor.b);
+            sl.handleColor.a = us["handleColor"].value("a", sl.handleColor.a);
+        }
+        world.addComponent(entity, sl);
+    }
+
+    if (c.contains("cameraComponent")) {
+        auto& cc = c["cameraComponent"];
+        Components::CameraComponent cam;
+        cam.isMain = cc.value("isMain", true);
+        cam.zoom = cc.value("zoom", 1.f);
+        if (cc.contains("offset")) {
+            cam.offset.x = cc["offset"].value("x", 0.f);
+            cam.offset.y = cc["offset"].value("y", 0.f);
+        }
+        world.addComponent(entity, cam);
     }
 
     return entity;

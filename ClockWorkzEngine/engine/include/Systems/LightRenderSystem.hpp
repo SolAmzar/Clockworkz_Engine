@@ -20,6 +20,7 @@ reserved.
 #include "ECS/World.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
+#include <algorithm>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <vector>
@@ -89,10 +90,11 @@ inline glm::vec2 clampLightOriginOutsideBlockers(glm::vec2 origin, ECS::World& w
 }
 
 inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
-                                                  float angleCenter,
-                                                  float fovRad,
-                                                  float radius,
-                                                  ECS::World& world) {
+                                                float angleCenter,
+                                                float fovRad,
+                                                float radius,
+                                                ECS::Entity sourceEntity,
+                                                ECS::World& world) {
     std::vector<glm::vec2> points;
     points.push_back(origin);
     const int numRays   = 100;
@@ -105,7 +107,11 @@ inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
         float closestDist   = radius;
 
         world.each<Components::Transform, Components::Collider>(
-            [&](ECS::Entity, Components::Transform& transform, Components::Collider& collider) {
+            [&](ECS::Entity blockerEntity, Components::Transform& transform, Components::Collider& collider) {
+                if (blockerEntity.id == sourceEntity.id &&
+                    blockerEntity.generation == sourceEntity.generation) {
+                    return;
+                }
                 if (!collider.blocksLight) return;
 
                 // Compute world-space collider center — matches CollisionSystem exactly:
@@ -185,12 +191,12 @@ inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
 }
 
 inline void renderLightPass(ECS::World& world,
-                             Graphics::RenderingManager& renderer,
-                             float batteryFactor = 1.0f) {
+                            Graphics::RenderingManager& renderer,
+                            float batteryFactor = 1.0f) {
     auto& camera = Core::Engine::Get().camera();
 
     world.each<Components::Transform, Components::Light>(
-        [&](ECS::Entity, Components::Transform& transform, Components::Light& light) {
+        [&](ECS::Entity lightEntity, Components::Transform& transform, Components::Light& light) {
             if (!light.active) return;
 
             float lightAngle = transform.rotation;
@@ -203,7 +209,7 @@ inline void renderLightPass(ECS::World& world,
             lightOrigin = clampLightOriginOutsideBlockers(lightOrigin, world);
 
             float fovRad    = glm::radians(light.angle);
-            auto lightPoly  = buildLightPolygon(lightOrigin, lightAngle, fovRad, light.radius, world);
+            auto lightPoly  = buildLightPolygon(lightOrigin, lightAngle, fovRad, light.radius, lightEntity, world);
 
             renderer.beginLightPass(camera.viewProj(), lightOrigin, light.color,
                                     light.radius, lightAngle, light.angle, batteryFactor, light.intensity);

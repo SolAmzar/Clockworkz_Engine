@@ -126,8 +126,17 @@ inline void UpdateFootstepAudio(ECS::World &world, double dt) {
           footsteps.timerRemaining -= dtf;
           if (footsteps.timerRemaining <= 0.0f) {
             float interval = footsteps.interval;
-            if (speed >= footsteps.sprintSpeedThreshold)
+            if (footsteps.sprintSpeedThreshold > footsteps.minSpeed) {
+              const float normalizedSpeed =
+                  std::clamp((speed - footsteps.minSpeed) /
+                                 (footsteps.sprintSpeedThreshold - footsteps.minSpeed),
+                             0.0f, 1.0f);
+              const float intervalScale =
+                  1.0f + (footsteps.sprintIntervalScale - 1.0f) * normalizedSpeed;
+              interval *= intervalScale;
+            } else {
               interval *= footsteps.sprintIntervalScale;
+            }
             footsteps.timerRemaining = std::max(interval, 0.01f);
 
             const Gameplay::SurfaceType surface =

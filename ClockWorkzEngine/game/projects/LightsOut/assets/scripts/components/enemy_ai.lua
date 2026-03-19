@@ -5,7 +5,7 @@
 -------------------------------------------------------------------------------
 
 Properties = {
-    { name = "state",                  type = "string", default = "Patrol", label = "State" },
+    { name = "state",                  type = "string", default = "Patrol", label = "Current State" },
     { name = "maxHp",                  type = "float",  default = 100.0,    label = "Max HP" },
     { name = "detectionRadius",        type = "float",  default = 300.0,    label = "Detection Radius" },
     { name = "chaseSpeed",             type = "float",  default = 150.0,    label = "Chase Speed" },
@@ -16,15 +16,20 @@ Properties = {
     { name = "patrolStateSfxVariations", type = "int",  default = 1,        label = "Patrol SFX Variations" },
     { name = "chaseStateSfxVariations",  type = "int",  default = 1,        label = "Chase SFX Variations" },
     { name = "alertStateSfxVariations",  type = "int",  default = 1,        label = "Alert SFX Variations" },
+    { name = "attackStateSfxVariations", type = "int",  default = 1,        label = "Attack SFX Variations" },
     { name = "deathStateSfxVariations",  type = "int",  default = 1,        label = "Death SFX Variations" },
     { name = "patrolStateSfxPrefix",   type = "string", default = "",       label = "Patrol SFX Prefix" },
     { name = "chaseStateSfxPrefix",    type = "string", default = "",       label = "Chase SFX Prefix" },
     { name = "alertStateSfxPrefix",    type = "string", default = "",       label = "Alert SFX Prefix" },
+    { name = "attackStateSfxPrefix",   type = "string", default = "",       label = "Attack SFX Prefix" },
     { name = "deathStateSfxPrefix",    type = "string", default = "",       label = "Death SFX Prefix" },
     { name = "patrolStateSfx",         type = "string", default = "",       label = "" },
     { name = "chaseStateSfx",          type = "string", default = "",       label = "" },
     { name = "alertStateSfx",          type = "string", default = "",       label = "" },
+    { name = "attackStateSfx",         type = "string", default = "",       label = "" },
     { name = "deathStateSfx",          type = "string", default = "",       label = "" },
+    { name = "stateSfxVolume",         type = "float",  default = 1.0,      label = "State SFX Volume" },
+    { name = "usePositionalStateSfx",  type = "bool",   default = true,     label = "Use Positional State SFX" },
     -- Internal
     { name = "_hp",                    type = "float",  default = 100.0,    label = "" },
     { name = "_stateTimer",            type = "float",  default = 0.0,      label = "" },
@@ -78,6 +83,10 @@ local function stateSfxId(self, state)
         prefix = self.alertStateSfxPrefix or ""
         legacy = self.alertStateSfx or ""
         variations = tonumber(self.alertStateSfxVariations) or 1
+    elseif state == "Attack" then
+        prefix = self.attackStateSfxPrefix or ""
+        legacy = self.attackStateSfx or ""
+        variations = tonumber(self.attackStateSfxVariations) or 1
     elseif state == "Death" then
         prefix = self.deathStateSfxPrefix or ""
         legacy = self.deathStateSfx or ""
@@ -86,19 +95,21 @@ local function stateSfxId(self, state)
 
     if prefix ~= "" then
         variations = math.max(variations, 1)
-        if variations <= 1 then
-            return prefix
-        end
         return prefix .. tostring(math.random(1, variations))
     end
 
     return legacy
 end
 
-local function playStateSfx(self, state)
+local function playStateSfx(self, entity, state)
     local sfx = stateSfxId(self, state)
     if sfx ~= nil and sfx ~= "" then
-        Audio.playOneShot(sfx)
+        local volume = tonumber(self.stateSfxVolume) or 1.0
+        if self.usePositionalStateSfx then
+            Audio.playOneShotAt(sfx, entity.position.x, entity.position.y, volume)
+        else
+            Audio.playOneShot(sfx)
+        end
     end
 end
 
@@ -108,13 +119,17 @@ local function setState(self, entity, newState)
     end
 
     self.state = newState
-    playStateSfx(self, newState)
+    playStateSfx(self, entity, newState)
     return true
 end
 
 function Enemy:onStart(entity)
     if not self._initialized then
         self._hp = self.maxHp
+        self._alpha = 1.0
+        self._deathSfxPlayed = false
+        self._colliderDisabled = false
+        self._wanderTimer = 0.0
         self._initialized = true
     end
 end
@@ -170,7 +185,13 @@ function Enemy:onUpdate(entity, dt)
             self._deathSfxPlayed = true
             if (self.deathStateSfxPrefix == nil or self.deathStateSfxPrefix == "") and
                (self.deathStateSfx == nil or self.deathStateSfx == "") then
-                Audio.playOneShot("enemy_death_" .. math.random(1, 3))
+                local fallbackId = "enemy_death_" .. math.random(1, 3)
+                local volume = tonumber(self.stateSfxVolume) or 1.0
+                if self.usePositionalStateSfx then
+                    Audio.playOneShotAt(fallbackId, entity.position.x, entity.position.y, volume)
+                else
+                    Audio.playOneShot(fallbackId)
+                end
             end
         end
         self._alpha = math.max(0.0, self._alpha - 2.0 * dt)
@@ -254,6 +275,8 @@ function Enemy:onUpdate(entity, dt)
         elseif vx < -0.1 and sx > 0.0 then
             entity.scale = Vec2(-sx, entity.scale.y)
         end
+    elseif entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "idle" then
+        entity:playAnimation("idle")
     end
 end
 
@@ -261,6 +284,15 @@ function Enemy:onCollisionEnter(entity, other)
     if self.state == "Death" then return end
     if not other:isValid() then return end
     if other:hasPlayerController() then
+        local attackSfx = stateSfxId(self, "Attack")
+        if attackSfx ~= nil and attackSfx ~= "" then
+            local volume = tonumber(self.stateSfxVolume) or 1.0
+            if self.usePositionalStateSfx then
+                Audio.playOneShotAt(attackSfx, entity.position.x, entity.position.y, volume)
+            else
+                Audio.playOneShot(attackSfx)
+            end
+        end
         local isDead = World.getScriptProp(other.id, "_isDead")
         if not isDead then
             World.setScriptProp(other.id, "_isDead", true)

@@ -13,6 +13,10 @@ function onTriggerEnter(self, entity, other)
     self.triggered = true
     if self.actionType == "PlayAudio" then
         Audio.play(self.payload)
+    elseif self.actionType == "ChangeScene" then
+        if self.payload ~= nil and self.payload ~= "" then
+            World.loadLevel(self.payload)
+        end
     end
 end
 
