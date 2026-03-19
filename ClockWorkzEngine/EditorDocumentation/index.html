@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClockWorkz Engine - Editor Documentation</title>
+    <!-- Modern Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <div class="sidebar-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            ClockWorkz Docs
+        </div>
+        <ul class="nav-links">
+            <li><a href="#overview" class="active">Overview & Architecture</a></li>
+            <li><a href="#editor-hub">Editor Hub</a></li>
+            <li><a href="#level-editor">Level & Scene Editor</a></li>
+            <li><a href="#undo-redo">Undo/Redo System</a></li>
+            <li><a href="#sprite-editor">Sprite Editor</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+        <header>
+            <h1>Editor Architecture Documentation</h1>
+            <p>A comprehensive guide to the ClockWorkz Engine editor workflow, state management, and undo/redo architecture.</p>
+        </header>
+
+        <!-- Section 1: Overview & Architecture -->
+        <section id="overview" class="doc-section">
+            <h2>Overview & Architecture</h2>
+            <p>The ClockWorkz Engine Editor operates on a robust state machine built on top of <code>GameState</code>. The editor splits responsibilities between launching projects (Hub), managing game scenes (Editor State), and testing them (Play State).</p>
+
+            <div class="diagram-container">
+                <div class="diagram-row">
+                    <div class="node highlight">
+                        <h4>EditorHubState</h4>
+                        <p>Project Launcher & Manager</p>
+                        <div class="edge-down"></div>
+                    </div>
+                </div>
+                <div class="diagram-row">
+                    <div class="node">
+                        <h4>EditorState / LevelEditor</h4>
+                        <p>Main ECS Scene Editor</p>
+                        <div class="edge-horizontal"></div>
+                        <div class="edge-down"></div>
+                    </div>
+                    <div class="node">
+                        <h4>SpriteEditorState</h4>
+                        <p>Animation & Texture Editor</p>
+                    </div>
+                </div>
+                <div class="diagram-row">
+                    <div class="node highlight" style="border-color: #58a6ff; background: rgba(88, 166, 255, 0.1);">
+                        <h4>EditorPlayState</h4>
+                        <p>In-Editor Gameplay Test</p>
+                    </div>
+                </div>
+            </div>
+            
+            <p>Transitions between these states manage the setup and teardown of ImGui panels, rendering configurations, and engine subsystems.</p>
+        </section>
+
+        <!-- Section 2: Editor Hub -->
+        <section id="editor-hub" class="doc-section">
+            <h2>Editor Hub State</h2>
+            <p>The <code>EditorHubState</code> acts as a Unity-style project launcher. It is the initial entry point when the engine starts in editor mode. Its primary responsibilities include listing recent projects, creating new projects, and resolving scene paths.</p>
+            
+            <h3>Key Data Structure</h3>
+            <p>Projects are managed using the <code>ProjectEntry</code> struct, saving metadata necessary to bootstrap the engine into the correct project context.</p>
+            <pre><code>struct ProjectEntry {
+    std::string name;
+    std::string path;         // Project root relative to SourceRoot
+    std::string initialScene; // Initial scene path
+    std::string description;
+};</code></pre>
+
+            <p>Behind the scenes, the hub manages threaded background building via CMake, preventing the UI from stalling during heavy compilation steps.</p>
+        </section>
+
+        <!-- Section 3: Level & Scene Editor -->
+        <section id="level-editor" class="doc-section">
+            <h2>Level & Scene Editor</h2>
+            <p>The core editing experience resides in <code>EditorState</code> and <code>LevelEditor</code>. This state hooks deeply into the ECS (Entity Component System) to provide visual tools for manipulating Entities.</p>
+
+            <h3>Features & Capabilities</h3>
+            <ul>
+                <li><strong>Integrated Gizmo System:</strong> Translate, scale, and rotate entities seamlessly in the viewport with grid-snapping support.</li>
+                <li><strong>Prefab Management:</strong> Drag-and-drop workflow for saving and loading complex entity configurations via JSON.</li>
+                <li><strong>Tilemap Painting:</strong> Specialized tools for painting grid-aligned sprites across multiple layers.</li>
+            </ul>
+
+            <h3>Editor State Initialization</h3>
+            <p>When entering the editor, all engine subsystems pause gameplay logic while rendering loops remain active. Notice how entities are tracked selectively via IDs to prevent dangling pointers:</p>
+            <pre><code>class EditorState final : public GameState {
+private:
+    std::vector&lt;uint32_t&gt; m_hierarchyOrder;
+    std::vector&lt;HierarchyGroup&gt; m_hierarchyGroups;
+    ECS::Entity m_selectedEntity{0, 0};
+    // ImGui state, Framebuffers, File Dialogs...
+};</code></pre>
+        </section>
+
+        <!-- Section 4: Undo/Redo System -->
+        <section id="undo-redo" class="doc-section">
+            <h2>Undo/Redo Command Architecture</h2>
+            <p>The engine implements the <strong>Command Pattern</strong> to support reliable undo/redo capabilities without state corruption. Commands encapsulate the exact delta, or whole state snapshot, required to revert an action.</p>
+
+            <div class="diagram-container">
+                <div class="diagram-row" style="gap: 2rem;">
+                    <div class="node" style="min-width: 140px;">
+                        <h4>User Action</h4>
+                        <p>Moves Entity</p>
+                    </div>
+                    <div style="align-self: center; font-size: 2rem; color: var(--text-secondary);">→</div>
+                    <div class="node" style="min-width: 140px; border-color: #3fb950; background: rgba(46, 160, 67, 0.1);">
+                        <h4>Create Command</h4>
+                        <p>MoveEntityCmd</p>
+                    </div>
+                    <div style="align-self: center; font-size: 2rem; color: var(--text-secondary);">→</div>
+                    <div class="node" style="min-width: 140px;">
+                        <h4>Push Stack</h4>
+                        <p>m_undoStack</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Entity Snapshotting</h3>
+            <p>For complex changes (e.g., inspector edits where multiple properties change at once), the engine takes a full snapshot of the entity's components using <code>EntitySnapshot</code>.</p>
+            <pre><code>struct EntitySnapshot {
+    std::string tagName{"Entity"};
+    Components::Transform transform{};
+    bool hasSpriteRenderer{false};  
+    Components::SpriteRenderer spriteRenderer{};
+    // Flags and data for ALL core components...
+
+    static EntitySnapshot capture(ECS::World& world, ECS::Entity entity);
+    void restoreInPlace(ECS::World& world, ECS::Entity entity) const;
+};</code></pre>
+
+            <h3>Command Implementation Example</h3>
+            <p>A specialized command to modify components takes the <em>before</em> and <em>after</em> states to ensure precision:</p>
+            <pre><code>template&lt;typename T&gt;
+struct ModifyComponentCmd final : IEditorCommand {
+    ECS::World& world;
+    ECS::Entity entity;
+    T before{};
+    T after{};
+
+    void execute() override { 
+        if (auto* c = world.getComponent&lt;T&gt;(entity)) *c = after; 
+    }
+    void undo() override { 
+        if (auto* c = world.getComponent&lt;T&gt;(entity)) *c = before; 
+    }
+};</code></pre>
+            <p>Using templates allows the engine to create strongly-typed commands for any ECS component on the fly without writing custom logic for every struct.</p>
+        </section>
+
+        <!-- Section 5: Sprite Editor -->
+        <section id="sprite-editor" class="doc-section">
+            <h2>Sprite & Animation Editor</h2>
+            <p>The <code>SpriteEditorState</code> is a dedicated state for isolating texture and animation creation from the dense level editor context. It constructs a virtual grid overlay to slice textures into animation frames and instantly previews the output.</p>
+            <pre><code>class SpriteEditorState final : public GameState {
+private:
+    // Slicing Tool Variables
+    int m_sheetWidth{512};
+    int m_sheetHeight{512};
+    int m_cellWidth{64};
+    int m_cellHeight{64};
+    
+    // Playback Variables
+    int m_startFrame{0};
+    int m_endFrame{0};
+    bool m_playLoop{true};
+};</code></pre>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
