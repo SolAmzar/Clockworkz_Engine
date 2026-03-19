@@ -1,15 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find \"C:\\\\Users\\\\Acer\\\\Documents\\\\GitHub\\\\csd2401f25_team_clockworkz\\\\ClockWorkzEngine\" -type f -name \"*.cmake\" 2>/dev/null | grep -v \"build\\\\|out\" | head -20)",
-      "Bash(find \"C:\\\\Users\\\\Acer\\\\Documents\\\\GitHub\\\\csd2401f25_team_clockworkz\\\\ClockWorkzEngine\" -type f \\\\\\( -name \"*.sh\" -o -name \"*.bat\" -o -name \"*.cmd\" \\\\\\) 2>/dev/null | grep -v build | grep -v out)",
-      "Bash(where lib.exe)",
-      "Read(//c/Program Files/Microsoft Visual Studio/**)",
-      "Bash(mkdir -p \"C:/Users/Acer/Documents/GitHub/csd2401f25_team_clockworkz/ClockWorkzEngine/bin/Debug\" && cp \"C:/Users/Acer/Documents/GitHub/csd2401f25_team_clockworkz/ClockWorkzEngine/ffmpeg/lib/\"*.dll \"C:/Users/Acer/Documents/GitHub/csd2401f25_team_clockworkz/ClockWorkzEngine/bin/Debug/\" && echo \"Done\" && ls \"C:/Users/Acer/Documents/GitHub/csd2401f25_team_clockworkz/ClockWorkzEngine/bin/Debug/\"*.dll 2>/dev/null)",
-      "Bash(ls \"C:/Users/Acer/Documents/GitHub/csd2401f25_team_clockworkz/ClockWorkzEngine/ffmpeg/lib/\"*avcodec* 2>/dev/null)",
-      "Bash(curl -s \"https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest\" | python3 -c \"import sys,json; assets=json.load\\(sys.stdin\\)['assets']; [print\\(a['browser_download_url']\\) for a in assets if 'win64-gpl-shared' in a['name'] and 'n7' in a['name'] and a['name'].endswith\\('.zip'\\)]\" 2>/dev/null | head -5)",
-      "Bash(curl -s \"https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest\" | python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(a['name'], a['browser_download_url']\\) for a in data['assets']]\" 2>/dev/null)",
-      "Bash(node:*)"
     ]
   }
 }

@@ -14,16 +14,21 @@ reserved.
 #include "Components/Collider.hpp"
 #include "Components/Layer.hpp"
 #include "Components/Transform.hpp"
+#include "Components/Velocity.hpp"
 #include "Math/Vec2.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <limits>
-#include <unordered_map>
-#include <unordered_set>
 
 
 namespace Systems {
+
+// Baumgarte correction constants — apply partial correction to reduce jitter.
+// kPercent: fraction of penetration corrected per frame (< 1 prevents overshoot).
+// kSlop: minimum penetration depth to correct (filters micro-jitter).
+static constexpr float kCorrectPercent = 0.8f;
+static constexpr float kCorrectSlop    = 0.5f;  // pixels
 
 // Returns the AABB (in world space) that encloses the rotated collider.
 // Used for spatial grid broadphase only — not for narrowphase.
@@ -50,14 +55,25 @@ static void getWorldAABB(const Components::Transform &t,
   outMax = center + extents;
 }
 
+// Apply Baumgarte-style position correction: scale down by kPercent and ignore
+// penetrations smaller than kSlop to prevent micro-jitter.
+static vec2 baumgarte(vec2 penetration) {
+  float mag = magnitude(penetration);
+  if (mag < kCorrectSlop) return vec2(0.f, 0.f);
+  float scale = kCorrectPercent * (mag - kCorrectSlop) / mag;
+  return penetration * scale;
+}
+
 void CollisionSystem::update(ECS::World &world,
                              const std::vector<bool> *layerEnabled) {
   m_collisions.clear();
 
+  // Reuse scratch buffers — clear preserves allocated capacity.
+  m_entities.clear();
+  m_grid.clear();
+  m_tested.clear();
+
   // Collect all entities with Transform + Collider
-  // We need to collect them first because we cannot perform nested iteration
-  // efficiently/safely with the current world.each() implementation
-  std::vector<ECS::Entity> entities;
   world.each<Components::Transform, Components::Collider>(
       [&](ECS::Entity e, Components::Transform &, Components::Collider &) {
         if (layerEnabled) {
@@ -69,41 +85,18 @@ void CollisionSystem::update(ECS::World &world,
             }
           }
         }
-        entities.push_back(e);
+        m_entities.push_back(e);
       });
 
-  struct CellKey {
-    int x, y;
-    bool operator==(const CellKey &o) const { return x == o.x && y == o.y; }
-  };
-  struct CellKeyHash {
-    std::size_t operator()(const CellKey &k) const {
-      std::size_t hx = std::hash<int>{}(k.x);
-      std::size_t hy = std::hash<int>{}(k.y);
-      return hx ^ (hy + 0x9e3779b9 + (hx << 6) + (hx >> 2));
-    }
-  };
-  struct PairKey {
-    std::uint64_t a, b;
-    bool operator==(const PairKey &o) const { return a == o.a && b == o.b; }
-  };
-  struct PairKeyHash {
-    std::size_t operator()(const PairKey &k) const {
-      std::size_t ha = std::hash<std::uint64_t>{}(k.a);
-      std::size_t hb = std::hash<std::uint64_t>{}(k.b);
-      return ha ^ (hb + 0x9e3779b97f4a7c15ULL + (ha << 6) + (ha >> 2));
-    }
-  };
-
-  std::unordered_map<CellKey, std::vector<ECS::Entity>, CellKeyHash> grid;
-  grid.reserve(entities.size() * 2);
+  m_grid.reserve(m_entities.size() * 2);
+  m_tested.reserve(m_entities.size() * 4);
 
   auto entityKey = [](ECS::Entity e) -> std::uint64_t {
     return (static_cast<std::uint64_t>(e.id) << 32) |
            static_cast<std::uint64_t>(e.generation);
   };
 
-  for (auto e : entities) {
+  for (auto e : m_entities) {
     auto *t = world.getComponent<Components::Transform>(e);
     auto *c = world.getComponent<Components::Collider>(e);
     if (!t || !c) continue;
@@ -118,13 +111,10 @@ void CollisionSystem::update(ECS::World &world,
 
     for (int x = minX; x <= maxX; ++x)
       for (int y = minY; y <= maxY; ++y)
-        grid[{x, y}].push_back(e);
+        m_grid[{x, y}].push_back(e);
   }
 
-  std::unordered_set<PairKey, PairKeyHash> tested;
-  tested.reserve(entities.size() * 4);
-
-  for (const auto &cell : grid) {
+  for (const auto &cell : m_grid) {
     const auto &cellEntities = cell.second;
     if (cellEntities.size() < 2) continue;
 
@@ -137,8 +127,8 @@ void CollisionSystem::update(ECS::World &world,
         std::uint64_t keyB = entityKey(eB);
         if (keyA > keyB) std::swap(keyA, keyB);
         PairKey pairKey{keyA, keyB};
-        if (tested.find(pairKey) != tested.end()) continue;
-        tested.insert(pairKey);
+        if (m_tested.find(pairKey) != m_tested.end()) continue;
+        m_tested.insert(pairKey);
 
         auto *tA = world.getComponent<Components::Transform>(eA);
         auto *cA = world.getComponent<Components::Collider>(eA);
@@ -156,12 +146,14 @@ void CollisionSystem::update(ECS::World &world,
             vec2 penetration{};
             bool collided = false;
 
+            std::uint64_t eAKey = entityKey(eA);
+
             if (cA->shape == Components::Collider::Shape::Box &&
                 cB->shape == Components::Collider::Shape::Box) {
               collided = checkAABB(*tA, *cA, *tB, *cB, penetration);
             } else if (cA->shape == Components::Collider::Shape::Circle &&
                        cB->shape == Components::Collider::Shape::Circle) {
-              collided = checkCircleCircle(*tA, *cA, *tB, *cB, penetration);
+              collided = checkCircleCircle(*tA, *cA, *tB, *cB, penetration, eAKey);
             } else if (cA->shape == Components::Collider::Shape::Box) {
               collided = checkAABBCircle(*tA, *cA, *tB, *cB, penetration);
             } else {
@@ -179,16 +171,42 @@ void CollisionSystem::update(ECS::World &world,
                 bool aMoves = cA->moveable;
                 bool bMoves = cB->moveable;
 
+                // Baumgarte-corrected penetration: partial correction with slop
+                // prevents jitter from full-depth snapping.
+                vec2 corrected = baumgarte(penetration);
+                if (magnitude(corrected) < 1e-6f) continue;
+
+                vec2 normal = normalize(penetration);
+
                 if (aMoves && !bMoves) {
-                  tA->position += penetration;
+                  tA->position += corrected;
+                  // Cancel A's velocity component pointing into B
+                  if (auto *vA = world.getComponent<Components::Velocity>(eA)) {
+                    float vDotN = dot(vA->velocity, normal);
+                    if (vDotN < 0.f) vA->velocity -= vDotN * normal;
+                  }
                 } else if (!aMoves && bMoves) {
-                  tB->position -= penetration;
+                  tB->position -= corrected;
+                  // Cancel B's velocity component pointing into A
+                  if (auto *vB = world.getComponent<Components::Velocity>(eB)) {
+                    float vDotN = dot(vB->velocity, -normal);
+                    if (vDotN < 0.f) vB->velocity -= vDotN * (-normal);
+                  }
                 } else if (aMoves && bMoves) {
                   float totalMass = cA->mass + cB->mass;
                   float ratioA = cB->mass / totalMass;
                   float ratioB = cA->mass / totalMass;
-                  tA->position += penetration * ratioA;
-                  tB->position -= penetration * ratioB;
+                  tA->position += corrected * ratioA;
+                  tB->position -= corrected * ratioB;
+                  // Cancel each entity's velocity into the other
+                  if (auto *vA = world.getComponent<Components::Velocity>(eA)) {
+                    float vDotN = dot(vA->velocity, normal);
+                    if (vDotN < 0.f) vA->velocity -= vDotN * normal;
+                  }
+                  if (auto *vB = world.getComponent<Components::Velocity>(eB)) {
+                    float vDotN = dot(vB->velocity, -normal);
+                    if (vDotN < 0.f) vB->velocity -= vDotN * (-normal);
+                  }
                 }
               }
             }
@@ -213,18 +231,31 @@ bool CollisionSystem::checkAABB(const Components::Transform &tA,
   vec2 halfA(cA.size.x * tA.scale.x * 0.5f, cA.size.y * tA.scale.y * 0.5f);
   vec2 halfB(cB.size.x * tB.scale.x * 0.5f, cB.size.y * tB.scale.y * 0.5f);
 
-  // Local axes of each OBB (unit vectors along local X and Y)
+  vec2 d = centerB - centerA;
+
+  // Fast-path: both boxes axis-aligned (most common case — walls, player, tiles).
+  // Simple interval overlap is much cheaper than 4-axis SAT.
+  static constexpr float kRotEps = 1e-4f;
+  if (std::abs(tA.rotation) < kRotEps && std::abs(tB.rotation) < kRotEps) {
+    float overlapX = halfA.x + halfB.x - std::abs(d.x);
+    float overlapY = halfA.y + halfB.y - std::abs(d.y);
+    if (overlapX <= 0.f || overlapY <= 0.f) return false;
+    if (overlapX < overlapY)
+      penetration = { (d.x < 0.f ? overlapX : -overlapX), 0.f };
+    else
+      penetration = { 0.f, (d.y < 0.f ? overlapY : -overlapY) };
+    return true;
+  }
+
+  // General OBB SAT: test 4 axes (2 face normals per box)
   float cosA = std::cos(tA.rotation), sinA = std::sin(tA.rotation);
   float cosB = std::cos(tB.rotation), sinB = std::sin(tB.rotation);
   vec2 axA[2] = {{ cosA,  sinA }, {-sinA,  cosA }};
   vec2 axB[2] = {{ cosB,  sinB }, {-sinB,  cosB }};
 
-  vec2 d = centerB - centerA;
-
   float minOverlap = std::numeric_limits<float>::max();
   vec2 mtvAxis{};
 
-  // SAT: test 4 axes (2 face normals per box)
   vec2 axes[4] = { axA[0], axA[1], axB[0], axB[1] };
   for (const auto &axis : axes) {
     float dist  = std::abs(dot(d, axis));
@@ -251,7 +282,8 @@ bool CollisionSystem::checkCircleCircle(const Components::Transform &tA,
                                         const Components::Collider &cA,
                                         const Components::Transform &tB,
                                         const Components::Collider &cB,
-                                        vec2 &penetration) {
+                                        vec2 &penetration,
+                                        std::uint64_t keyA) {
   vec2 centerA = tA.position + rotate(vec2(cA.offset.x - tA.pivot.x,
                                             cA.offset.y - tA.pivot.y), tA.rotation);
   vec2 centerB = tB.position + rotate(vec2(cB.offset.x - tB.pivot.x,
@@ -267,7 +299,12 @@ bool CollisionSystem::checkCircleCircle(const Components::Transform &tA,
 
   float dist = std::sqrt(distSq);
   if (dist < 1e-4f) {
-    penetration = vec2(radiusSum, 0.0f);
+    // Circles perfectly overlapping — use entity key bit for a deterministic
+    // push direction that doesn't oscillate between frames.
+    if (keyA & 1u)
+      penetration = vec2(radiusSum, 0.f);
+    else
+      penetration = vec2(0.f, radiusSum);
   } else {
     penetration = (diff / dist) * (radiusSum - dist);
   }

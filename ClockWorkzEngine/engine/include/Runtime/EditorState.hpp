@@ -333,6 +333,7 @@ private:
     bool                     m_tileMapMode{false};
     bool                     m_showTilePalette{false};
     bool                     m_paintedThisFrame{false};
+    bool                     m_tilemapDirty{false}; ///< Set when tiles are added/removed; triggers merged-collider rebuild on mouse release
     std::string              m_selectedTilePrefab;
     PaintMode                m_paintMode{PaintMode::Paint};
     int                      m_currentLayer{0};

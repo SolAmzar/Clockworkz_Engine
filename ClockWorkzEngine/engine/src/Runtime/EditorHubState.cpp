@@ -28,6 +28,8 @@ reserved.
 #include <iostream>
 #include <cstdlib>
 
+namespace fs = std::filesystem;
+
 namespace Runtime {
 
 // Replace every occurrence of {{N}} in a template string with projectName.
@@ -43,7 +45,6 @@ static std::string scaffold(const char* tmpl, const std::string& projectName) {
 }
 
 static std::string getSourceRootImpl() {
-    namespace fs = std::filesystem;
     fs::path dir = fs::path(__FILE__).parent_path();
     for (int i = 0; i < 10 && !dir.empty(); ++i) {
         // Engine file lives in engine/src/Runtime/ — walk up to ClockWorkzEngine/
@@ -337,7 +338,6 @@ std::string EditorHubState::resolveAbsoluteScenePath(const ProjectEntry& project
     const std::string srcRoot = getSourceRootImpl();
     if (srcRoot.empty())
         return {};
-    namespace fs = std::filesystem;
     return (fs::path(srcRoot) / project.path / project.initialScene).generic_string();
 }
 
@@ -374,7 +374,6 @@ void EditorHubState::loadRegistry() {
 
         // Skip entries whose project folder no longer exists on disk
         if (!srcRoot.empty()) {
-            namespace fs = std::filesystem;
             fs::path absPath = fs::path(srcRoot) / entry.path;
             if (!fs::exists(absPath)) {
                 std::cerr << "[EditorHub] Skipping missing project folder: "
@@ -416,19 +415,16 @@ void EditorHubState::saveRegistry() {
     // Write to source directory
     const std::string srcRoot = getSourceRootImpl();
     if (!srcRoot.empty()) {
-        namespace fs = std::filesystem;
         fs::path srcPath =
             fs::path(srcRoot) / "assets" / "configs" / "projects_registry.json";
         fs::create_directories(srcPath.parent_path());
-        std::ofstream out(srcPath);
+        std::ofstream out(srcPath.string());
         if (out)
             out << j.dump(4);
     }
 }
 
 void EditorHubState::createNewProject(const std::string& projectName, const std::string& description) {
-    namespace fs = std::filesystem;
-
     const std::string srcRoot = getSourceRootImpl();
     if (srcRoot.empty()) {
         m_errorMessage   = "Cannot resolve source root. Project not created.";
@@ -466,7 +462,7 @@ void EditorHubState::createNewProject(const std::string& projectName, const std:
     bool ok = true;
     auto write = [&](const fs::path& p, std::string content) {
         if (!ok) return;
-        std::ofstream out(p);
+        std::ofstream out(p.string());
         if (!out) {
             m_errorMessage   = "Failed to write: " + p.filename().string();
             m_showErrorPopup = true;

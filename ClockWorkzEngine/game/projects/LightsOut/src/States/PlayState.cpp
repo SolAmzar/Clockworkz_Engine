@@ -1112,7 +1112,15 @@ void PlayState::render(Core::Time *timer) {
   }
 
   // Normal game rendering (keep all your existing code below)
-  m_renderer->beginScenePass(engine.camera().viewProj());
+  glm::vec4 sceneTint(1.0f);
+  if (auto* scene = m_scenes.current()) {
+    if (scene->isDarknessEnabled()) {
+      float intensity = std::clamp(scene->getDarknessIntensity(), 0.0f, 1.0f);
+      glm::vec3 tintRgb = glm::mix(glm::vec3(1.0f), scene->getDarknessColor(), intensity);
+      sceneTint = glm::vec4(tintRgb, 1.0f);
+    }
+  }
+  m_renderer->beginScenePass(engine.camera().viewProj(), sceneTint);
   m_scenes.render(*m_renderer);
   m_renderer->endScenePass();
 
