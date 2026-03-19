@@ -58,10 +58,6 @@
         "Entity 506",
         "Entity 506 (Clone)",
         "Entity 508",
-        "Entity 518",
-        "Entity 518 (Clone)",
-        "Entity 518 (Clone) (Clone)",
-        "Entity 518 (Clone) (Clone) (Clone)",
         "Entity 522",
         "Entity 523",
         "floor mat",
@@ -182,6 +178,7 @@
         "marble",
         "concrete floor",
         "concrete floor",
+        "Enemy",
         "concrete floor",
         "concrete floor",
         "marble",
@@ -378,10 +375,10 @@
         "concrete -",
         "marble -",
         "concrete -",
+        "TilemapMergedCollider",
         "marble -",
         "concrete bottom right wall",
         "concrete l wall",
-        "TilemapMergedCollider",
         "marble l",
         "marble",
         "concrete -",
@@ -413,6 +410,7 @@
         "House entrance",
         "concrete -",
         "concrete -",
+        "TilemapMergedCollider",
         "concrete -",
         "concrete top_left wall",
         "marble l",
@@ -474,11 +472,12 @@
         "marble -",
         "marble -",
         "marble top right",
+        "Enemy",
         "concrete -",
         "marble l",
         "marble -",
         "marble l",
-        "Entity 518 (Clone) (Clone)",
+        "TilemapMergedCollider",
         "concrete l wall",
         "House entrance",
         "concrete -",
@@ -541,8 +540,6 @@
         "Syrofoam box",
         "marble l",
         "marble l",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
@@ -18223,7 +18220,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
+                    "sortOrder": 6,
                     "textureId": "blockage",
                     "unlit": false,
                     "uv": [
@@ -18241,12 +18238,12 @@
                     },
                     "position": {
                         "x": 1850.0,
-                        "y": 50.0
+                        "y": 14.623348236083984
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.2599999904632568,
+                        "y": 1.5499999523162842
                     },
                     "snapToGrid": false
                 }
@@ -18537,13 +18534,13 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1850.0,
-                        "y": 250.0
+                        "x": 1841.54296875,
+                        "y": 275.3710632324219
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.380000114440918,
+                        "y": 1.850000023841858
                     },
                     "snapToGrid": false
                 }
@@ -19049,44 +19046,22 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
+                    "blocksLight": false,
+                    "collisionCategory": 4,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 0.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
-                    "shape": 1,
-                    "width": 100.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "trashstack",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
+                    "shape": 0,
+                    "width": 2600.0
                 },
                 "transform": {
                     "pivot": {
@@ -19094,8 +19069,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1770.2274169921875,
-                        "y": 61.240272521972656
+                        "x": 400.0,
+                        "y": 350.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -19105,7 +19080,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity 518 (Clone) (Clone) (Clone)"
+            "name": "TilemapMergedCollider"
         },
         {
             "active": true,
@@ -27406,7 +27381,7 @@
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
+                        "x": 1.2400000095367432,
                         "y": 1.0
                     },
                     "snapToGrid": false
@@ -29619,7 +29594,7 @@
                     },
                     "position": {
                         "x": 1750.0,
-                        "y": 50.0
+                        "y": 50.614315032958984
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31897,7 +31872,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
@@ -31905,14 +31880,59 @@
                     "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
-                    "shape": 1,
+                    "shape": 0,
                     "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.7099999785423279,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.23999999463558197,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 1.0800000429153442,
+                    "sprintSpeedThreshold": 19.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 2,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "attack_monster2_",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "attack_monster_",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "idle_monster_",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "enemy_death_",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 50.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "idle_monster2_",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
                 },
                 "spriteRenderer": {
                     "color": {
@@ -31922,17 +31942,17 @@
                         "r": 1.0
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 150.0,
+                        "y": 150.0
                     },
-                    "sortOrder": 2,
-                    "textureId": "trashstack",
+                    "sortOrder": 0,
+                    "textureId": "monster_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
                     ],
                     "visible": true
                 },
@@ -31942,8 +31962,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1703.8828125,
-                        "y": 210.01547241210938
+                        "x": 362.47357177734375,
+                        "y": 176.40756225585938
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31951,9 +31971,14 @@
                         "y": 1.0
                     },
                     "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
                 }
             },
-            "name": "Entity 518 (Clone)"
+            "name": "Enemy"
         },
         {
             "active": true,
@@ -32832,44 +32857,22 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
+                    "blocksLight": false,
+                    "collisionCategory": 4,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 0.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
-                    "shape": 1,
-                    "width": 100.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "trashstack",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
+                    "shape": 0,
+                    "width": 500.0
                 },
                 "transform": {
                     "pivot": {
@@ -32877,8 +32880,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1760.7908935546875,
-                        "y": 280.3874206542969
+                        "x": -1150.0,
+                        "y": 550.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -32888,50 +32891,28 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity 518 (Clone) (Clone)"
+            "name": "TilemapMergedCollider"
         },
         {
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
+                    "blocksLight": false,
+                    "collisionCategory": 4,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 0.0,
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
-                    "shape": 1,
-                    "width": 100.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "trashstack",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
+                    "shape": 0,
+                    "width": 600.0
                 },
                 "transform": {
                     "pivot": {
@@ -32939,8 +32920,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1756.3868408203125,
-                        "y": 83.96810150146484
+                        "x": 2200.0,
+                        "y": 1250.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -32950,7 +32931,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity 518 (Clone) (Clone)"
+            "name": "TilemapMergedCollider"
         },
         {
             "active": true,
@@ -33021,7 +33002,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
+                    "sortOrder": 6,
                     "textureId": "blockage",
                     "unlit": false,
                     "uv": [
@@ -33039,12 +33020,12 @@
                     },
                     "position": {
                         "x": 1850.0,
-                        "y": 150.0
+                        "y": 154.3918914794922
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1.25,
+                        "y": 1.9500000476837158
                     },
                     "snapToGrid": false
                 }
@@ -46327,22 +46308,67 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": false,
+                    "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
-                    "moveable": false,
+                    "moveable": true,
                     "offset": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "radius": 50.0,
-                    "shape": 1,
+                    "shape": 0,
                     "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.7099999785423279,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.23999999463558197,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 1.0800000429153442,
+                    "sprintSpeedThreshold": 19.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 2,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "attack_monster2_",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "attack_monster_",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "idle_monster_",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "enemy_death_",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 50.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "idle_monster2_",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
                 },
                 "spriteRenderer": {
                     "color": {
@@ -46352,17 +46378,17 @@
                         "r": 1.0
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 150.0,
+                        "y": 150.0
                     },
-                    "sortOrder": 2,
-                    "textureId": "trashstack",
+                    "sortOrder": 1,
+                    "textureId": "monster_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
                     ],
                     "visible": true
                 },
@@ -46372,8 +46398,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1746.697998046875,
-                        "y": 143.86277770996094
+                        "x": 697.1005249023438,
+                        "y": 166.97271728515625
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -46381,9 +46407,14 @@
                         "y": 1.0
                     },
                     "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
                 }
             },
-            "name": "Entity 518"
+            "name": "Enemy"
         },
         {
             "active": true,
@@ -47517,126 +47548,6 @@
                     "position": {
                         "x": 1800.0,
                         "y": 200.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 600.0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 2200.0,
-                        "y": 1250.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 500.0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1150.0,
-                        "y": 550.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 2600.0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 400.0,
-                        "y": 350.0
                     },
                     "rotation": 0.0,
                     "scale": {

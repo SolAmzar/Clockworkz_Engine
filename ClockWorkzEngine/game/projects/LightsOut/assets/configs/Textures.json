@@ -465,12 +465,6 @@
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "blockage",
-            "path": "assets/textures/imported/blockage.jpg"
-        },
-        {
-            "alphaOnlyIsRed": false,
-            "flipY": true,
             "name": "bottlerack",
             "path": "assets/textures/imported/bottlerack.png"
         },
@@ -1217,6 +1211,24 @@
             "flipY": true,
             "name": "waterpipe'_texture",
             "path": "assets/textures/waterpipe'.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "blockage_texture",
+            "path": "assets/textures/blockage.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "blockage(New)_texture",
+            "path": "assets/textures/blockage.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "Crack_texture",
+            "path": "assets/textures/blockage.png"
         }
     ]
 }
