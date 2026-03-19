@@ -81,6 +81,8 @@ public:
   float getLightAngle() const;
   float getLightOffsetX() const;
   float getLightOffsetY() const;
+  float getLightIntensity() const;
+  void setLightIntensity(float i);
   void setLightOffsetX(float x);
   void setLightOffsetY(float y);
 
