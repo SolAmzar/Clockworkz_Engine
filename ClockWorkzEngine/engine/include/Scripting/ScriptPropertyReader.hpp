@@ -26,7 +26,7 @@ using ScriptPropValue = std::variant<float, int, bool, std::string>;
 
 struct ScriptProperty {
     std::string     name;
-    std::string     type;         // "float" | "int" | "bool" | "string"
+    std::string     type;         // "float" | "int" | "bool" | "string" | "texture" | "animation"
     std::string     label;        // display label in inspector
     ScriptPropValue defaultValue;
 };

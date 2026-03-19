@@ -474,20 +474,16 @@ bool SceneSerializer::Deserialize(ECS::World &world,
           entry.scriptPath = lsj.value("scriptPath", "");
           entry.enabled = lsj.value("enabled", true);
           if (lsj.contains("properties") && !entry.scriptPath.empty()) {
-            auto &propDefs =
-                Scripting::ScriptPropertyReader::read(entry.scriptPath);
-            for (auto &def : propDefs) {
-              if (!lsj["properties"].contains(def.name))
-                continue;
-              auto &jv = lsj["properties"][def.name];
-              if (def.type == "float")
-                entry.properties[def.name] = jv.get<float>();
-              else if (def.type == "int")
-                entry.properties[def.name] = jv.get<int>();
-              else if (def.type == "bool")
-                entry.properties[def.name] = jv.get<bool>();
-              else if (def.type == "string")
-                entry.properties[def.name] = jv.get<std::string>();
+            auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
+            for (auto& def : propDefs) {
+              if (!lsj["properties"].contains(def.name)) continue;
+              auto& jv = lsj["properties"][def.name];
+              if      (def.type == "float")  entry.properties[def.name] = jv.get<float>();
+              else if (def.type == "int")    entry.properties[def.name] = jv.get<int>();
+              else if (def.type == "bool")   entry.properties[def.name] = jv.get<bool>();
+              else if (def.type == "string"   ||
+                       def.type == "texture"  ||
+                       def.type == "animation") entry.properties[def.name] = jv.get<std::string>();
             }
           }
           return entry;

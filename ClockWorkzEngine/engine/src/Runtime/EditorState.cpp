@@ -1,4 +1,4 @@
-/******************************************************************************/
+j/******************************************************************************/
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
@@ -1854,18 +1854,465 @@ void EditorState::renderInspector() {
                              ImGuiInputTextFlags_EnterReturnsTrue))
             grp.name = grpNameBuf;
 
-        // Sort order base â€” changing it offsets all member sortOrders
-        int newBase = grp.sortOrderBase;
-        if (ImGui::InputInt("Sort Order Base", &newBase)) {
-            int delta = newBase - grp.sortOrderBase;
-            grp.sortOrderBase = newBase;
-            for (uint32_t memberId : grp.entityIds) {
-                world.each<Components::Tag>([&](ECS::Entity e, Components::Tag&) {
-                    if (e.id == memberId) {
-                        if (auto* sr = world.getComponent<Components::SpriteRenderer>(e))
-                            sr->sortOrder += delta;
-                    }
-                });
+  if (ImGui::BeginPopup("##AddComp")) {
+    if (ImGui::BeginMenu("Core")) {
+      addCompEntry<Components::Velocity>("Velocity", m_selectedEntity, world);
+      addCompEntry<Components::Tag>("Tag", m_selectedEntity, world);
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Rendering")) {
+      addCompEntry<Components::SpriteRenderer>("SpriteRenderer",
+                                               m_selectedEntity, world);
+      addCompEntry<Components::SpriteAnimator>("SpriteAnimator",
+                                               m_selectedEntity, world);
+      addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity,
+                                             world);
+      addCompEntry<Components::VideoPlayer>("VideoPlayer", m_selectedEntity,
+                                            world);
+      addCompEntry<Components::Light>("Light", m_selectedEntity, world);
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Physics")) {
+      addCompEntry<Components::Collider>("Collider", m_selectedEntity, world);
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Audio")) {
+      addCompEntry<Components::AudioSource>("AudioSource", m_selectedEntity,
+                                            world);
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("UI")) {
+      addCompEntry<Components::UIButton>("UIButton", m_selectedEntity, world);
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Camera")) {
+      addCompEntry<Components::CameraComponent>("CameraComponent",
+                                                m_selectedEntity, world);
+      ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Scripting")) {
+      // LuaScript: always available — adds a new script slot each click
+      if (ImGui::MenuItem("LuaScript")) {
+        if (!world.hasComponent<Components::LuaScript>(m_selectedEntity))
+          world.addComponent(m_selectedEntity, Components::LuaScript{});
+        world.getComponent<Components::LuaScript>(m_selectedEntity)
+            ->scripts.push_back({});
+      }
+      addCompEntry<Components::StateMachine>("StateMachine", m_selectedEntity,
+                                             world);
+      ImGui::EndMenu();
+    }
+    ImGui::EndPopup();
+  }
+
+  ImGui::Separator();
+
+  // Tag
+  if (auto *tag = world.getComponent<Components::Tag>(m_selectedEntity)) {
+    if (ImGui::CollapsingHeader("Tag", ImGuiTreeNodeFlags_DefaultOpen)) {
+      char buf[256];
+      strncpy_s(buf, tag->tag.c_str(), sizeof(buf) - 1);
+      if (ImGui::InputText("Name", buf, sizeof(buf)))
+        tag->tag = buf;
+    }
+  }
+
+  // Transform
+  if (auto *t = world.getComponent<Components::Transform>(m_selectedEntity)) {
+    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+      float pos[2] = {t->position.x, t->position.y};
+      if (ImGui::DragFloat2("Position", pos, 1.0f)) {
+        t->position = {pos[0], pos[1]};
+      }
+      // Undo on release
+      if (ImGui::IsItemDeactivatedAfterEdit()) {
+        vec2 newPos = {pos[0], pos[1]};
+        vec2 oldPos = m_gizmoOriginalPos; // reuse for non-gizmo edits
+        executeCommand(std::make_unique<MoveEntityCmd>(world, m_selectedEntity,
+                                                       oldPos, newPos));
+      }
+      if (ImGui::IsItemActivated())
+        m_gizmoOriginalPos = t->position;
+
+      float rot = t->rotation;
+      if (ImGui::DragFloat("Rotation (rad)", &rot, 0.01f)) {
+        t->rotation = rot;
+      }
+      if (ImGui::IsItemDeactivatedAfterEdit()) {
+        executeCommand(std::make_unique<RotateEntityCmd>(
+            world, m_selectedEntity, m_gizmoOriginalRotation, rot));
+      }
+      if (ImGui::IsItemActivated())
+        m_gizmoOriginalRotation = t->rotation;
+
+      float scale[2] = {t->scale.x, t->scale.y};
+      if (ImGui::DragFloat2("Scale", scale, 0.01f))
+        t->scale = {scale[0], scale[1]};
+
+      float pivot[2] = {t->pivot.x, t->pivot.y};
+      if (ImGui::DragFloat2("Pivot", pivot, 0.5f))
+        t->pivot = {pivot[0], pivot[1]};
+
+      ImGui::Checkbox("Snap to Grid##transform", &t->snapToGrid);
+    }
+  }
+
+  // SpriteRenderer
+  if (world.hasComponent<Components::SpriteRenderer>(m_selectedEntity)) {
+    auto *sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+    if (ImGui::CollapsingHeader("SpriteRenderer",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      char texBuf[256];
+      strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
+      if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
+        sr->textureId = texBuf;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+          sr->textureId = static_cast<const char *>(pl->Data);
+        ImGui::EndDragDropTarget();
+      }
+
+      // Show texture thumbnail if loaded
+      auto tex = Assets::TextureManager::Get(sr->textureId);
+      if (tex && tex->id() != 0) {
+        ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(48, 48),
+                     ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::SameLine();
+      }
+
+      float sz[2] = {sr->size.x, sr->size.y};
+      if (ImGui::DragFloat2("Size", sz, 1.0f))
+        sr->size = {sz[0], sz[1]};
+
+      ImGui::ColorEdit4("Color", glm::value_ptr(sr->color));
+      ImGui::Checkbox("Visible", &sr->visible);
+      ImGui::DragInt("Sort Order", &sr->sortOrder);
+    }
+  } else {
+    if (ImGui::Button("+ Add SpriteRenderer"))
+      world.addComponent(m_selectedEntity, Components::SpriteRenderer{});
+  }
+
+  // VideoPlayer
+  if (world.hasComponent<Components::VideoPlayer>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("VideoPlayer",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##vp"))
+      rm = true;
+
+    if (open) {
+      auto *vp = world.getComponent<Components::VideoPlayer>(m_selectedEntity);
+
+      char pathBuf[256];
+      strncpy_s(pathBuf, vp->filepath.c_str(), sizeof(pathBuf) - 1);
+      if (ImGui::InputText("Filepath##vp", pathBuf, sizeof(pathBuf))) {
+        vp->filepath = pathBuf;
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Browse##vp")) {
+        IGFD::FileDialogConfig config;
+        config.path = ".";
+        IGFD::FileDialog::Instance()->OpenDialog(
+            "ChooseVideoFileDlg", "Choose Video File",
+            "Video files (*.mp4 *.avi *.mkv *.webm){.mp4,.avi,.mkv,.webm},.*",
+            config);
+      }
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("VIDEO_ASSET")) {
+          vp->filepath = static_cast<const char *>(pl->Data);
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      ImGui::Checkbox("Loop##vp", &vp->loop);
+      ImGui::SameLine();
+      ImGui::Checkbox("Autoplay##vp", &vp->autoplay);
+      ImGui::Checkbox("Mute##vp", &vp->mute);
+
+      ImGui::SliderFloat("Speed##vp", &vp->playbackSpeed, 0.1f, 2.0f);
+
+      ImGui::Text("State: %s", vp->playbackState.c_str());
+      ImGui::Text("Resolution: %dx%d (%.1f fps)", vp->width, vp->height,
+                  vp->fps);
+
+      float cTime = vp->currentTime;
+      if (ImGui::SliderFloat("Time##vp", &cTime, 0.0f,
+                             vp->duration > 0 ? vp->duration : 100.0f)) {
+        // To seek, we unfortunately need the ECS system hook, but we modify
+        // time. The current VideoPlayer component does not have a "seek
+        // target", but we can just rely on the Play/Pause logic for now.
+      }
+      ImGui::Text("Duration: %.2f", vp->duration);
+
+      bool playing = vp->isPlaying;
+      if (ImGui::Checkbox("Is Playing##vp", &playing)) {
+        vp->isPlaying = playing;
+      }
+    }
+    if (rm) {
+      world.removeComponent<Components::VideoPlayer>(m_selectedEntity);
+    }
+  }
+
+  // Collider
+  if (ImGui::CollapsingHeader("Collider")) {
+    auto *c = world.getComponent<Components::Collider>(m_selectedEntity);
+    if (c) {
+      ImGui::Checkbox("Show Outline", &m_showColliders);
+      ImGui::Separator();
+
+      // Shape selector — changing this affects collision logic immediately
+      const char *shapeNames[] = {"Box", "Circle"};
+      int currentShape = static_cast<int>(c->shape);
+      if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2))
+        c->shape = static_cast<Components::Collider::Shape>(currentShape);
+
+      if (c->shape == Components::Collider::Shape::Box) {
+        ImGui::DragFloat2("Size##col", &c->size.x, 1.0f);
+      } else {
+        ImGui::DragFloat("Radius##col", &c->radius, 1.0f);
+      }
+
+      ImGui::DragFloat2("Offset##col", &c->offset.x, 1.0f);
+      ImGui::Checkbox("Solid##col", &c->isSolid);
+      ImGui::Checkbox("Trigger##col", &c->isTrigger);
+      ImGui::Checkbox("Blocks Light##col", &c->blocksLight);
+      ImGui::Checkbox("Moveable##col", &c->moveable);
+      if (c->moveable)
+        ImGui::DragFloat("Mass##col", &c->mass, 0.1f);
+
+      if (ImGui::Button("Fit to Sprite##col")) {
+        auto *spr =
+            world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+        if (spr) {
+          if (c->shape == Components::Collider::Shape::Box)
+            c->size = spr->size;
+          else
+            c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+          c->offset = {0.f, 0.f};
+        }
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Remove##col"))
+        world.removeComponent<Components::Collider>(m_selectedEntity);
+    } else {
+      if (ImGui::Button("Add Collider##col"))
+        world.addComponent(m_selectedEntity, Components::Collider{});
+    }
+  }
+
+  // ── Velocity ────────────────────────────────────────────────────────────
+  if (world.hasComponent<Components::Velocity>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("Velocity##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##rv"))
+      rm = true;
+    if (open) {
+      auto *vel = world.getComponent<Components::Velocity>(m_selectedEntity);
+      float vv[2] = {vel->velocity.x, vel->velocity.y};
+      if (ImGui::DragFloat2("Velocity##vel", vv, 0.5f))
+        vel->velocity = {vv[0], vv[1]};
+      ImGui::DragFloat("MoveSpeed##vel", &vel->moveSpeed, 1.0f);
+    }
+    if (rm)
+      world.removeComponent<Components::Velocity>(m_selectedEntity);
+  }
+
+  // ── AudioSource ─────────────────────────────────────────────────────────
+  if (world.hasComponent<Components::AudioSource>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("AudioSource##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##ras"))
+      rm = true;
+    if (open) {
+      auto *au = world.getComponent<Components::AudioSource>(m_selectedEntity);
+      char sndbuf[256];
+      snprintf(sndbuf, sizeof(sndbuf), "%s", au->soundId.c_str());
+      if (ImGui::InputText("Sound ID##au", sndbuf, sizeof(sndbuf)))
+        au->soundId = sndbuf;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("AUDIO_ASSET"))
+          au->soundId = static_cast<const char *>(pl->Data);
+        ImGui::EndDragDropTarget();
+      }
+      ImGui::SliderFloat("Volume##au", &au->volume, 0.0f, 1.0f);
+      ImGui::Checkbox("Loop##au", &au->loop);
+      ImGui::SameLine();
+      ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
+    }
+    if (rm)
+      world.removeComponent<Components::AudioSource>(m_selectedEntity);
+  }
+
+  // ── SpriteAnimator ──────────────────────────────────────────────────────
+  if (world.hasComponent<Components::SpriteAnimator>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("SpriteAnimator##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##rsa"))
+      rm = true;
+    if (open) {
+      auto *sa =
+          world.getComponent<Components::SpriteAnimator>(m_selectedEntity);
+      char fbuf[256];
+      snprintf(fbuf, sizeof(fbuf), "%s", sa->filename.c_str());
+      if (ImGui::InputText("File##sa", fbuf, sizeof(fbuf)))
+        sa->filename = fbuf;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("ANIMATION_ASSET")) {
+          sa->filename = static_cast<const char *>(pl->Data);
+          sa->loadFromPath("assets/animations/" + sa->filename);
+        }
+        ImGui::EndDragDropTarget();
+      }
+      char cbuf[128];
+      snprintf(cbuf, sizeof(cbuf), "%s", sa->currentClip.c_str());
+      if (ImGui::InputText("Current Clip##sa", cbuf, sizeof(cbuf)))
+        sa->currentClip = cbuf;
+      ImGui::Checkbox("Playing##sa", &sa->playing);
+      ImGui::SameLine();
+      ImGui::Checkbox("Paused##sa", &sa->paused);
+    }
+    if (rm)
+      world.removeComponent<Components::SpriteAnimator>(m_selectedEntity);
+  }
+
+  // ── StateMachine ────────────────────────────────────────────────────────
+  if (world.hasComponent<Components::StateMachine>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("StateMachine##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##rsm"))
+      rm = true;
+    if (open) {
+      auto *sm = world.getComponent<Components::StateMachine>(m_selectedEntity);
+      char sbuf[128];
+      snprintf(sbuf, sizeof(sbuf), "%s", sm->currentState.c_str());
+      if (ImGui::InputText("Current State##sm", sbuf, sizeof(sbuf)))
+        sm->currentState = sbuf;
+      ImGui::BeginDisabled(true);
+      ImGui::DragFloat("State Timer##sm", &sm->stateTimer, 0.0f);
+      ImGui::EndDisabled();
+    }
+    if (rm)
+      world.removeComponent<Components::StateMachine>(m_selectedEntity);
+  }
+
+  // ── LuaScript (multi-slot) ───────────────────────────────────────────────
+  if (world.hasComponent<Components::LuaScript>(m_selectedEntity)) {
+    namespace fs = std::filesystem;
+    auto *ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
+    bool removeComponent = false;
+
+    for (int si = 0; si < (int)ls->scripts.size(); ++si) {
+      auto &entry = ls->scripts[si];
+      ImGui::PushID(si);
+
+      // Header name: derive from script filename (e.g. "health.lua" → "Health")
+      std::string headerName = "Script";
+      if (!entry.scriptPath.empty()) {
+        std::string stem = fs::path(entry.scriptPath).stem().string();
+        if (!stem.empty())
+          stem[0] = (char)toupper((unsigned char)stem[0]);
+        headerName = stem;
+      }
+
+      bool open = ImGui::CollapsingHeader(headerName.c_str(),
+                                          ImGuiTreeNodeFlags_DefaultOpen |
+                                              ImGuiTreeNodeFlags_AllowOverlap);
+      ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+      if (ImGui::SmallButton("X##lse")) {
+        ls->scripts.erase(ls->scripts.begin() + si);
+        ImGui::PopID();
+        --si;
+        continue;
+      }
+
+      if (open) {
+        char spbuf[256];
+        snprintf(spbuf, sizeof(spbuf), "%s", entry.scriptPath.c_str());
+        if (ImGui::InputText("Script Path##lse", spbuf, sizeof(spbuf)))
+          entry.scriptPath = spbuf;
+        if (ImGui::BeginDragDropTarget()) {
+          if (const ImGuiPayload *pl =
+                  ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+            entry.scriptPath = static_cast<const char *>(pl->Data);
+          ImGui::EndDragDropTarget();
+        }
+        ImGui::Checkbox("Enabled##lse", &entry.enabled);
+
+        if (!entry.scriptPath.empty()) {
+          auto &propDefs =
+              Scripting::ScriptPropertyReader::read(entry.scriptPath);
+          if (!propDefs.empty()) {
+            ImGui::Separator();
+            ImGui::TextDisabled("Script Properties");
+            for (auto &def : propDefs) {
+              if (def.label.empty())
+                continue;
+              if (!entry.properties.count(def.name))
+                entry.properties[def.name] = def.defaultValue;
+              auto &val = entry.properties[def.name];
+              if (def.type == "float") {
+                float v = std::get<float>(val);
+                if (ImGui::DragFloat(def.label.c_str(), &v, 0.1f))
+                  val = v;
+              } else if (def.type == "int") {
+                int v = std::get<int>(val);
+                if (ImGui::DragInt(def.label.c_str(), &v))
+                  val = v;
+              } else if (def.type == "bool") {
+                bool v = std::get<bool>(val);
+                if (ImGui::Checkbox(def.label.c_str(), &v))
+                  val = v;
+              } else if (def.type == "string") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+              } else if (def.type == "texture") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+                if (ImGui::BeginDragDropTarget()) {
+                  if (const ImGuiPayload *pl =
+                          ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+                    val = std::string(static_cast<const char *>(pl->Data));
+                  ImGui::EndDragDropTarget();
+                }
+              } else if (def.type == "animation") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+                if (ImGui::BeginDragDropTarget()) {
+                  if (const ImGuiPayload *pl =
+                          ImGui::AcceptDragDropPayload("ANIMATION_ASSET"))
+                    val = std::string(static_cast<const char *>(pl->Data));
+                  ImGui::EndDragDropTarget();
+                }
+              }
             }
         }
         ImGui::TextDisabled("(%d entities in group)", (int)grp.entityIds.size());

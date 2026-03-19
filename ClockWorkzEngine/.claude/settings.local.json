@@ -1,21 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)",
-      "Bash(xargs grep:*)",
-      "Bash(xargs -I {} basename {})",
-      "Bash(where lib.exe)",
-      "Read(//c/Program Files/Microsoft Visual Studio/**)",
-      "Bash(python3:*)",
-      "Bash(ls -la /c/Users/amiru/source/repos/csd2401f25_team_clockworkz/ClockWorkzEngine/out/build/*/bin/)",
-      "Bash(git -C C:Usersamirusourcereposcsd2401f25_team_clockworkzClockWorkzEngine ls-files --others --exclude-standard ffmpeg/)",
-      "Bash(git:*)",
-      "Bash(grep -E \"\\\\.dll$|avcodec\")",
-      "Bash(DLLS=\"C:\\\\Users\\\\amiru\\\\source\\\\repos\\\\csd2401f25_team_clockworkz\\\\ClockWorkzEngine\\\\ffmpeg\\\\bin\")",
-      "Bash(__NEW_LINE_d629edb373bbef67__ for:*)",
-      "Bash(do)",
-      "Bash(cp \"$DLLS\"/*.dll \"$DIR/\")",
-      "Bash(echo \"Copied to $DIR\")"
     ]
   }
 }

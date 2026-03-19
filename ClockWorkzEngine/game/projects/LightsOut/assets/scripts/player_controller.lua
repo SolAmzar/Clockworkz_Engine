@@ -16,6 +16,9 @@ Properties = {
     { name = "bobAmount",         type = "float",  default = 8.0,    label = "Torch Bob Amount"    },
     { name = "bobSpeed",          type = "float",  default = 6.0,    label = "Torch Bob Speed"     },
     { name = "footstepInterval",  type = "float",  default = 0.6,    label = "Footstep Interval s" },
+    { name = "pushSpriteSheet",   type = "texture",   default = "",     label = "Push Sprite Sheet"   },
+    { name = "pushAnimFile",      type = "animation", default = "",     label = "Push Anim File"       },
+    { name = "pushClipName",      type = "string",    default = "push", label = "Push Clip Name"       },
 }
 
 local PlayerController = {}
@@ -28,6 +31,14 @@ PlayerController.baseWalkSpeed    = 10.0
 PlayerController.bobAmount        = 8.0
 PlayerController.bobSpeed         = 6.0
 PlayerController.footstepInterval = 0.6
+
+PlayerController.pushSpriteSheet    = ""
+PlayerController.pushAnimFile       = ""
+PlayerController.pushClipName       = "push"
+PlayerController._isPushing         = false
+PlayerController._pushTarget        = nil
+PlayerController._origAnimFile      = ""
+PlayerController._origTexture       = ""
 
 -- Internal
 PlayerController._bobTimer       = 0.0
@@ -48,6 +59,12 @@ local BATTERY_DEATH_FLICKER_MAX_STEP = 0.08
 
 function PlayerController:onStart(entity)
     entity.moveSpeed = self.walkSpeed
+    if entity:hasSpriteAnimator() then
+        self._origAnimFile = entity:getAnimationFile()
+    end
+    if entity:hasSpriteRenderer() then
+        self._origTexture = entity:getSpriteTextureId()
+    end
 end
 
 function PlayerController:onUpdate(entity, dt)
@@ -220,13 +237,16 @@ function PlayerController:onUpdate(entity, dt)
     -- Animation
     -- ----------------------------------------------------------------
     if entity:hasSpriteAnimator() then
-        if entity:getCurrentClip() ~= currentState then
-            entity:playAnimation(currentState)
+        if not self._isPushing then  -- <-- add this guard
+            if entity:getCurrentClip() ~= currentState then
+                entity:playAnimation(currentState)
+            end
         end
     end
 end
 
 function PlayerController:onCollisionEnter(entity, other)
+    print("[PC] onCollisionEnter: other tag='" .. other:getTagValue() .. "' moveable=" .. tostring(other:isColliderMoveable()))
     if other:getTagValue() == "Enemy" then
         if not self._isDead then
             self._isDead = true
@@ -235,6 +255,38 @@ function PlayerController:onCollisionEnter(entity, other)
                 entity:setColliderSolid(false)
             end
             Engine.triggerGameOver()
+        end
+
+    elseif other:isColliderMoveable() then
+        if not self._isPushing then
+            self._isPushing  = true
+            self._pushTarget = other
+            print("[PC] Push start: pushAnimFile='" .. self.pushAnimFile .. "' pushClipName='" .. self.pushClipName .. "' pushSpriteSheet='" .. self.pushSpriteSheet .. "'")
+            if self.pushSpriteSheet ~= "" then
+                entity:setSpriteTextureId(self.pushSpriteSheet)
+            end
+            if entity:hasSpriteAnimator() and self.pushAnimFile ~= "" then
+                entity:loadAnimationFile(self.pushAnimFile)
+                entity:playAnimation(self.pushClipName)
+                print("[PC] After load: currentClip='" .. entity:getCurrentClip() .. "'")
+            else
+                print("[PC] Push skipped: hasSpriteAnimator=" .. tostring(entity:hasSpriteAnimator()) .. " pushAnimFile='" .. self.pushAnimFile .. "'")
+            end
+        end
+    end
+end
+
+function PlayerController:onCollisionExit(entity, other)
+    print("[PC] onCollisionExit: other tag='" .. other:getTagValue() .. "' moveable=" .. tostring(other:isColliderMoveable()))
+    if other:isColliderMoveable() and self._isPushing then
+        self._isPushing  = false
+        self._pushTarget = nil
+        if self._origTexture ~= "" then
+            entity:setSpriteTextureId(self._origTexture)
+        end
+        if entity:hasSpriteAnimator() and self._origAnimFile ~= "" then
+            entity:loadAnimationFile(self._origAnimFile)
+            entity:playAnimation("idle")
         end
     end
 end

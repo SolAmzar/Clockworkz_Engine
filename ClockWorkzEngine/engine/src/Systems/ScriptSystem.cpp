@@ -257,13 +257,22 @@ void ScriptSystem::update(ECS::World& world, double dt,
       auto it = m_states.find(self.id);
       if (it == m_states.end()) return;
       for (auto& state : it->second) {
-        if (!state.started || !state.onTriggerExit.valid()) continue;
+        if (!state.started) continue;
         Scripting::EntityRef selfRef(self, &world);
         Scripting::EntityRef otherRef(other, &world);
-        try { state.onTriggerExit(state.scriptTable, selfRef, otherRef); }
-        catch (const sol::error& e) {
-          std::cerr << "[ScriptSystem] onTriggerExit error (entity "
-                    << self.id << "): " << e.what() << std::endl;
+        if (state.onTriggerExit.valid()) {
+          try { state.onTriggerExit(state.scriptTable, selfRef, otherRef); }
+          catch (const sol::error& e) {
+            std::cerr << "[ScriptSystem] onTriggerExit error (entity "
+                      << self.id << "): " << e.what() << std::endl;
+          }
+        }
+        if (state.onCollisionExit.valid()) {
+          try { state.onCollisionExit(state.scriptTable, selfRef, otherRef); }
+          catch (const sol::error& e) {
+            std::cerr << "[ScriptSystem] onCollisionExit error (entity "
+                      << self.id << "): " << e.what() << std::endl;
+          }
         }
       }
     };
@@ -331,6 +340,7 @@ bool ScriptSystem::loadScript(ECS::Entity entity, size_t idx,
   state.onTriggerEnter   = scriptTable["onTriggerEnter"];
   state.onTriggerExit    = scriptTable["onTriggerExit"];
   state.onCollisionEnter = scriptTable["onCollisionEnter"];
+  state.onCollisionExit  = scriptTable["onCollisionExit"];
   state.started = false;
   state.loadedPath = scriptPath;
 

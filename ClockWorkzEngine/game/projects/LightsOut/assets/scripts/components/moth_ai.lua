@@ -1,18 +1,18 @@
--------------------------------------------------------------------------------
 -- moth_ai.lua
--- Light-attracted enemy: stands still, CHASES PLAYER when light hits it.
--- Does NOT take damage from light. Kills player on contact.
--- Attach to moth/specter enemy entities.
--------------------------------------------------------------------------------
 
 Properties = {
-    { name = "chaseSpeed",  type = "float", default = 180.0, label = "Chase Speed" },
-    { name = "attackRange", type = "float", default = 40.0,  label = "Attack Range" },
+    { name = "chaseSpeed",    type = "float", default = 180.0, label = "Chase Speed" },
+    { name = "attackRange",   type = "float", default = 40.0,  label = "Attack Range" },
+    { name = "dashSpeed",     type = "float", default = 400.0, label = "Dash Speed" },
+    { name = "dashDuration",  type = "float", default = 0.25,  label = "Dash Duration (s)" },
 
     { name = "_state",            type = "string", default = "Idle",  label = "" },
     { name = "_alpha",            type = "float",  default = 1.0,     label = "" },
     { name = "_deathSfxPlayed",   type = "bool",   default = false,   label = "" },
     { name = "_colliderDisabled", type = "bool",   default = false,   label = "" },
+    { name = "_dashTimer",        type = "float",  default = 0.0,     label = "" },
+    { name = "_dashDirX",         type = "float",  default = 0.0,     label = "" },
+    { name = "_dashDirY",         type = "float",  default = 0.0,     label = "" },
 }
 
 local function norm(dx, dy)
@@ -77,6 +77,17 @@ local function setState(self, entity, newState)
     return true
 end
 
+local function killPlayer(player)
+    local isDead = World.getScriptProp(player.id, "_isDead")
+    if isDead then return end
+    World.setScriptProp(player.id, "_isDead", true)
+    if player:hasSpriteAnimator() and player:getCurrentClip() ~= "death" then
+        player:playAnimation("death")
+        player:setColliderSolid(false)
+    end
+    Engine.triggerGameOver()
+end
+
 local Moth = {}
 
 function Moth:onStart(entity)
@@ -88,9 +99,9 @@ end
 function Moth:onUpdate(entity, dt)
     if not entity:isValid() then return end
 
-    ---------------------------------------------------------------------------
-    -- Death state (from player killing it — not from light)
-    ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------
+    -- DEATH
+    -- -------------------------------------------------------------------------
     if self._state == "Death" then
         entity.velocity = Vec2(0.0, 0.0)
 
@@ -107,52 +118,55 @@ function Moth:onUpdate(entity, dt)
             end
         end
 
-        self._alpha = math.max(0.0, self._alpha - 2.0*dt)
+        self._alpha = math.max(0.0, self._alpha - 2.0 * dt)
         entity:setSpriteAlpha(self._alpha)
         return
     end
 
-    ---------------------------------------------------------------------------
-    -- Attack state: play attack animation, deal damage, then return to Idle
-    ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------
+    -- ATTACK: stand still, play animation once, then dash
+    -- -------------------------------------------------------------------------
     if self._state == "Attack" then
         entity.velocity = Vec2(0.0, 0.0)
-
-        -- Kill player if still within attack range (covers missed collision cases)
-        local aplayer = World.findByTag("Player")
-        if aplayer ~= nil and aplayer:isValid() then
-            local dx = aplayer.position.x - entity.position.x
-            local dy = aplayer.position.y - entity.position.y
-            if dx*dx + dy*dy <= self.attackRange * self.attackRange then
-                local isDead = World.getScriptProp(aplayer.id, "_isDead")
-                if not isDead then
-                    World.setScriptProp(aplayer.id, "_isDead", true)
-                    if aplayer:hasSpriteAnimator() and aplayer:getCurrentClip() ~= "death" then
-                        aplayer:playAnimation("death")
-                        aplayer:setColliderSolid(false)
-                    end
-                    Engine.triggerGameOver()
-                end
-            end
-        end
 
         if entity:hasSpriteAnimator() then
             if entity:getCurrentClip() ~= "attack" then
                 entity:playAnimation("attack")
             end
-            if not entity:isAnimationPlaying() then
-                self._state = "Idle"
+
+            -- Once the attack animation finishes, launch the dash
+            if not entity:isAnimationPlaying() and entity:getCurrentClip() == "attack" then
+                self._dashTimer = self.dashDuration
+                self._state     = "Dash"
             end
         else
-            self._state = "Idle"
+            self._dashTimer = self.dashDuration
+            self._state     = "Dash"
         end
 
         return
     end
 
-    ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------
+    -- DASH: short burst toward stored direction
+    -- -------------------------------------------------------------------------
+    if self._state == "Dash" then
+        self._dashTimer = self._dashTimer - dt
+
+        if self._dashTimer > 0.0 then
+            entity.velocity = Vec2(self._dashDirX * self.dashSpeed,
+                                   self._dashDirY * self.dashSpeed)
+        else
+            entity.velocity = Vec2(0.0, 0.0)
+            self._state     = "Chase"
+        end
+
+        return
+    end
+
+    -- -------------------------------------------------------------------------
     -- Find player
-    ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------
     local player      = World.findByTag("Player")
     local playerFound = player ~= nil and player:isValid()
     local px, py      = 0.0, 0.0
@@ -167,107 +181,112 @@ function Moth:onUpdate(entity, dt)
 
     local ex, ey = entity.position.x, entity.position.y
 
-    ---------------------------------------------------------------------------
-    -- Check if any active torch is shining on this enemy
-    ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------
+    -- Check light cones
+    -- -------------------------------------------------------------------------
     local inLight = false
     World.eachLight(function(t)
         if inLight or not t:isValid() then return end
         if not t:isLightActive() then return end
         if t:hasBattery() and t:getBatteryCharge() <= 0.0 then return end
 
-        local rot = t.rotation
-        local c, s = math.cos(rot), math.sin(rot)
-        local ox, oy = t:getLightOffsetX(), t:getLightOffsetY()
-        local tx = t.position.x + ox*c - oy*s
-        local ty = t.position.y + ox*s + oy*c
+        local rot     = t.rotation
+        local c, s    = math.cos(rot), math.sin(rot)
+        local ox, oy  = t:getLightOffsetX(), t:getLightOffsetY()
+        local tx      = t.position.x + ox*c - oy*s
+        local ty      = t.position.y + ox*s + oy*c
 
         if inCone(ex, ey, tx, ty, rot, t:getLightRadius(), t:getLightAngle()) then
             inLight = true
         end
     end)
 
-    ---------------------------------------------------------------------------
-    -- State: Idle ↔ Chase (light is the trigger, NOT proximity)
-    ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------
+    -- IDLE
+    -- -------------------------------------------------------------------------
     if self._state == "Idle" then
+        entity.velocity = Vec2(0.0, 0.0)
+
+        if entity:hasSpriteAnimator() then
+            if entity:getCurrentClip() ~= "idle" then
+                entity:playAnimation("idle")
+            end
+        end
+
         if inLight and playerFound then
             setState(self, entity, "Chase")
         end
 
-        entity.velocity = Vec2(0.0, 0.0)
+    -- -------------------------------------------------------------------------
+    -- CHASE
+    -- -------------------------------------------------------------------------
+    elseif self._state == "Chase" then
+        if not inLight or not playerFound then
+            self._state = "Idle"
+            entity.velocity = Vec2(0.0, 0.0)
+            return
+        end
 
-        -- IDLE ANIMATION
+        local dxp  = px - ex
+        local dyp  = py - ey
+        local dist = math.sqrt(dxp*dxp + dyp*dyp)
+
+        -- Close enough: enter Attack state, store dash direction toward player
+        print("[Moth] Chase dist=" .. string.format("%.1f", dist) .. " attackRange=" .. tostring(self.attackRange))
+        if dist <= self.attackRange then
+            self._dashDirX  = dxp / (dist > 0.0001 and dist or 1.0)
+            self._dashDirY  = dyp / (dist > 0.0001 and dist or 1.0)
+            self._state     = "Attack"
+            entity.velocity = Vec2(0.0, 0.0)
+
+            if entity:hasSpriteAnimator() then
+                entity:playAnimation("attack")
+            end
+            return
+        end
+
+        -- Move toward player
+        local dx, dy = norm(dxp, dyp)
+        entity.velocity = Vec2(dx * self.chaseSpeed, dy * self.chaseSpeed)
+
+        -- Flip sprite to face direction
+        local sx = entity.scale.x
+        if     dx > 0.1  and sx < 0.0 then entity.scale = Vec2(-sx,  entity.scale.y)
+        elseif dx < -0.1 and sx > 0.0 then entity.scale = Vec2(-sx,  entity.scale.y)
+        end
+
+        -- Walk animation
         if entity:hasSpriteAnimator() then
-            if entity:getCurrentClip() ~= "idle" then
-                entity:playAnimation("idle")      -- looped idle clip
+            if entity:getCurrentClip() ~= "walk" then
+                entity:playAnimation("walk")
             end
         end
-
-    elseif self._state == "Chase" then
-    if not inLight or not playerFound then
-        self._state = "Idle"
-        entity.velocity = Vec2(0.0, 0.0)
-        return
-    end
-
-    local dxp = px - ex
-    local dyp = py - ey
-    local dist = math.sqrt(dxp*dxp + dyp*dyp)
-
-    -- Attack when close
-    if dist <= self.attackRange then
-        self._state = "Attack"
-        entity.velocity = Vec2(0.0, 0.0)
-
-        if entity:hasSpriteAnimator() then
-            entity:playAnimation("attack")
-        end
-        return
-    end
-
-    -- Move toward player
-    local dx, dy = norm(dxp, dyp)
-    entity.velocity = Vec2(dx * self.chaseSpeed, dy * self.chaseSpeed)
-
-    -- Flip sprite
-    local sx = entity.scale.x
-    if dx > 0.1 and sx < 0.0 then
-        entity.scale = Vec2(-sx, entity.scale.y)
-    elseif dx < -0.1 and sx > 0.0 then
-        entity.scale = Vec2(-sx, entity.scale.y)
-    end
-
-    -- Walk animation
-    if entity:hasSpriteAnimator() then
-        if entity:getCurrentClip() ~= "walk" then
-            entity:playAnimation("walk")
-        end
     end
 end
-end
 
+-- ---------------------------------------------------------------------------
+-- COLLISION: kill player on touch (from any non-Death state)
+-- ---------------------------------------------------------------------------
 function Moth:onCollisionEnter(entity, other)
+    print("[Moth] onCollisionEnter: state='" .. tostring(self._state) .. "' other tag='" .. tostring(other:getTagValue()) .. "' hasPC=" .. tostring(other:hasPlayerController()))
     if self._state == "Death" then return end
     if not other:isValid() then return end
 
     if other:hasPlayerController() then
-        -- Enter ATTACK state for moth (plays attack animation)
-        self._state = "Attack"
-        if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "attack" then
-            entity:playAnimation("attack")
+        -- Interrupt any active state and start attacking
+        if self._state ~= "Attack" and self._state ~= "Dash" then
+            local ex, ey = entity.position.x, entity.position.y
+            local px, py = other.position.x,  other.position.y
+            self._dashDirX, self._dashDirY = norm(px - ex, py - ey)
+            self._state    = "Attack"
+            entity.velocity = Vec2(0.0, 0.0)
+            if entity:hasSpriteAnimator() then
+                entity:playAnimation("attack")
+            end
         end
 
-        -- Kill player and trigger game over
-        local isDead = World.getScriptProp(other.id, "_isDead")
-        if not isDead then
-            World.setScriptProp(other.id, "_isDead", true)
-            if other:hasSpriteAnimator() and other:getCurrentClip() ~= "death" then
-                other:playAnimation("death")
-                other:setColliderSolid(false)
-            end
-            Engine.triggerGameOver()
-        end
+        print("[Moth] Calling killPlayer")
+        killPlayer(other)
     end
 end
 
