@@ -75,6 +75,7 @@ private:
     sol::function onTriggerEnter;    // Fires once when a collision pair starts.
     sol::function onTriggerExit;     // Fires once when a collision pair ends.
     sol::function onCollisionEnter;  // Same timing as onTriggerEnter (solid).
+    sol::function onCollisionExit;   // Same timing as onTriggerExit (solid).
     bool started{false};             // Has onStart been called?
     std::string loadedPath;          // Last loaded script path (for change detection).
   };

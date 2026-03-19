@@ -28,6 +28,7 @@ reserved.
 #include "Memory/IPoolStats.hpp"
 #include "Components/Light.hpp"
 #include "Components/Transform.hpp"
+#include "Systems/TilemapCollisionBuilder.hpp"
 #include "Components/Tag.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Collider.hpp"
@@ -38,6 +39,7 @@ reserved.
 #include "Platform/WindowManager.hpp"
 #include "IMGUI/imgui.h"
 #include "IMGUI/imgui_internal.h"
+#include "IMGUI/ImGuiFileDialog.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -529,38 +531,52 @@ void EditorState::render(Core::Time* timer) {
 
         if (m_showColliders) {
             auto& world = m_scene.GetWorld();
+
+            auto drawCollider = [&](Components::Transform& t,
+                                    Components::Collider& c, glm::vec3 col) {
+                auto rotVec = [](glm::vec2 v, float a) {
+                    return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
+                                    v.x * std::sin(a) + v.y * std::cos(a));
+                };
+                glm::vec2 offset = rotVec(
+                    glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
+                    t.rotation);
+                glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
+                if (c.shape == Components::Collider::Shape::Box) {
+                    glm::vec2 half(c.size.x * t.scale.x * 0.5f,
+                                   c.size.y * t.scale.y * 0.5f);
+                    glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
+                    glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
+                    renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
+                    renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
+                    renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
+                    renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
+                } else {
+                    float r = c.radius * std::max(t.scale.x, t.scale.y);
+                    renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
+                }
+            };
+
+            // Pass 1: green/yellow — all active non-merged colliders
             world.each<Components::Transform, Components::Collider>(
-                [&](ECS::Entity, Components::Transform& t, Components::Collider& c) {
-                    auto rotVec = [](glm::vec2 v, float a) {
-                        return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
-                                        v.x * std::sin(a) + v.y * std::cos(a));
-                    };
-
-                    glm::vec2 offset = rotVec(
-                        glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
-                        t.rotation);
-                    glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
-
-                    // Yellow for triggers, green for solid
+                [&](ECS::Entity entity, Components::Transform& t, Components::Collider& c) {
+                    if (!c.isSolid && !c.isTrigger && !c.isHazard) return;
+                    auto* tag = world.getComponent<Components::Tag>(entity);
+                    if (tag && tag->tag == "TilemapMergedCollider") return; // drawn in pass 2
                     glm::vec3 col = c.isTrigger
-                        ? glm::vec3(1.f, 1.f, 0.f)
-                        : glm::vec3(0.f, 1.f, 0.f);
+                        ? glm::vec3(1.f, 1.f, 0.f)   // yellow
+                        : glm::vec3(0.f, 1.f, 0.f);  // green
+                    drawCollider(t, c, col);
+                });
 
-                    if (c.shape == Components::Collider::Shape::Box) {
-                        glm::vec2 half(c.size.x * t.scale.x * 0.5f,
-                                       c.size.y * t.scale.y * 0.5f);
-                        glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
-                        glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
-                        glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
-                        glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
-                        renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
-                        renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
-                        renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
-                        renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
-                    } else {
-                        float r = c.radius * std::max(t.scale.x, t.scale.y);
-                        renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
-                    }
+            // Pass 2: cyan — greedy-merged wall colliders, drawn on top
+            world.each<Components::Transform, Components::Collider>(
+                [&](ECS::Entity entity, Components::Transform& t, Components::Collider& c) {
+                    auto* tag = world.getComponent<Components::Tag>(entity);
+                    if (!tag || tag->tag != "TilemapMergedCollider") return;
+                    drawCollider(t, c, glm::vec3(0.f, 1.f, 1.f)); // cyan
                 });
         }
 
@@ -1309,6 +1325,9 @@ void EditorState::renderHierarchy() {
         auto mapIt = idMap.find(uid);
         if (mapIt == idMap.end()) continue;
         ECS::Entity e = mapIt->second;
+        // Skip merged collider entities — shown in their own section below
+        if (auto* tag = world.getComponent<Components::Tag>(e))
+            if (tag->tag == "TilemapMergedCollider") continue;
         ImGui::PushID(i);
 
         // --- Thin drop-zone ABOVE this row ---
@@ -1752,6 +1771,64 @@ void EditorState::renderHierarchy() {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // 8. Merged Colliders section (read-only, collapsed by default)
+    // -----------------------------------------------------------------------
+    {
+        std::vector<ECS::Entity> mergedEntities;
+        world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
+            if (tag.tag == "TilemapMergedCollider") mergedEntities.push_back(e);
+        });
+
+        if (!mergedEntities.empty()) {
+            ImGui::Separator();
+            char sectionLabel[64];
+            snprintf(sectionLabel, sizeof(sectionLabel),
+                     "Merged Colliders  [%d]##mergedsec", (int)mergedEntities.size());
+            ImGuiTreeNodeFlags sectionFlags = ImGuiTreeNodeFlags_SpanAvailWidth;
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 1.0f, 1.0f)); // cyan label
+            bool sectionOpen = ImGui::TreeNodeEx(sectionLabel, sectionFlags);
+            ImGui::PopStyleColor();
+
+            if (sectionOpen) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.9f, 0.9f, 1.0f));
+                std::vector<ECS::Entity> mergedToDelete;
+                for (auto& me : mergedEntities) {
+                    char rowLabel[128];
+                    if (auto* c = world.getComponent<Components::Collider>(me))
+                        snprintf(rowLabel, sizeof(rowLabel),
+                                 "  [%.0fx%.0f] (ID:%u)", c->size.x, c->size.y, me.id);
+                    else
+                        snprintf(rowLabel, sizeof(rowLabel), "  (ID:%u)", me.id);
+
+                    ImGui::PushID((int)me.id);
+                    bool selected = isEntitySelected(me);
+                    if (ImGui::Selectable(rowLabel, selected))
+                        selectNew(me);
+
+                    if (ImGui::BeginPopupContextItem()) {
+                        if (ImGui::MenuItem("Delete")) {
+                            mergedToDelete.push_back(me);
+                        }
+                        ImGui::EndPopup();
+                    }
+                    ImGui::PopID();
+                }
+                for (auto& me : mergedToDelete) {
+                    m_selectedEntities.erase(
+                        std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+                            [&](ECS::Entity se){ return se.id == me.id && se.generation == me.generation; }),
+                        m_selectedEntities.end());
+                    if (m_selectedEntity.id == me.id && m_selectedEntity.generation == me.generation)
+                        m_selectedEntity = {0, 0};
+                    executeCommand(std::make_unique<DeleteEntityCmd>(world, me));
+                }
+                ImGui::PopStyleColor();
+                ImGui::TreePop();
+            }
+        }
+    }
+
     ImGui::End();
 }
 
@@ -1778,20 +1855,423 @@ void EditorState::renderInspector() {
                              ImGuiInputTextFlags_EnterReturnsTrue))
             grp.name = grpNameBuf;
 
-        // Sort order base â€” changing it offsets all member sortOrders
-        int newBase = grp.sortOrderBase;
-        if (ImGui::InputInt("Sort Order Base", &newBase)) {
-            int delta = newBase - grp.sortOrderBase;
-            grp.sortOrderBase = newBase;
-            for (uint32_t memberId : grp.entityIds) {
-                world.each<Components::Tag>([&](ECS::Entity e, Components::Tag&) {
-                    if (e.id == memberId) {
-                        if (auto* sr = world.getComponent<Components::SpriteRenderer>(e))
-                            sr->sortOrder += delta;
-                    }
-                });
+  ImGui::Separator();
+
+  // Tag
+  if (auto *tag = world.getComponent<Components::Tag>(m_selectedEntity)) {
+    if (ImGui::CollapsingHeader("Tag", ImGuiTreeNodeFlags_DefaultOpen)) {
+      char buf[256];
+      strncpy_s(buf, tag->tag.c_str(), sizeof(buf) - 1);
+      if (ImGui::InputText("Name", buf, sizeof(buf)))
+        tag->tag = buf;
+    }
+  }
+
+  // Transform
+  if (auto *t = world.getComponent<Components::Transform>(m_selectedEntity)) {
+    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+      float pos[2] = {t->position.x, t->position.y};
+      if (ImGui::DragFloat2("Position", pos, 1.0f)) {
+        t->position = {pos[0], pos[1]};
+      }
+      // Undo on release
+      if (ImGui::IsItemDeactivatedAfterEdit()) {
+        vec2 newPos = {pos[0], pos[1]};
+        vec2 oldPos = m_gizmoOriginalPos; // reuse for non-gizmo edits
+        executeCommand(std::make_unique<MoveEntityCmd>(world, m_selectedEntity,
+                                                       oldPos, newPos));
+      }
+      if (ImGui::IsItemActivated())
+        m_gizmoOriginalPos = t->position;
+
+      float rot = t->rotation;
+      if (ImGui::DragFloat("Rotation (rad)", &rot, 0.01f)) {
+        t->rotation = rot;
+      }
+      if (ImGui::IsItemDeactivatedAfterEdit()) {
+        executeCommand(std::make_unique<RotateEntityCmd>(
+            world, m_selectedEntity, m_gizmoOriginalRotation, rot));
+      }
+      if (ImGui::IsItemActivated())
+        m_gizmoOriginalRotation = t->rotation;
+
+      float scale[2] = {t->scale.x, t->scale.y};
+      if (ImGui::DragFloat2("Scale", scale, 0.01f))
+        t->scale = {scale[0], scale[1]};
+
+      float pivot[2] = {t->pivot.x, t->pivot.y};
+      if (ImGui::DragFloat2("Pivot", pivot, 0.5f))
+        t->pivot = {pivot[0], pivot[1]};
+
+      ImGui::Checkbox("Snap to Grid##transform", &t->snapToGrid);
+    }
+  }
+
+  // SpriteRenderer
+  if (world.hasComponent<Components::SpriteRenderer>(m_selectedEntity)) {
+    auto *sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+    if (ImGui::CollapsingHeader("SpriteRenderer",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      char texBuf[256];
+      strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
+      if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
+        sr->textureId = texBuf;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+          sr->textureId = static_cast<const char *>(pl->Data);
+        ImGui::EndDragDropTarget();
+      }
+
+      // Show texture thumbnail if loaded
+      auto tex = Assets::TextureManager::Get(sr->textureId);
+      if (tex && tex->id() != 0) {
+        ImGui::Image((ImTextureID)(intptr_t)tex->id(), ImVec2(48, 48),
+                     ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::SameLine();
+      }
+
+      float sz[2] = {sr->size.x, sr->size.y};
+      if (ImGui::DragFloat2("Size", sz, 1.0f))
+        sr->size = {sz[0], sz[1]};
+
+      ImGui::ColorEdit4("Color", glm::value_ptr(sr->color));
+      ImGui::Checkbox("Visible", &sr->visible);
+      ImGui::DragInt("Sort Order", &sr->sortOrder);
+    }
+  } else {
+    if (ImGui::Button("+ Add SpriteRenderer"))
+      world.addComponent(m_selectedEntity, Components::SpriteRenderer{});
+  }
+
+  // VideoPlayer
+  if (world.hasComponent<Components::VideoPlayer>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("VideoPlayer",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##vp"))
+      rm = true;
+
+    if (open) {
+      auto *vp = world.getComponent<Components::VideoPlayer>(m_selectedEntity);
+
+      char pathBuf[256];
+      strncpy_s(pathBuf, vp->filepath.c_str(), sizeof(pathBuf) - 1);
+      if (ImGui::InputText("Filepath##vp", pathBuf, sizeof(pathBuf))) {
+        vp->filepath = pathBuf;
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Browse##vp")) {
+        IGFD::FileDialogConfig config;
+        config.path = ".";
+        IGFD::FileDialog::Instance()->OpenDialog(
+            "ChooseVideoFileDlg", "Choose Video File",
+            "Video files (*.mp4 *.avi *.mkv *.webm){.mp4,.avi,.mkv,.webm},.*",
+            config);
+      }
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("VIDEO_ASSET")) {
+          vp->filepath = static_cast<const char *>(pl->Data);
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      ImGui::Checkbox("Loop##vp", &vp->loop);
+      ImGui::SameLine();
+      ImGui::Checkbox("Autoplay##vp", &vp->autoplay);
+      ImGui::Checkbox("Mute##vp", &vp->mute);
+
+      ImGui::SliderFloat("Speed##vp", &vp->playbackSpeed, 0.1f, 2.0f);
+
+      ImGui::Text("State: %s", vp->playbackState.c_str());
+      ImGui::Text("Resolution: %dx%d (%.1f fps)", vp->width, vp->height,
+                  vp->fps);
+
+      float cTime = vp->currentTime;
+      if (ImGui::SliderFloat("Time##vp", &cTime, 0.0f,
+                             vp->duration > 0 ? vp->duration : 100.0f)) {
+        // To seek, we unfortunately need the ECS system hook, but we modify
+        // time. The current VideoPlayer component does not have a "seek
+        // target", but we can just rely on the Play/Pause logic for now.
+      }
+      ImGui::Text("Duration: %.2f", vp->duration);
+
+      bool playing = vp->isPlaying;
+      if (ImGui::Checkbox("Is Playing##vp", &playing)) {
+        vp->isPlaying = playing;
+      }
+    }
+    if (rm) {
+      world.removeComponent<Components::VideoPlayer>(m_selectedEntity);
+    }
+  }
+
+  // Collider
+  if (ImGui::CollapsingHeader("Collider")) {
+    auto *c = world.getComponent<Components::Collider>(m_selectedEntity);
+    if (c) {
+      ImGui::Checkbox("Show Outline", &m_showColliders);
+      ImGui::Separator();
+
+      // Shape selector — changing this affects collision logic immediately
+      const char *shapeNames[] = {"Box", "Circle"};
+      int currentShape = static_cast<int>(c->shape);
+      if (ImGui::Combo("Shape##col", &currentShape, shapeNames, 2))
+        c->shape = static_cast<Components::Collider::Shape>(currentShape);
+
+      if (c->shape == Components::Collider::Shape::Box) {
+        ImGui::DragFloat2("Size##col", &c->size.x, 1.0f);
+      } else {
+        ImGui::DragFloat("Radius##col", &c->radius, 1.0f);
+      }
+
+      ImGui::DragFloat2("Offset##col", &c->offset.x, 1.0f);
+      ImGui::Checkbox("Solid##col", &c->isSolid);
+      ImGui::Checkbox("Trigger##col", &c->isTrigger);
+      ImGui::Checkbox("Blocks Light##col", &c->blocksLight);
+      ImGui::Checkbox("Moveable##col", &c->moveable);
+      if (c->moveable)
+        ImGui::DragFloat("Mass##col", &c->mass, 0.1f);
+
+      if (ImGui::Button("Fit to Sprite##col")) {
+        auto *spr =
+            world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
+        if (spr) {
+          if (c->shape == Components::Collider::Shape::Box)
+            c->size = spr->size;
+          else
+            c->radius = std::max(spr->size.x, spr->size.y) * 0.5f;
+          c->offset = {0.f, 0.f};
+        }
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Remove##col"))
+        world.removeComponent<Components::Collider>(m_selectedEntity);
+    } else {
+      if (ImGui::Button("Add Collider##col"))
+        world.addComponent(m_selectedEntity, Components::Collider{});
+    }
+  }
+
+  // ── Velocity ────────────────────────────────────────────────────────────
+  if (world.hasComponent<Components::Velocity>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("Velocity##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##rv"))
+      rm = true;
+    if (open) {
+      auto *vel = world.getComponent<Components::Velocity>(m_selectedEntity);
+      float vv[2] = {vel->velocity.x, vel->velocity.y};
+      if (ImGui::DragFloat2("Velocity##vel", vv, 0.5f))
+        vel->velocity = {vv[0], vv[1]};
+      ImGui::DragFloat("MoveSpeed##vel", &vel->moveSpeed, 1.0f);
+    }
+    if (rm)
+      world.removeComponent<Components::Velocity>(m_selectedEntity);
+  }
+
+  // ── AudioSource ─────────────────────────────────────────────────────────
+  if (world.hasComponent<Components::AudioSource>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("AudioSource##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##ras"))
+      rm = true;
+    if (open) {
+      auto *au = world.getComponent<Components::AudioSource>(m_selectedEntity);
+      char sndbuf[256];
+      snprintf(sndbuf, sizeof(sndbuf), "%s", au->soundId.c_str());
+      if (ImGui::InputText("Sound ID##au", sndbuf, sizeof(sndbuf)))
+        au->soundId = sndbuf;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("AUDIO_ASSET"))
+          au->soundId = static_cast<const char *>(pl->Data);
+        ImGui::EndDragDropTarget();
+      }
+      ImGui::SliderFloat("Volume##au", &au->volume, 0.0f, 1.0f);
+      ImGui::Checkbox("Loop##au", &au->loop);
+      ImGui::SameLine();
+      ImGui::Checkbox("PlayOnStart##au", &au->playOnStart);
+    }
+    if (rm)
+      world.removeComponent<Components::AudioSource>(m_selectedEntity);
+  }
+
+  // ── SpriteAnimator ──────────────────────────────────────────────────────
+  if (world.hasComponent<Components::SpriteAnimator>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("SpriteAnimator##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##rsa"))
+      rm = true;
+    if (open) {
+      auto *sa =
+          world.getComponent<Components::SpriteAnimator>(m_selectedEntity);
+      char fbuf[256];
+      snprintf(fbuf, sizeof(fbuf), "%s", sa->filename.c_str());
+      if (ImGui::InputText("File##sa", fbuf, sizeof(fbuf)))
+        sa->filename = fbuf;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *pl =
+                ImGui::AcceptDragDropPayload("ANIMATION_ASSET")) {
+          sa->filename = static_cast<const char *>(pl->Data);
+          sa->loadFromPath("assets/animations/" + sa->filename);
+        }
+        ImGui::EndDragDropTarget();
+      }
+      char cbuf[128];
+      snprintf(cbuf, sizeof(cbuf), "%s", sa->currentClip.c_str());
+      if (ImGui::InputText("Current Clip##sa", cbuf, sizeof(cbuf)))
+        sa->currentClip = cbuf;
+      ImGui::Checkbox("Playing##sa", &sa->playing);
+      ImGui::SameLine();
+      ImGui::Checkbox("Paused##sa", &sa->paused);
+    }
+    if (rm)
+      world.removeComponent<Components::SpriteAnimator>(m_selectedEntity);
+  }
+
+  // ── StateMachine ────────────────────────────────────────────────────────
+  if (world.hasComponent<Components::StateMachine>(m_selectedEntity)) {
+    bool rm = false;
+    bool open = ImGui::CollapsingHeader("StateMachine##hdr",
+                                        ImGuiTreeNodeFlags_DefaultOpen |
+                                            ImGuiTreeNodeFlags_AllowOverlap);
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+    if (ImGui::SmallButton("X##rsm"))
+      rm = true;
+    if (open) {
+      auto *sm = world.getComponent<Components::StateMachine>(m_selectedEntity);
+      char sbuf[128];
+      snprintf(sbuf, sizeof(sbuf), "%s", sm->currentState.c_str());
+      if (ImGui::InputText("Current State##sm", sbuf, sizeof(sbuf)))
+        sm->currentState = sbuf;
+      ImGui::BeginDisabled(true);
+      ImGui::DragFloat("State Timer##sm", &sm->stateTimer, 0.0f);
+      ImGui::EndDisabled();
+    }
+    if (rm)
+      world.removeComponent<Components::StateMachine>(m_selectedEntity);
+  }
+
+  // ── LuaScript (multi-slot) ───────────────────────────────────────────────
+  if (world.hasComponent<Components::LuaScript>(m_selectedEntity)) {
+    namespace fs = std::filesystem;
+    auto *ls = world.getComponent<Components::LuaScript>(m_selectedEntity);
+    bool removeComponent = false;
+
+    for (int si = 0; si < (int)ls->scripts.size(); ++si) {
+      auto &entry = ls->scripts[si];
+      ImGui::PushID(si);
+
+      // Header name: derive from script filename (e.g. "health.lua" → "Health")
+      std::string headerName = "Script";
+      if (!entry.scriptPath.empty()) {
+        std::string stem = fs::path(entry.scriptPath).stem().string();
+        if (!stem.empty())
+          stem[0] = (char)toupper((unsigned char)stem[0]);
+        headerName = stem;
+      }
+
+      bool open = ImGui::CollapsingHeader(headerName.c_str(),
+                                          ImGuiTreeNodeFlags_DefaultOpen |
+                                              ImGuiTreeNodeFlags_AllowOverlap);
+      ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+      if (ImGui::SmallButton("X##lse")) {
+        ls->scripts.erase(ls->scripts.begin() + si);
+        ImGui::PopID();
+        --si;
+        continue;
+      }
+
+      if (open) {
+        char spbuf[256];
+        snprintf(spbuf, sizeof(spbuf), "%s", entry.scriptPath.c_str());
+        if (ImGui::InputText("Script Path##lse", spbuf, sizeof(spbuf)))
+          entry.scriptPath = spbuf;
+        if (ImGui::BeginDragDropTarget()) {
+          if (const ImGuiPayload *pl =
+                  ImGui::AcceptDragDropPayload("SCRIPT_ASSET"))
+            entry.scriptPath = static_cast<const char *>(pl->Data);
+          ImGui::EndDragDropTarget();
+        }
+        ImGui::Checkbox("Enabled##lse", &entry.enabled);
+
+        if (!entry.scriptPath.empty()) {
+          auto &propDefs =
+              Scripting::ScriptPropertyReader::read(entry.scriptPath);
+          if (!propDefs.empty()) {
+            ImGui::Separator();
+            ImGui::TextDisabled("Script Properties");
+            for (auto &def : propDefs) {
+              if (def.label.empty())
+                continue;
+              if (!entry.properties.count(def.name))
+                entry.properties[def.name] = def.defaultValue;
+              auto &val = entry.properties[def.name];
+              if (def.type == "float") {
+                float v = std::get<float>(val);
+                if (ImGui::DragFloat(def.label.c_str(), &v, 0.1f))
+                  val = v;
+              } else if (def.type == "int") {
+                int v = std::get<int>(val);
+                if (ImGui::DragInt(def.label.c_str(), &v))
+                  val = v;
+              } else if (def.type == "bool") {
+                bool v = std::get<bool>(val);
+                if (ImGui::Checkbox(def.label.c_str(), &v))
+                  val = v;
+              } else if (def.type == "string") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+              } else if (def.type == "texture") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+                if (ImGui::BeginDragDropTarget()) {
+                  if (const ImGuiPayload *pl =
+                          ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
+                    val = std::string(static_cast<const char *>(pl->Data));
+                  ImGui::EndDragDropTarget();
+                }
+              } else if (def.type == "animation") {
+                std::string sv = std::get<std::string>(val);
+                char strbuf[256];
+                snprintf(strbuf, sizeof(strbuf), "%s", sv.c_str());
+                if (ImGui::InputText(def.label.c_str(), strbuf, sizeof(strbuf)))
+                  val = std::string(strbuf);
+                if (ImGui::BeginDragDropTarget()) {
+                  if (const ImGuiPayload *pl =
+                          ImGui::AcceptDragDropPayload("ANIMATION_ASSET"))
+                    val = std::string(static_cast<const char *>(pl->Data));
+                  ImGui::EndDragDropTarget();
+                }
+              }
             }
         }
+        }       // close if (!entry.scriptPath.empty())
+      }         // close if (open)
+      ImGui::PopID();
+    }           // close for (int si = 0; ...)
+    if (removeComponent)
+      world.removeComponent<Components::LuaScript>(m_selectedEntity);
+  }             // close if (world.hasComponent<LuaScript>)
         ImGui::TextDisabled("(%d entities in group)", (int)grp.entityIds.size());
         ImGui::End();
         return;
@@ -2031,6 +2511,27 @@ void EditorState::renderInspector() {
                 ImGui::DragFloat("Mass##col", &c->mass, 0.1f);
                 if (ImGui::IsItemActivated()) captureInspectorBefore();
                 if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+            }
+
+            {
+                // Collision Category — shown as a combo: Default(1), Player(1), Enemy(2), Wall(4)
+                static const char* categoryNames[] = { "Default (1)", "Player (1)", "Enemy (2)", "Wall (4)" };
+                static const uint32_t categoryValues[] = { 1, 1, 2, 4 };
+                int currentIdx = 0;
+                for (int i = 1; i < 4; ++i)
+                    if (c->collisionCategory == categoryValues[i]) { currentIdx = i; break; }
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::BeginCombo("Category##col", categoryNames[currentIdx])) {
+                    captureInspectorBefore();
+                    for (int i = 0; i < 4; ++i) {
+                        bool selected = (currentIdx == i);
+                        if (ImGui::Selectable(categoryNames[i], selected))
+                            c->collisionCategory = categoryValues[i];
+                        if (selected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                    pushInspectorChange();
+                }
             }
 
             if (ImGui::Button("Fit to Sprite##col")) {
@@ -5267,6 +5768,8 @@ void EditorState::renderAudioBrowser() {
 void EditorState::loadScene(const std::string& path) {
     if (path.empty()) return;
     std::cout << "[EditorState] Loading: " << path << "\n";
+    // Clean up any merged colliders from the previous scene before the world is replaced.
+    Systems::TilemapCollisionBuilder::clear(m_scene.GetWorld());
     if (!m_scene.LoadFromFile(path))
         std::cerr << "[EditorState] Failed to load: " << path << "\n";
     m_sceneMetaBuffersDirty = true;
@@ -5348,6 +5851,37 @@ void EditorState::loadScene(const std::string& path) {
                 }
             }
         }
+    }
+
+    // Auto-build greedy merged colliders from all solid static wall entities.
+    // Individual tile colliders get isSolid=false (hidden from debug view);
+    // merged boxes are drawn in cyan so you can see which walls were greedy-merged.
+    {
+        auto& world = m_scene.GetWorld();
+        std::vector<Systems::TilemapTileEntry> entries;
+        const float tileSizeTolerance = 1.0f;
+        const float rotationTolerance = 0.01f; // radians — excludes rotated objects
+        world.each<Components::Transform, Components::Collider>(
+            [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
+                if (!c.isSolid || c.isTrigger || c.moveable) return;
+                // Only merge axis-aligned, single-tile-sized box colliders (wall tiles).
+                // Circle colliders, rotated, or differently-sized entities are scene objects.
+                if (c.shape == Components::Collider::Shape::Circle) return;
+                if (std::abs(t.rotation) > rotationTolerance) return;
+                if (std::abs(c.size.x - m_gridSize) > tileSizeTolerance
+                    || std::abs(c.size.y - m_gridSize) > tileSizeTolerance) return;
+                // Exclude dynamic entities (player, enemies) by tag
+                auto* tag = world.getComponent<Components::Tag>(e);
+                if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
+                            || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
+                    return;
+                int layerIdx = 0;
+                if (auto* layer = world.getComponent<Components::Layer>(e))
+                    layerIdx = layer->index;
+                entries.push_back({t.position, e, layerIdx});
+            });
+        if (!entries.empty())
+            Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
     }
 }
 
@@ -5969,6 +6503,10 @@ void EditorState::removeEntityFromGroups(ECS::Entity entity) {
 
 void EditorState::clearTilemap() {
     auto& world = m_scene.GetWorld();
+    // Remove merged colliders and restore individual tile isSolid flags
+    // before destroying the tile entities themselves.
+    Systems::TilemapCollisionBuilder::clear(world);
+    m_tilemapDirty = false;
     for (auto& tile : m_tilemap) {
         if (world.isValid(tile.entity))
             world.destroyEntity(tile.entity);
@@ -6032,6 +6570,14 @@ void EditorState::loadTilemap(const std::string& filepath) {
             getOrCreateLayerGroup(layer)->entities.push_back(entity);
         }
     }
+    // Build merged colliders to eliminate ghost collisions at tile borders.
+    {
+        std::vector<Systems::TilemapTileEntry> entries;
+        entries.reserve(m_tilemap.size());
+        for (const auto& td : m_tilemap)
+            entries.push_back({td.position, td.entity, td.layer});
+        Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+    }
     std::cout << "[Editor] Loaded tilemap: " << filepath << "\n";
 }
 
@@ -6049,6 +6595,18 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
     worldPos = snapToGrid(worldPos, m_gridSize);
 
     m_paintedThisFrame = false;
+
+    // Rebuild merged colliders when a paint/erase stroke ends (mouse released).
+    if (m_tilemapDirty && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+        && m_paintMode != PaintMode::Select) {
+        m_tilemapDirty = false;
+        Systems::TilemapCollisionBuilder::clear(world);
+        std::vector<Systems::TilemapTileEntry> entries;
+        entries.reserve(m_tilemap.size());
+        for (const auto& td : m_tilemap)
+            entries.push_back({td.position, td.entity, td.layer});
+        Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+    }
 
     if (m_paintMode != PaintMode::Select && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) return;
 
@@ -6076,6 +6634,7 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                 m_tilemap.push_back({m_selectedTilePrefab, worldPos, m_currentLayer, entity});
                 getOrCreateLayerGroup(m_currentLayer)->entities.push_back(entity);
                 m_paintedThisFrame = true;
+                m_tilemapDirty = true;
             }
         }
     } else if (m_paintMode == PaintMode::Erase) {
@@ -6088,6 +6647,7 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                     world.destroyEntity(it->entity);
                     m_tilemap.erase(it);
                     m_paintedThisFrame = true;
+                    m_tilemapDirty = true;
                     break;
                 }
             }

@@ -362,8 +362,8 @@ macro(import_ffmpeg target)
     
     if(WIN32)
       set(FFMPEG_LIB_DIR "${FFMPEG_DIR}/lib")
-      set(FFMPEG_BIN_DIR "${FFMPEG_DIR}/bin")
-      
+      set(FFMPEG_BIN_DIR "${FFMPEG_DIR}/lib")
+
       set(_FFMPEG_LIBS avcodec avdevice avfilter avformat avutil swresample swscale)
       set(_FFMPEG_READY TRUE)
       foreach(_lib ${_FFMPEG_LIBS})

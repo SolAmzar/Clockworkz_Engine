@@ -85,6 +85,14 @@ Temporary Items
 *.so
 *.dylib
 
+# --- FFmpeg prebuilt binaries (too large for GitHub, download separately) ---
+!ffmpeg/
+!ffmpeg/bin/
+!ffmpeg/bin/.gitkeep
+!ffmpeg/lib/
+!ffmpeg/lib/*.def
+!ffmpeg/lib/*.exp
+
 # Ignore other intermediate or output directories
 out/
 Debug/

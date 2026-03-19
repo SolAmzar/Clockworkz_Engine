@@ -109,6 +109,13 @@ endif()
 add_dependencies(CWZEditor CopyLightsOutAssets)
 add_dependencies(LightsOut CopyLightsOutAssets)
 
+# When debugging LightsOut from VS, run it with the source project directory as
+# the working directory so that relative asset paths ("assets/scenes/...") resolve
+# to the same files the editor saves — no asset-copy step needed for dev iteration.
+set_target_properties(LightsOut PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
 # --- VS source groups ---
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"     PREFIX "Source Files" FILES ${ALL_SOURCES})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${HEADERS})

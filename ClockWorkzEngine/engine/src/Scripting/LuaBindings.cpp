@@ -531,15 +531,15 @@ void RegisterEntityRef(sol::state &lua) {
       "hasTag", &Scripting::EntityRef::hasTag, "getTagValue",
       &Scripting::EntityRef::getTagValue,
 
-      // SpriteAnimator
-      "hasSpriteAnimator", &Scripting::EntityRef::hasSpriteAnimator,
-      "playAnimation", sol::overload(&playAnimation1, &playAnimation2),
-      "getCurrentClip", &Scripting::EntityRef::getCurrentAnimationClip,
-      "isAnimationPlaying", &Scripting::EntityRef::isAnimationPlaying,
-      "getAnimationPlaybackSpeed",
-      &Scripting::EntityRef::getAnimationPlaybackSpeed,
-      "setAnimationPlaybackSpeed",
-      &Scripting::EntityRef::setAnimationPlaybackSpeed,
+            // SpriteAnimator
+            "hasSpriteAnimator", &Scripting::EntityRef::hasSpriteAnimator,
+            "playAnimation", sol::overload(&playAnimation1, &playAnimation2),
+            "loadAnimationFile",       &Scripting::EntityRef::loadAnimationFile,
+            "getAnimationFile",        &Scripting::EntityRef::getAnimationFile,
+            "getCurrentClip",    &Scripting::EntityRef::getCurrentAnimationClip,
+            "isAnimationPlaying",      &Scripting::EntityRef::isAnimationPlaying,
+            "getAnimationPlaybackSpeed",&Scripting::EntityRef::getAnimationPlaybackSpeed,
+            "setAnimationPlaybackSpeed",&Scripting::EntityRef::setAnimationPlaybackSpeed,
 
       // Generic script property access (Unity-like: game components as pure
       // Lua)
@@ -780,6 +780,12 @@ void RegisterAllBindings(sol::state &lua) {
   engine.set_function("mouseWorldPos", &LuaGetMouseWorldPosGlobal);
   engine.set_function("triggerGameOver",
                       []() { Core::Engine::Get().setGameOverPending(); });
+  engine.set_function("screenWidth",
+                      []() { return static_cast<float>(Core::Engine::Get().window().width()); });
+  engine.set_function("screenHeight",
+                      []() { return static_cast<float>(Core::Engine::Get().window().height()); });
+  engine.set_function("cameraZoom",
+                      []() { return Core::Engine::Get().camera().zoom(); });
   lua["Engine"] = engine;
   std::cout << "[LuaBindings] Registered Engine global table" << std::endl;
 

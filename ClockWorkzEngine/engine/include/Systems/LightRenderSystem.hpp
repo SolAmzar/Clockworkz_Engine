@@ -27,92 +27,66 @@ reserved.
 
 namespace Systems {
 
-inline glm::vec2 rotateLightVec(const glm::vec2& v, float angle) {
-    float c = std::cos(angle);
-    float s = std::sin(angle);
-    return {v.x * c - v.y * s, v.x * s + v.y * c};
-}
+// ---------------------------------------------------------------------------
+// If lightOrigin falls inside a blocking box collider (e.g. because the light
+// offset on the player entity pushes it into an adjacent wall), push it out to
+// the nearest face of that box.  This prevents the "skip-if-inside" guard in
+// buildLightPolygon from treating the wall as transparent.
+// ---------------------------------------------------------------------------
+inline glm::vec2 clampLightOriginOutsideBlockers(glm::vec2 origin, ECS::World& world) {
+    static constexpr float kSurfaceBias = 1.0f; // push 1 world-unit outside the face
 
-inline bool raycastBoxLight(const glm::vec2& origin,
-                            const glm::vec2& dir,
-                            const Components::Transform& t,
-                            const Components::Collider& c,
-                            float maxDist,
-                            float& hitDist) {
-    glm::vec2 center = glm::vec2(t.position.x, t.position.y) +
-                       rotateLightVec(glm::vec2(c.offset.x - t.pivot.x,
-                                                c.offset.y - t.pivot.y),
-                                      t.rotation);
-    glm::vec2 localOrigin = rotateLightVec(origin - center, -t.rotation);
-    glm::vec2 localDir = rotateLightVec(dir, -t.rotation);
-    glm::vec2 halfExtents = {c.size.x * t.scale.x * 0.5f,
-                             c.size.y * t.scale.y * 0.5f};
+    world.each<Components::Transform, Components::Collider>(
+        [&](ECS::Entity, Components::Transform& transform, Components::Collider& collider) {
+            if (!collider.blocksLight) return;
+            if (collider.shape != Components::Collider::Shape::Box) return;
 
-    // If the light starts inside a blocker, ignore that blocker for this ray.
-    if (localOrigin.x >= -halfExtents.x && localOrigin.x <= halfExtents.x &&
-        localOrigin.y >= -halfExtents.y && localOrigin.y <= halfExtents.y) {
-        return false;
-    }
+            float halfWidth  = collider.size.x * 0.5f * transform.scale.x;
+            float halfHeight = collider.size.y * 0.5f * transform.scale.y;
 
-    float tmin = 0.0f;
-    float tmax = maxDist;
-    auto updateSlab = [&](float originAxis, float dirAxis, float minAxis,
-                          float maxAxis) {
-        if (std::abs(dirAxis) < 1e-6f) {
-            return originAxis >= minAxis && originAxis <= maxAxis;
-        }
+            float cosA = std::cos(transform.rotation);
+            float sinA = std::sin(transform.rotation);
 
-        float invDir = 1.0f / dirAxis;
-        float t1 = (minAxis - originAxis) * invDir;
-        float t2 = (maxAxis - originAxis) * invDir;
-        if (t1 > t2) std::swap(t1, t2);
+            glm::vec2 pivotAdjustedOffset = {
+                collider.offset.x - transform.pivot.x,
+                collider.offset.y - transform.pivot.y
+            };
+            glm::vec2 boxCenter = glm::vec2(transform.position.x, transform.position.y)
+                + glm::vec2(pivotAdjustedOffset.x * cosA - pivotAdjustedOffset.y * sinA,
+                            pivotAdjustedOffset.x * sinA + pivotAdjustedOffset.y * cosA);
 
-        tmin = std::max(tmin, t1);
-        tmax = std::min(tmax, t2);
-        return tmax >= tmin;
-    };
+            // Transform origin into box local space.
+            glm::vec2 delta      = origin - boxCenter;
+            glm::vec2 localOrigin = {
+                 delta.x * cosA + delta.y * sinA,
+                -delta.x * sinA + delta.y * cosA
+            };
 
-    if (!updateSlab(localOrigin.x, localDir.x, -halfExtents.x, halfExtents.x)) {
-        return false;
-    }
-    if (!updateSlab(localOrigin.y, localDir.y, -halfExtents.y, halfExtents.y)) {
-        return false;
-    }
+            // Not inside — nothing to do.
+            if (localOrigin.x < -halfWidth  || localOrigin.x > halfWidth)  return;
+            if (localOrigin.y < -halfHeight || localOrigin.y > halfHeight) return;
 
-    hitDist = tmin;
-    return hitDist >= 0.0f && hitDist < maxDist;
-}
+            // Inside the box: find which face is nearest and push out through it.
+            float overlapRight  = halfWidth  - localOrigin.x;  // dist to +X face
+            float overlapLeft   = halfWidth  + localOrigin.x;  // dist to -X face
+            float overlapBottom = halfHeight - localOrigin.y;  // dist to +Y face
+            float overlapTop    = halfHeight + localOrigin.y;  // dist to -Y face
 
-inline bool raycastCircleLight(const glm::vec2& origin,
-                               const glm::vec2& dir,
-                               const Components::Transform& t,
-                               const Components::Collider& c,
-                               float maxDist,
-                               float& hitDist) {
-    glm::vec2 center = glm::vec2(t.position.x, t.position.y) +
-                       rotateLightVec(glm::vec2(c.offset.x - t.pivot.x,
-                                                c.offset.y - t.pivot.y),
-                                      t.rotation);
-    float radius = c.radius * std::max(t.scale.x, t.scale.y);
+            float minOverlap = std::min({overlapRight, overlapLeft, overlapBottom, overlapTop});
 
-    glm::vec2 oc = origin - center;
-    float b = 2.0f * glm::dot(oc, dir);
-    float cval = glm::dot(oc, oc) - radius * radius;
-    float disc = b * b - 4.0f * cval;
-    if (disc < 0.0f) {
-        return false;
-    }
+            glm::vec2 localPushed = localOrigin;
+            if      (minOverlap == overlapRight)  localPushed.x =  halfWidth  + kSurfaceBias;
+            else if (minOverlap == overlapLeft)   localPushed.x = -halfWidth  - kSurfaceBias;
+            else if (minOverlap == overlapBottom) localPushed.y =  halfHeight + kSurfaceBias;
+            else                                  localPushed.y = -halfHeight - kSurfaceBias;
 
-    float sqrtDisc = std::sqrt(disc);
-    float t0 = (-b - sqrtDisc) * 0.5f;
-    float t1 = (-b + sqrtDisc) * 0.5f;
-    float candidate = (t0 >= 0.0f) ? t0 : t1;
-    if (candidate < 0.0f || candidate >= maxDist) {
-        return false;
-    }
+            // Transform the pushed position back to world space.
+            origin = boxCenter + glm::vec2(
+                localPushed.x * cosA - localPushed.y * sinA,
+                localPushed.x * sinA + localPushed.y * cosA);
+        });
 
-    hitDist = candidate;
-    return true;
+    return origin;
 }
 
 inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
@@ -123,39 +97,91 @@ inline std::vector<glm::vec2> buildLightPolygon(const glm::vec2& origin,
                                                 ECS::World& world) {
     std::vector<glm::vec2> points;
     points.push_back(origin);
-    const int numRays = 100;
-    float startAngle = angleCenter - fovRad * 0.5f;
+    const int numRays   = 100;
+    float startAngle    = angleCenter - fovRad * 0.5f;
 
-    for (int i = 0; i < numRays; ++i) {
-        float a = startAngle + fovRad * (static_cast<float>(i) / (numRays - 1));
-        glm::vec2 dir = {std::cos(a), std::sin(a)};
-        glm::vec2 hit = origin + dir * radius;
-        float closestDist = radius;
+    for (int rayIndex = 0; rayIndex < numRays; ++rayIndex) {
+        float rayAngle      = startAngle + fovRad * (float(rayIndex) / (numRays - 1));
+        glm::vec2 rayDir    = { std::cos(rayAngle), std::sin(rayAngle) };
+        glm::vec2 hitPoint  = origin + rayDir * radius;
+        float closestDist   = radius;
 
         world.each<Components::Transform, Components::Collider>(
-            [&](ECS::Entity blockerEntity, Components::Transform& t, Components::Collider& c) {
-                if (blockerEntity.id == sourceEntity.id &&
-                    blockerEntity.generation == sourceEntity.generation) {
-                    return;
+            [&](ECS::Entity, Components::Transform& transform, Components::Collider& collider) {
+                if (!collider.blocksLight) return;
+
+                // Compute world-space collider center — matches CollisionSystem exactly:
+                // rotate (offset - pivot) by entity rotation, then add to position.
+                float cosAngle = std::cos(transform.rotation);
+                float sinAngle = std::sin(transform.rotation);
+                auto rotateByEntityAngle = [&](glm::vec2 vec) -> glm::vec2 {
+                    return {
+                        vec.x * cosAngle - vec.y * sinAngle,
+                        vec.x * sinAngle + vec.y * cosAngle
+                    };
+                };
+                glm::vec2 pivotAdjustedOffset = glm::vec2(
+                    collider.offset.x - transform.pivot.x,
+                    collider.offset.y - transform.pivot.y);
+                glm::vec2 colliderCenter = glm::vec2(transform.position.x, transform.position.y)
+                                         + rotateByEntityAngle(pivotAdjustedOffset);
+
+                if (collider.shape == Components::Collider::Shape::Box) {
+                    float halfWidth  = collider.size.x * 0.5f * transform.scale.x;
+                    float halfHeight = collider.size.y * 0.5f * transform.scale.y;
+
+                    // Transform ray into box local space using the INVERSE rotation
+                    // (rotate by -angle). Both origin and direction use the same transform.
+                    glm::vec2 originToCenter = origin - colliderCenter;
+                    glm::vec2 localRayOrigin = {
+                         originToCenter.x * cosAngle + originToCenter.y * sinAngle,
+                        -originToCenter.x * sinAngle + originToCenter.y * cosAngle
+                    };
+                    glm::vec2 localRayDir = {
+                         rayDir.x * cosAngle + rayDir.y * sinAngle,
+                        -rayDir.x * sinAngle + rayDir.y * cosAngle
+                    };
+
+                    // Skip if the light origin is inside the box.
+                    if (localRayOrigin.x >= -halfWidth  && localRayOrigin.x <= halfWidth &&
+                        localRayOrigin.y >= -halfHeight && localRayOrigin.y <= halfHeight) return;
+
+                    // Slab method: find entry/exit distances along X and Y axes.
+                    float invDirX = (std::abs(localRayDir.x) < 1e-6f) ? 1e6f : 1.0f / localRayDir.x;
+                    float invDirY = (std::abs(localRayDir.y) < 1e-6f) ? 1e6f : 1.0f / localRayDir.y;
+                    float slabXEntry = (-halfWidth  - localRayOrigin.x) * invDirX;
+                    float slabXExit  = ( halfWidth  - localRayOrigin.x) * invDirX;
+                    float slabYEntry = (-halfHeight - localRayOrigin.y) * invDirY;
+                    float slabYExit  = ( halfHeight - localRayOrigin.y) * invDirY;
+                    float entryDist  = std::max(0.0f, std::max(std::min(slabXEntry, slabXExit),
+                                                               std::min(slabYEntry, slabYExit)));
+                    float exitDist   = std::min(std::max(slabXEntry, slabXExit),
+                                                std::max(slabYEntry, slabYExit));
+                    if (exitDist >= entryDist && entryDist < closestDist) {
+                        closestDist = entryDist;
+                        hitPoint    = origin + rayDir * entryDist;
+                    }
                 }
-                if (!c.blocksLight) return;
+                else if (collider.shape == Components::Collider::Shape::Circle) {
+                    float scaledRadius = collider.radius * std::max(transform.scale.x, transform.scale.y);
 
-                float hitDist = closestDist;
-                bool didHit = false;
+                    // Quadratic ray-circle intersection.
+                    // Solving: |origin + t*rayDir - colliderCenter|^2 = scaledRadius^2
+                    glm::vec2 originToCenter  = origin - colliderCenter;
+                    float     linearCoeff     = 2.0f * glm::dot(originToCenter, rayDir);
+                    float     constantCoeff   = glm::dot(originToCenter, originToCenter) - scaledRadius * scaledRadius;
+                    float     discriminant    = linearCoeff * linearCoeff - 4.0f * constantCoeff;
+                    if (discriminant < 0.0f) return;
 
-                if (c.shape == Components::Collider::Shape::Box) {
-                    didHit = raycastBoxLight(origin, dir, t, c, closestDist, hitDist);
-                } else if (c.shape == Components::Collider::Shape::Circle) {
-                    didHit = raycastCircleLight(origin, dir, t, c, closestDist, hitDist);
-                }
-
-                if (didHit) {
-                    closestDist = hitDist;
-                    hit = origin + dir * hitDist;
+                    float entryDist = (-linearCoeff - std::sqrt(discriminant)) * 0.5f;
+                    if (entryDist > 0.0f && entryDist < closestDist) {
+                        closestDist = entryDist;
+                        hitPoint    = origin + rayDir * entryDist;
+                    }
                 }
             });
 
-        points.push_back(hit);
+        points.push_back(hitPoint);
     }
     return points;
 }
@@ -166,22 +192,24 @@ inline void renderLightPass(ECS::World& world,
     auto& camera = Core::Engine::Get().camera();
 
     world.each<Components::Transform, Components::Light>(
-        [&](ECS::Entity lightEntity, Components::Transform& trans, Components::Light& lt) {
-            if (!lt.active) return;
+        [&](ECS::Entity, Components::Transform& transform, Components::Light& light) {
+            if (!light.active) return;
 
-            float angle = trans.rotation;
-            glm::vec2 offset = {
-                lt.offset.x * std::cos(angle) - lt.offset.y * std::sin(angle),
-                lt.offset.x * std::sin(angle) + lt.offset.y * std::cos(angle)
+            float lightAngle = transform.rotation;
+            glm::vec2 lightOffset = {
+                light.offset.x * std::cos(lightAngle) - light.offset.y * std::sin(lightAngle),
+                light.offset.x * std::sin(lightAngle) + light.offset.y * std::cos(lightAngle)
             };
-            glm::vec2 origin = glm::vec2(trans.position.x, trans.position.y) + offset;
+            glm::vec2 lightOrigin = glm::vec2(transform.position.x, transform.position.y) + lightOffset;
+            // If the light offset pushed the origin inside a wall, pull it back to the surface.
+            lightOrigin = clampLightOriginOutsideBlockers(lightOrigin, world);
 
-            float fovRad = glm::radians(lt.angle);
-            auto lightPoly = buildLightPolygon(origin, angle, fovRad, lt.radius, lightEntity, world);
+            float fovRad    = glm::radians(light.angle);
+            auto lightPoly  = buildLightPolygon(lightOrigin, lightAngle, fovRad, light.radius, world);
 
-            renderer.beginLightPass(camera.viewProj(), origin, lt.color,
-                                    lt.radius, angle, lt.angle, batteryFactor, lt.intensity);
-            renderer.drawLightCone(origin, lightPoly, lt.color);
+            renderer.beginLightPass(camera.viewProj(), lightOrigin, light.color,
+                                    light.radius, lightAngle, light.angle, batteryFactor, light.intensity);
+            renderer.drawLightCone(lightOrigin, lightPoly, light.color);
             renderer.endLightPass();
         });
 }
