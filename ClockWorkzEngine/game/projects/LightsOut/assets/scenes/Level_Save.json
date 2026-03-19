@@ -42906,10 +42906,10 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "attackRange": 10.0,
+                            "attackRange": 1000.0,
                             "chaseSpeed": 3.299999952316284,
                             "dashDuration": 0.25,
-                            "dashSpeed": 400.0
+                            "dashSpeed": 10.0
                         },
                         "scriptPath": "components/moth_ai.lua"
                     },
