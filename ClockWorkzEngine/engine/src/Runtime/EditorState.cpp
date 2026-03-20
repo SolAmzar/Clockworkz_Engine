@@ -88,6 +88,61 @@ reserved.
 
 namespace Runtime {
 
+class HierarchyChangeCmd final : public IEditorCommand {
+public:
+    HierarchyChangeCmd(EditorState& editor,
+                       EditorState::HierarchyUndoState before,
+                       EditorState::HierarchyUndoState after,
+                       std::string label)
+        : m_editor(editor),
+          m_before(std::move(before)),
+          m_after(std::move(after)),
+          m_label(std::move(label)) {}
+
+    void execute() override { m_editor.applyHierarchyUndoState(m_after); }
+    void undo() override { m_editor.applyHierarchyUndoState(m_before); }
+    const char* label() const override { return m_label.c_str(); }
+
+private:
+    EditorState&                 m_editor;
+    EditorState::HierarchyUndoState m_before;
+    EditorState::HierarchyUndoState m_after;
+    std::string                  m_label;
+};
+
+class DeleteTilemapTileCmd final : public IEditorCommand {
+public:
+    DeleteTilemapTileCmd(EditorState& editor, ECS::World& world, ECS::Entity entity, EditorState::TileData tileData)
+        : m_editor(editor), m_entityCmd(world, entity), m_tileData(std::move(tileData)) {}
+
+    void execute() override {
+        auto it = std::find_if(m_editor.m_tilemap.begin(), m_editor.m_tilemap.end(),
+            [&](const EditorState::TileData& t) {
+                return t.entity.id == m_entityCmd.m_current.id && t.entity.generation == m_entityCmd.m_current.generation;
+            });
+        if (it != m_editor.m_tilemap.end()) {
+            m_editor.m_tilemap.erase(it);
+            m_editor.m_tilemapDirty = true;
+        }
+        m_editor.removeEntityFromGroups(m_entityCmd.m_current);
+        m_entityCmd.execute();
+    }
+
+    void undo() override {
+        m_entityCmd.undo();
+        m_tileData.entity = m_entityCmd.m_current;
+        m_editor.m_tilemap.push_back(m_tileData);
+        m_editor.m_tilemapDirty = true;
+    }
+
+    const char* label() const override { return "Delete Tile"; }
+
+private:
+    EditorState& m_editor;
+    DeleteEntityCmd m_entityCmd;
+    EditorState::TileData m_tileData;
+};
+
 // ---------------------------------------------------------------------------
 // Static helpers
 // ---------------------------------------------------------------------------
@@ -515,24 +570,36 @@ void EditorState::update(double dt) {
     }
     if (!ImGui::GetIO().WantTextInput &&
         (m_input.wasKeyTriggered(GLFW_KEY_DELETE) || m_input.wasKeyTriggered(GLFW_KEY_BACKSPACE))) {
-        auto& world = m_scene.GetWorld();
-        for (auto e : m_selectedEntities) {
-            if (!world.isValid(e)) continue;
-            // If this entity is a tilemap tile, clean up tile data too
-            auto tileIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
-                [&](const TileData& t) {
-                    return t.entity.id == e.id && t.entity.generation == e.generation;
-                });
-            if (tileIt != m_tilemap.end()) {
-                removeEntityFromGroups(e);
-                world.destroyEntity(e);
-                m_tilemap.erase(tileIt);
-            } else {
-                executeCommand(std::make_unique<DeleteEntityCmd>(world, e));
+        if (!m_selectedEntities.empty()) {
+            auto& world = m_scene.GetWorld();
+            auto compositeCmd = std::make_unique<CompositeEditorCmd>("Delete Selected Entities");
+            auto beforeState = captureHierarchyUndoState();
+            auto toDelete = m_selectedEntities;
+            for (auto e : toDelete) {
+                if (world.isValid(e))
+                    removeEntityFromGroups(e);
             }
+            auto afterState = captureHierarchyUndoState();
+            applyHierarchyUndoState(beforeState);
+            for (auto e : toDelete) {
+                if (!world.isValid(e)) continue;
+                auto tileIt = std::find_if(m_tilemap.begin(), m_tilemap.end(),
+                    [&](const TileData& t) {
+                        return t.entity.id == e.id && t.entity.generation == e.generation;
+                    });
+                if (tileIt != m_tilemap.end()) {
+                    compositeCmd->add(std::make_unique<DeleteTilemapTileCmd>(*this, world, e, *tileIt));
+                } else {
+                    compositeCmd->add(std::make_unique<DeleteEntityCmd>(world, e));
+                }
+            }
+            compositeCmd->add(std::make_unique<HierarchyChangeCmd>(
+                *this,
+                std::move(beforeState),
+                std::move(afterState),
+                "Delete Selected Entities"));
+            executeCommand(std::move(compositeCmd));
         }
-        m_selectedEntities.clear();
-        m_selectedEntity = {0, 0};
     }
 }
 
@@ -932,15 +999,17 @@ void EditorState::renderToolbar() {
 
     // Undo/redo buttons
     if (!m_undoStack.empty()) {
+        const std::string undoLabel = m_undoStack.back()->label();
         if (ImGui::Button("Undo")) undo();
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Undo: %s", m_undoStack.back()->label());
+            ImGui::SetTooltip("Undo: %s", undoLabel.c_str());
     }
     if (!m_redoStack.empty()) {
         ImGui::SameLine();
+        const std::string redoLabel = m_redoStack.back()->label();
         if (ImGui::Button("Redo")) redo();
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Redo: %s", m_redoStack.back()->label());
+            ImGui::SetTooltip("Redo: %s", redoLabel.c_str());
     }
 
     ImGui::SameLine(0.0f, 20.0f);
@@ -1207,6 +1276,16 @@ void EditorState::renderLoadSceneWindow() {
 void EditorState::renderHierarchy() {
     ImGui::Begin("Hierarchy");
     auto& world = m_scene.GetWorld();
+    bool hierarchyChanged = false;
+    std::string hierarchyChangeLabel = "Modify Hierarchy";
+    HierarchyUndoState hierarchyBefore{};
+    auto markHierarchyChanged = [&](const char* label) {
+        if (!hierarchyChanged) {
+            hierarchyBefore = captureHierarchyUndoState();
+            hierarchyChanged = true;
+            hierarchyChangeLabel = label;
+        }
+    };
 
     // -----------------------------------------------------------------------
     // 1. Build id â†’ full-entity map (needed to call world APIs)
@@ -1310,6 +1389,7 @@ void EditorState::renderHierarchy() {
 
     auto moveEntitiesIntoGroup = [&](const std::vector<uint32_t>& draggedIds, HierarchyGroup& targetGroup) {
         if (draggedIds.empty()) return;
+        markHierarchyChanged("Move Into Group");
 
         std::unordered_set<uint32_t> draggedSet(draggedIds.begin(), draggedIds.end());
         for (auto& otherGroup : m_hierarchyGroups) {
@@ -1337,6 +1417,7 @@ void EditorState::renderHierarchy() {
     // together (maintaining relative order) to the drop position.
     // If dragging an unselected entity, move only that one.
     auto reorderFlat = [&](uint32_t draggedId, int destIndex) {
+        markHierarchyChanged("Reorder Hierarchy");
         // Build selected ID set
         std::unordered_set<uint32_t> selSet;
         for (auto& se : m_selectedEntities) selSet.insert(se.id);
@@ -1409,6 +1490,7 @@ void EditorState::renderHierarchy() {
     }
     ImGui::SameLine();
     if (ImGui::Button("+ Group")) {
+        markHierarchyChanged("Create Group");
         HierarchyGroup grp;
         grp.name = "Group";
         grp.parentGroupIdx = m_selectedGroupIdx;
@@ -1601,6 +1683,7 @@ void EditorState::renderHierarchy() {
             if (!m_hierarchyGroups.empty() && ImGui::BeginMenu("Add to Group")) {
                 for (int gi = 0; gi < (int)m_hierarchyGroups.size(); ++gi) {
                     if (ImGui::MenuItem(m_hierarchyGroups[gi].name.c_str())) {
+                        markHierarchyChanged("Add To Group");
                         m_hierarchyGroups[gi].entityIds.push_back(uid);
                     }
                 }
@@ -1709,6 +1792,7 @@ void EditorState::renderHierarchy() {
             fromIdx == beforeIdx) {
             return;
         }
+        markHierarchyChanged("Reorder Group");
 
         std::vector<HierarchyGroup> reordered;
         reordered.reserve(m_hierarchyGroups.size());
@@ -1779,6 +1863,7 @@ void EditorState::renderHierarchy() {
             if (ImGui::InputText("##grprename", m_renameBuffer, sizeof(m_renameBuffer),
                                  ImGuiInputTextFlags_EnterReturnsTrue |
                                  ImGuiInputTextFlags_AutoSelectAll)) {
+                markHierarchyChanged("Rename Group");
                 grp.name          = m_renameBuffer;
                 m_renamingGroupIdx = -1;
             }
@@ -1850,6 +1935,7 @@ void EditorState::renderHierarchy() {
                     draggedGroupIdx >= 0 &&
                     draggedGroupIdx < (int)m_hierarchyGroups.size() &&
                     !isDescendantGroup(gi, draggedGroupIdx)) {
+                    markHierarchyChanged("Nest Group");
                     m_hierarchyGroups[draggedGroupIdx].parentGroupIdx = gi;
                 }
             }
@@ -1863,6 +1949,7 @@ void EditorState::renderHierarchy() {
                 strncpy_s(m_renameBuffer, grp.name.c_str(), sizeof(m_renameBuffer) - 1);
             }
             if (ImGui::MenuItem("Add Subgroup")) {
+                markHierarchyChanged("Create Group");
                 HierarchyGroup child;
                 child.name = "Group";
                 child.parentGroupIdx = gi;
@@ -1875,9 +1962,12 @@ void EditorState::renderHierarchy() {
                 if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
                 break;
             }
-            if (grp.parentGroupIdx != -1 && ImGui::MenuItem("Move To Root"))
+            if (grp.parentGroupIdx != -1 && ImGui::MenuItem("Move To Root")) {
+                markHierarchyChanged("Move Group To Root");
                 grp.parentGroupIdx = -1;
+            }
             if (ImGui::MenuItem("Disband (keep entities)")) {
+                markHierarchyChanged("Disband Group");
                 for (uint32_t id : grp.entityIds) m_hierarchyOrder.push_back(id);
                 for (auto& otherGroup : m_hierarchyGroups) {
                     if (otherGroup.parentGroupIdx == gi)
@@ -1891,6 +1981,7 @@ void EditorState::renderHierarchy() {
                 break;
             }
             if (ImGui::MenuItem("Delete Group + Entities")) {
+                markHierarchyChanged("Delete Group");
                 std::vector<uint32_t> idsToDelete = grp.entityIds;
                 for (int groupIdx = 0; groupIdx < (int)m_hierarchyGroups.size(); ++groupIdx) {
                     if (groupIdx == gi) continue;
@@ -1899,12 +1990,22 @@ void EditorState::renderHierarchy() {
                                        m_hierarchyGroups[groupIdx].entityIds.begin(),
                                        m_hierarchyGroups[groupIdx].entityIds.end());
                 }
+                auto beforeState = hierarchyChanged ? hierarchyBefore : captureHierarchyUndoState();
+                eraseGroupRecursive(gi);
+                auto deleteGroupCmd = std::make_unique<CompositeEditorCmd>("Delete Group + Entities");
                 for (uint32_t id : idsToDelete) {
                     auto it = idMap.find(id);
                     if (it != idMap.end())
-                        executeCommand(std::make_unique<DeleteEntityCmd>(world, it->second));
+                        deleteGroupCmd->add(std::make_unique<DeleteEntityCmd>(world, it->second));
                 }
-                eraseGroupRecursive(gi);
+                deleteGroupCmd->add(std::make_unique<HierarchyChangeCmd>(
+                    *this,
+                    std::move(beforeState),
+                    captureHierarchyUndoState(),
+                    "Delete Group"));
+                executeCommand(std::move(deleteGroupCmd));
+                hierarchyChanged = false;
+                hierarchyChangeLabel.clear();
                 if (open) ImGui::TreePop();
                 ImGui::EndPopup();
                 if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
@@ -2012,6 +2113,7 @@ void EditorState::renderHierarchy() {
 
                 // Drag source (entity inside group can be dragged out)
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    markHierarchyChanged("Remove From Group");
                     ImGui::SetDragDropPayload(k_dragTag, &uid, sizeof(uint32_t));
                     // Remove from group on drag (will land ungrouped or in another group)
                     grp.entityIds.erase(grp.entityIds.begin() + mi);
@@ -2031,6 +2133,7 @@ void EditorState::renderHierarchy() {
                             strncpy_s(m_renameBuffer, tag->tag.c_str(), sizeof(m_renameBuffer) - 1);
                     }
                     if (ImGui::MenuItem("Remove from Group")) {
+                        markHierarchyChanged("Remove From Group");
                         grp.entityIds.erase(grp.entityIds.begin() + mi);
                         groupedIds.erase(uid);
                         m_hierarchyOrder.push_back(uid);
@@ -2082,8 +2185,10 @@ void EditorState::renderHierarchy() {
     if (ImGui::BeginDragDropTarget()) {
         if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
             int draggedGroupIdx = *(const int*)p->Data;
-            if (draggedGroupIdx >= 0 && draggedGroupIdx < (int)m_hierarchyGroups.size())
+            if (draggedGroupIdx >= 0 && draggedGroupIdx < (int)m_hierarchyGroups.size()) {
+                markHierarchyChanged("Move Group To Root");
                 m_hierarchyGroups[draggedGroupIdx].parentGroupIdx = -1;
+            }
         }
         ImGui::EndDragDropTarget();
     }
@@ -2144,6 +2249,14 @@ void EditorState::renderHierarchy() {
                 ImGui::TreePop();
             }
         }
+    }
+
+    if (hierarchyChanged) {
+        executeCommand(std::make_unique<HierarchyChangeCmd>(
+            *this,
+            std::move(hierarchyBefore),
+            captureHierarchyUndoState(),
+            hierarchyChangeLabel));
     }
 
     ImGui::End();
@@ -3510,8 +3623,7 @@ void EditorState::renderViewport() {
                      ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoScrollWithMouse);
 
-    m_viewportFocused = ImGui::IsWindowFocused();
-    m_viewportHovered = ImGui::IsWindowHovered();
+    m_viewportFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
     m_viewportShouldRender = viewportWindowVisible &&
@@ -3531,6 +3643,8 @@ void EditorState::renderViewport() {
     ImGui::Image(reinterpret_cast<void*>(static_cast<uint64_t>(
                      m_framebuffer.getTextureID())),
                  avail, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+    m_viewportHovered = ImGui::IsItemHovered() ||
+                        ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 
     // Compute viewport bounds (for gizmos + picking)
     ImVec2 winPos    = ImGui::GetWindowPos();
@@ -6390,6 +6504,30 @@ void EditorState::pushInspectorChange() {
         std::move(m_inspectorBefore), std::move(after)));
 }
 
+EditorState::HierarchyUndoState EditorState::captureHierarchyUndoState() const {
+    HierarchyUndoState state;
+    state.hierarchyOrder = m_hierarchyOrder;
+    state.hierarchyGroups = m_hierarchyGroups;
+    state.hiddenEntities = m_hiddenEntities;
+    state.selectedEntities = m_selectedEntities;
+    state.selectedEntity = m_selectedEntity;
+    state.selectedGroupIdx = m_selectedGroupIdx;
+    state.renamingGroupIdx = m_renamingGroupIdx;
+    state.lastAnchorId = m_lastAnchorId;
+    return state;
+}
+
+void EditorState::applyHierarchyUndoState(const HierarchyUndoState& state) {
+    m_hierarchyOrder = state.hierarchyOrder;
+    m_hierarchyGroups = state.hierarchyGroups;
+    m_hiddenEntities = state.hiddenEntities;
+    m_selectedEntities = state.selectedEntities;
+    m_selectedEntity = state.selectedEntity;
+    m_selectedGroupIdx = state.selectedGroupIdx;
+    m_renamingGroupIdx = state.renamingGroupIdx;
+    m_lastAnchorId = state.lastAnchorId;
+}
+
 // ---------------------------------------------------------------------------
 // Prefab helpers
 // ---------------------------------------------------------------------------
@@ -6894,11 +7032,30 @@ void EditorState::removeEntityFromGroups(ECS::Entity entity) {
             [&](ECS::Entity e) {
                 return e.id == entity.id && e.generation == entity.generation;
             });
-        if (it != g.entities.end()) {
+        if (it != g.entities.end())
             g.entities.erase(it, g.entities.end());
-            return;
-        }
     }
+
+    for (auto& grp : m_hierarchyGroups) {
+        grp.entityIds.erase(
+            std::remove(grp.entityIds.begin(), grp.entityIds.end(), entity.id),
+            grp.entityIds.end());
+    }
+
+    m_hierarchyOrder.erase(
+        std::remove(m_hierarchyOrder.begin(), m_hierarchyOrder.end(), entity.id),
+        m_hierarchyOrder.end());
+
+    m_hiddenEntities.erase(entity.id);
+    m_selectedEntities.erase(
+        std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
+            [&](ECS::Entity e) {
+                return e.id == entity.id && e.generation == entity.generation;
+            }),
+        m_selectedEntities.end());
+
+    if (m_selectedEntity.id == entity.id && m_selectedEntity.generation == entity.generation)
+        m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0} : m_selectedEntities.front();
 }
 
 void EditorState::clearTilemap() {
@@ -6996,19 +7153,28 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
 
     m_paintedThisFrame = false;
 
-    // Rebuild merged colliders when a paint/erase stroke ends (mouse released).
-    if (m_tilemapDirty && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-        && m_paintMode != PaintMode::Select) {
-        m_tilemapDirty = false;
-        Systems::TilemapCollisionBuilder::clear(world);
-        std::vector<Systems::TilemapTileEntry> entries;
-        entries.reserve(m_tilemap.size());
-        for (const auto& td : m_tilemap)
-            entries.push_back({td.position, td.entity, td.layer});
-        Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
-    }
+    if (m_paintMode != PaintMode::Select) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered)
+            m_tileStrokeActive = true;
 
-    if (m_paintMode != PaintMode::Select && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) return;
+        if (m_tileStrokeActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            m_tileStrokeActive = false;
+            if (m_tilemapDirty) {
+                m_tilemapDirty = false;
+                Systems::TilemapCollisionBuilder::clear(world);
+                std::vector<Systems::TilemapTileEntry> entries;
+                entries.reserve(m_tilemap.size());
+                for (const auto& td : m_tilemap)
+                    entries.push_back({td.position, td.entity, td.layer});
+                Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+            }
+        }
+
+        if (!m_tileStrokeActive || !ImGui::IsMouseDown(ImGuiMouseButton_Left) || !m_viewportHovered)
+            return;
+    } else if (!m_viewportHovered) {
+        return;
+    }
 
     if (m_paintMode == PaintMode::Paint) {
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -7042,18 +7208,16 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
             }
         }
     } else if (m_paintMode == PaintMode::Erase) {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            for (auto it = m_tilemap.begin(); it != m_tilemap.end(); ++it) {
-                if (it->layer == m_currentLayer &&
-                    world.isValid(it->entity) &&
-                    magnitude(it->position - worldPos) < m_gridSize * 0.5f) {
-                    removeEntityFromGroups(it->entity);
-                    world.destroyEntity(it->entity);
-                    m_tilemap.erase(it);
-                    m_paintedThisFrame = true;
-                    m_tilemapDirty = true;
-                    break;
-                }
+        for (auto it = m_tilemap.begin(); it != m_tilemap.end(); ++it) {
+            if (it->layer == m_currentLayer &&
+                world.isValid(it->entity) &&
+                magnitude(it->position - worldPos) < m_gridSize * 0.5f) {
+                removeEntityFromGroups(it->entity);
+                world.destroyEntity(it->entity);
+                m_tilemap.erase(it);
+                m_paintedThisFrame = true;
+                m_tilemapDirty = true;
+                break;
             }
         }
     } else if (m_paintMode == PaintMode::Select) {

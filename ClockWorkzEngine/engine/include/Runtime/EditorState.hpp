@@ -45,6 +45,9 @@ public:
     void renderImGui(Core::Time* timer) override;
 
 private:
+    friend class HierarchyChangeCmd;
+    friend class DeleteTilemapTileCmd;
+
     // ----- Panels -----
     void renderToolbar();
     void renderHierarchy();
@@ -95,6 +98,16 @@ private:
         int                   sortOrderBase{0};
         int                   parentGroupIdx{-1};
     };
+    struct HierarchyUndoState {
+        std::vector<uint32_t>        hierarchyOrder;
+        std::vector<HierarchyGroup>  hierarchyGroups;
+        std::unordered_set<uint32_t> hiddenEntities;
+        std::vector<ECS::Entity>     selectedEntities;
+        ECS::Entity                  selectedEntity{0, 0};
+        int                          selectedGroupIdx{-1};
+        int                          renamingGroupIdx{-1};
+        uint32_t                     lastAnchorId{0};
+    };
     struct DirectoryListingCache {
         std::string                    dir;
         std::vector<std::filesystem::path> items;
@@ -120,6 +133,8 @@ private:
     // ----- Inspector undo helpers -----
     void captureInspectorBefore();   ///< snapshot entity state at widget activation
     void pushInspectorChange();      ///< diff against current state and push ModifyEntityCmd
+    HierarchyUndoState captureHierarchyUndoState() const;
+    void applyHierarchyUndoState(const HierarchyUndoState& state);
 
     // ----- References -----
     Platform::InputManager& m_input;
@@ -350,6 +365,7 @@ private:
     bool                     m_showTilePalette{false};
     bool                     m_paintedThisFrame{false};
     bool                     m_tilemapDirty{false}; ///< Set when tiles are added/removed; triggers merged-collider rebuild on mouse release
+    bool                     m_tileStrokeActive{false};
     std::string              m_selectedTilePrefab;
     PaintMode                m_paintMode{PaintMode::Paint};
     int                      m_currentLayer{0};
