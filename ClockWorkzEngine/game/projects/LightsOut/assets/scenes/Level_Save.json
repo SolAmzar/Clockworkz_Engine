@@ -4818,7 +4818,8 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete floor"
+        "concrete floor",
+        "Enemy"
     ],
     "hierarchyOrderIndices": [
         485,
@@ -5501,7 +5502,8 @@
         677,
         678,
         679,
-        680
+        680,
+        681
     ],
     "musicContext": "level_default",
     "objects": [
@@ -58597,6 +58599,99 @@
                 }
             },
             "name": "concrete floor"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "hp": 50.0,
+                            "invulnerable": true,
+                            "isDead": false,
+                            "maxHp": 50.0,
+                            "regenRate": 0.0
+                        },
+                        "scriptPath": "components/health.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "attackRange": 182.8000030517578,
+                            "chaseSpeed": 3.299999952316284,
+                            "dashDuration": 0.25,
+                            "dashSpeed": 10.0
+                        },
+                        "scriptPath": "components/moth_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "moth.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "completedMonster 2 export",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1331.42236328125,
+                        "y": 390.12481689453125
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
+                }
+            },
+            "name": "Enemy"
         }
     ],
     "sfxVolume": 1.0,
