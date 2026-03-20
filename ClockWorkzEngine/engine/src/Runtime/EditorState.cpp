@@ -203,6 +203,42 @@ static void OpenInVSCode(const std::string& absPath) {
 #endif
 }
 
+template<typename CacheT, typename IncludeFn>
+static const std::vector<std::filesystem::path>& RefreshDirectoryCache(
+    CacheT& cache,
+    const std::string& currentDir,
+    double now,
+    double refreshInterval,
+    IncludeFn&& includeFn) {
+    namespace fs = std::filesystem;
+    if (!cache.dirty &&
+        cache.dir == currentDir &&
+        cache.lastRefreshTime >= 0.0 &&
+        (now - cache.lastRefreshTime) < refreshInterval) {
+        return cache.items;
+    }
+
+    std::error_code ec;
+    cache.items.clear();
+    cache.dir = currentDir;
+
+    for (const auto& entry : fs::directory_iterator(currentDir, ec)) {
+        if (includeFn(entry.path()))
+            cache.items.push_back(entry.path());
+    }
+
+    std::sort(cache.items.begin(), cache.items.end(), [](const fs::path& a, const fs::path& b) {
+        bool aDir = fs::is_directory(a);
+        bool bDir = fs::is_directory(b);
+        if (aDir != bDir) return aDir;
+        return a.filename().string() < b.filename().string();
+    });
+
+    cache.lastRefreshTime = now;
+    cache.dirty = false;
+    return cache.items;
+}
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
@@ -335,6 +371,13 @@ void EditorState::onExit() {
     m_currentLayer       = 0;
     m_numLayers          = 3;
     m_selectedPrefabIndex = -1;
+}
+
+void EditorState::invalidateBrowserCaches() {
+    m_assetBrowserCache.dirty = true;
+    m_animBrowserCache.dirty = true;
+    m_scriptBrowserCache.dirty = true;
+    m_audioBrowserCache.dirty = true;
 }
 
 // ---------------------------------------------------------------------------
@@ -500,32 +543,45 @@ void EditorState::update(double dt) {
 void EditorState::render(Core::Time* timer) {
     (void)timer;
 
-    m_framebuffer.bind();
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     auto& engine   = Core::Engine::Get();
     auto& renderer = engine.rendering();
     auto& camera   = engine.camera();
+    const double now = ImGui::GetTime();
+    const bool shouldBackgroundRefresh =
+        !m_viewportShouldRender &&
+        m_viewportSize.x > 0.0f &&
+        m_viewportSize.y > 0.0f &&
+        (m_lastViewportRenderTime < 0.0 ||
+         (now - m_lastViewportRenderTime) >= VIEWPORT_BACKGROUND_REFRESH_INTERVAL);
+    const bool shouldRenderViewportFrame =
+        (m_viewportShouldRender || shouldBackgroundRefresh) &&
+        m_viewportSize.x > 0.0f &&
+        m_viewportSize.y > 0.0f;
 
-    glm::vec4 sceneTint(1.0f);
-    if (m_scene.isDarknessEnabled()) {
-        float intensity = std::clamp(m_scene.getDarknessIntensity(), 0.0f, 1.0f);
-        glm::vec3 tintRgb = glm::mix(glm::vec3(1.0f), m_scene.getDarknessColor(), intensity);
-        sceneTint = glm::vec4(tintRgb, 1.0f);
-    }
+    if (shouldRenderViewportFrame) {
+        m_framebuffer.bind();
 
-    renderer.beginScenePass(camera.viewProj(), sceneTint);
-    m_scene.Render(renderer);
-    renderer.endScenePass();
-    m_scene.RenderText(renderer);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    Systems::renderLightPass(m_scene.GetWorld(), renderer);
+        glm::vec4 sceneTint(1.0f);
+        if (m_scene.isDarknessEnabled()) {
+            float intensity = std::clamp(m_scene.getDarknessIntensity(), 0.0f, 1.0f);
+            glm::vec3 tintRgb = glm::mix(glm::vec3(1.0f), m_scene.getDarknessColor(), intensity);
+            sceneTint = glm::vec4(tintRgb, 1.0f);
+        }
 
-    // Grid + collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
-    if (m_showGrid || m_showColliders || m_showUIButtons || m_showTextBoxes) {
-        renderer.beginDebugPass(camera.viewProj());
+        renderer.beginScenePass(camera.viewProj(), sceneTint);
+        m_scene.Render(renderer);
+        renderer.endScenePass();
+        m_scene.RenderText(renderer);
+
+        Systems::renderLightPass(m_scene.GetWorld(), renderer);
+        m_lastViewportRenderTime = now;
+
+        // Grid + collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
+        if (m_showGrid || m_showColliders || m_showUIButtons || m_showTextBoxes) {
+            renderer.beginDebugPass(camera.viewProj());
 
         if (m_showGrid)
             renderGrid();
@@ -643,7 +699,8 @@ void EditorState::render(Core::Time* timer) {
         renderer.endDebugPass();
     }
 
-    m_framebuffer.unbind();
+        m_framebuffer.unbind();
+    }
 
     // Animation editor preview â€” render current frame into m_animPreviewFB
     if (m_animEditorOpen && !m_animEdTexture.empty() && !m_animEdClip.empty()) {
@@ -3432,14 +3489,19 @@ void EditorState::renderInspector() {
 
 void EditorState::renderViewport() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Scene##EditorViewport", nullptr,
-                 ImGuiWindowFlags_NoScrollbar |
-                 ImGuiWindowFlags_NoScrollWithMouse);
+    const bool viewportWindowVisible =
+        ImGui::Begin("Scene##EditorViewport", nullptr,
+                     ImGuiWindowFlags_NoScrollbar |
+                     ImGuiWindowFlags_NoScrollWithMouse);
 
     m_viewportFocused = ImGui::IsWindowFocused();
     m_viewportHovered = ImGui::IsWindowHovered();
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
+    m_viewportShouldRender = viewportWindowVisible &&
+                             !ImGui::IsWindowCollapsed() &&
+                             avail.x > 0.0f &&
+                             avail.y > 0.0f;
     if (avail.x != m_viewportSize.x || avail.y != m_viewportSize.y) {
         m_viewportSize = {avail.x, avail.y};
         m_framebuffer.resize(static_cast<int>(avail.x),
@@ -4062,6 +4124,7 @@ void EditorState::renderAssetBrowser() {
                     // Import into CURRENT directory
                     fs::path dest = fs::path(m_currentAssetDir) / fs::path(filePath).filename();
                     Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
+                    invalidateBrowserCaches();
                     // If imported to a different location than the manager's default,
                     // we might need to handle the move, but ImportTexture handles the copy to assets/textures.
                     handled = true;
@@ -4090,6 +4153,7 @@ void EditorState::renderAssetBrowser() {
     if (m_currentAssetDir != assetsRoot.generic_string()) {
         if (ImGui::Button("<- Back##assets")) {
             m_currentAssetDir = fs::path(m_currentAssetDir).parent_path().generic_string();
+            m_assetBrowserCache.dirty = true;
         }
         ImGui::SameLine();
     }
@@ -4131,6 +4195,7 @@ void EditorState::renderAssetBrowser() {
         ImGui::InputText("Asset ID", m_newAssetNameBuf, sizeof(m_newAssetNameBuf));
         if (ImGui::Button("Import", ImVec2(100, 0))) {
             Assets::TextureManager::ImportTexture(m_newAssetPathBuf, m_newAssetNameBuf);
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4143,6 +4208,7 @@ void EditorState::renderAssetBrowser() {
         ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
         if (ImGui::Button("Create", ImVec2(100, 0))) {
             if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAssetDir) / m_newScriptFolderBuf, ec);
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4164,6 +4230,7 @@ void EditorState::renderAssetBrowser() {
                 }
             }
             m_renamingAsset.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4179,6 +4246,7 @@ void EditorState::renderAssetBrowser() {
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
             Assets::TextureManager::DeleteFromDisk(m_deletingAsset);
             m_deletingAsset.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopStyleColor();
@@ -4197,6 +4265,7 @@ void EditorState::renderAssetBrowser() {
                 fs::rename(src, src.parent_path() / m_renameAssetDirBuf, ec);
             }
             m_renamingAssetDirPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4215,6 +4284,7 @@ void EditorState::renderAssetBrowser() {
             if (m_currentAssetDir.find(m_deletingAssetDirPath) == 0)
                 m_currentAssetDir = assetsRoot.generic_string();
             m_deletingAssetDirPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopStyleColor();
@@ -4248,6 +4318,7 @@ void EditorState::renderAssetBrowser() {
                     fs::rename(fs::path(m_movingAssetPath), destFile, ec);
                 }
                 m_movingAssetPath.clear();
+                invalidateBrowserCaches();
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -4261,22 +4332,17 @@ void EditorState::renderAssetBrowser() {
     }
 
     ImGui::Separator();
-    std::vector<fs::path> items;
-    for (const auto& entry : fs::directory_iterator(m_currentAssetDir, ec)) {
-        if (entry.is_directory()) {
-            items.push_back(entry.path());
-        } else {
-            std::string ext = entry.path().extension().string();
+    const auto& items = RefreshDirectoryCache(
+        m_assetBrowserCache,
+        m_currentAssetDir,
+        ImGui::GetTime(),
+        BROWSER_CACHE_REFRESH_INTERVAL,
+        [&](const fs::path& path) {
+            if (fs::is_directory(path)) return true;
+            std::string ext = path.extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
-                items.push_back(entry.path());
-        }
-    }
-    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
-        bool aDir = fs::is_directory(a), bDir = fs::is_directory(b);
-        if (aDir != bDir) return aDir;
-        return a.filename().string() < b.filename().string();
-    });
+            return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga";
+        });
 
     float thumbSize = 64.0f;
     float padding = 8.0f;
@@ -4297,17 +4363,21 @@ void EditorState::renderAssetBrowser() {
                 ImGui::Button("##icon", ImVec2(thumbSize, thumbSize));
                 ImGui::PopStyleColor();
                 DrawFolderIcon();
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                     m_currentAssetDir = path.generic_string();
+                    m_assetBrowserCache.dirty = true;
+                }
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("TEXTURE_ASSET_FILE")) {
                         fs::path src((const char*)payloadFile->Data);
                         fs::rename(src, path / src.filename(), ec);
+                        invalidateBrowserCaches();
                     } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
                         std::string srcPath = Assets::TextureManager::GetFilePath((const char*)payloadAsset->Data);
                         if (!srcPath.empty()) {
                             fs::path src(srcPath);
                             fs::rename(src, path / src.filename(), ec);
+                            invalidateBrowserCaches();
                         }
                     }
                     ImGui::EndDragDropTarget();
@@ -4362,6 +4432,7 @@ void EditorState::renderAssetBrowser() {
                         while (fs::exists(dst))
                             dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
                         fs::copy_file(src, dst, ec);
+                        invalidateBrowserCaches();
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Delete")) m_deletingAsset = stem;
@@ -4394,6 +4465,7 @@ void EditorState::renderAnimationsBrowser() {
     if (m_currentAnimDir != animRoot.generic_string()) {
         if (ImGui::Button("<- Back##anim")) {
             m_currentAnimDir = fs::path(m_currentAnimDir).parent_path().generic_string();
+            m_animBrowserCache.dirty = true;
         }
         ImGui::SameLine();
     }
@@ -4429,6 +4501,7 @@ void EditorState::renderAnimationsBrowser() {
             m_animEdFrame = -1;
             m_animEdPlaying = false;
             m_animEditorOpen = true;
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4441,6 +4514,7 @@ void EditorState::renderAnimationsBrowser() {
         ImGui::InputText("Folder name##nfan", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
         if (ImGui::Button("Create", ImVec2(100, 0))) {
             if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAnimDir) / m_newScriptFolderBuf, ec);
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4461,6 +4535,7 @@ void EditorState::renderAnimationsBrowser() {
                 fs::rename(rPath, rPath.parent_path() / newName, ec);
             }
             m_renamingAnimPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4475,6 +4550,7 @@ void EditorState::renderAnimationsBrowser() {
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
             fs::remove_all(dPath, ec);
             m_deletingAnimPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4485,16 +4561,14 @@ void EditorState::renderAnimationsBrowser() {
     ImGui::Separator();
 
 
-    std::vector<fs::path> items;
-    for (const auto& entry : fs::directory_iterator(m_currentAnimDir, ec)) {
-        if (entry.is_directory() || entry.path().extension() == ".json")
-            items.push_back(entry.path());
-    }
-    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
-        bool aDir = fs::is_directory(a), bDir = fs::is_directory(b);
-        if (aDir != bDir) return aDir;
-        return a.filename().string() < b.filename().string();
-    });
+    const auto& items = RefreshDirectoryCache(
+        m_animBrowserCache,
+        m_currentAnimDir,
+        ImGui::GetTime(),
+        BROWSER_CACHE_REFRESH_INTERVAL,
+        [&](const fs::path& path) {
+            return fs::is_directory(path) || path.extension() == ".json";
+        });
 
     constexpr float kIconW = 64.0f, kIconH = 72.0f;
     float panelW = ImGui::GetContentRegionAvail().x;
@@ -4515,13 +4589,17 @@ void EditorState::renderAnimationsBrowser() {
 
             if (isDir) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.1f, 1.0f));
-                if (ImGui::Button("##icon", ImVec2(kIconW, kIconH))) m_currentAnimDir = path.generic_string();
+                if (ImGui::Button("##icon", ImVec2(kIconW, kIconH))) {
+                    m_currentAnimDir = path.generic_string();
+                    m_animBrowserCache.dirty = true;
+                }
                 ImGui::PopStyleColor();
                 DrawFolderIcon();
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("ANIMATION_ASSET")) {
                         fs::path src(animRoot / (const char*)pl->Data);
                         fs::rename(src, path / src.filename(), ec);
+                        invalidateBrowserCaches();
                     }
                     ImGui::EndDragDropTarget();
                 }
@@ -4787,6 +4865,7 @@ void EditorState::renderScriptsBrowser() {
     if (m_currentScriptDir != scriptsRoot.generic_string()) {
         if (ImGui::Button("<- Back")) {
             m_currentScriptDir = fs::path(m_currentScriptDir).parent_path().generic_string();
+            m_scriptBrowserCache.dirty = true;
         }
         ImGui::SameLine();
     }
@@ -4842,6 +4921,7 @@ void EditorState::renderScriptsBrowser() {
                         f << "return M\n";
                     }
                 }
+                invalidateBrowserCaches();
             }
             ImGui::CloseCurrentPopup();
         }
@@ -4861,6 +4941,7 @@ void EditorState::renderScriptsBrowser() {
             if (m_newScriptFolderBuf[0]) {
                 fs::create_directories(scriptsRoot / m_newScriptFolderBuf, ec);
             }
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4889,6 +4970,7 @@ void EditorState::renderScriptsBrowser() {
                 fs::rename(renamePath, newPath, ec2);
             }
             m_renamingScriptPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -4930,6 +5012,7 @@ void EditorState::renderScriptsBrowser() {
                     fs::rename(movePath, destFile, ec2);
                 }
                 m_movingScriptPath.clear();
+                invalidateBrowserCaches();
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -4956,6 +5039,7 @@ void EditorState::renderScriptsBrowser() {
             std::error_code ec2;
             fs::remove(delPath, ec2);
             m_deletingScriptPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopStyleColor();
@@ -4970,19 +5054,14 @@ void EditorState::renderScriptsBrowser() {
     ImGui::Separator();
 
 
-    std::vector<fs::path> items;
-    for (const auto& entry : fs::directory_iterator(m_currentScriptDir, ec)) {
-        if (entry.is_directory() || entry.path().extension() == ".lua")
-            items.push_back(entry.path());
-    }
-
-    // Sort: directories first, then files
-    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
-        bool aDir = fs::is_directory(a);
-        bool bDir = fs::is_directory(b);
-        if (aDir != bDir) return aDir;
-        return a.filename().string() < b.filename().string();
-    });
+    const auto& items = RefreshDirectoryCache(
+        m_scriptBrowserCache,
+        m_currentScriptDir,
+        ImGui::GetTime(),
+        BROWSER_CACHE_REFRESH_INTERVAL,
+        [&](const fs::path& path) {
+            return fs::is_directory(path) || path.extension() == ".lua";
+        });
 
     constexpr float kIconW = 64.0f;
     constexpr float kIconH = 72.0f;
@@ -5036,6 +5115,7 @@ void EditorState::renderScriptsBrowser() {
                         fs::path destPath = path / sourcePath.filename();
                         if (!fs::exists(destPath)) {
                             fs::rename(sourcePath, destPath, ec);
+                            invalidateBrowserCaches();
                         }
                     }
                     ImGui::EndDragDropTarget();
@@ -5046,6 +5126,7 @@ void EditorState::renderScriptsBrowser() {
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                 if (isDir) {
                     m_currentScriptDir = path.generic_string();
+                    m_scriptBrowserCache.dirty = true;
                 } else {
                     OpenInVSCode(fs::absolute(path).string());
                 }
@@ -5084,6 +5165,7 @@ void EditorState::renderScriptsBrowser() {
                         dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
                     }
                     fs::copy_file(src, dst, ec);
+                    invalidateBrowserCaches();
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Delete")) { m_deletingScriptPath = path.string(); }
@@ -5283,6 +5365,7 @@ void EditorState::renderAudioBrowser() {
 
         if (!importedSounds.empty()) {
             m_selectedAudioAssets = importedSounds;
+            invalidateBrowserCaches();
         }
 
         auto& remainingDrops = Core::Engine::Get().window().droppedFilesMutable();
@@ -5445,6 +5528,7 @@ void EditorState::renderAudioBrowser() {
         if (ImGui::Button("<- Back##audio")) {
             m_currentAudioDir = fs::path(m_currentAudioDir).parent_path().generic_string();
             m_selectedAudioAssets.clear();
+            m_audioBrowserCache.dirty = true;
         }
     }
 
@@ -5471,6 +5555,7 @@ void EditorState::renderAudioBrowser() {
             cfg.loop = m_newAudioLoop; cfg.stream = m_newAudioStream; cfg.is3D = m_newAudioIs3D;
             cfg.volume = m_newAudioVolume; cfg.group = m_newAudioIsBGM ? "BGM" : "SFX";
             Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg);
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -5483,6 +5568,7 @@ void EditorState::renderAudioBrowser() {
         ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
         if (ImGui::Button("Create", ImVec2(100, 0))) {
             if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAudioDir) / m_newScriptFolderBuf, ec);
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -5496,6 +5582,7 @@ void EditorState::renderAudioBrowser() {
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
             Assets::SoundManager::DeleteFromDisk(m_deletingAudio);
             m_deletingAudio.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -5545,6 +5632,7 @@ void EditorState::renderAudioBrowser() {
             cfg.filterReleaseEnd = std::clamp(m_editAudioFilterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
             if (Assets::SoundManager::UpdateConfig(m_editingAudio, cfg, kSoundConfig)) {
                 m_editingAudio.clear();
+                invalidateBrowserCaches();
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -5680,6 +5768,7 @@ void EditorState::renderAudioBrowser() {
                 cfg.filterReleaseEnd = std::clamp(cfg.filterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
                 Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig);
             }
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -5707,6 +5796,7 @@ void EditorState::renderAudioBrowser() {
                     Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
             }
             m_renamingAudioPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -5725,6 +5815,7 @@ void EditorState::renderAudioBrowser() {
             if (m_currentAudioDir.find(m_deletingAudioPath) == 0)
                 m_currentAudioDir = audioRoot.generic_string();
             m_deletingAudioPath.clear();
+            invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopStyleColor();
@@ -5760,6 +5851,7 @@ void EditorState::renderAudioBrowser() {
         fs::rename(normalizedSrc, destFile, moveEc);
         if (!moveEc) {
             Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
+            invalidateBrowserCaches();
         }
     };
 
@@ -5835,22 +5927,17 @@ void EditorState::renderAudioBrowser() {
         ImGui::Separator();
     }
 
-    std::vector<fs::path> items;
-    for (const auto& entry : fs::directory_iterator(m_currentAudioDir, ec)) {
-        if (entry.is_directory()) {
-            items.push_back(entry.path());
-        } else {
-            std::string ext = entry.path().extension().string();
+    const auto& items = RefreshDirectoryCache(
+        m_audioBrowserCache,
+        m_currentAudioDir,
+        ImGui::GetTime(),
+        BROWSER_CACHE_REFRESH_INTERVAL,
+        [&](const fs::path& path) {
+            if (fs::is_directory(path)) return true;
+            std::string ext = path.extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-            if (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac")
-                items.push_back(entry.path());
-        }
-    }
-    std::sort(items.begin(), items.end(), [](const fs::path& a, const fs::path& b) {
-        bool aDir = fs::is_directory(a), bDir = fs::is_directory(b);
-        if (aDir != bDir) return aDir;
-        return a.filename().string() < b.filename().string();
-    });
+            return ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac";
+        });
 
     constexpr float kIconW = 64.0f, kIconH = 72.0f;
     float panelW = ImGui::GetContentRegionAvail().x;
@@ -5880,6 +5967,7 @@ void EditorState::renderAudioBrowser() {
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                     m_currentAudioDir = path.generic_string();
                     m_selectedAudioAssets.clear();
+                    m_audioBrowserCache.dirty = true;
                 }
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("AUDIO_ASSET_FILE")) {
@@ -5889,6 +5977,7 @@ void EditorState::renderAudioBrowser() {
                         fs::rename(src, dest, ec);
                         if (ec.value() == 0 && !movedName.empty())
                             Assets::SoundManager::UpdatePathInConfig(movedName, dest.generic_string(), kSoundConfig);
+                        invalidateBrowserCaches();
                     } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
                         std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data, kSoundConfig);
                         if (!srcPath.empty()) {
@@ -5897,6 +5986,7 @@ void EditorState::renderAudioBrowser() {
                             fs::rename(src, dest, ec);
                             if (ec.value() == 0)
                                 Assets::SoundManager::UpdatePathInConfig((const char*)payloadAsset->Data, dest.generic_string(), kSoundConfig);
+                            invalidateBrowserCaches();
                         }
                     }
                     ImGui::EndDragDropTarget();
@@ -6035,9 +6125,13 @@ void EditorState::loadScene(const std::string& path) {
         if (fin.is_open()) {
             json root;
             fin >> root;
+            auto& world = m_scene.GetWorld();
+            std::vector<uint32_t> objectIndexToId;
+            world.each<Components::Transform>([&](ECS::Entity e, Components::Transform&) {
+                objectIndexToId.push_back(e.id);
+            });
             if (root.contains("hierarchyGroups") && root["hierarchyGroups"].is_array()) {
                 // Build name â†’ entity ID map from world
-                auto& world = m_scene.GetWorld();
                 std::unordered_map<std::string, uint32_t> nameToId;
                 world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
                     nameToId[tag.tag] = e.id;
@@ -6048,7 +6142,13 @@ void EditorState::loadScene(const std::string& path) {
                     grp.collapsed     = jgrp.value("collapsed", false);
                     grp.sortOrderBase = jgrp.value("sortOrderBase", 0);
                     grp.parentGroupIdx = jgrp.value("parentGroupIdx", -1);
-                    if (jgrp.contains("entities") && jgrp["entities"].is_array()) {
+                    if (jgrp.contains("entityIndices") && jgrp["entityIndices"].is_array()) {
+                        for (auto& jidx : jgrp["entityIndices"]) {
+                            int idx = jidx.get<int>();
+                            if (idx >= 0 && idx < (int)objectIndexToId.size())
+                                grp.entityIds.push_back(objectIndexToId[idx]);
+                        }
+                    } else if (jgrp.contains("entities") && jgrp["entities"].is_array()) {
                         for (auto& jname : jgrp["entities"]) {
                             std::string n = jname.get<std::string>();
                             auto it = nameToId.find(n);
@@ -6060,7 +6160,13 @@ void EditorState::loadScene(const std::string& path) {
                 }
             }
             // Restore flat hierarchy display order
-            if (root.contains("hierarchyOrder") && root["hierarchyOrder"].is_array()) {
+            if (root.contains("hierarchyOrderIndices") && root["hierarchyOrderIndices"].is_array()) {
+                for (auto& jidx : root["hierarchyOrderIndices"]) {
+                    int idx = jidx.get<int>();
+                    if (idx >= 0 && idx < (int)objectIndexToId.size())
+                        m_hierarchyOrder.push_back(objectIndexToId[idx]);
+                }
+            } else if (root.contains("hierarchyOrder") && root["hierarchyOrder"].is_array()) {
                 auto& world3 = m_scene.GetWorld();
                 std::unordered_map<std::string, uint32_t> nameToId3;
                 world3.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
@@ -6075,7 +6181,20 @@ void EditorState::loadScene(const std::string& path) {
             }
 
             // Restore hidden entities
-            if (root.contains("hiddenEntities") && root["hiddenEntities"].is_array()) {
+            if (root.contains("hiddenEntityIndices") && root["hiddenEntityIndices"].is_array()) {
+                for (auto& jidx : root["hiddenEntityIndices"]) {
+                    int idx = jidx.get<int>();
+                    if (idx < 0 || idx >= (int)objectIndexToId.size()) continue;
+                    uint32_t id = objectIndexToId[idx];
+                    m_hiddenEntities.insert(id);
+                    world.each<Components::Tag>([&](ECS::Entity e, Components::Tag&) {
+                        if (e.id != id) return;
+                        if (auto* sr = world.getComponent<Components::SpriteRenderer>(e)) sr->visible = false;
+                        if (auto* tr = world.getComponent<Components::TextRenderer>(e))   tr->visible = false;
+                        if (auto* lt = world.getComponent<Components::Light>(e))           lt->active  = false;
+                    });
+                }
+            } else if (root.contains("hiddenEntities") && root["hiddenEntities"].is_array()) {
                 auto& world2 = m_scene.GetWorld();
                 std::unordered_map<std::string, uint32_t> nameToId2;
                 world2.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
@@ -6152,8 +6271,13 @@ void EditorState::saveScene() {
         // Build entity ID â†’ tag name map
         auto& world = m_scene.GetWorld();
         std::unordered_map<uint32_t, std::string> idToName;
+        std::unordered_map<uint32_t, int> idToObjectIndex;
         world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
             idToName[e.id] = tag.tag;
+        });
+        int objectIndex = 0;
+        world.each<Components::Transform>([&](ECS::Entity e, Components::Transform&) {
+            idToObjectIndex[e.id] = objectIndex++;
         });
 
         json jGroups = json::array();
@@ -6164,10 +6288,14 @@ void EditorState::saveScene() {
             jg["sortOrderBase"] = grp.sortOrderBase;
             jg["parentGroupIdx"] = grp.parentGroupIdx;
             jg["entities"]      = json::array();
+            jg["entityIndices"] = json::array();
             for (uint32_t id : grp.entityIds) {
                 auto it = idToName.find(id);
                 if (it != idToName.end())
                     jg["entities"].push_back(it->second);
+                auto idxIt = idToObjectIndex.find(id);
+                if (idxIt != idToObjectIndex.end())
+                    jg["entityIndices"].push_back(idxIt->second);
             }
             jGroups.push_back(jg);
         }
@@ -6175,19 +6303,27 @@ void EditorState::saveScene() {
 
         // Save flat entity display order
         json jOrder = json::array();
+        json jOrderIndices = json::array();
         for (uint32_t id : m_hierarchyOrder) {
             auto it = idToName.find(id);
             if (it != idToName.end()) jOrder.push_back(it->second);
+            auto idxIt = idToObjectIndex.find(id);
+            if (idxIt != idToObjectIndex.end()) jOrderIndices.push_back(idxIt->second);
         }
         root["hierarchyOrder"] = jOrder;
+        root["hierarchyOrderIndices"] = jOrderIndices;
 
         // Save hidden entity names
         json jHidden = json::array();
+        json jHiddenIndices = json::array();
         for (uint32_t id : m_hiddenEntities) {
             auto it = idToName.find(id);
             if (it != idToName.end()) jHidden.push_back(it->second);
+            auto idxIt = idToObjectIndex.find(id);
+            if (idxIt != idToObjectIndex.end()) jHiddenIndices.push_back(idxIt->second);
         }
         root["hiddenEntities"] = jHidden;
+        root["hiddenEntityIndices"] = jHiddenIndices;
 
         std::ofstream fout(m_sceneFilePath);
         fout << std::setw(4) << root << std::endl;
@@ -6881,6 +7017,10 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                     spr->sortOrder = m_currentLayer;
                 m_tilemap.push_back({m_selectedTilePrefab, worldPos, m_currentLayer, entity});
                 getOrCreateLayerGroup(m_currentLayer)->entities.push_back(entity);
+
+                if (m_selectedGroupIdx >= 0 && m_selectedGroupIdx < (int)m_hierarchyGroups.size()) {
+                    m_hierarchyGroups[m_selectedGroupIdx].entityIds.push_back(entity.id);
+                }
                 m_paintedThisFrame = true;
                 m_tilemapDirty = true;
             }

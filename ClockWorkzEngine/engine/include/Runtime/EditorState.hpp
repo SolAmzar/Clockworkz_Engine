@@ -61,6 +61,7 @@ private:
     void renderPrefabBrowser();
     void renderTilePalette();
     void renderFontBrowser();
+    void invalidateBrowserCaches();
 
     // ----- Scene helpers -----
     void renderGrid();
@@ -93,6 +94,12 @@ private:
         bool                  collapsed{false};
         int                   sortOrderBase{0};
         int                   parentGroupIdx{-1};
+    };
+    struct DirectoryListingCache {
+        std::string                    dir;
+        std::vector<std::filesystem::path> items;
+        double                         lastRefreshTime{-1.0};
+        bool                           dirty{true};
     };
     enum class PaintMode { Paint, Erase, Select };
 
@@ -143,6 +150,8 @@ private:
     vec2                    m_viewportSize{800.0f, 600.0f};
     bool                    m_viewportFocused{false};
     bool                    m_viewportHovered{false};
+    bool                    m_viewportShouldRender{true};
+    double                  m_lastViewportRenderTime{-1.0};
 
     // ----- Editor camera -----
     glm::vec2               m_editorCamPos{0.0f, 0.0f};
@@ -177,12 +186,14 @@ private:
     char                    m_renameAssetDirBuf[256]{};
     std::string             m_deletingAssetDirPath;
     std::string             m_movingAssetPath;
+    DirectoryListingCache   m_assetBrowserCache;
 
     // ----- Dockspace -----
     bool                    m_dockLayoutInitialized{false};
 
     // ----- Undo/redo -----
     static constexpr size_t MAX_UNDO = 50;
+    static constexpr double VIEWPORT_BACKGROUND_REFRESH_INTERVAL = 0.25;
     std::vector<std::unique_ptr<IEditorCommand>> m_undoStack;
     std::vector<std::unique_ptr<IEditorCommand>> m_redoStack;
 
@@ -216,11 +227,13 @@ private:
     bool        m_hotReloadEnabled{true};
     float       m_hotReloadTimer{0.f};
     static constexpr float HOT_RELOAD_INTERVAL = 1.0f;
+    static constexpr double BROWSER_CACHE_REFRESH_INTERVAL = 3.0;
 
     // ----- Scripts browser -----
     char                    m_newScriptBuf[128]{};
     char                    m_newScriptFolderBuf[64]{};   // subfolder for new script
     std::string             m_currentScriptDir;
+    DirectoryListingCache   m_scriptBrowserCache;
     std::string             m_renamingScriptPath;
     char                    m_renameScriptBuf[256]{};
     std::string             m_deletingScriptPath;
@@ -228,6 +241,7 @@ private:
 
     // ----- Animations browser -----
     std::string             m_currentAnimDir;
+    DirectoryListingCache   m_animBrowserCache;
     std::string             m_renamingAnimPath;
     char                    m_renameAnimBuf[256]{};
     std::string             m_deletingAnimPath;
@@ -264,6 +278,7 @@ private:
     float                   m_newAudioPitch{1.0f};
     bool                    m_newAudioIsBGM{false};
     std::string             m_currentAudioDir;
+    DirectoryListingCache   m_audioBrowserCache;
     std::string             m_renamingAudioPath;
     char                    m_renameAudioBuf[256]{};
     std::string             m_editingAudio;
