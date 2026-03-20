@@ -166,17 +166,19 @@ function PlayerController:onUpdate(entity, dt)
         end
 
         if (not self._batteryDying) and input:wasKeyPressed(Keys.F) then
+            self._torchActive = not self._torchActive
+            self._manualTorchOff = not self._torchActive
+            
             local charge = entity:hasBattery() and entity:getBatteryCharge() or 1.0
-            if charge > 0.0 then
-                self._torchActive = not self._torchActive
-                self._manualTorchOff = not self._torchActive
-                entity:setLightActive(self._torchActive)
-                if self._torchActive then
-                    Audio.playOneShot("flashlight_on")
+            if self._torchActive then
+                if charge > 0.0 then
+                    entity:setLightActive(true)
                 else
-                    Audio.playOneShot("flashlight_off")
+                    entity:setLightActive(false)
                 end
-            elseif not self._torchActive then
+                Audio.playOneShot("flashlight_on")
+            else
+                entity:setLightActive(false)
                 Audio.playOneShot("flashlight_off")
             end
         end
@@ -184,7 +186,27 @@ function PlayerController:onUpdate(entity, dt)
         -- Battery recharges whenever the torch is off.
         if entity:hasBattery() then
             entity:setBatteryCharging(not self._torchActive)
-            if self._torchActive and (not self._batteryDying) and entity:getBatteryCharge() <= 0.0 then
+            if self._torchActive and (not self._batteryDying) and entity:isLightActive() then
+                local charge = entity:getBatteryCharge()
+                local maxCharge = entity:getBatteryMaxCharge()
+                local pct = charge / maxCharge
+                
+                -- Base intensity follows battery percentage
+                local targetIntensity = pct
+                
+                -- Add flickering when battery is low (below 25%)
+                if pct < 0.25 then
+                    local lowBatSeverity = 1.0 - (pct / 0.25) -- 0.0 at 25%, 1.0 at 0%
+                    if math.random() < (0.1 + lowBatSeverity * 0.4) then
+                        -- Random dip in intensity
+                        targetIntensity = targetIntensity * (0.2 + math.random() * 0.5)
+                    end
+                end
+                
+                entity:setLightIntensity(targetIntensity)
+            end
+
+            if entity:getBatteryCharge() <= 0.0 and self._torchActive and entity:isLightActive() and (not self._batteryDying) then
                 self._batteryDying = true
                 self._flickerTimer = BATTERY_DEATH_FLICKER_TIME
                 self._flickerStep = 0.0
@@ -202,16 +224,15 @@ function PlayerController:onUpdate(entity, dt)
 
                 if self._flickerTimer <= 0.0 then
                     self._batteryDying = false
-                    self._torchActive = false
-                    self._manualTorchOff = false
+                    -- The switch stays ON, player must turn it off manually to recharge
                     entity:setLightActive(false)
-                    Audio.playOneShot("flashlight_off")
+                    entity:setLightIntensity(1.0) -- Reset for next use
                 end
             end
         end
 
         -- Torch bobbing
-        if self._torchActive and not self._batteryDying then
+        if self._torchActive then
             local stateOffX = 0.0
             if currentState == "run" then
                 stateOffX = 10.0
@@ -228,7 +249,7 @@ function PlayerController:onUpdate(entity, dt)
         end
 
         -- Append _torch suffix to animation state
-        if self._torchActive and not self._batteryDying then
+        if self._torchActive then
             currentState = currentState .. "_torch"
         end
     end

@@ -1422,6 +1422,16 @@ void EditorState::renderHierarchy() {
     ImGui::Separator();
 
     // -----------------------------------------------------------------------
+    // Search filter
+    // -----------------------------------------------------------------------
+    static ImGuiTextFilter filter;
+    ImGui::TextDisabled("Search:");
+    ImGui::SameLine();
+    filter.Draw("##HierarchySearch", ImGui::GetContentRegionAvail().x);
+
+    ImGui::Separator();
+
+    // -----------------------------------------------------------------------
     // 6. Render ungrouped entities with drag-drop reorder
     // -----------------------------------------------------------------------
     // Drop-zone payload tags
@@ -1437,6 +1447,9 @@ void EditorState::renderHierarchy() {
         // Skip merged collider entities — shown in their own section below
         if (auto* tag = world.getComponent<Components::Tag>(e))
             if (tag->tag == "TilemapMergedCollider") continue;
+
+        if (!filter.PassFilter(getDisplayName(e).c_str())) continue;
+
         ImGui::PushID(i);
 
         // --- Thin drop-zone ABOVE this row ---
@@ -1925,6 +1938,9 @@ void EditorState::renderHierarchy() {
                 auto mapIt = idMap.find(uid);
                 if (mapIt == idMap.end()) continue;
                 ECS::Entity e = mapIt->second;
+
+                if (!filter.PassFilter(getDisplayName(e).c_str())) continue;
+
                 ImGui::PushID(mi);
 
                 bool isHiddenMember = m_hiddenEntities.count(uid) > 0;

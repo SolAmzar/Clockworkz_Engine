@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           LevelEditor.cpp
 \project        Lights Out - Level Editor
@@ -2721,8 +2721,10 @@ void LevelEditor::renderHierarchy() {
   ImGui::Separator();
 
   // Search filter
-  static char searchBuffer[256] = "";
-  ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer));
+  static ImGuiTextFilter filter;
+  ImGui::TextDisabled("Search:");
+  ImGui::SameLine();
+  filter.Draw("##HierarchySearch", ImGui::GetContentRegionAvail().x);
 
   ImGui::Separator();
 
@@ -2738,10 +2740,8 @@ void LevelEditor::renderHierarchy() {
       }
 
       // Apply search filter
-      if (searchBuffer[0] != '\0') {
-        if (obj->name().find(searchBuffer) == std::string::npos) {
-          continue;
-        }
+      if (!filter.PassFilter(obj->name().c_str())) {
+        continue;
       }
 
       // Determine icon based on type

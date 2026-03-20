@@ -505,7 +505,9 @@ void RegisterEntityRef(sol::state &lua) {
       &Scripting::EntityRef::getLightOffsetX, "getLightOffsetY",
       &Scripting::EntityRef::getLightOffsetY, "setLightOffsetX",
       &Scripting::EntityRef::setLightOffsetX, "setLightOffsetY",
-      &Scripting::EntityRef::setLightOffsetY,
+      &Scripting::EntityRef::setLightOffsetY, "getLightIntensity",
+      &Scripting::EntityRef::getLightIntensity, "setLightIntensity",
+      &Scripting::EntityRef::setLightIntensity,
 
       // TextRenderer
       "hasTextRenderer", &Scripting::EntityRef::hasTextRenderer, "getText",
