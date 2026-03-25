@@ -59,6 +59,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Ignore Claude Code files
+.claude/
+
 # Ignore Ubuntu system files
 *~
 \#*\#

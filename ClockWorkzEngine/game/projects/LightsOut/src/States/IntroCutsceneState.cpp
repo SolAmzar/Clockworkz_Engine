@@ -27,6 +27,7 @@ reserved.
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
 #include "IMGUI/imgui.h"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -190,7 +191,8 @@ bool IntroCutsceneState::shouldSkip() const {
          m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
          m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) ||
          m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
-         m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
+         m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) ||
+         Core::Engine::Get().gamepad().wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH);
 }
 
 } // namespace Runtime

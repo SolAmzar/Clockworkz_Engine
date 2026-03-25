@@ -64,6 +64,7 @@ namespace Gameplay {
 
 namespace Platform {
     class InputManager;
+    class GamepadManager;
 }
 
 namespace Scripting {
@@ -137,6 +138,11 @@ namespace Scripting {
     //   Audio.play("name"), Audio.playOneShot("name"),
     //   Audio.stop("name"), Audio.isPlaying("name")
     void RegisterAudioGlobal(sol::state& lua);
+
+    // Register Gamepad global — controller action API for Lua scripts:
+    //   Gamepad:isActionDown("sprint"), Gamepad:isActionPressed("flashlight"),
+    //   Gamepad:getActionAxis("move_x")
+    void RegisterGamepadGlobal(sol::state& lua);
 
     //-------------------------------------------------------------------------
     // Master Registration

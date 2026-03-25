@@ -93,6 +93,9 @@ else()
   )
 endif()
 
+# SDL3 (static) — cross-platform, linked after the platform block
+target_link_libraries(CWZEngine PUBLIC SDL3::SDL3-static)
+
 # --- Source groups for Visual Studio IDE ---
 # Split file lists by their root so each source_group gets only files under its TREE root.
 set(_ENGINE_HEADERS_LOCAL  "")
