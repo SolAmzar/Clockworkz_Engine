@@ -19,6 +19,7 @@ reserved.
 #include "Runtime/Scene.hpp"
 #include "ECS/World.hpp"
 #include "Components/UIButton.hpp"
+#include "Systems/UISliderSystem.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -65,6 +66,7 @@ private:
   void openOptions();
   void closeOptions();
   void syncOptionsSlidersInScene();
+  void applyOptionsSliderSettings();
   void adjustOptionVolume(float delta);
   void setOptionVolume(int optionIndex, float value);
   void updateOptionsOverlayText();
@@ -81,6 +83,7 @@ private:
   Graphics::Camera2D         *m_cam{nullptr};
 
   Runtime::Scene             m_menuScene;
+  Systems::UISliderSystem    m_sliderSystem;
 
   std::vector<ECS::Entity>   m_buttonEntities;
   int                        m_selected{0};
@@ -94,6 +97,8 @@ private:
 };
 
 } // namespace Runtime
+
+
 
 
 

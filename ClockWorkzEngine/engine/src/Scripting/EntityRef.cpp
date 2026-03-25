@@ -189,6 +189,17 @@ float EntityRef::getLightOffsetY() const {
       m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
   return t ? t->offset.y : 0.f;
 }
+float EntityRef::getLightIntensity() const {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  return t ? t->intensity : 1.0f;
+}
+void EntityRef::setLightIntensity(float i) {
+  auto *t =
+      m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;
+  if (t)
+    t->intensity = i;
+}
 void EntityRef::setLightOffsetX(float x) {
   auto *t =
       m_world ? m_world->getComponent<Components::Light>(m_entity) : nullptr;

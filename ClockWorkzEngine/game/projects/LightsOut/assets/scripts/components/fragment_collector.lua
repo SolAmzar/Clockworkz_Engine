@@ -13,6 +13,12 @@ function onUpdate(self, entity, dt)
             World.setScriptProp(frag.id, "collected", true)
             self.collectedCount = self.collectedCount + 1
 
+            local fragId = World.getScriptProp(frag.id, "fragmentId")
+            local groupId = _G.GameProgress and _G.GameProgress.CurrentLevelGroup
+            if groupId and groupId ~= "" and fragId and fragId ~= 0 then
+                _G.GameProgress.Groups[groupId].collectedIds[fragId] = true
+            end
+
             local pickupSfx = World.getScriptProp(frag.id, "pickupSfx") or ""
             if pickupSfx ~= "" then
                 Audio.playOneShot(pickupSfx)

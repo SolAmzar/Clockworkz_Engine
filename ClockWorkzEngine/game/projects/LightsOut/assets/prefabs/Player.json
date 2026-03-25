@@ -1,0 +1,156 @@
+{
+    "category": "Entity",
+    "components": {
+        "cameraComponent": {
+            "isMain": true,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "zoom": 2.0
+        },
+        "collider": {
+            "blocksLight": true,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 50.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": true,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 30.0,
+            "shape": 1,
+            "width": 50.0
+        },
+        "footstepAudio": {
+            "concretePrefix": "fs_concrete_",
+            "interval": 0.6000000238418579,
+            "minSpeed": 0.10000000149011612,
+            "resetDelay": 0.05000000074505806,
+            "soundPrefix": "fs_concrete_",
+            "sprintIntervalScale": 0.4000000059604645,
+            "sprintSpeedThreshold": 15.600000381469727,
+            "tilePrefix": "fs_tile_",
+            "useSurfaceSounds": true,
+            "variationCount": 4,
+            "volume": 0.22100000083446503,
+            "woodPrefix": "fs_concrete_"
+        },
+        "light": {
+            "active": false,
+            "angle": 60.0,
+            "color": {
+                "b": 0.699999988079071,
+                "g": 0.8999999761581421,
+                "r": 1.0
+            },
+            "intensity": 1.0,
+            "offset": {
+                "x": 35.0,
+                "y": -20.0
+            },
+            "radius": 400.0
+        },
+        "luaScript": [
+            {
+                "enabled": true,
+                "properties": {
+                    "baseWalkSpeed": 10.0,
+                    "bobAmount": 3.5999999046325684,
+                    "bobSpeed": 2.9000000953674316,
+                    "footstepInterval": 0.6000000238418579,
+                    "sprintMultiplier": 2.0,
+                    "walkSpeed": 10.0
+                },
+                "scriptPath": "player_controller.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "charge": 100.0,
+                    "chargeRate": 20.0,
+                    "drainRate": 5.0,
+                    "isCharging": true,
+                    "maxCharge": 100.0
+                },
+                "scriptPath": "components/battery.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "collectedCount": 0,
+                    "pickupRadius": 50.0,
+                    "requiredFragments": 5
+                },
+                "scriptPath": "components/fragment_collector.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "hp": 100.0,
+                    "invulnerable": false,
+                    "isDead": false,
+                    "maxHp": 100.0,
+                    "regenRate": 0.0
+                },
+                "scriptPath": "components/health.lua"
+            }
+        ],
+        "spriteAnimator": {
+            "currentClip": "idle",
+            "filename": "player.json"
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 0,
+            "textureId": "player_texture",
+            "unlit": false,
+            "uv": [
+                0.125,
+                0.875,
+                0.125,
+                0.125
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "Player"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -4.008148193359375,
+                "y": 5.252643585205078
+            },
+            "rotation": 2.2303144931793213,
+            "scale": {
+                "x": 1.5,
+                "y": 1.5
+            },
+            "snapToGrid": false
+        },
+        "velocity": {
+            "moveSpeed": 10.0,
+            "x": 0.0,
+            "y": 0.0
+        }
+    },
+    "name": "Player"
+}

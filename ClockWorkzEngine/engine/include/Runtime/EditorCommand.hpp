@@ -31,7 +31,9 @@ reserved.
 #include "ECS/Entity.hpp"
 #include "ECS/World.hpp"
 #include "Math/Vec2.hpp"
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace Runtime {
 
@@ -44,6 +46,22 @@ struct IEditorCommand {
     virtual void execute() = 0;
     virtual void undo()    = 0;
     virtual const char* label() const = 0;
+};
+
+struct CompositeEditorCmd final : IEditorCommand {
+    std::vector<std::unique_ptr<IEditorCommand>> commands;
+    std::string                                  commandLabel;
+
+    explicit CompositeEditorCmd(std::string label)
+        : commandLabel(std::move(label)) {}
+
+    void add(std::unique_ptr<IEditorCommand> cmd) {
+        if (cmd) commands.push_back(std::move(cmd));
+    }
+
+    void execute() override;
+    void undo() override;
+    const char* label() const override { return commandLabel.c_str(); }
 };
 
 // ---------------------------------------------------------------------------

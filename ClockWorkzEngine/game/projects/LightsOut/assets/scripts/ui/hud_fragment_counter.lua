@@ -13,16 +13,30 @@ Properties = {
     -- Margin (in world units) inward from the bottom-left corner of the screen
     { name = "marginX", type = "float", default = 80.0, label = "Margin from Left"   },
     { name = "marginY", type = "float", default = 40.0, label = "Margin from Bottom" },
+    { name = "levelGroupId", type = "string", default = "", label = "Level Group ID" },
+    { name = "groupMaxFragments", type = "int", default = 0, label = "Group Maximum" },
 }
 
 local HudFragmentCounter = {}
 
 -- ── Fragment visibility (merged from fragment_system.lua) ─────────────────────
-local function updateFragmentVisibility(dt)
+local function updateFragmentVisibility(dt, self)
     World.eachWithScript("components/fragment.lua", function(frag)
         if not frag:isValid() then return end
 
         local collected = World.getScriptProp(frag.id, "collected") or false
+        
+        if self.levelGroupId ~= "" then
+            local fragId = World.getScriptProp(frag.id, "fragmentId")
+            if fragId and fragId ~= 0 then
+                local group = _G.GameProgress and _G.GameProgress.Groups and _G.GameProgress.Groups[self.levelGroupId]
+                if group and group.collectedIds[fragId] then
+                    collected = true
+                    World.setScriptProp(frag.id, "collected", true)
+                end
+            end
+        end
+
         if collected then
             frag:setSpriteAlpha(0.0)
             return
@@ -100,15 +114,40 @@ function HudFragmentCounter:onUpdate(entity, dt)
     entity.position = Vec2(player.position.x - halfW + self.marginX,
                            player.position.y - halfH + self.marginY)
 
+    -- Setup global state
+    _G.GameProgress = _G.GameProgress or { CurrentLevelGroup = "", Groups = {} }
+    
+    if self.levelGroupId ~= "" then
+        _G.GameProgress.CurrentLevelGroup = self.levelGroupId
+        _G.GameProgress.Groups[self.levelGroupId] = _G.GameProgress.Groups[self.levelGroupId] or {
+            collectedIds = {},
+            maxFragments = self.groupMaxFragments
+        }
+        if self.groupMaxFragments > _G.GameProgress.Groups[self.levelGroupId].maxFragments then
+             _G.GameProgress.Groups[self.levelGroupId].maxFragments = self.groupMaxFragments
+        end
+    else
+        _G.GameProgress.CurrentLevelGroup = ""
+    end
+
     -- Count total fragments and how many have been collected
     local total     = 0
     local collected = 0
-    World.eachByTag("Fragment", function(frag)
-        total = total + 1
-        if World.getScriptProp(frag.id, "collected") then
+    
+    if self.levelGroupId ~= "" then
+        local group = _G.GameProgress.Groups[self.levelGroupId]
+        total = group.maxFragments
+        for k,v in pairs(group.collectedIds) do
             collected = collected + 1
         end
-    end)
+    else
+        World.eachByTag("Fragment", function(frag)
+            total = total + 1
+            if World.getScriptProp(frag.id, "collected") then
+                collected = collected + 1
+            end
+        end)
+    end
 
     local label = collected .. " / " .. total .. " fragments collected"
     if entity:hasTextRenderer() and entity:getText() ~= label then
@@ -116,7 +155,7 @@ function HudFragmentCounter:onUpdate(entity, dt)
     end
 
     -- Drive fragment light-cone visibility (was FragmentManager / fragment_system.lua)
-    updateFragmentVisibility(dt)
+    updateFragmentVisibility(dt, self)
 end
 
 return HudFragmentCounter

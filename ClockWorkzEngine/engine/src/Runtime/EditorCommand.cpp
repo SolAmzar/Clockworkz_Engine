@@ -13,6 +13,16 @@ reserved.
 
 namespace Runtime {
 
+void CompositeEditorCmd::execute() {
+    for (auto& cmd : commands)
+        cmd->execute();
+}
+
+void CompositeEditorCmd::undo() {
+    for (auto it = commands.rbegin(); it != commands.rend(); ++it)
+        (*it)->undo();
+}
+
 // ---------------------------------------------------------------------------
 // EntitySnapshot
 // ---------------------------------------------------------------------------

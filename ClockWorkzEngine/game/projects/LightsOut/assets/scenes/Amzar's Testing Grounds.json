@@ -1,0 +1,745 @@
+{
+    "bgm": "",
+    "darknessColor": {
+        "b": 0.0,
+        "g": 0.0,
+        "r": 0.0
+    },
+    "darknessIntensity": 0.0,
+    "enableDarkness": false,
+    "hiddenEntities": [],
+    "hierarchyGroups": [],
+    "hierarchyOrder": [
+        "Player",
+        "Enemy",
+        "Entity",
+        "Enemy",
+        "Enemy",
+        "Enemy",
+        "Fragment"
+    ],
+    "musicContext": "",
+    "objects": [
+        {
+            "active": true,
+            "components": {
+                "cameraComponent": {
+                    "isMain": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "zoom": 2.0
+                },
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 50.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 30.0,
+                    "shape": 1,
+                    "width": 50.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_concrete_",
+                    "sprintIntervalScale": 0.4000000059604645,
+                    "sprintSpeedThreshold": 15.600000381469727,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 4,
+                    "volume": 0.22100000083446503,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "light": {
+                    "active": false,
+                    "angle": 60.0,
+                    "color": {
+                        "b": 0.699999988079071,
+                        "g": 0.8999999761581421,
+                        "r": 1.0
+                    },
+                    "intensity": 1.0,
+                    "offset": {
+                        "x": 35.0,
+                        "y": -20.0
+                    },
+                    "radius": 400.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "baseWalkSpeed": 10.0,
+                            "bobAmount": 3.5999999046325684,
+                            "bobSpeed": 2.9000000953674316,
+                            "footstepInterval": 0.6000000238418579,
+                            "sprintMultiplier": 2.0,
+                            "walkSpeed": 10.0
+                        },
+                        "scriptPath": "player_controller.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "charge": 100.0,
+                            "chargeRate": 20.0,
+                            "drainRate": 5.0,
+                            "isCharging": true,
+                            "maxCharge": 100.0
+                        },
+                        "scriptPath": "components/battery.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "collectedCount": 0,
+                            "pickupRadius": 50.0,
+                            "requiredFragments": 5
+                        },
+                        "scriptPath": "components/fragment_collector.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "hp": 100.0,
+                            "invulnerable": false,
+                            "isDead": false,
+                            "maxHp": 100.0,
+                            "regenRate": 0.0
+                        },
+                        "scriptPath": "components/health.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "player.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "player_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.125,
+                        0.875,
+                        0.125,
+                        0.125
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -4.008148193359375,
+                        "y": 5.252643585205078
+                    },
+                    "rotation": 2.2303144931793213,
+                    "scale": {
+                        "x": 1.5,
+                        "y": 1.5
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 10.0,
+                    "x": 0.0,
+                    "y": 0.0
+                }
+            },
+            "name": "Player"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.7099999785423279,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.23999999463558197,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 1.0800000429153442,
+                    "sprintSpeedThreshold": 19.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 2,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "attack_monster2_",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "attack_monster_",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "idle_monster_",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "enemy_death_",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 50.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "idle_monster2_",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 433.5,
+                        "y": 34.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
+                }
+            },
+            "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.7099999785423279,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.23999999463558197,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 1.0800000429153442,
+                    "sprintSpeedThreshold": 19.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 2,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "attack_monster2_",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "attack_monster_",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "idle_monster_",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "enemy_death_",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 50.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "idle_monster2_",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -562.1510009765625,
+                        "y": -278.56585693359375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
+                }
+            },
+            "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.7099999785423279,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.23999999463558197,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 1.0800000429153442,
+                    "sprintSpeedThreshold": 19.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 2,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "attack_monster2_",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "attack_monster_",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "idle_monster_",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "enemy_death_",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 50.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "idle_monster2_",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -468.4591369628906,
+                        "y": 109.58596801757813
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
+                }
+            },
+            "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.7099999785423279,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.23999999463558197,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 1.0800000429153442,
+                    "sprintSpeedThreshold": 19.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": true,
+                    "variationCount": 2,
+                    "volume": 1.0,
+                    "woodPrefix": "fs_concrete_"
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "attack_monster2_",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "attack_monster_",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "idle_monster_",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "enemy_death_",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 300.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 50.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "idle_monster2_",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 354.69049072265625,
+                        "y": -425.7958984375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
+                }
+            },
+            "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "actionType": "PlayAudio",
+                            "active": true,
+                            "oneShot": true,
+                            "payload": "idle_monster2_1",
+                            "triggered": false
+                        },
+                        "scriptPath": "components/activation_zone.lua"
+                    }
+                ],
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 0,
+                            "pickupSfx": "fragment_collect_1",
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragmentsample",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -9.375,
+                        "y": 293.75
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment"
+        }
+    ],
+    "sfxVolume": 1.0,
+    "spawnPoint": {
+        "x": 0.0,
+        "y": 0.0
+    }
+}

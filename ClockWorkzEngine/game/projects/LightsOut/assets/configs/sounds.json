@@ -213,28 +213,8 @@
             "group": "SFX",
             "is3D": false,
             "loop": false,
-            "name": "fs_monster_3",
-            "path": "assets/audio/fs/monster/fs_monster_3.mp3",
-            "pitch": 1.0,
-            "stream": false,
-            "volume": 1.0
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
             "name": "attack_monster2_1",
-            "path": "assets/audio/attack_monster2_1.mp3",
-            "pitch": 1.0,
-            "stream": false,
-            "volume": 1.0
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "idle_monster2_1",
-            "path": "assets/audio/idle_monster2_1.mp3",
+            "path": "assets/audio/Monster2/attack_monster2_1.mp3",
             "pitch": 1.0,
             "stream": false,
             "volume": 1.0
@@ -244,7 +224,7 @@
             "is3D": false,
             "loop": false,
             "name": "idle_monster2_2",
-            "path": "assets/audio/idle_monster2_2.mp3",
+            "path": "assets/audio/fs/monster2/idle_monster2_2.mp3",
             "pitch": 1.0,
             "stream": false,
             "volume": 1.0
@@ -254,7 +234,7 @@
             "is3D": false,
             "loop": false,
             "name": "idle_monster2_3",
-            "path": "assets/audio/idle_monster2_3.mp3",
+            "path": "assets/audio/fs/monster2/idle_monster2_3.mp3",
             "pitch": 1.0,
             "stream": false,
             "volume": 1.0
@@ -265,16 +245,6 @@
             "loop": false,
             "name": "Key Pick Up",
             "path": "assets/audio/Key Pick Up.mp3",
-            "pitch": 1.0,
-            "stream": false,
-            "volume": 1.0
-        },
-        {
-            "group": "SFX",
-            "is3D": false,
-            "loop": false,
-            "name": "Equip SFX",
-            "path": "assets/audio/Equip SFX.mp3",
             "pitch": 1.0,
             "stream": false,
             "volume": 1.0
@@ -355,6 +325,76 @@
             "loop": false,
             "name": "fs_wood_5",
             "path": "assets/audio/fs/wood/fs_wood_5.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "Equip SFX",
+            "path": "assets/audio/Equip SFX.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "Idle_monster2_1",
+            "path": "assets/audio/fs/monster2/idle_monster2_1.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "attack_monster_1",
+            "path": "assets/audio/Monster/attack_monster_1.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "idle_monster_1",
+            "path": "assets/audio/Monster/idle_monster_1.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "idle_monster2_1",
+            "path": "assets/audio/Monster2/idle_monster2_1.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "idle_monster2_2_1",
+            "path": "assets/audio/Monster2/idle_monster2_2.mp3",
+            "pitch": 1.0,
+            "stream": false,
+            "volume": 1.0
+        },
+        {
+            "group": "SFX",
+            "is3D": false,
+            "loop": false,
+            "name": "idle_monster2_3_1",
+            "path": "assets/audio/Monster2/idle_monster2_3.mp3",
             "pitch": 1.0,
             "stream": false,
             "volume": 1.0

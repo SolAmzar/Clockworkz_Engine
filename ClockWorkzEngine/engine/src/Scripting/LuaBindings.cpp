@@ -19,6 +19,7 @@ reserved.
 #include "Gameplay/GameObject.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Math/Vec2.hpp"
+#include "Math/Vec3.hpp"
 #include "Math/config.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
@@ -504,7 +505,9 @@ void RegisterEntityRef(sol::state &lua) {
       &Scripting::EntityRef::getLightOffsetX, "getLightOffsetY",
       &Scripting::EntityRef::getLightOffsetY, "setLightOffsetX",
       &Scripting::EntityRef::setLightOffsetX, "setLightOffsetY",
-      &Scripting::EntityRef::setLightOffsetY,
+      &Scripting::EntityRef::setLightOffsetY, "getLightIntensity",
+      &Scripting::EntityRef::getLightIntensity, "setLightIntensity",
+      &Scripting::EntityRef::setLightIntensity,
 
       // TextRenderer
       "hasTextRenderer", &Scripting::EntityRef::hasTextRenderer, "getText",
@@ -705,6 +708,11 @@ static void LuaAudioPlay(const std::string &name) {
 static void LuaAudioPlayOneShot(const std::string &name) {
   Core::Engine::Get().audio().playOneShot(name);
 }
+static void LuaAudioPlayOneShotAt(const std::string &name, float x, float y,
+                                  sol::optional<float> volume) {
+  Core::Engine::Get().audio().playOneShotAt(
+      name, vec3{x, y, 0.0f}, Audio::Group::SFX, volume.value_or(1.0f));
+}
 static void LuaAudioStop(const std::string &name) {
   Core::Engine::Get().audio().stop(name);
 }
@@ -716,6 +724,7 @@ void RegisterAudioGlobal(sol::state &lua) {
   auto t = lua.create_table();
   t.set_function("play", &LuaAudioPlay);
   t.set_function("playOneShot", &LuaAudioPlayOneShot);
+  t.set_function("playOneShotAt", &LuaAudioPlayOneShotAt);
   t.set_function("stop", &LuaAudioStop);
   t.set_function("isPlaying", &LuaAudioIsPlaying);
   lua["Audio"] = t;
