@@ -28,6 +28,7 @@ reserved.
 #include "Graphics/Shader.hpp"
 #include "GlobalAudioSettings.hpp"
 #include "IMGUI/imgui.h"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -176,7 +177,8 @@ void PauseState::update(double /*dt*/) {
   int h = engine.window().height();
 
   // ESC always resumes
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+      Core::Engine::Get().gamepad().isActionPressed("escape")) {
     std::cout << "[PauseState] ESC pressed - resuming\n";
     GlobalAudioSettings::Apply(m_audio);
     m_gsm.pop();
@@ -207,6 +209,23 @@ void PauseState::update(double /*dt*/) {
     }
   }
 
+  // Gamepad navigation
+  auto& gp   = Core::Engine::Get().gamepad();
+  bool gpUp      = gp.isActionPressed("ui_up");
+  bool gpDown    = gp.isActionPressed("ui_down");
+  bool gpConfirm = gp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH);
+
+  // Keyboard + gamepad navigation — selection persists across frames
+  if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W) || gpUp) {
+    m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
+    if (--m_selected < 0) m_selected = (int)m_buttonEntities.size() - 1;
+  }
+  if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S) || gpDown) {
+    m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
+    if (++m_selected >= (int)m_buttonEntities.size()) m_selected = 0;
+  }
+
+  // Mouse hover — overrides keyboard/gamepad selection; selection persists when mouse moves away
   if (hoveredIndex >= 0) {
     if (m_selected != hoveredIndex) {
       m_selected = hoveredIndex;
@@ -216,28 +235,13 @@ void PauseState::update(double /*dt*/) {
       m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
       auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[hoveredIndex]);
-      if (btn) {
-        handleButton(*btn);
-        return;
-      }
+      if (btn) { handleButton(*btn); return; }
     }
   }
 
-  // Deselect when mouse is not over any button
-  mouseHover = (hoveredIndex >= 0);
-  if (!mouseHover) m_selected = -1;
-
-  // Keyboard navigation
-  if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
-    m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
-    if (--m_selected < 0) m_selected = (int)m_buttonEntities.size() - 1;
-  }
-  if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
-    m_audio.playOneShot("ui_move", Audio::Group::SFX, m_sfx);
-    if (++m_selected >= (int)m_buttonEntities.size()) m_selected = 0;
-  }
-  if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
-    if (!m_buttonEntities.empty()) {
+  // Confirm
+  if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) || gpConfirm) {
+    if (m_selected >= 0 && m_selected < (int)m_buttonEntities.size()) {
       m_audio.playOneShot("ui_select", Audio::Group::SFX, 1.f);
       auto *btn = m_pauseScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[m_selected]);

@@ -3,5 +3,7 @@
     "height": 1080,
     "vsync": true,
     "title": "Lights Out",
-    "startState": "Menu" 
+    "startState": "Menu",
+    "gamepad_deadzone": 0.15,
+    "gamepad_sprint_thresh": 0.5
 }

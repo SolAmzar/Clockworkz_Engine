@@ -10,12 +10,12 @@
                   Focus events, QuitGameEvent, PlayerDiedEvent)
                 - EventID alias for runtime type identification via std::type_index
 
-                These events are dispatched through the engine’s event bus to
+                These events are dispatched through the engineï¿½s event bus to
                 allow decoupled communication between systems such as Window,
                 Input, Renderer, and Game States.
 
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -55,5 +55,17 @@ namespace Core
         PlayerDiedEvent(int id) : id(id) {}
     };
 
+    // Fired by GamepadManager when a controller is plugged in / unplugged.
+    // index is the slot (0-3) that was assigned or freed.
+    struct GamepadConnectedEvent : BaseEvent
+    {
+        int index;
+        GamepadConnectedEvent(int i) : index(i) {}
+    };
+    struct GamepadDisconnectedEvent : BaseEvent
+    {
+        int index;
+        GamepadDisconnectedEvent(int i) : index(i) {}
+    };
 
 }

@@ -189,17 +189,11 @@ void EditorHubState::renderImGui(Core::Time* timer) {
     if (!hasSelection)
         ImGui::EndDisabled();
 
-    // Build status
-    {
-        std::lock_guard<std::mutex> lk(m_buildStatusMutex);
-        if (!m_buildStatus.empty()) {
-            ImGui::Spacing();
-            ImGui::Separator();
-            if (m_buildInProgress)
-                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", m_buildStatus.c_str());
-            else
-                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s", m_buildStatus.c_str());
-        }
+    // Build status — mutex-free to avoid crash on some machines
+    if (m_buildInProgress) {
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Building...");
     }
 
     if (hasSelection) {

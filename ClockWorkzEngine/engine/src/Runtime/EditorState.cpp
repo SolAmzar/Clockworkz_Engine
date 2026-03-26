@@ -6388,7 +6388,34 @@ void EditorState::saveScene() {
     namespace fs = std::filesystem;
     std::error_code ec;
     fs::create_directories(fs::path(m_sceneFilePath).parent_path(), ec);
+    // Clear merged colliders before saving so tiles are serialized with isSolid=true.
+    // Rebuild them after so the editor continues to work correctly.
+    auto& saveWorld = m_scene.GetWorld();
+    Systems::TilemapCollisionBuilder::clear(saveWorld);
     SceneSerializer::Serialize(m_scene, m_sceneFilePath);
+    // Rebuild merged colliders so editor state is restored after save.
+    {
+        std::vector<Systems::TilemapTileEntry> saveEntries;
+        const float saveTileSizeTol = 1.0f;
+        saveWorld.each<Components::Transform, Components::Collider>(
+            [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
+                if (!c.isSolid || c.isTrigger || c.moveable) return;
+                if (c.shape != Components::Collider::Shape::Box) return;
+                if (std::abs(t.rotation) > 0.01f) return;
+                if (std::abs(c.size.x - m_gridSize) > saveTileSizeTol
+                    || std::abs(c.size.y - m_gridSize) > saveTileSizeTol) return;
+                auto* tag = saveWorld.getComponent<Components::Tag>(e);
+                if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
+                            || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
+                    return;
+                int layerIdx = 0;
+                if (auto* layer = saveWorld.getComponent<Components::Layer>(e))
+                    layerIdx = layer->index;
+                saveEntries.push_back({t.position, e, layerIdx});
+            });
+        if (!saveEntries.empty())
+            Systems::TilemapCollisionBuilder::build(saveWorld, saveEntries, m_gridSize, m_gridSize);
+    }
 
     // Append hierarchy groups metadata (entity names used as stable keys)
     {

@@ -26,6 +26,7 @@ All content (c) 2025 DigiPen Institute of Technology Singapore. All rights reser
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -136,7 +137,8 @@ void GameOverState::update(double /*dt*/) {
         return;
     }
     // ESC / M — return to main menu
-    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) || m_input.wasKeyPressed(GLFW_KEY_M)) {
+    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) || m_input.wasKeyPressed(GLFW_KEY_M) ||
+        Core::Engine::Get().gamepad().isActionPressed("escape")) {
         m_gsm.switchToAndClear(std::make_shared<MenuState>(
             m_gsm, m_input, engine.window(), engine.audio()));
         return;
@@ -144,7 +146,6 @@ void GameOverState::update(double /*dt*/) {
 
     vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
     bool clicked    = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
-    bool mouseHover = false;
 
     for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
         ECS::Entity e  = m_buttonEntities[i];
@@ -159,7 +160,6 @@ void GameOverState::update(double /*dt*/) {
         bool hovered = (mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
                         mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH);
         if (hovered) {
-            mouseHover = true;
             if (m_selected != i) {
                 m_selected = i;
                 Assets::SoundManager::Play("ui_move");
@@ -171,18 +171,24 @@ void GameOverState::update(double /*dt*/) {
             }
         }
     }
-    if (!mouseHover) m_selected = -1;
+    // Gamepad navigation
+    auto& gp   = Core::Engine::Get().gamepad();
+    bool gpUp      = gp.isActionPressed("ui_up");
+    bool gpDown    = gp.isActionPressed("ui_down");
+    bool gpConfirm = gp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH);
 
-    // Keyboard navigation
-    if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
+    // Keyboard + gamepad navigation — selection persists across frames
+    if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W) || gpUp) {
         Assets::SoundManager::Play("ui_move");
         if (--m_selected < 0) m_selected = (int)m_buttonEntities.size() - 1;
     }
-    if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
+    if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S) || gpDown) {
         Assets::SoundManager::Play("ui_move");
         if (++m_selected >= (int)m_buttonEntities.size()) m_selected = 0;
     }
-    if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
+
+    // Confirm
+    if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) || gpConfirm) {
         if (m_selected >= 0 && m_selected < (int)m_buttonEntities.size()) {
             Assets::SoundManager::Play("ui_select");
             auto* btn = m_loseScene.GetWorld().getComponent<Components::UIButton>(

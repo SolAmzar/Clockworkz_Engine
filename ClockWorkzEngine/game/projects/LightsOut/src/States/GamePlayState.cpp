@@ -19,6 +19,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Runtime/LevelMusicManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -94,7 +95,8 @@ void GamePlayState::update(double dt) {
   m_scene.Update(dt, m_input);
 
   // ESC ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ push pause overlay (GamePlayState stays on the stack, frozen)
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE))
+  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+      Core::Engine::Get().gamepad().isActionPressed("escape"))
     m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
 }
 

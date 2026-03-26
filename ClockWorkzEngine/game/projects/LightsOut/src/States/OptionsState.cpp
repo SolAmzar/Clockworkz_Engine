@@ -30,6 +30,7 @@ reserved.
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
 #include "IMGUI/imgui.h"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -354,7 +355,8 @@ void OptionsState::update(double /*dt*/) {
     }
   }
 
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+      Core::Engine::Get().gamepad().isActionPressed("escape")) {
     Assets::SoundManager::Play("ui_select");
     closeOptions();
     return;

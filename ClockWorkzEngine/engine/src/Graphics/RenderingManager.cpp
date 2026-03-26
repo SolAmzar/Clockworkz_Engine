@@ -442,6 +442,8 @@ void RenderingManager::beginLightPass(
 
 void RenderingManager::endLightPass() {
   // nothing to flush unless batching light meshes
+  glBindVertexArray(0);
+  glUseProgram(0);
   glDepthMask(GL_TRUE);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
