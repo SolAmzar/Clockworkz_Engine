@@ -34,7 +34,9 @@ bool Core::Config::loadFromFile(const std::string &path) {
   height = j.value("height", height);
   vsync = j.value("vsync", vsync);
   title = j.value("title", title);
-  startState = j.value("startState", startState);
+  startState          = j.value("startState",          startState);
+  gamepadDeadzone     = j.value("gamepad_deadzone",     gamepadDeadzone);
+  gamepadSprintThresh = j.value("gamepad_sprint_thresh", gamepadSprintThresh);
 
   return true;
 }

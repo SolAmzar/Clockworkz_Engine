@@ -33,6 +33,7 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
+#include "Platform/GamepadManager.hpp"
 #include "Gameplay/Components/Fragment.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
@@ -69,6 +70,8 @@ reserved.
 #include <Math/VecCompatGLM.hpp>
 #include <Platform/LevelEditorState.hpp>
 #include <Scripting/LuaScriptComponent.hpp>
+#include "Systems/TilemapCollisionBuilder.hpp"
+#include "Components/Layer.hpp"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -261,6 +264,31 @@ void PlayState::onEnter() {
         std::cout << "[PlayState] Loading level file: " << path << "\n";
         SceneSerializer::Deserialize(*scene, path);
         scene->registerExistingObjectsToLayers();
+        // Build merged wall colliders to eliminate ghost collisions at tile borders.
+        {
+            auto& world = scene->GetWorld();
+            std::vector<Systems::TilemapTileEntry> entries;
+            float gridSize = 100.f; // standard tile size
+            const float tileSizeTol = 1.0f;
+            world.each<Components::Transform, Components::Collider>(
+                [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
+                    if (!c.isSolid || c.isTrigger || c.moveable) return;
+                    if (c.shape != Components::Collider::Shape::Box) return;
+                    if (std::abs(t.rotation) > 0.01f) return;
+                    if (std::abs(c.size.x - gridSize) > tileSizeTol
+                        || std::abs(c.size.y - gridSize) > tileSizeTol) return;
+                    auto* tag = world.getComponent<Components::Tag>(e);
+                    if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
+                                || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
+                        return;
+                    int layerIdx = 0;
+                    if (auto* layer = world.getComponent<Components::Layer>(e))
+                        layerIdx = layer->index;
+                    entries.push_back({t.position, e, layerIdx});
+                });
+            if (!entries.empty())
+                Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
+        }
       } else {
         std::cout << "[PlayState] Level file not found: " << path
                   << " (starting empty)\n";
@@ -413,7 +441,8 @@ void PlayState::update(double dt) {
     return;
 
   // Check for pause input
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+      Core::Engine::Get().gamepad().isActionPressed("escape")) {
     std::cout << "[PlayState] ESC pressed - requesting pause\n";
     m_pauseRequested = true;
     return; // Don't continue this frame
@@ -437,7 +466,8 @@ void PlayState::update(double dt) {
   if (!m_loaded)
     return;
 
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+      Core::Engine::Get().gamepad().isActionPressed("escape")) {
     m_gsm.pop();
     return;
   }
@@ -696,31 +726,35 @@ void PlayState::update(double dt) {
           // Player world position
           vec2 playerPos = obj->transform().position;
 
-          // Direction vector from player to mouse
-          vec2 dir = mouseWorld - playerPos;
+          // Lua-scripted players handle their own rotation (mouse + gamepad).
+          // Only apply C++ mouse-aiming for non-Lua players.
+          if (!hasLuaScript) {
+            // Direction vector from player to mouse
+            vec2 dir = mouseWorld - playerPos;
 
-          // Distance check to prevent jitter
-          float dist = magnitude(dir);
-          if (dist > 10.0f) { // 10 units = threshold distance
-            // Normalize direction
-            dir = normalize(dir);
+            // Distance check to prevent jitter
+            float dist = magnitude(dir);
+            if (dist > 10.0f) { // 10 units = threshold distance
+              // Normalize direction
+              dir = normalize(dir);
 
-            // Compute target angle in radians — atan2(y, x)
-            float targetAngle = std::atan2(dir.y, dir.x);
-            float currentAngle = obj->transform().rotationRad;
+              // Compute target angle in radians — atan2(y, x)
+              float targetAngle = std::atan2(dir.y, dir.x);
+              float currentAngle = obj->transform().rotationRad;
 
-            // Calculate shortest angle difference
-            float angleDiff = targetAngle - currentAngle;
+              // Calculate shortest angle difference
+              float angleDiff = targetAngle - currentAngle;
 
-            // Normalize angle difference to [-PI, PI] for shortest path
-            const float PI = 3.14159265358979f;
-            while (angleDiff > PI)
-              angleDiff -= 2.0f * PI;
-            while (angleDiff < -PI)
-              angleDiff += 2.0f * PI;
+              // Normalize angle difference to [-PI, PI] for shortest path
+              const float PI = 3.14159265358979f;
+              while (angleDiff > PI)
+                angleDiff -= 2.0f * PI;
+              while (angleDiff < -PI)
+                angleDiff += 2.0f * PI;
 
-            // Apply rotation (can add smoothing here if desired)
-            obj->transform().rotationRad = currentAngle + angleDiff;
+              // Apply rotation (can add smoothing here if desired)
+              obj->transform().rotationRad = currentAngle + angleDiff;
+            }
           }
           if (obj->type() == Gameplay::GameObjectType::Player &&
               !obj->active()) {

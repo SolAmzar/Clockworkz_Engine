@@ -405,6 +405,30 @@
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
+            "name": "battery_3/4",
+            "path": "assets/textures/energy 3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_2/4",
+            "path": "assets/textures/energy 2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_1/4",
+            "path": "assets/textures/energy 1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "battery_empty",
+            "path": "assets/textures/energy flat.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
             "name": "fragment_texture",
             "path": "assets/textures/fragmentsample.png"
         },

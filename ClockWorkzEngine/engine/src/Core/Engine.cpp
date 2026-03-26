@@ -49,6 +49,7 @@ static bool s_hasPostLuaInitState = false;
 #include "Graphics/ImGuiManager.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/LevelEditor.hpp"
 #include "Platform/WindowManager.hpp"
@@ -156,9 +157,10 @@ bool Engine::init() {
   m_config = std::make_unique<Config>();
   m_logger = std::make_unique<Logger>();
   m_time = std::make_unique<Time>();
-  m_window = std::make_unique<Platform::WindowManager>();
-  m_input = std::make_unique<Platform::InputManager>();
-  m_editor = std::make_unique<Platform::LevelEditor>();
+  m_window   = std::make_unique<Platform::WindowManager>();
+  m_input    = std::make_unique<Platform::InputManager>();
+  m_gamepad  = std::make_unique<Platform::GamepadManager>();
+  m_editor   = std::make_unique<Platform::LevelEditor>();
   m_gfx = std::make_unique<Graphics::GraphicsManager>();
   m_renderer = std::make_unique<Graphics::RenderingManager>();
   m_camera = std::make_unique<Graphics::Camera2D>();
@@ -181,6 +183,7 @@ bool Engine::init() {
   if (!m_window->create(*m_config))
     return false;
   m_input->init(*m_window);
+  m_gamepad->init(m_config->gamepadDeadzone, m_config->gamepadSprintThresh);
   if (!m_gfx->init(*m_window))
     return false;
 
@@ -295,7 +298,11 @@ void Engine::shutdown() {
     m_gfx.reset();
   }
 
-  // 7. Input must die BEFORE window
+  // 7. Gamepad + Input must die BEFORE window
+  if (m_gamepad) {
+    m_gamepad->shutdown();
+    m_gamepad.reset();
+  }
   if (m_input) {
     m_input.reset();
   }
@@ -366,7 +373,8 @@ void Engine::update(double dt) {
 
   // Initial state is pushed inside Run() via the bootstrap factory.
   m_audio->update(dt); // Update the audio manager class
-  m_input->update(); // Update the input manager class
+  m_input->update();   // Update the input manager class
+  m_gamepad->update(); // Pump SDL gamepad events + snapshot state
   if (m_input->wasKeyPressed(GLFW_KEY_F11)) {
     m_window->toggleFullscreen();
   }

@@ -35,6 +35,7 @@ reserved.
 #include "Graphics/Shader.hpp"
 #include "GlobalAudioSettings.hpp"
 #include "IMGUI/imgui.h"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -469,7 +470,8 @@ void MenuState::update(double /*dt*/) {
     if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
         m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
         m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
-        m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) ||
+        Core::Engine::Get().gamepad().isActionPressed("escape")) {
       m_showingHowToPlay = false;
       setOverlayVisible("howtoplay_overlay", false);
       setMenuButtonsVisible(true);
@@ -614,7 +616,8 @@ void MenuState::update(double /*dt*/) {
       }
     }
 
-    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+        Core::Engine::Get().gamepad().isActionPressed("escape")) {
       Assets::SoundManager::Play("ui_select");
       closeOptions();
     }
@@ -651,6 +654,23 @@ void MenuState::update(double /*dt*/) {
     }
   }
 
+  // Gamepad navigation
+  auto& gp   = Core::Engine::Get().gamepad();
+  bool gpUp      = gp.isActionPressed("ui_up");
+  bool gpDown    = gp.isActionPressed("ui_down");
+  bool gpConfirm = gp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH);
+
+  // Keyboard + gamepad navigation — selection persists across frames
+  if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W) || gpUp) {
+    Assets::SoundManager::Play("ui_move");
+    if (--m_selected < 0) m_selected = (int)m_buttonEntities.size() - 1;
+  }
+  if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S) || gpDown) {
+    Assets::SoundManager::Play("ui_move");
+    if (++m_selected >= (int)m_buttonEntities.size()) m_selected = 0;
+  }
+
+  // Mouse hover — overrides keyboard/gamepad selection; selection persists when mouse moves away
   if (hoveredIndex >= 0) {
     if (m_selected != hoveredIndex) {
       m_selected = hoveredIndex;
@@ -660,40 +680,17 @@ void MenuState::update(double /*dt*/) {
       Assets::SoundManager::Play("ui_select");
       auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[hoveredIndex]);
-      if (btn) {
-        activateButton(*btn);
-        return;
-      }
+      if (btn) { activateButton(*btn); return; }
     }
   }
 
-  // Deselect when mouse is not over any button
-  const bool mouseHover = (hoveredIndex >= 0);
-  if (!mouseHover) m_selected = -1;
-
-  // Keyboard navigation
-  if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
-    Assets::SoundManager::Play("ui_move");
-    if (--m_selected < 0) {
-      m_selected = (int)m_buttonEntities.size() - 1;
-    }
-  }
-  if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
-    Assets::SoundManager::Play("ui_move");
-    if (++m_selected >= (int)m_buttonEntities.size()) {
-      m_selected = 0;
-    }
-  }
-  if (m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
-      m_input.wasKeyPressed(GLFW_KEY_KP_ENTER)) {
-    if (!m_buttonEntities.empty()) {
+  // Confirm
+  if (m_input.wasKeyPressed(GLFW_KEY_ENTER) || m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) || gpConfirm) {
+    if (m_selected >= 0 && m_selected < (int)m_buttonEntities.size()) {
       Assets::SoundManager::Play("ui_select");
       auto *btn = m_menuScene.GetWorld().getComponent<Components::UIButton>(
           m_buttonEntities[m_selected]);
-      if (btn) {
-        activateButton(*btn);
-        return;
-      }
+      if (btn) { activateButton(*btn); return; }
     }
   }
 

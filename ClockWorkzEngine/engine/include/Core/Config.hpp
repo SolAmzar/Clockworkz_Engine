@@ -17,6 +17,9 @@ struct Config {
   std::string title = "Lights Out";
   std::string startState = "Menu";
 
+  float gamepadDeadzone     = 0.15f;
+  float gamepadSprintThresh = 0.50f;
+
   bool loadFromFile(const std::string &path);
 };
 } // namespace Core

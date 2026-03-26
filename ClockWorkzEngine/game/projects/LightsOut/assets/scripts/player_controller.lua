@@ -52,6 +52,9 @@ PlayerController._flickerTimer   = 0.0
 PlayerController._flickerStep    = 0.0
 PlayerController._isDead         = false
 PlayerController._deathTimer     = 0.0
+PlayerController._usingGamepad   = false
+PlayerController._prevMouseX     = nil   -- nil until first frame so no false delta
+PlayerController._prevMouseY     = nil
 local DEATH_RESPAWN_DELAY        = 2.8   -- seconds before level reloads
 local BATTERY_DEATH_FLICKER_TIME = 0.9
 local BATTERY_DEATH_FLICKER_MIN_STEP = 0.015
@@ -80,21 +83,79 @@ function PlayerController:onUpdate(entity, dt)
     local input        = Engine.input()
     local isSprinting  = input:isKeyDown(Keys.LEFT_SHIFT)
                       or input:isKeyDown(Keys.RIGHT_SHIFT)
+                      or Gamepad:isActionDown("sprint")
 
     -- ----------------------------------------------------------------
-    -- Mouse-facing rotation
+    -- Gamepad axes (resolved before movement and rotation are computed)
     -- ----------------------------------------------------------------
-    local mouseWorld = Engine.mouseWorldPos()
-    local pos        = entity.position
-    local dx         = mouseWorld.x - pos.x
-    local dy         = mouseWorld.y - pos.y
-    local dist       = math.sqrt(dx * dx + dy * dy)
-    if dist > 10.0 then
-        entity.rotation = math.atan(dy, dx)
+    local gpMoveX   = Gamepad:getActionAxis("move_x")
+    local gpMoveY   = Gamepad:getActionAxis("move_y")
+    local rx        = Gamepad:getActionAxis("look_x")
+    local ry        = Gamepad:getActionAxis("look_y")
+    local hasGpMove = (math.abs(gpMoveX) > 0.01 or math.abs(gpMoveY) > 0.01)
+    local stickMag  = math.sqrt(rx * rx + ry * ry)
+
+    -- Release cooldown: the PS5 spring bounces past zero at ~0.4 magnitude
+    -- for 1-3 frames after release. When the stick drops from high (>0.5)
+    -- to low, suppress input for 4 frames to let the spring settle.
+    if not self._stickWasHigh    then self._stickWasHigh    = false end
+    if not self._releaseCooldown then self._releaseCooldown = 0     end
+    local stickHigh = (stickMag > 0.5)
+    if self._stickWasHigh and not stickHigh then
+        self._releaseCooldown = 4
+    end
+    if self._releaseCooldown > 0 then
+        self._releaseCooldown = self._releaseCooldown - 1
+        rx = 0; ry = 0; stickMag = 0
+    end
+    self._stickWasHigh = stickHigh
+
+    -- ----------------------------------------------------------------
+    -- Device tracking: switch to gamepad on any stick input,
+    -- switch back to mouse when the mouse actually moves (> 2px world-space)
+    -- ----------------------------------------------------------------
+    if stickMag > 0.3 or hasGpMove or Gamepad:isActionPressed("flashlight") then
+        self._usingGamepad = true
+    end
+
+    -- Use screen-space position for the "did mouse move?" check so that
+    -- camera movement (from player movement) does not falsely trigger
+    -- a switch back to mouse mode.
+    local ms = Engine.input():mousePosition()
+    if self._prevMouseX ~= nil then
+        local mdx = ms.x - self._prevMouseX
+        local mdy = ms.y - self._prevMouseY
+        if math.sqrt(mdx * mdx + mdy * mdy) > 2.0 then
+            self._usingGamepad = false
+        end
+    end
+    self._prevMouseX = ms.x
+    self._prevMouseY = ms.y
+
+    -- ----------------------------------------------------------------
+    -- Rotation:
+    --   gamepad mode + right stick active → face stick direction
+    --   gamepad mode + right stick at rest → hold last rotation
+    --   mouse mode → face mouse cursor
+    -- ----------------------------------------------------------------
+    if self._usingGamepad then
+        if stickMag > 0.3 then
+            entity.rotation = math.atan(ry, rx)
+        end
+        -- right stick at rest: rotation unchanged
+    else
+        local mw = Engine.mouseWorldPos()
+        local dx = mw.x - entity.position.x
+        local dy = mw.y - entity.position.y
+        if math.sqrt(dx * dx + dy * dy) > 10.0 then
+            entity.rotation = math.atan(dy, dx)
+        end
     end
 
     -- ----------------------------------------------------------------
-    -- Movement (rotation-based WASD)
+    -- Movement:
+    --   gamepad left stick → world-space (screen-relative)
+    --   keyboard WASD      → rotation-relative (existing behaviour)
     -- ----------------------------------------------------------------
     local forwardInput = 0
     local strafeInput  = 0
@@ -104,15 +165,21 @@ function PlayerController:onUpdate(entity, dt)
     if input:isKeyDown(Keys.A) then strafeInput = strafeInput + 1 end
 
     local currentState = "idle"
-    if forwardInput ~= 0 or strafeInput ~= 0 then
+    if hasGpMove then
+        -- Screen-space: stick up = up on screen, stick right = right on screen
+        local speedMul = isSprinting and self.sprintMultiplier or 1.0
+        local speed    = self.walkSpeed * speedMul
+        entity.velocity = Vec2(gpMoveX * speed, gpMoveY * speed)
+        currentState = isSprinting and "run" or "walk"
+    elseif forwardInput ~= 0 or strafeInput ~= 0 then
         local speedMul = isSprinting and self.sprintMultiplier or 1.0
         local speed    = self.walkSpeed * speedMul
 
-        local angle = entity.rotation
+        local angle    = entity.rotation
         local forwardX = math.cos(angle)
         local forwardY = math.sin(angle)
-        local rightX = -forwardY
-        local rightY = forwardX
+        local rightX   = -forwardY
+        local rightY   = forwardX
 
         local moveX = (forwardX * forwardInput) + (rightX * strafeInput)
         local moveY = (forwardY * forwardInput) + (rightY * strafeInput)
@@ -165,7 +232,7 @@ function PlayerController:onUpdate(entity, dt)
             self._manualTorchOff = not self._torchActive
         end
 
-        if (not self._batteryDying) and input:wasKeyPressed(Keys.F) then
+        if (not self._batteryDying) and (input:wasKeyPressed(Keys.F) or Gamepad:isActionPressed("flashlight")) then
             self._torchActive = not self._torchActive
             self._manualTorchOff = not self._torchActive
             
@@ -267,8 +334,7 @@ function PlayerController:onUpdate(entity, dt)
 end
 
 function PlayerController:onCollisionEnter(entity, other)
-    print("[PC] onCollisionEnter: other tag='" .. other:getTagValue() .. "' moveable=" .. tostring(other:isColliderMoveable()))
-    if other:getTagValue() == "Enemy" then
+if other:getTagValue() == "Enemy" then
         if not self._isDead then
             self._isDead = true
             if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then

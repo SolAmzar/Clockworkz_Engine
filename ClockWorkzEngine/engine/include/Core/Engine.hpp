@@ -38,7 +38,7 @@ namespace Core {
 	class Config; class Logger; class Time;
 }
 namespace Platform {
-	class WindowManager; class InputManager; class LevelEditor;
+	class WindowManager; class InputManager; class LevelEditor; class GamepadManager;
 }
 namespace Graphics {
 	class GraphicsManager; class RenderingManager; class Camera2D;
@@ -120,6 +120,7 @@ namespace Core {
 
 		Platform::WindowManager& window() { return *m_window; }
 		Platform::InputManager& input() { return *m_input; }
+		Platform::GamepadManager& gamepad() { return *m_gamepad; }
 		Platform::LevelEditor& editor() { return *m_editor; }
 		Core::Logger& logger() { return *m_logger; }
 		Audio::SurfaceAudioSystem& surfaceAudio() { return *m_sfAudio; }
@@ -144,9 +145,10 @@ namespace Core {
 		std::unique_ptr<Time>   m_time;
 
 		// Inside namespace Platform
-		std::unique_ptr<Platform::WindowManager> m_window;
-		std::unique_ptr<Platform::InputManager>  m_input;
-		std::unique_ptr<Platform::LevelEditor>   m_editor;
+		std::unique_ptr<Platform::WindowManager>  m_window;
+		std::unique_ptr<Platform::InputManager>   m_input;
+		std::unique_ptr<Platform::GamepadManager> m_gamepad;
+		std::unique_ptr<Platform::LevelEditor>    m_editor;
 
 		// Inside namespace Graphics
 		std::unique_ptr<Graphics::GraphicsManager>   m_gfx;
