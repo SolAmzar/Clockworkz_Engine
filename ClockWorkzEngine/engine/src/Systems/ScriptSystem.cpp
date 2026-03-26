@@ -125,6 +125,10 @@ void ScriptSystem::setLoadLevelFn(LoadLevelFn fn) {
   m_loadLevelFn = std::move(fn);
 }
 
+void ScriptSystem::setCurrentLevelFn(CurrentLevelFn fn) {
+  m_currentLevelFn = std::move(fn);
+}
+
 void ScriptSystem::update(ECS::World& world, double dt,
                           const std::vector<std::pair<ECS::Entity, ECS::Entity>>& collisions) {
   float fDt = static_cast<float>(dt);
@@ -145,6 +149,9 @@ void ScriptSystem::update(ECS::World& world, double dt,
     worldTable.set_function("setScriptProp", [&world](uint32_t id, const std::string& key, sol::object val) { LuaWorldSetScriptProp(world, id, key, val); });
     worldTable.set_function("loadLevel", [this](const std::string& name) {
         if (m_loadLevelFn) m_loadLevelFn(name);
+    });
+    worldTable.set_function("getCurrentLevel", [this]() {
+        return m_currentLevelFn ? m_currentLevelFn() : std::string{};
     });
 
     lua["World"] = worldTable;

@@ -102,6 +102,7 @@ void Scene::Init() {
 
   // Wire level-loading so scripts can call World.loadLevel(name)
   m_scriptSystem.setLoadLevelFn([this](const std::string& name) { SetPendingLevel(name); });
+  m_scriptSystem.setCurrentLevelFn([this]() { return GetCurrentLevelPath(); });
 
   // Initialize layer enabled flags (all enabled by default)
   m_layerEnabled.resize(MAX_LAYERS, true);
@@ -149,6 +150,7 @@ bool Scene::LoadFromFile(const std::string &path) {
   // Re-wire load-level callback cleared by Clear() so scripts can still call
   // World.loadLevel() after a level transition (e.g. player respawn in level 2).
   m_scriptSystem.setLoadLevelFn([this](const std::string& name) { SetPendingLevel(name); });
+  m_scriptSystem.setCurrentLevelFn([this]() { return GetCurrentLevelPath(); });
   if (std::filesystem::exists(path)) {
     if (SceneSerializer::Deserialize(*this, path)) {
       m_currentLevelPath = path;

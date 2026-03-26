@@ -75,7 +75,10 @@ function PlayerController:onUpdate(entity, dt)
     if self._isDead then
         self._deathTimer = self._deathTimer - dt
         if self._deathTimer <= 0 then
-            World.loadLevel("Level_Save.json")
+            local currentLevel = World.getCurrentLevel()
+            if currentLevel ~= nil and currentLevel ~= "" then
+                World.loadLevel(currentLevel)
+            end
         end
         return
     end

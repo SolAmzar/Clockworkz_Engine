@@ -49,6 +49,8 @@ public:
 
   using LoadLevelFn = std::function<void(const std::string&)>;
   void setLoadLevelFn(LoadLevelFn fn);
+  using CurrentLevelFn = std::function<std::string()>;
+  void setCurrentLevelFn(CurrentLevelFn fn);
 
   /**
    * @brief Update all entities that have a LuaScript component.
@@ -92,6 +94,7 @@ private:
 
   // @brief Optional callback to trigger a level transition from Lua (World.loadLevel).
   LoadLevelFn m_loadLevelFn;
+  CurrentLevelFn m_currentLevelFn;
 
   // @brief Canonical collision pair key: order-independent, id-based.
   static uint64_t collisionKey(ECS::Entity a, ECS::Entity b) noexcept {
