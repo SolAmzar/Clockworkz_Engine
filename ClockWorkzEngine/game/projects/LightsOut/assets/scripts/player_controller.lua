@@ -71,14 +71,9 @@ function PlayerController:onStart(entity)
 end
 
 function PlayerController:onUpdate(entity, dt)
-    if not entity:isValid() then return end
     if self._isDead then
-        self._deathTimer = self._deathTimer - dt
-        if self._deathTimer <= 0 then
-            local currentLevel = World.getCurrentLevel()
-            if currentLevel ~= nil and currentLevel ~= "" then
-                World.loadLevel(currentLevel)
-            end
+        if entity:isValid() then
+            entity.velocity = Vec2(0, 0)
         end
         return
     end
