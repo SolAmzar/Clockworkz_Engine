@@ -50,6 +50,7 @@ reserved.
 #include <Gameplay/WallTiles.hpp>
 #include <IMGUI/imgui.h>
 #include <IMGUI/imgui_internal.h>
+#include <IMGUI/ImGuiFileDialog.h>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -174,6 +175,9 @@ bool LevelEditor::init(GLFWwindow *window, Graphics::RenderingManager &renderer,
     return false;
   }
   m_sceneViewportSize = ImVec2(1280, 720);
+
+  scanBSAAssets();
+  loadBSASelection();
 
   return true;
 }
@@ -3666,6 +3670,12 @@ void LevelEditor::renderAssetBrowser() {
       ImGui::EndTabItem();
     }
 
+    // Build Size Analyser Tab
+    if (ImGui::BeginTabItem("BSA")) {
+      drawBSATab();
+      ImGui::EndTabItem();
+    }
+
     ImGui::EndTabBar();
   }
 
@@ -4617,4 +4627,158 @@ void LevelEditor::renderErrorPopup() {
 
 //    ImGui::DockBuilderFinish(dockspaceId);
 //}
+
+// ============================================================================
+// Build Size Analyser (BSA) Implementation
+// ============================================================================
+
+void LevelEditor::scanBSAAssets() {
+  m_bsaAssets.clear();
+  std::string assetsDir = "assets";
+  
+  if (!std::filesystem::exists(assetsDir)) {
+    return;
+  }
+  
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsDir)) {
+    if (entry.is_regular_file()) {
+      BSAAssetInfo info;
+      info.absolutePath = entry.path().string();
+      
+      // Get relative path manually
+      std::string absPathStr = entry.path().lexically_normal().string();
+      std::string assetsPrefix = std::filesystem::path("assets").lexically_normal().string();
+      size_t pos = absPathStr.find(assetsPrefix);
+      if (pos != std::string::npos) {
+          info.relativePath = absPathStr.substr(pos);
+      } else {
+          info.relativePath = absPathStr;
+      }
+      
+      std::replace(info.relativePath.begin(), info.relativePath.end(), '\\', '/');
+      info.sizeBytes = std::filesystem::file_size(entry);
+      info.isSelected = false; // By default not selected
+      
+      m_bsaAssets.push_back(info);
+    }
+  }
+}
+
+void LevelEditor::saveBSASelection() {
+  nlohmann::json root;
+  for (const auto& asset : m_bsaAssets) {
+    if (asset.isSelected) {
+      root["selectedAssets"].push_back(asset.relativePath);
+    }
+  }
+  
+  std::filesystem::create_directories("assets/configs");
+  std::ofstream file("assets/configs/bsa_selections.json");
+  if (file.is_open()) {
+    file << root.dump(4);
+  }
+}
+
+void LevelEditor::loadBSASelection() {
+  std::ifstream file("assets/configs/bsa_selections.json");
+  if (!file.is_open()) return;
+  
+  try {
+    nlohmann::json root;
+    file >> root;
+    
+    if (root.contains("selectedAssets") && root["selectedAssets"].is_array()) {
+      for (const auto& selectedPathObj : root["selectedAssets"]) {
+        std::string selectedPath = selectedPathObj.get<std::string>();
+        for (auto& asset : m_bsaAssets) {
+          if (asset.relativePath == selectedPath) {
+            asset.isSelected = true;
+          }
+        }
+      }
+    }
+  } catch (const std::exception& e) {
+    if (m_logger) m_logger->warn("Failed to load BSA selections: " + std::string(e.what()));
+  }
+}
+
+static std::string formatBytes(uintmax_t bytes) {
+  const char* suffixes[] = {"B", "KB", "MB", "GB", "TB"};
+  int suffixIndex = 0;
+  double size = static_cast<double>(bytes);
+  while (size >= 1024 && suffixIndex < 4) {
+    size /= 1024;
+    suffixIndex++;
+  }
+  char buf[64];
+  snprintf(buf, sizeof(buf), "%.2f %s", size, suffixes[suffixIndex]);
+  return std::string(buf);
+}
+
+void LevelEditor::drawBSATab() {
+  if (ImGui::Button("Select All")) {
+    for (auto& asset : m_bsaAssets) asset.isSelected = true;
+    saveBSASelection();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Deselect All")) {
+    for (auto& asset : m_bsaAssets) asset.isSelected = false;
+    saveBSASelection();
+  }
+  
+  uintmax_t totalSize = 0;
+  for (const auto& asset : m_bsaAssets) {
+    if (asset.isSelected) totalSize += asset.sizeBytes;
+  }
+  
+  ImGui::SameLine();
+  ImGui::Text("Total Selected Size: %s", formatBytes(totalSize).c_str());
+  
+  if (ImGui::Button("Export Selected", ImVec2(120, 0))) {
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    ImGuiFileDialog::Instance()->OpenDialog("ExportBSA", "Select Destination Directory", nullptr, config);
+  }
+  
+  if (ImGuiFileDialog::Instance()->Display("ExportBSA")) {
+    if (ImGuiFileDialog::Instance()->IsOk()) {
+      std::string destDir = ImGuiFileDialog::Instance()->GetCurrentPath();
+      for (const auto& asset : m_bsaAssets) {
+        if (asset.isSelected) {
+          std::filesystem::path destPath = std::filesystem::path(destDir) / std::filesystem::path(asset.relativePath);
+          std::filesystem::create_directories(destPath.parent_path());
+          try {
+            std::filesystem::copy_file(asset.absolutePath, destPath, std::filesystem::copy_options::overwrite_existing);
+          } catch (...) {}
+        }
+      }
+    }
+    ImGuiFileDialog::Instance()->Close();
+  }
+  
+  ImGui::Separator();
+  ImGui::BeginChild("AssetList", ImVec2(0, 0), true);
+  
+  if (ImGui::BeginTable("BSA_Table", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+    ImGui::TableSetupColumn("Asset Path", ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableHeadersRow();
+    
+    for (auto& asset : m_bsaAssets) {
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      bool wasSelected = asset.isSelected;
+      ImGui::Checkbox(asset.relativePath.c_str(), &asset.isSelected);
+      if (wasSelected != asset.isSelected) {
+          saveBSASelection();
+      }
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", formatBytes(asset.sizeBytes).c_str());
+    }
+    
+    ImGui::EndTable();
+  }
+  ImGui::EndChild();
+}
+
 } // namespace Platform

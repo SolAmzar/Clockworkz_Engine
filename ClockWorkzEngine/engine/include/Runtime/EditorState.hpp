@@ -25,6 +25,15 @@ reserved.
 #include <unordered_set>
 #include <vector>
 
+namespace Runtime {
+    struct BSAAssetInfo {
+        std::string name;
+        std::string path;
+        size_t sizeBytes;
+        bool isSelected;
+    };
+}
+
 namespace Platform { class InputManager; }
 namespace Core    { class Time; }
 namespace Runtime { class GameStateManager; }
@@ -368,6 +377,17 @@ private:
     char                     m_renamePrefabBuf[128]{};
     std::string              m_cloningPrefabPath;
     char                     m_clonePrefabBuf[128]{};
+
+    // ----- BSA -----
+    void renderBSATab();
+    void scanBSAAssets();
+    void saveBSASelection();
+    void loadBSASelection();
+
+    std::vector<BSAAssetInfo> m_bsaAssets;
+    int                       m_bsaLastSelectedIdx{-1};
+    bool                      m_showBSAWindow{false};
+    bool                      m_wasBSAWindowOpen{false};
 
     // ----- Tilemap -----
     std::vector<TileData>    m_tilemap;

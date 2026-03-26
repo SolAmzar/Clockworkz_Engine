@@ -59,6 +59,7 @@ reserved.
 #  endif
 #  include <windows.h>
 #  include <commdlg.h>
+#  include <shlobj.h>
 #endif
 #include <iostream>
 #include <cmath>
@@ -445,6 +446,8 @@ void EditorState::onEnter() {
     m_currentAudioDir = "assets/audio";
 
     loadAvailablePrefabs();
+    scanBSAAssets();
+    loadBSASelection();
     m_layerVisible.assign(m_numLayers, true);
     for (int i = 0; i < m_numLayers; ++i)
         m_scene.setLayerEnabled(i, true);
@@ -911,6 +914,7 @@ void EditorState::renderImGui(Core::Time* timer) {
         ImGui::DockBuilderDockWindow("Animations",             centerBot);
         ImGui::DockBuilderDockWindow("Prefabs",                centerBot);
         ImGui::DockBuilderDockWindow("Fonts",                  centerBot);
+        ImGui::DockBuilderDockWindow("BSA",                    centerBot);
         ImGui::DockBuilderDockWindow("Tile Palette",           left);
         ImGui::DockBuilderDockWindow("Inspector",              rightTop);
         ImGui::DockBuilderDockWindow("Stats",                  rightTop);
@@ -932,6 +936,7 @@ void EditorState::renderImGui(Core::Time* timer) {
     renderFontBrowser();
     renderPrefabBrowser();
     renderTilePalette();
+    renderBSATab();
 
     Core::Engine::Get().imguiManager().endDockspace();
 }
@@ -963,6 +968,10 @@ void EditorState::renderToolbar() {
     if (ImGui::BeginMenu("Edit")) {
         if (ImGui::MenuItem("Undo", "Ctrl+Z", false, !m_undoStack.empty())) undo();
         if (ImGui::MenuItem("Redo", "Ctrl+Y", false, !m_redoStack.empty())) redo();
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Window")) {
+        ImGui::MenuItem("Build Size Analyser", nullptr, &m_showBSAWindow);
         ImGui::EndMenu();
     }
 
@@ -8222,6 +8231,165 @@ void EditorState::checkAssetHotReload() {
             Core::Engine::Get().logger().info("[Editor] Hot-reloaded texture: " + name);
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// BSA Logic
+// ---------------------------------------------------------------------------
+
+static std::string formatBytes(size_t bytes) {
+  if (bytes < 1024) return std::to_string(bytes) + " B";
+  if (bytes < 1024 * 1024) return std::to_string(bytes / 1024) + " KB";
+  if (bytes < 1024 * 1024 * 1024) return std::to_string(bytes / (1024 * 1024)) + " MB";
+  return std::to_string(bytes / (1024 * 1024 * 1024)) + " GB";
+}
+
+void EditorState::scanBSAAssets() {
+  m_bsaAssets.clear();
+  std::error_code ec;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator("assets/", ec)) {
+    if (entry.is_regular_file()) {
+      BSAAssetInfo info;
+      info.name = entry.path().filename().string();
+      info.path = entry.path().generic_string();
+      info.sizeBytes = std::filesystem::file_size(entry, ec);
+      info.isSelected = false;
+      m_bsaAssets.push_back(info);
+    }
+  }
+}
+
+void EditorState::saveBSASelection() {
+  nlohmann::json j = nlohmann::json::array();
+  for (const auto& asset : m_bsaAssets) {
+    if (asset.isSelected) {
+      j.push_back(asset.path);
+    }
+  }
+  std::ofstream out("assets/configs/bsa_selections.json");
+  if (out.is_open()) {
+    out << j.dump(4);
+  }
+}
+
+void EditorState::loadBSASelection() {
+  std::ifstream in("assets/configs/bsa_selections.json");
+  if (!in.is_open()) return;
+  try {
+    nlohmann::json j;
+    in >> j;
+    for (auto& asset : m_bsaAssets) {
+      for (const auto& path : j) {
+        if (asset.path == path.get<std::string>()) {
+          asset.isSelected = true;
+          break;
+        }
+      }
+    }
+  } catch (...) {}
+}
+
+void EditorState::renderBSATab() {
+  if (m_showBSAWindow && !m_wasBSAWindowOpen) {
+    scanBSAAssets();
+    loadBSASelection();
+  }
+  m_wasBSAWindowOpen = m_showBSAWindow;
+
+  if (!m_showBSAWindow) return;
+
+  ImGui::Begin("BSA", &m_showBSAWindow);
+
+  if (ImGui::Button("Select All")) {
+    for (auto& asset : m_bsaAssets) asset.isSelected = true;
+    saveBSASelection();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Deselect All")) {
+    for (auto& asset : m_bsaAssets) asset.isSelected = false;
+    saveBSASelection();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Refresh")) {
+    scanBSAAssets();
+    loadBSASelection();
+  }
+
+  size_t totalSize = 0;
+  for (const auto& asset : m_bsaAssets) {
+    if (asset.isSelected) totalSize += asset.sizeBytes;
+  }
+  
+  ImGui::Text("Total Selected Size: %s", formatBytes(totalSize).c_str());
+  
+  if (ImGui::Button("Export Selected", ImVec2(120, 0))) {
+#ifdef _WIN32
+    // Use native Windows folder-picker dialog
+    BROWSEINFOA bi = {};
+    bi.lpszTitle  = "Select destination folder for export";
+    bi.ulFlags    = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    LPITEMIDLIST pidl = SHBrowseForFolderA(&bi);
+    if (pidl) {
+      char folderPath[MAX_PATH] = {};
+      if (SHGetPathFromIDListA(pidl, folderPath)) {
+        std::string destDir = folderPath;
+        int successCount = 0;
+        for (const auto& asset : m_bsaAssets) {
+          if (asset.isSelected) {
+            std::error_code ec;
+            std::filesystem::path destPath = std::filesystem::path(destDir) / std::filesystem::path(asset.path).filename();
+            std::filesystem::copy_file(asset.path, destPath, std::filesystem::copy_options::overwrite_existing, ec);
+            if (!ec) successCount++;
+          }
+        }
+        Core::Engine::Get().logger().info("[BSA] Exported " + std::to_string(successCount) + " items to " + destDir);
+      }
+      CoTaskMemFree(pidl);
+    }
+#endif
+  }
+
+  if (ImGui::BeginChild("AssetList", ImVec2(0, 0), true)) {
+    if (ImGui::BeginTable("BSAAssets", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+      ImGui::TableSetupColumn("Select", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+      ImGui::TableSetupColumn("Asset", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+      ImGui::TableHeadersRow();
+
+      int rowIdx = 0;
+      for (auto& asset : m_bsaAssets) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        bool checked = asset.isSelected;
+        ImGui::PushID(asset.path.c_str());
+        if (ImGui::Checkbox("##sel", &checked)) {
+          if (ImGui::GetIO().KeyShift && m_bsaLastSelectedIdx >= 0 && m_bsaLastSelectedIdx < (int)m_bsaAssets.size()) {
+            int start = std::min(m_bsaLastSelectedIdx, rowIdx);
+            int end = std::max(m_bsaLastSelectedIdx, rowIdx);
+            for (int i = start; i <= end; ++i) {
+              m_bsaAssets[i].isSelected = checked;
+            }
+          } else {
+            asset.isSelected = checked;
+            m_bsaLastSelectedIdx = rowIdx;
+          }
+          saveBSASelection();
+        }
+        ImGui::PopID();
+        
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("%s", asset.path.c_str());
+        
+        ImGui::TableSetColumnIndex(2);
+        ImGui::Text("%s", formatBytes(asset.sizeBytes).c_str());
+        rowIdx++;
+      }
+      ImGui::EndTable();
+    }
+  }
+  ImGui::EndChild();
+
+  ImGui::End();
 }
 
 } // namespace Runtime
