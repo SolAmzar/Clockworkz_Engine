@@ -1,5 +1,5 @@
 {
-    "category": "Entity",
+    "category": "Custom",
     "components": {
         "collider": {
             "blocksLight": false,
@@ -96,8 +96,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": 433.5,
-                "y": 34.0
+                "x": 362.47357177734375,
+                "y": 176.40756225585938
             },
             "rotation": 0.0,
             "scale": {
@@ -112,5 +112,5 @@
             "y": 0.648781955242157
         }
     },
-    "name": "Enemy Type 1"
+    "name": "enemy 1"
 }

@@ -2,13 +2,21 @@
     "category": "Custom",
     "components": {
         "collider": {
+            "blocksLight": false,
             "collisionCategory": 1,
             "collisionMask": 4294967295,
             "height": 100.0,
             "isHazard": false,
             "isSolid": true,
             "isTrigger": false,
+            "mass": 1.0,
             "moveable": false,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
             "width": 100.0
         },
         "spriteRenderer": {
@@ -22,19 +30,36 @@
                 "x": 100.0,
                 "y": 100.0
             },
-            "textureId": "house entrance"
+            "sortOrder": 0,
+            "textureId": "classroom wall2",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "classroom wall2"
         },
         "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
             "position": {
-                "x": 1650.0,
-                "y": 250.0
+                "x": -950.0,
+                "y": -3050.0
             },
             "rotation": 0.0,
             "scale": {
                 "x": 1.0,
                 "y": 1.0
-            }
+            },
+            "snapToGrid": false
         }
     },
-    "name": "House entrance"
+    "name": "school - wall"
 }

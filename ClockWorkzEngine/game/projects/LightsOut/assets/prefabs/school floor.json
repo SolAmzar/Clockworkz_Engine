@@ -12,19 +12,36 @@
                 "x": 100.0,
                 "y": 100.0
             },
-            "textureId": "box6"
+            "sortOrder": 0,
+            "textureId": "schoolfloor2",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "schoolfloor2"
         },
         "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
             "position": {
                 "x": -950.0,
-                "y": 850.0
+                "y": -1050.0
             },
             "rotation": 0.0,
             "scale": {
                 "x": 1.0,
                 "y": 1.0
-            }
+            },
+            "snapToGrid": false
         }
     },
-    "name": "Box"
+    "name": "school floor"
 }
