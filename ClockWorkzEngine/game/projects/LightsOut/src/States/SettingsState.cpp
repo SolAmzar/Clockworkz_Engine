@@ -28,6 +28,7 @@ reserved.
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Graphics/Shader.hpp"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Runtime/GameStateManager.hpp"
@@ -138,7 +139,8 @@ void SettingsState::update(double /*dt*/) {
     int h = m_window.height();
 
     // ESC always goes back
-    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE)) {
+    if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
+        Core::Engine::Get().gamepad().isActionPressed("escape")) {
         m_gsm.pop();
         return;
     }

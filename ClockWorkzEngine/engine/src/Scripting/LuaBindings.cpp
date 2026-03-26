@@ -21,6 +21,7 @@ reserved.
 #include "Math/Vec2.hpp"
 #include "Math/Vec3.hpp"
 #include "Math/config.hpp"
+#include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
 #include "Scripting/EntityRef.hpp"
@@ -745,6 +746,20 @@ static vec2 LuaGetMouseWorldPosGlobal() {
                                 static_cast<float>(window.height()));
 }
 
+void RegisterGamepadGlobal(sol::state &lua) {
+    // Register GamepadManager as a usertype so method-call syntax works:
+    //   Gamepad:isActionDown("sprint")  →  GamepadManager::isActionDown(ptr, "sprint")
+    lua.new_usertype<Platform::GamepadManager>(
+        "GamepadManager",
+        sol::no_constructor,
+        "isActionDown",    &Platform::GamepadManager::isActionDown,
+        "isActionPressed", &Platform::GamepadManager::isActionPressed,
+        "getActionAxis",   &Platform::GamepadManager::getActionAxis
+    );
+    // Expose the live singleton so all sol::environments can access it
+    lua["Gamepad"] = &Core::Engine::Get().gamepad();
+}
+
 void RegisterAllBindings(sol::state &lua) {
   std::cout << "[LuaBindings] Registering engine types..." << std::endl;
 
@@ -775,6 +790,9 @@ void RegisterAllBindings(sol::state &lua) {
 
   RegisterAudioGlobal(lua);
   std::cout << "[LuaBindings] Registered Audio global" << std::endl;
+
+  RegisterGamepadGlobal(lua);
+  std::cout << "[LuaBindings] Registered Gamepad global" << std::endl;
 
   // Create Engine global table for accessing engine services
   auto engine = lua.create_table();

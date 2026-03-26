@@ -4,6 +4,9 @@ Build/
 bin/
 Bin/
 
+# Ignore all local files
+*.local.json
+
 # Ignore CMake generated files
 CMakeFiles/
 CMakeCache.txt
@@ -58,6 +61,9 @@ ui_*.h
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Ignore Claude Code files
+.claude/
 
 # Ignore Ubuntu system files
 *~

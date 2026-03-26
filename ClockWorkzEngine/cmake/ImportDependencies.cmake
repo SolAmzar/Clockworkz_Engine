@@ -209,6 +209,33 @@ macro(import_imgui)
   endif()
 endmacro()
 
+# Macro to import SDL3 via FetchContent (static build)
+macro(import_sdl3)
+
+  if(NOT TARGET SDL3::SDL3-static)
+
+    # Build SDL3 as a static library only — no shared DLL needed
+    set(SDL_SHARED         OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC         ON  CACHE BOOL "" FORCE)
+    # Skip SDL test/example targets
+    set(SDL_TEST_LIBRARY   OFF CACHE BOOL "" FORCE)
+    set(SDL2_COMPAT        OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+      sdl3
+      GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+      GIT_TAG        release-3.2.0   # first stable SDL3 release; bump as needed
+    )
+
+    FetchContent_MakeAvailable(sdl3)
+
+    # SDL3 exposes SDL3::SDL3-static when SDL_STATIC=ON
+    set_property(TARGET SDL3-static PROPERTY CXX_STANDARD ${DEPENDENCIES_CXX_STANDARD})
+    set_property(TARGET SDL3-static PROPERTY CXX_STANDARD_REQUIRED ON)
+
+  endif()
+endmacro()
+
 macro(import_fmod target)
   if(NOT TARGET FMOD::fmod AND ENGINE_ENABLE_FMOD)
     # Locate headers
@@ -439,6 +466,10 @@ macro(importDependencies)
     # message(STATUS "Importing ImGui...")
     # import_imgui()
     # message(STATUS "ImGui imported successfully.")
+
+    message(STATUS "Importing SDL3...")
+    import_sdl3()
+    message(STATUS "SDL3 imported successfully.")
 
     message(STATUS "All dependencies have been imported successfully.")
 endmacro()

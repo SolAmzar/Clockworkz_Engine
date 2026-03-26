@@ -52,9 +52,8 @@ void Camera2D::recalcVP() { m_vp = m_proj * m_view; }
 
 void Camera2D::setViewport(int width, int height) { m_viewW = width; m_viewH = height; recalcProj(); }
 void Camera2D::setPosition(glm::vec2 p) { m_pos = p; recalcView(); }
-void Camera2D::setZoom(float z) { 
-    std::cout << "Zoom: " << z << std::endl;
-    m_zoom = z; 
+void Camera2D::setZoom(float z) {
+    m_zoom = z;
     recalcProj();
 }
 glm::vec2 Camera2D::position() const { return m_pos; }
