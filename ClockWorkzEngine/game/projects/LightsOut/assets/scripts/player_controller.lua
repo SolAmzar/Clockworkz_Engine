@@ -114,20 +114,23 @@ function PlayerController:onUpdate(entity, dt)
     -- Device tracking: switch to gamepad on any stick input,
     -- switch back to mouse when the mouse actually moves (> 2px world-space)
     -- ----------------------------------------------------------------
-    if stickMag > 0.3 or hasGpMove then
+    if stickMag > 0.3 or hasGpMove or Gamepad:isActionPressed("flashlight") then
         self._usingGamepad = true
     end
 
-    local mw = Engine.mouseWorldPos()
+    -- Use screen-space position for the "did mouse move?" check so that
+    -- camera movement (from player movement) does not falsely trigger
+    -- a switch back to mouse mode.
+    local ms = Engine.input():mousePosition()
     if self._prevMouseX ~= nil then
-        local mdx = mw.x - self._prevMouseX
-        local mdy = mw.y - self._prevMouseY
+        local mdx = ms.x - self._prevMouseX
+        local mdy = ms.y - self._prevMouseY
         if math.sqrt(mdx * mdx + mdy * mdy) > 2.0 then
             self._usingGamepad = false
         end
     end
-    self._prevMouseX = mw.x
-    self._prevMouseY = mw.y
+    self._prevMouseX = ms.x
+    self._prevMouseY = ms.y
 
     -- ----------------------------------------------------------------
     -- Rotation:
@@ -141,6 +144,7 @@ function PlayerController:onUpdate(entity, dt)
         end
         -- right stick at rest: rotation unchanged
     else
+        local mw = Engine.mouseWorldPos()
         local dx = mw.x - entity.position.x
         local dy = mw.y - entity.position.y
         if math.sqrt(dx * dx + dy * dy) > 10.0 then
@@ -162,19 +166,10 @@ function PlayerController:onUpdate(entity, dt)
 
     local currentState = "idle"
     if hasGpMove then
-        -- Player-relative: stick up = forward along facing direction
+        -- Screen-space: stick up = up on screen, stick right = right on screen
         local speedMul = isSprinting and self.sprintMultiplier or 1.0
         local speed    = self.walkSpeed * speedMul
-
-        local angle    = entity.rotation
-        local forwardX = math.cos(angle)
-        local forwardY = math.sin(angle)
-        local rightX   = -forwardY
-        local rightY   = forwardX
-
-        local moveX = forwardX * gpMoveY - rightX * gpMoveX
-        local moveY = forwardY * gpMoveY - rightY * gpMoveX
-        entity.velocity = Vec2(moveX * speed, moveY * speed)
+        entity.velocity = Vec2(gpMoveX * speed, gpMoveY * speed)
         currentState = isSprinting and "run" or "walk"
     elseif forwardInput ~= 0 or strafeInput ~= 0 then
         local speedMul = isSprinting and self.sprintMultiplier or 1.0
@@ -339,8 +334,7 @@ function PlayerController:onUpdate(entity, dt)
 end
 
 function PlayerController:onCollisionEnter(entity, other)
-    print("[PC] onCollisionEnter: other tag='" .. other:getTagValue() .. "' moveable=" .. tostring(other:isColliderMoveable()))
-    if other:getTagValue() == "Enemy" then
+if other:getTagValue() == "Enemy" then
         if not self._isDead then
             self._isDead = true
             if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then

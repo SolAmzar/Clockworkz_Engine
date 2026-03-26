@@ -192,7 +192,8 @@ bool IntroCutsceneState::shouldSkip() const {
          m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) ||
          m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
          m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) ||
-         Core::Engine::Get().gamepad().wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH);
+         Core::Engine::Get().gamepad().wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH) ||
+         Core::Engine::Get().gamepad().isActionPressed("escape");
 }
 
 } // namespace Runtime

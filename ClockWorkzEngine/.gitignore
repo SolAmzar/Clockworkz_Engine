@@ -4,6 +4,9 @@ Build/
 bin/
 Bin/
 
+# Ignore all local files
+*.local.json
+
 # Ignore CMake generated files
 CMakeFiles/
 CMakeCache.txt

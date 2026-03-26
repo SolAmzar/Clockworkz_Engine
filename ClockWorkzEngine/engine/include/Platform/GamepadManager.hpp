@@ -59,7 +59,7 @@ public:
     float getAxis(SDL_GamepadAxis axis, int index = 0) const;
 
     // ---------- Named action API (preferred for Lua and game code) ----------
-    // Actions driven from slot 0: "move_x", "move_y", "sprint", "flashlight"
+    // Actions driven from slot 0: "move_x", "move_y", "sprint", "flashlight", "escape"
     bool  isActionDown   (const std::string& name) const;
     bool  isActionPressed(const std::string& name) const;  // true one frame only
     float getActionAxis  (const std::string& name) const;

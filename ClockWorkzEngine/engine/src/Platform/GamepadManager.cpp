@@ -230,6 +230,18 @@ void GamepadManager::computeActions(int slot) {
     my.curr  = (ly != 0.0f);
     my.value = ly;
 
+    // --- Left stick + D-pad → UI navigation ---
+    bool dpadUp   = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_UP);
+    bool dpadDown = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+
+    ActionState& uiUp   = m_actions["ui_up"];
+    uiUp.curr  = dpadUp || (ly >  0.5f);
+    uiUp.value = uiUp.curr ? 1.f : 0.f;
+
+    ActionState& uiDown = m_actions["ui_down"];
+    uiDown.curr  = dpadDown || (ly < -0.5f);
+    uiDown.value = uiDown.curr ? 1.f : 0.f;
+
     // --- Right stick → look (same radial deadzone, Y-flipped) ---
     float rx = m_pads[slot].axes[SDL_GAMEPAD_AXIS_RIGHTX];
     float ry = m_pads[slot].axes[SDL_GAMEPAD_AXIS_RIGHTY];
@@ -267,6 +279,12 @@ void GamepadManager::computeActions(int slot) {
     ActionState& flashlight = m_actions["flashlight"];
     flashlight.curr  = xBtn;
     flashlight.value = xBtn ? 1.0f : 0.0f;
+
+    // --- Options / Start button (DualSense B9) → escape ---
+    bool startBtn = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_START);
+    ActionState& escapeAction = m_actions["escape"];
+    escapeAction.curr  = startBtn;
+    escapeAction.value = startBtn ? 1.0f : 0.0f;
 }
 
 bool GamepadManager::isActionDown(const std::string& name) const {
