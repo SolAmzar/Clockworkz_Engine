@@ -24,6 +24,7 @@ reserved.
 #include "Runtime/LevelMusicManager.hpp"
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
+#include <variant>
 
 
 namespace Scripting {

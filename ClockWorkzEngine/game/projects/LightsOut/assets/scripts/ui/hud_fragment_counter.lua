@@ -1,3 +1,115 @@
+local function getFragmentProgress()
+    if _G.FragmentProgress then
+        return _G.FragmentProgress
+    end
+
+    local FragmentProgress = {
+        currentGroupId = "",
+        groups = {}
+    }
+
+    function FragmentProgress.ensureGroup(groupId, maxFragments)
+        if not groupId or groupId == "" then
+            return nil
+        end
+
+        local group = FragmentProgress.groups[groupId]
+        if not group then
+            group = {
+                collectedIds = {},
+                maxFragments = maxFragments or 0
+            }
+            FragmentProgress.groups[groupId] = group
+        elseif maxFragments and maxFragments > group.maxFragments then
+            group.maxFragments = maxFragments
+        end
+
+        return group
+    end
+
+    function FragmentProgress.setCurrentGroup(groupId, maxFragments)
+        if groupId and groupId ~= "" then
+            FragmentProgress.currentGroupId = groupId
+            FragmentProgress.ensureGroup(groupId, maxFragments)
+        else
+            FragmentProgress.currentGroupId = ""
+        end
+    end
+
+    function FragmentProgress.getCurrentGroupId()
+        return FragmentProgress.currentGroupId
+    end
+
+    function FragmentProgress.markCollected(groupId, fragmentId)
+        if not groupId or groupId == "" or not fragmentId or fragmentId == 0 then
+            return false
+        end
+
+        local group = FragmentProgress.ensureGroup(groupId)
+        if not group then
+            return false
+        end
+
+        if group.collectedIds[fragmentId] then
+            return false
+        end
+
+        group.collectedIds[fragmentId] = true
+        return true
+    end
+
+    function FragmentProgress.isCollected(groupId, fragmentId)
+        if not groupId or groupId == "" or not fragmentId or fragmentId == 0 then
+            return false
+        end
+
+        local group = FragmentProgress.groups[groupId]
+        return group ~= nil and group.collectedIds[fragmentId] == true
+    end
+
+    function FragmentProgress.getCollectedCount(groupId)
+        local group = FragmentProgress.groups[groupId]
+        if not group then
+            return 0
+        end
+
+        local count = 0
+        for _, collected in pairs(group.collectedIds) do
+            if collected then
+                count = count + 1
+            end
+        end
+        return count
+    end
+
+    function FragmentProgress.getMaxCount(groupId)
+        local group = FragmentProgress.groups[groupId]
+        if not group then
+            return 0
+        end
+        return group.maxFragments or 0
+    end
+
+    function FragmentProgress.resetGroup(groupId)
+        if groupId and groupId ~= "" then
+            FragmentProgress.groups[groupId] = nil
+            if FragmentProgress.currentGroupId == groupId then
+                FragmentProgress.currentGroupId = ""
+            end
+        end
+    end
+
+    function FragmentProgress.resetAll()
+        FragmentProgress.currentGroupId = ""
+        FragmentProgress.groups = {}
+    end
+
+    _G.FragmentProgress = FragmentProgress
+    return FragmentProgress
+end
+
+local FragmentProgress = getFragmentProgress()
+
 -- *****************************************************************************
 -- file           hud_fragment_counter.lua
 -- project        Lights Out
@@ -28,12 +140,9 @@ local function updateFragmentVisibility(dt, self)
         
         if self.levelGroupId ~= "" then
             local fragId = World.getScriptProp(frag.id, "fragmentId")
-            if fragId and fragId ~= 0 then
-                local group = _G.GameProgress and _G.GameProgress.Groups and _G.GameProgress.Groups[self.levelGroupId]
-                if group and group.collectedIds[fragId] then
-                    collected = true
-                    World.setScriptProp(frag.id, "collected", true)
-                end
+            if FragmentProgress.isCollected(self.levelGroupId, fragId) then
+                collected = true
+                World.setScriptProp(frag.id, "collected", true)
             end
         end
 
@@ -114,32 +223,15 @@ function HudFragmentCounter:onUpdate(entity, dt)
     entity.position = Vec2(player.position.x - halfW + self.marginX,
                            player.position.y - halfH + self.marginY)
 
-    -- Setup global state
-    _G.GameProgress = _G.GameProgress or { CurrentLevelGroup = "", Groups = {} }
-    
-    if self.levelGroupId ~= "" then
-        _G.GameProgress.CurrentLevelGroup = self.levelGroupId
-        _G.GameProgress.Groups[self.levelGroupId] = _G.GameProgress.Groups[self.levelGroupId] or {
-            collectedIds = {},
-            maxFragments = self.groupMaxFragments
-        }
-        if self.groupMaxFragments > _G.GameProgress.Groups[self.levelGroupId].maxFragments then
-             _G.GameProgress.Groups[self.levelGroupId].maxFragments = self.groupMaxFragments
-        end
-    else
-        _G.GameProgress.CurrentLevelGroup = ""
-    end
+    FragmentProgress.setCurrentGroup(self.levelGroupId, self.groupMaxFragments)
 
     -- Count total fragments and how many have been collected
     local total     = 0
     local collected = 0
     
     if self.levelGroupId ~= "" then
-        local group = _G.GameProgress.Groups[self.levelGroupId]
-        total = group.maxFragments
-        for k,v in pairs(group.collectedIds) do
-            collected = collected + 1
-        end
+        total = FragmentProgress.getMaxCount(self.levelGroupId)
+        collected = FragmentProgress.getCollectedCount(self.levelGroupId)
     else
         World.eachByTag("Fragment", function(frag)
             total = total + 1

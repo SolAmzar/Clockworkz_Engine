@@ -54,6 +54,20 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #endif
 #endif
 
+namespace {
+vec2 resolvePlayerSpawn(ECS::World& world, const vec2& fallback) {
+    vec2 resolved = fallback;
+    bool foundMarker = false;
+    world.each<Components::Tag, Components::Transform>(
+        [&](ECS::Entity, Components::Tag& tag, Components::Transform& transform) {
+            if (foundMarker || tag.tag != "PlayerSpawn") return;
+            resolved = transform.position;
+            foundMarker = true;
+        });
+    return resolved;
+}
+}
+
 int main()
 {
     std::cout << "[Main] Booting ClockWorkz Engine...\n";
@@ -188,18 +202,20 @@ int main()
                 Systems::renderLightPass(world, renderer);
             },
             [](ECS::World& world, const vec2& spawn, Runtime::Scene& scene) {
+                const vec2 resolvedSpawn = resolvePlayerSpawn(world, spawn);
                 world.each<Components::Tag, Components::Transform>(
                     [&](ECS::Entity, Components::Tag& tag, Components::Transform& t) {
-                        if (tag.tag == "Player") t.position = spawn;
+                        if (tag.tag == "Player") t.position = resolvedSpawn;
                     });
                 Runtime::LevelMusicManager::ApplySceneMusic(scene, Core::Engine::Get().audio());
             },
             [](ECS::World& world, const vec2& spawn) {
+                const vec2 resolvedSpawn = resolvePlayerSpawn(world, spawn);
                 world.each<Components::Tag, Components::Transform, Components::SpriteAnimator>(
                     [&](ECS::Entity entity, Components::Tag& tag,
                         Components::Transform& t, Components::SpriteAnimator& anim) {
                         if (tag.tag == "Player") {
-                            t.position = spawn;
+                            t.position = resolvedSpawn;
                             anim.play("idle");
                             if (auto* col = world.getComponent<Components::Collider>(entity))
                                 col->isSolid = true;

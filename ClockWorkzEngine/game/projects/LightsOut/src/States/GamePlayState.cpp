@@ -14,11 +14,15 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "States/PauseState.hpp"
 #include "States/GameOverState.hpp"
 
+#include "Assets/FontManager.hpp"
+#include "Assets/ResourceManager.hpp"
+#include "Assets/TextureManager.hpp"
 #include "Core/Engine.hpp"
 #include "GlobalAudioSettings.hpp"
 #include "Runtime/LevelMusicManager.hpp"
 #include "Graphics/Camera2D.hpp"
 #include "Graphics/RenderingManager.hpp"
+#include "Graphics/Shader.hpp"
 #include "Platform/GamepadManager.hpp"
 #include "Platform/InputManager.hpp"
 #include "Platform/WindowManager.hpp"
@@ -44,6 +48,15 @@ void GamePlayState::onEnter() {
   auto& engine = Core::Engine::Get();
   m_renderer   = &engine.rendering();
   m_cam        = &engine.camera();
+
+  // Ensure gameplay has the same text and texture resources available even if
+  // we reach this state without relying on another state's one-time loads.
+  Assets::FontManager::LoadFromConfig("assets/configs/fonts.json");
+  Assets::ResourceManager<Graphics::Shader>::Load(
+      "text", "assets/shaders/text.vert", "assets/shaders/text.frag");
+  Assets::ResourceManager<Graphics::Shader>::Load(
+      "texture", "assets/shaders/texture.vert", "assets/shaders/texture.frag");
+  Assets::TextureManager::LoadFromConfig("assets/configs/Textures.json");
 
   // Init ECS world + register components + wire all game callbacks
   // (PlayerSystem, AISystem, particles, portal transitions, respawn, etc.)

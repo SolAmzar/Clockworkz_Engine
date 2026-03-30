@@ -25,6 +25,15 @@ reserved.
 #include <unordered_set>
 #include <vector>
 
+namespace Runtime {
+    struct BSAAssetInfo {
+        std::string name;
+        std::string path;
+        size_t sizeBytes;
+        bool isSelected;
+    };
+}
+
 namespace Platform { class InputManager; }
 namespace Core    { class Time; }
 namespace Runtime { class GameStateManager; }
@@ -46,6 +55,7 @@ public:
 
 private:
     friend class HierarchyChangeCmd;
+    friend class GroupCloneCmd;
     friend class DeleteTilemapTileCmd;
 
     // ----- Panels -----
@@ -225,9 +235,15 @@ private:
     char                    m_loadSceneFilter[128]{};
     std::string             m_pendingLoadPath;
     char                    m_newSceneBuf[128]{};
+    std::string             m_renamingScenePath;
+    char                    m_renameSceneBuf[128]{};
+    std::string             m_cloningScenePath;
+    char                    m_cloneSceneBuf[128]{};
+    std::string             m_deletingScenePath;
     bool                    m_sceneMetaBuffersDirty{true};
     char                    m_sceneBgmBuf[128]{};
     char                    m_sceneMusicContextBuf[128]{};
+    vec2                    m_sceneSpawnPointBuf{0.0f, 0.0f};
 
     // ----- Asset rename/delete -----
     std::string             m_renamingAsset;
@@ -357,6 +373,21 @@ private:
     int                      m_selectedPrefabIndex{-1};
     char                     m_savePrefabNameBuf[128]{};
     char                     m_savePrefabCategoryBuf[64]{"Custom"};
+    std::string              m_renamingPrefabPath;
+    char                     m_renamePrefabBuf[128]{};
+    std::string              m_cloningPrefabPath;
+    char                     m_clonePrefabBuf[128]{};
+
+    // ----- BSA -----
+    void renderBSATab();
+    void scanBSAAssets();
+    void saveBSASelection();
+    void loadBSASelection();
+
+    std::vector<BSAAssetInfo> m_bsaAssets;
+    int                       m_bsaLastSelectedIdx{-1};
+    bool                      m_showBSAWindow{false};
+    bool                      m_wasBSAWindowOpen{false};
 
     // ----- Tilemap -----
     std::vector<TileData>    m_tilemap;

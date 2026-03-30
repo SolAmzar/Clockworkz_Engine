@@ -1,4 +1,4 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           LevelEditor.hpp
 \project        Lights Out - Level Editor
@@ -43,6 +43,7 @@ reserved.
 #include <memory>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 struct GLFWwindow;
 
@@ -104,6 +105,14 @@ struct LevelMetadata {
   std::string description;
   vec2 spawnPoint = vec2(0.0f, 0.0f);
   int lastModified = 0;
+};
+
+// Build Size Analyser asset info
+struct BSAAssetInfo {
+  std::string relativePath;
+  std::string absolutePath;
+  uintmax_t sizeBytes;
+  bool isSelected;
 };
 
 /******************************************************************************/
@@ -241,6 +250,12 @@ private:
   void renderAudioAssets();
   // void handleAssetFileWatch();
   void renderGrid();
+  
+  // BSA Tab
+  void drawBSATab();
+  void scanBSAAssets();
+  void saveBSASelection();
+  void loadBSASelection();
 
   // Object manipulation
   void handleObjectSelection();
@@ -348,6 +363,8 @@ private:
   bool m_showPrefabPalette;
   bool m_showSceneView;
   bool m_showLevelSettings;
+
+  std::vector<BSAAssetInfo> m_bsaAssets;
 
   // Recent files
   std::vector<std::string> m_recentLevels;
