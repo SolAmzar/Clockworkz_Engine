@@ -29491,7 +29491,7 @@
                         "properties": {
                             "collectedCount": 0,
                             "pickupRadius": 50.0,
-                            "requiredFragments": 5
+                            "requiredFragments": 10
                         },
                         "scriptPath": "components/fragment_collector.lua"
                     },
@@ -29554,7 +29554,8 @@
                     "y": 0.0
                 }
             },
-            "name": "PlayerSpawn"
+            "name": "Player",
+            "tag": "Player"
         },
         {
             "active": true,
@@ -35632,7 +35633,7 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "groupMaxFragments": 7,
+                            "groupMaxFragments": 10,
                             "levelGroupId": "Zone1",
                             "marginX": 60.0,
                             "marginY": 70.0
