@@ -56,7 +56,9 @@ private:
 
   Runtime::Scene m_scene;
   std::string m_startLevel; // level loaded on enter (default: k_firstLevel)
+  void  renderFragmentUI();
   float m_deathTimer{0.0f}; // counts up after Engine.triggerGameOver()
+  std::string m_fragmentIconTexture{"fragment_texture"};
 
   // First level loaded on enter
   static constexpr const char *k_firstLevel = "assets/scenes/Level_Save.json";

@@ -160,51 +160,6 @@
         {
             "active": true,
             "components": {
-                "textRenderer": {
-                    "alignment": 1,
-                    "boxSize": {
-                        "x": 400.0,
-                        "y": 60.0
-                    },
-                    "color": {
-                        "b": 0.6000000238418579,
-                        "g": 0.6000000238418579,
-                        "r": 0.6000000238418579
-                    },
-                    "fontId": "Debug",
-                    "fontSize": 1.0,
-                    "lineSpacing": 1.0,
-                    "padding": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "text": "A PUZZLE HORROR GAME",
-                    "verticalAlignment": 0,
-                    "visible": false,
-                    "wordWrap": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -200.0,
-                        "y": 278.3478698730469
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "SubtitleText"
-        },
-        {
-            "active": true,
-            "components": {
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,

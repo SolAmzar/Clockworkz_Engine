@@ -24,6 +24,11 @@
             "name": "PauseMenu",
             "path": "../fonts/MANIC1.ttf",
             "size": 48
+        },
+        {
+            "name": "Debug",
+            "path": "../fonts/MANIC1.TTF",
+            "size": 32
         }
     ]
 }
