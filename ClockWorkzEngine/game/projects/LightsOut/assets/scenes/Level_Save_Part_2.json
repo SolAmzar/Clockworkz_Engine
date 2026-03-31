@@ -46709,7 +46709,9 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "levelName": "Level_Save.json"
+                            "levelName": "Level_Save.json",
+                            "spawnX": 2250.0,
+                            "spawnY": -250.0
                         },
                         "scriptPath": "components/portal.lua"
                     }
