@@ -68,6 +68,13 @@ function PlayerController:onStart(entity)
     if entity:hasSpriteRenderer() then
         self._origTexture = entity:getSpriteTextureId()
     end
+
+    -- If a portal set a target spawn position, teleport the player there now
+    -- and clear it so it does not persist to future level loads.
+    if _G.nextSpawnPos then
+        entity.position = Vec2(_G.nextSpawnPos.x, _G.nextSpawnPos.y)
+        _G.nextSpawnPos = nil
+    end
 end
 
 function PlayerController:onUpdate(entity, dt)

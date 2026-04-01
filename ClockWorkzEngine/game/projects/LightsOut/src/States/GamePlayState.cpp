@@ -13,6 +13,9 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "States/MenuState.hpp"
 #include "States/PauseState.hpp"
 #include "States/GameOverState.hpp"
+#include "Gameplay/Components/Fragment.hpp"
+#include "Components/Tag.hpp"
+#include "Components/FragmentCollector.hpp"
 
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -120,14 +123,25 @@ void GamePlayState::render(Core::Time* /*timer*/) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   glm::mat4 vp = m_cam->viewProj();
-  m_scene.RenderAll(*m_renderer, vp);
+  // Apply the scene's darkness colour tint (loaded from JSON by SceneSerializer).
+  // RenderAll multiplies every sprite by this tint, giving the blue-dark
+  // ambience that is visible in editor play mode.
+  glm::vec4 sceneTint(1.0f);
+  if (m_scene.isDarknessEnabled()) {
+    float     intensity = std::clamp(m_scene.getDarknessIntensity(), 0.0f, 1.0f);
+    glm::vec3 tintRgb   = glm::mix(glm::vec3(1.0f), m_scene.getDarknessColor(), intensity);
+    sceneTint           = glm::vec4(tintRgb, 1.0f);
+  }
+
+  m_scene.RenderAll(*m_renderer, vp, sceneTint);
+
   // Particle emitter + light pass are handled by the onRender callback
   // registered in main_game.cpp's setSceneSetup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no extra code needed here.
 }
 
 void GamePlayState::onExit() {
-  Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
-  m_scene.Clear();
+    Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio());
+    m_scene.Clear();
 }
 
 } // namespace Runtime

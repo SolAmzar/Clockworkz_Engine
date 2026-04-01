@@ -29491,7 +29491,7 @@
                         "properties": {
                             "collectedCount": 0,
                             "pickupRadius": 50.0,
-                            "requiredFragments": 5
+                            "requiredFragments": 10
                         },
                         "scriptPath": "components/fragment_collector.lua"
                     },
@@ -29554,7 +29554,8 @@
                     "y": 0.0
                 }
             },
-            "name": "PlayerSpawn"
+            "name": "Player",
+            "tag": "Player"
         },
         {
             "active": true,
@@ -35632,7 +35633,7 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "groupMaxFragments": 7,
+                            "groupMaxFragments": 10,
                             "levelGroupId": "Zone1",
                             "marginX": 60.0,
                             "marginY": 70.0
@@ -46708,7 +46709,9 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "levelName": "Level_Save.json"
+                            "levelName": "Level_Save.json",
+                            "spawnX": 2250.0,
+                            "spawnY": -250.0
                         },
                         "scriptPath": "components/portal.lua"
                     }
@@ -46752,7 +46755,78 @@
                     "snapToGrid": false
                 }
             },
-            "name": "window"
+            "name": "Portal"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "levelName": "Level_Save_03.json"
+                        },
+                        "scriptPath": "components/portal.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "house entrance",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2445.0,
+                        "y": 55.0
+                    },
+                    "rotation": 1.5700000524520874,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Portal2"
         },
         {
             "active": true,
