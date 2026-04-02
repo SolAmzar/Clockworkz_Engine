@@ -16,6 +16,7 @@ reserved.
 #include "Audio/AudioManager.hpp"
 #include "Components/Collider.hpp"
 #include "Components/FootstepAudio.hpp"
+#include "Components/LuaScript.hpp"
 #include "Components/Tag.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
@@ -89,16 +90,31 @@ inline const std::string &PrefixForSurface(const Components::FootstepAudio &foot
   }
 }
 
+inline bool IsPlayerEntity(ECS::World &world, ECS::Entity entity) {
+  if (auto *tag = world.getComponent<Components::Tag>(entity)) {
+    if (tag->tag == "Player" || tag->tag == "PlayerSpawn")
+      return true;
+  }
+
+  if (auto *lua = world.getComponent<Components::LuaScript>(entity)) {
+    for (const auto &script : lua->scripts) {
+      if (script.scriptPath == "player_controller.lua")
+        return true;
+    }
+  }
+
+  return false;
+}
+
 } // namespace detail
 
 inline void UpdateFootstepListener(ECS::World &world) {
   auto &audio = Core::Engine::Get().audio();
   bool listenerSet = false;
 
-  world.each<Components::Tag, Components::Transform>(
-      [&](ECS::Entity entity, Components::Tag &tag,
-          Components::Transform &transform) {
-        if (listenerSet || tag.tag != "Player")
+  world.each<Components::Transform>(
+      [&](ECS::Entity entity, Components::Transform &transform) {
+        if (listenerSet || !detail::IsPlayerEntity(world, entity))
           return;
 
         vec3 velocity{0.0f, 0.0f, 0.0f};
@@ -150,9 +166,7 @@ inline void UpdateFootstepAudio(ECS::World &world, double dt) {
             const int variation = dist(detail::FootstepRng());
             const std::string soundId = prefix + std::to_string(variation);
 
-            bool isPlayerEmitter = false;
-            if (auto *tag = world.getComponent<Components::Tag>(entity))
-              isPlayerEmitter = (tag->tag == "Player");
+            const bool isPlayerEmitter = detail::IsPlayerEntity(world, entity);
 
             if (isPlayerEmitter) {
               audio.playOneShotLocal(soundId, Group::SFX, footsteps.volume);
