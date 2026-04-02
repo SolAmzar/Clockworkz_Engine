@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           Light.hpp
+\project        ClockWorkz Engine
+\author(s)      [Syafiq] 100%
+\brief          Declares the engine light component used by lighting systems.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #pragma once
 #include "Math/Vec2.hpp"
 #include <glm/vec3.hpp>

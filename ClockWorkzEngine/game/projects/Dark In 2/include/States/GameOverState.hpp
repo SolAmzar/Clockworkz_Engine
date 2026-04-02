@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           GameOverState.hpp
+\project        Dark In 2
+\author(s)      [Syafiq] 100%
+\brief          Declares the Dark In 2 GameOverState game state.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #pragma once
 #include "Runtime/GameState.hpp"
 #include "Runtime/Scene.hpp"

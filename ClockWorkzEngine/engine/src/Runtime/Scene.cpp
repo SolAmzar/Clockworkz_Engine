@@ -1,9 +1,13 @@
 /******************************************************************************/
 /*!
 \file           Scene.cpp
-\project        Lights Out
-\author(s)      [Lebon] 90% [Amzar] 10% 
-\brief          Implementation of the Scene class.
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 84% [Sol-Amzar] 16%
+\brief          Implements the runtime scene container and engine-owned system
+                orchestration.
+
+All content Â© 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
 */
 /******************************************************************************/
 
@@ -16,6 +20,7 @@
 #include "Components/Layer.hpp"
 #include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/ParticleEmitter.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
@@ -76,8 +81,9 @@ float Scene::getSoundVolumeOverride(const std::string &name,
 }
 
 void Scene::Init() {
-  // Pre-allocate memory pool registry entries at load time (25 component types).
-  Memory::MemoryManager::Get().preallocateForScene(26);
+  // Pre-allocate registry entries before built-in and game-specific component
+  // registration begins.
+  Memory::MemoryManager::Get().preallocateForScene(27);
 
   // Register engine-level component types.
   m_world.registerComponent<Components::Transform>();
@@ -92,6 +98,7 @@ void Scene::Init() {
   m_world.registerComponent<Components::LuaScript>();
   m_world.registerComponent<Components::Layer>();
   m_world.registerComponent<Components::Light>();
+  m_world.registerComponent<Components::ParticleEmitter>();
   m_world.registerComponent<Components::UIButton>();
   m_world.registerComponent<Components::UISlider>();
   m_world.registerComponent<Components::CameraComponent>();
@@ -223,6 +230,12 @@ void Scene::Update(double dt, Platform::InputManager &input) {
   // --- Game-specific update (particles, collision reactions, portal, etc.) ---
   if (m_onUpdate) m_onUpdate(m_world, dt, m_collisionSystem, *this);
 
+  m_world.each<Components::Transform, Components::ParticleEmitter>(
+      [dt](ECS::Entity, Components::Transform &transform,
+           Components::ParticleEmitter &emitter) {
+        emitter.update(ps::v2{transform.position.x, transform.position.y}, dt);
+      });
+
   // --- Camera system: must run last so it sees final entity positions ---
   if (m_cameraSystemEnabled)
     m_cameraSystem.update(m_world);
@@ -241,6 +254,11 @@ void Scene::Render(Graphics::RenderingManager &renderer) {
   // Flush the sprite batch before the light pass so light cones are drawn
   // on top of sprites (not underneath them).
   renderer.flush();
+
+  m_world.each<Components::ParticleEmitter>(
+      [&renderer](ECS::Entity, Components::ParticleEmitter &emitter) {
+        emitter.render(renderer);
+      });
 
   // --- Render Legacy GameObjects ---
   for (auto &obj : m_gameObjects) {

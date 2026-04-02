@@ -2,7 +2,7 @@
 /*!
 \file			AudioClip.hpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Sol-Amzar], 100%
 \brief          Definition of AudioClip class that wraps FMOD::Sound for sound resource management.
                 Responsibilities include:
                 - Load(): Load sound data from file using AudioManager and SoundDesc

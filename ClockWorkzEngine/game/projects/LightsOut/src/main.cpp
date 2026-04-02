@@ -2,7 +2,7 @@
 /*!
 \file           main.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 81% [Sol-Amzar] 19%
+\author(s)      [Syafiq] 79% [Sol-Amzar] 21%
 \brief          Entry point for CWZEditor.exe ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â editor
 executable. Boots to EditorHubState. All game logic lives in Lua scripts.
 
@@ -37,7 +37,7 @@ reserved.
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
 #include "Components/Transform.hpp"
-#include "Gameplay/Components/ParticleEmitter.hpp"
+#include "Components/ParticleEmitter.hpp"
 #include "Gameplay/Components/SurfaceComponent.hpp"
 #include "Graphics/RenderingManager.hpp"
 #include "Runtime/LevelMusicManager.hpp"
@@ -86,7 +86,6 @@ int main() {
     Core::Engine engine;
 
     engine.setComponentRegistrar([](ECS::World &world) {
-      world.registerComponent<Components::ParticleEmitter>();
       world.registerComponent<Gameplay::SurfaceComponent>();
       world.registerComponent<Components::FootstepAudio>();
     });
@@ -97,37 +96,6 @@ int main() {
         [](ECS::Entity entity, ECS::World &world, void *rawComponents) {
           using json = nlohmann::json;
           auto &comps = *static_cast<json *>(rawComponents);
-          if (auto *pe =
-                  world.getComponent<Components::ParticleEmitter>(entity)) {
-            auto &sys = pe->system();
-            comps["particleEmitter"] = {
-                {"active", pe->active()},
-                {"rate", sys.rate},
-                {"lifeMin", sys.lifeMin},
-                {"lifeMax", sys.lifeMax},
-                {"speedMin", sys.speedMin},
-                {"speedMax", sys.speedMax},
-                {"sizeStart", sys.sizeStart},
-                {"sizeEnd", sys.sizeEnd},
-                {"colorStart",
-                 {{"r", sys.colorStart.r},
-                  {"g", sys.colorStart.g},
-                  {"b", sys.colorStart.b},
-                  {"a", sys.colorStart.a}}},
-                {"colorEnd",
-                 {{"r", sys.colorEnd.r},
-                  {"g", sys.colorEnd.g},
-                  {"b", sys.colorEnd.b},
-                  {"a", sys.colorEnd.a}}},
-                {"spreadDeg", sys.spreadDeg},
-                {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
-                {"acceleration",
-                 {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
-                {"looping", sys.looping},
-                {"worldSpace", sys.worldSpace},
-                {"localOffset",
-                 {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}}};
-          }
           if (auto *sc = world.getComponent<Gameplay::SurfaceComponent>(entity))
             comps["surface"] = {{"type", static_cast<int>(sc->type())}};
           if (auto *fa =
@@ -150,49 +118,6 @@ int main() {
         [](ECS::Entity entity, ECS::World &world, const void *rawComponents) {
           using json = nlohmann::json;
           const auto &c = *static_cast<const json *>(rawComponents);
-          if (c.contains("particleEmitter")) {
-            const auto &pec = c["particleEmitter"];
-            Components::ParticleEmitter pe;
-            pe.setActive(pec.value("active", true));
-            pe.localOffset.x = pec.contains("localOffset")
-                                   ? pec["localOffset"].value("x", 0.f)
-                                   : 0.f;
-            pe.localOffset.y = pec.contains("localOffset")
-                                   ? pec["localOffset"].value("y", 0.f)
-                                   : 0.f;
-            auto &sys = pe.system();
-            sys.rate = pec.value("rate", 200.f);
-            sys.lifeMin = pec.value("lifeMin", 0.5f);
-            sys.lifeMax = pec.value("lifeMax", 1.2f);
-            sys.speedMin = pec.value("speedMin", 20.f);
-            sys.speedMax = pec.value("speedMax", 120.f);
-            sys.sizeStart = pec.value("sizeStart", 2.25f);
-            sys.sizeEnd = pec.value("sizeEnd", 0.f);
-            sys.spreadDeg = pec.value("spreadDeg", 45.f);
-            sys.looping = pec.value("looping", true);
-            sys.worldSpace = pec.value("worldSpace", true);
-            if (pec.contains("colorStart")) {
-              sys.colorStart.r = pec["colorStart"].value("r", 1.f);
-              sys.colorStart.g = pec["colorStart"].value("g", 1.f);
-              sys.colorStart.b = pec["colorStart"].value("b", 1.f);
-              sys.colorStart.a = pec["colorStart"].value("a", 1.f);
-            }
-            if (pec.contains("colorEnd")) {
-              sys.colorEnd.r = pec["colorEnd"].value("r", 1.f);
-              sys.colorEnd.g = pec["colorEnd"].value("g", 1.f);
-              sys.colorEnd.b = pec["colorEnd"].value("b", 1.f);
-              sys.colorEnd.a = pec["colorEnd"].value("a", 0.f);
-            }
-            if (pec.contains("direction")) {
-              sys.dir.x = pec["direction"].value("x", 1.f);
-              sys.dir.y = pec["direction"].value("y", 0.f);
-            }
-            if (pec.contains("acceleration")) {
-              sys.acceleration.x = pec["acceleration"].value("x", 0.f);
-              sys.acceleration.y = pec["acceleration"].value("y", -200.f);
-            }
-            world.addComponent(entity, pe);
-          }
           if (c.contains("surface")) {
             Gameplay::SurfaceComponent sc;
             sc.setType(static_cast<Gameplay::SurfaceType>(
@@ -234,25 +159,10 @@ int main() {
       scene.setGameCallbacks(
           [](ECS::World &world, double dt, Systems::CollisionSystem &,
              Runtime::Scene &) {
-            world.each<Components::Transform, Components::ParticleEmitter>(
-                [dt](ECS::Entity, Components::Transform &t,
-                     Components::ParticleEmitter &pe) {
-                  if (pe.active()) {
-                    ps::v2 pos{t.position.x, t.position.y};
-                    pe.update(pos, dt);
-                  }
-                });
             Audio::UpdateFootstepListener(world);
             Audio::UpdateFootstepAudio(world, dt);
           },
           [](ECS::World &world, Graphics::RenderingManager &renderer) {
-            world.each<Components::ParticleEmitter>(
-                [&renderer](ECS::Entity, Components::ParticleEmitter &pe) {
-                  if (pe.active()) {
-                    pe.setRenderer(&renderer);
-                    pe.system().render(renderer);
-                  }
-                });
             Systems::renderLightPass(world, renderer);
           },
           [](ECS::World &world, const vec2 &spawn, Runtime::Scene &scene) {

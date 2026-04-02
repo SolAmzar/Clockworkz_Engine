@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           PlayerSystem.hpp
+\project        Lights Out
+\author(s)      [Syafiq] 100%
+\brief          Declares player-specific gameplay updates for Lights Out.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #pragma once
 #include "ECS/World.hpp"
 #include "Platform/InputManager.hpp"

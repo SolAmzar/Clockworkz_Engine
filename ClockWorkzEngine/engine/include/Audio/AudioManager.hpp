@@ -2,7 +2,7 @@
 /*!
 \file           AudioManager.hpp
 \project        Lights Out
-\author(s)      [Amzar]
+\author(s)      [Sol-Amzar]
 \brief          Handles Audio using FMOD API.
                 Responsibilities include:
                 - Initializing and shutting down the FMOD system
@@ -13,7 +13,7 @@
 pausing
                 - Providing 3D audio listener settings if needed
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content Â© 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/

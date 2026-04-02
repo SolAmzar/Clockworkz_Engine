@@ -1,16 +1,15 @@
+/******************************************************************************/
 /*!
-\file           SceneSerializer.hpp
-\project        Lights Out
-\author(s)      [Lebon], 80%, [Amzar] 19% , [Yusuf] 1%
-\brief          Loads and saves entire scenes to/from JSON files.
+\file           SceneSerializer.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 47% [Syafiq] 24% [Sol-Amzar] 26% [Yusuf] 3%
+\brief          Implements helpers for serializing and deserializing scenes.
 
-                                Takes an ECS World and serializes all entities
-with their components
-
-All content ? 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
+
 
 #include "Runtime/SceneSerializer.hpp"
 #include "Runtime/Scene.hpp"
@@ -21,6 +20,7 @@ reserved.
 #include "Components/Collider.hpp"
 #include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/ParticleEmitter.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/StateMachine.hpp"
@@ -196,6 +196,38 @@ static json SerializeWorld(ECS::World &world,
           {"radius", lt->radius},
           {"angle", lt->angle},
           {"intensity", lt->intensity}};
+    }
+
+    if (auto *pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+      const auto &sys = pe->system();
+      obj["components"]["particleEmitter"] = {
+          {"active", pe->active()},
+          {"rate", sys.rate},
+          {"lifeMin", sys.lifeMin},
+          {"lifeMax", sys.lifeMax},
+          {"speedMin", sys.speedMin},
+          {"speedMax", sys.speedMax},
+          {"sizeStart", sys.sizeStart},
+          {"sizeEnd", sys.sizeEnd},
+          {"spreadDeg", sys.spreadDeg},
+          {"spawnRadius", sys.spawnRadius},
+          {"looping", sys.looping},
+          {"worldSpace", sys.worldSpace},
+          {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+          {"acceleration",
+           {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+          {"localOffset",
+           {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}},
+          {"colorStart",
+           {{"r", sys.colorStart.r},
+            {"g", sys.colorStart.g},
+            {"b", sys.colorStart.b},
+            {"a", sys.colorStart.a}}},
+          {"colorEnd",
+           {{"r", sys.colorEnd.r},
+            {"g", sys.colorEnd.g},
+            {"b", sys.colorEnd.b},
+            {"a", sys.colorEnd.a}}}};
     }
 
     // UIButton
@@ -516,6 +548,54 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         lt.angle = lc.value("angle", 60.f);
         lt.intensity = lc.value("intensity", 1.f);
         world.addComponent(entity, lt);
+      }
+
+      if (components.contains("particleEmitter")) {
+        auto &pec = components["particleEmitter"];
+        Components::ParticleEmitter pe;
+        pe.setActive(pec.value("active", true));
+        pe.localOffset.x =
+            pec.contains("localOffset") ? pec["localOffset"].value("x", 0.f)
+                                        : 0.f;
+        pe.localOffset.y =
+            pec.contains("localOffset") ? pec["localOffset"].value("y", 0.f)
+                                        : 0.f;
+
+        auto &sys = pe.system();
+        sys.rate = pec.value("rate", sys.rate);
+        sys.lifeMin = pec.value("lifeMin", sys.lifeMin);
+        sys.lifeMax = pec.value("lifeMax", sys.lifeMax);
+        sys.speedMin = pec.value("speedMin", sys.speedMin);
+        sys.speedMax = pec.value("speedMax", sys.speedMax);
+        sys.sizeStart = pec.value("sizeStart", sys.sizeStart);
+        sys.sizeEnd = pec.value("sizeEnd", sys.sizeEnd);
+        sys.spreadDeg = pec.value("spreadDeg", sys.spreadDeg);
+        sys.spawnRadius = pec.value("spawnRadius", sys.spawnRadius);
+        sys.looping = pec.value("looping", sys.looping);
+        sys.worldSpace = pec.value("worldSpace", sys.worldSpace);
+        if (pec.contains("direction")) {
+          sys.dir.x = pec["direction"].value("x", sys.dir.x);
+          sys.dir.y = pec["direction"].value("y", sys.dir.y);
+        }
+        if (pec.contains("acceleration")) {
+          sys.acceleration.x =
+              pec["acceleration"].value("x", sys.acceleration.x);
+          sys.acceleration.y =
+              pec["acceleration"].value("y", sys.acceleration.y);
+        }
+        if (pec.contains("colorStart")) {
+          sys.colorStart.r = pec["colorStart"].value("r", sys.colorStart.r);
+          sys.colorStart.g = pec["colorStart"].value("g", sys.colorStart.g);
+          sys.colorStart.b = pec["colorStart"].value("b", sys.colorStart.b);
+          sys.colorStart.a = pec["colorStart"].value("a", sys.colorStart.a);
+        }
+        if (pec.contains("colorEnd")) {
+          sys.colorEnd.r = pec["colorEnd"].value("r", sys.colorEnd.r);
+          sys.colorEnd.g = pec["colorEnd"].value("g", sys.colorEnd.g);
+          sys.colorEnd.b = pec["colorEnd"].value("b", sys.colorEnd.b);
+          sys.colorEnd.a = pec["colorEnd"].value("a", sys.colorEnd.a);
+        }
+        world.addComponent(entity, pe);
       }
 
       // UIButton

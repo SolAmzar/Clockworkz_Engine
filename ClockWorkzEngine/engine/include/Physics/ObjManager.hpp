@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           ObjManager.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 100%
+\brief          Declares OBJ mesh loading and lookup helpers.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #ifndef 0
 
 #include "Types.hpp"	

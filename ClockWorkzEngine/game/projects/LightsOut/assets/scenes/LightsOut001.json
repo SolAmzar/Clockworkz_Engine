@@ -8,6 +8,7 @@
     "darknessIntensity": 0.800000011920929,
     "enableDarkness": false,
     "hiddenEntities": [],
+    "hiddenEntityIndices": [],
     "hierarchyGroups": [],
     "hierarchyOrder": [
         "Entity_4",
@@ -16,13 +17,30 @@
         "Fragment",
         "Entity_5",
         "Enemy Test",
-        "Fragment",
-        "Fragment",
         "Entity 9",
         "FragmentManager",
         "HUD_Battery",
         "HUD_FragmentCounter",
-        "Entity"
+        "Entity",
+        "Fragment",
+        "Fragment",
+        "TilemapMergedCollider"
+    ],
+    "hierarchyOrderIndices": [
+        0,
+        1,
+        2,
+        7,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        3,
+        6,
+        13
     ],
     "musicContext": "",
     "objects": [
@@ -522,6 +540,7 @@
                     "rate": 200.0,
                     "sizeEnd": 0.0,
                     "sizeStart": 2.25,
+                    "spawnRadius": 0.0,
                     "speedMax": 120.0,
                     "speedMin": 20.0,
                     "spreadDeg": 45.0,
@@ -806,8 +825,6 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "offsetX": 800.0,
-                            "offsetY": -420.0,
                             "threshold1": 0.0,
                             "threshold2": 25.0,
                             "threshold3": 50.0,
@@ -864,10 +881,6 @@
                 "luaScript": [
                     {
                         "enabled": true,
-                        "properties": {
-                            "offsetX": -830.0,
-                            "offsetY": -420.0
-                        },
                         "scriptPath": "ui/hud_fragment_counter.lua"
                     }
                 ],

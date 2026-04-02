@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           SpriteState.cpp
+\project        Lights Out
+\author(s)      [Lebon] 99% [Syafiq] 0% [Yusuf] 1%
+\brief          Implements the Lights Out sprite preview state.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #if 0
 /******************************************************************************/
 /*!

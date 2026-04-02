@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           PlayState.cpp
+\project        Lights Out
+\author(s)      [Lebon] 76% [Sol-Amzar] 15% [Syafiq] 8% [Yusuf] 0% [StarrySol] 1%
+\brief          Implements the Lights Out play state.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #if 1
 /******************************************************************************/
 /*!

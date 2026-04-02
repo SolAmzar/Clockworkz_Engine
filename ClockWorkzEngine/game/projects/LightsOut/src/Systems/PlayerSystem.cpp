@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           PlayerSystem.cpp
+\project        Lights Out
+\author(s)      [Lebon] 65% [Yusuf] 35%
+\brief          Implements player-specific gameplay updates for Lights Out.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #include "Systems/PlayerSystem.hpp"
 #include "Components/Layer.hpp"
 #include "Components/PlayerController.hpp"

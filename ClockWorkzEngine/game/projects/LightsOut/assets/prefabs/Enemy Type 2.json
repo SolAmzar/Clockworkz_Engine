@@ -1,5 +1,5 @@
 {
-    "category": "Entities",
+    "category": "Entity",
     "components": {
         "collider": {
             "blocksLight": false,

@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.cpp
 \project        Lights Out
-\author(s)      [Yusuf], 100%
+\author(s)      [Yusuf] 99% [Sol-Amzar] 1%
 \brief          Implementation of TextureManager for data-driven texture loading
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights
@@ -19,6 +19,8 @@ reserved.
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace fs = std::filesystem;
 
@@ -28,6 +30,38 @@ namespace Assets {
 
 // Static helper to track loaded texture names (optional, for debugging)
 static std::vector<std::string> loadedTextures;
+static std::unordered_map<std::string, std::string> s_resolvedTexturePaths;
+static std::unordered_set<std::string> s_missingTextureKeys;
+
+static std::string normalizeTextureKey(const std::string& name) {
+  static const std::string suffix = "_texture";
+  if (name.size() >= suffix.size() &&
+      name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+    return name;
+  }
+  return name + suffix;
+}
+
+static std::string findTexturePathOnDisk(const std::string& name) {
+  const fs::path textureRoot("assets/textures");
+  if (!fs::exists(textureRoot))
+    return "";
+
+  const std::string normalizedName = normalizeTextureKey(name);
+  std::error_code ec;
+  for (const auto& entry : fs::recursive_directory_iterator(textureRoot, ec)) {
+    if (ec)
+      break;
+    if (!entry.is_regular_file())
+      continue;
+
+    const std::string stem = entry.path().stem().string();
+    if (stem == name || stem == normalizedName)
+      return entry.path().generic_string();
+  }
+
+  return "";
+}
 
 bool TextureManager::LoadFromConfig(const std::string &configPath) {
   std::cout << "[TextureManager] Loading textures from: " << configPath
@@ -109,10 +143,39 @@ TextureManager::LoadTexture(const std::string &name, const std::string &path) {
 
 std::shared_ptr<Graphics::Texture2D>
 TextureManager::Get(const std::string &name) {
+  const std::string key = normalize(name);
+
   // Try exact key first, then normalized key as fallback so scene JSONs that
   // omit the "_texture" suffix still resolve correctly.
   auto t = ResourceManager<Graphics::Texture2D>::Get(name);
-  if (!t) t = ResourceManager<Graphics::Texture2D>::Get(normalize(name));
+  if (!t) t = ResourceManager<Graphics::Texture2D>::Get(key);
+  if (t)
+    return t;
+
+  auto cachedPathIt = s_resolvedTexturePaths.find(key);
+  if (cachedPathIt != s_resolvedTexturePaths.end()) {
+    t = LoadTexture(name, cachedPathIt->second);
+    if (t) {
+      s_missingTextureKeys.erase(key);
+      return t;
+    }
+    s_resolvedTexturePaths.erase(cachedPathIt);
+  }
+
+  std::string path = GetFilePath(name);
+  if (path.empty())
+    path = findTexturePathOnDisk(name);
+
+  if (!path.empty()) {
+    s_resolvedTexturePaths[key] = path;
+    t = LoadTexture(name, path);
+    if (t) {
+      s_missingTextureKeys.erase(key);
+      return t;
+    }
+  }
+
+  s_missingTextureKeys.insert(key);
   return t;
 }
 
@@ -134,6 +197,8 @@ void TextureManager::Clear() {
   std::cout << "[TextureManager] Clearing all textures..." << std::endl;
   ResourceManager<Graphics::Texture2D>::Clear();
   loadedTextures.clear();
+  s_resolvedTexturePaths.clear();
+  s_missingTextureKeys.clear();
 }
 
 std::vector<std::string> TextureManager::GetLoadedTextureNames() {

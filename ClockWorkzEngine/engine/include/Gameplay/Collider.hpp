@@ -2,7 +2,7 @@
 /*!
 \file           Collider.hpp
 \project        Lights Out
-\author(s)      [Lebon], 50% [Amzar], 50%
+\author(s)      [Lebon], 50% [Sol-Amzar], 50%
 \brief          Declares collider shapes for 2D physics and lighting systems.
 
                 Responsibilities:
@@ -16,7 +16,7 @@
                 Notes (REMOVE AFTER EDIT)
                 - Credit to Physics developer for foundational collision logic.
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 

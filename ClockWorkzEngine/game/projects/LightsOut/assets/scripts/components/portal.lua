@@ -6,7 +6,12 @@ Properties = {
 
 function onTriggerEnter(self, entity, other)
     if self.levelName == "" then return end
-    if other:getTagValue() == "Player" then
+    local isPlayer = other:getTagValue() == "Player"
+    if not isPlayer and other.hasPlayerController ~= nil then
+        isPlayer = other:hasPlayerController()
+    end
+
+    if isPlayer then
         -- Store target spawn position in the persistent global Lua state.
         -- _G persists across scene loads because the Lua VM is never restarted.
         _G.nextSpawnPos = { x = self.spawnX, y = self.spawnY }

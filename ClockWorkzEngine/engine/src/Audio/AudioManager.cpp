@@ -2,7 +2,7 @@
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
-\author(s)      [Amzar] , 100%
+\author(s)      [Sol-Amzar], 100%
 \brief          Handles Audio using FMOD API.
                 Responsibilities include:
                 - Initializing and shutting down the FMOD system
@@ -13,7 +13,7 @@
 pausing
                                 - Providing 3D audio listener settings if needed
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -95,7 +95,7 @@ bool AudioManager::init(int maxChannels) {
   // FMOD requires COM to be initialised on the calling thread before
   // System_Create. COINIT_APARTMENTTHREADED is the mode FMOD recommends.
   // We track the result so we only call CoUninitialize() if WE initialised it
-  // (S_FALSE means COM was already initialised � we still own a reference).
+  // (S_FALSE means COM was already initialised ï¿½ we still own a reference).
   HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
   m_comInitialized = SUCCEEDED(hr);
 

@@ -2,7 +2,7 @@
 /*!
 \file			SurfaceAudioSystem.cpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Sol-Amzar], 100%
 \brief          Definition of SurfaceAudioSystem for playing footstep sounds
                 based on surface type and movement speed.
                 Responsibilities include:

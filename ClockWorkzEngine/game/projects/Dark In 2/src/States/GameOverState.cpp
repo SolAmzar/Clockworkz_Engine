@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           GameOverState.cpp
+\project        Dark In 2
+\author(s)      [Syafiq] 100%
+\brief          Implements the Dark In 2 GameOverState game state.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #include "States/GameOverState.hpp"
 #include "Runtime/GameStateManager.hpp"
 #include "Core/Engine.hpp"

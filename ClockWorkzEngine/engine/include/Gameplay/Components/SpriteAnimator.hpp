@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           SpriteAnimator.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 100%
+\brief          Declares the gameplay sprite animator component.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #pragma once
 #pragma warning(push, 0)
 #include "Core/json.hpp" // nlohmann::json

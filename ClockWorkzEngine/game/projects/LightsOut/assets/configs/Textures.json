@@ -1253,6 +1253,72 @@
             "flipY": true,
             "name": "Crack_texture",
             "path": "assets/textures/blockage.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_base_texture",
+            "path": "assets/textures/character_base.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_eyes0_texture",
+            "path": "assets/textures/character_eyes0.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_hair1_texture",
+            "path": "assets/textures/character_hair1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_hair2_texture",
+            "path": "assets/textures/character_hair2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_pant1_texture",
+            "path": "assets/textures/character_pant1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_pant2_texture",
+            "path": "assets/textures/character_pant2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_shirt1_texture",
+            "path": "assets/textures/character_shirt1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_shirt2_texture",
+            "path": "assets/textures/character_shirt2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "character_shoes1_texture",
+            "path": "assets/textures/character_shoes1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "staircase_texture",
+            "path": "assets/textures/Corridor/exit.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "exit_texture",
+            "path": "assets/textures/Corridor/exit.png"
         }
     ]
 }

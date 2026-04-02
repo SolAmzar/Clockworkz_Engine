@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 86% [Sol-Amzar] 14%
+\author(s)      [Syafiq] 81% [Sol-Amzar] 19%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -87,6 +87,7 @@ private:
     void        savePrefabFromEntity(ECS::Entity entity, const std::string& name, const std::string& category);
     ECS::Entity spawnPrefab(const std::string& prefabName, vec2 position);
     void        deletePrefab(const std::string& prefabName);
+    bool        updatePrefabCategory(const std::string& prefabName, const std::string& category);
 
     // ----- Tilemap types (declared here so method signatures can use them) -----
     struct TileData {
@@ -123,6 +124,13 @@ private:
         std::vector<std::filesystem::path> items;
         double                         lastRefreshTime{-1.0};
         bool                           dirty{true};
+    };
+    struct AssetSearchCache {
+        std::string                      query;
+        bool                             includeFolders{true};
+        std::vector<std::filesystem::path> items;
+        std::unordered_map<std::string, int> duplicateCountsByAssetId;
+        bool                             dirty{true};
     };
     enum class PaintMode { Paint, Erase, Select };
 
@@ -204,14 +212,18 @@ private:
 
     // ----- Asset browser -----
     std::string             m_selectedAsset;
+    std::vector<std::string> m_selectedAssetPaths;
+    std::string             m_selectedAssetFolderPath;
     char                    m_newAssetNameBuf[128]{};
     char                    m_newAssetPathBuf[256]{};
     std::string             m_currentAssetDir;
+    char                    m_assetSearchBuf[128]{};
     std::string             m_renamingAssetDirPath;
     char                    m_renameAssetDirBuf[256]{};
     std::string             m_deletingAssetDirPath;
-    std::string             m_movingAssetPath;
+    std::vector<std::string> m_movingAssetPaths;
     DirectoryListingCache   m_assetBrowserCache;
+    AssetSearchCache        m_assetSearchCache;
 
     // ----- Dockspace -----
     bool                    m_dockLayoutInitialized{false};
@@ -248,7 +260,8 @@ private:
     // ----- Asset rename/delete -----
     std::string             m_renamingAsset;
     char                    m_renameAssetBuf[128]{};
-    std::string             m_deletingAsset;
+    std::vector<std::string> m_deletingAssetPaths;
+    bool                    m_assetSearchIncludeFolders{true};
 
     // ----- Texture hot-reload -----
     void        initTextureFilePaths();
@@ -369,14 +382,25 @@ private:
     bool                     m_pendingFontImportPopup{false};
 
     // ----- Prefab Browser -----
-    std::vector<std::string> m_availablePrefabs;
-    int                      m_selectedPrefabIndex{-1};
-    char                     m_savePrefabNameBuf[128]{};
-    char                     m_savePrefabCategoryBuf[64]{"Custom"};
-    std::string              m_renamingPrefabPath;
-    char                     m_renamePrefabBuf[128]{};
-    std::string              m_cloningPrefabPath;
-    char                     m_clonePrefabBuf[128]{};
+    struct PrefabBrowserEntry {
+        std::string name;
+        std::string category;
+        std::string textureId;
+    };
+    std::vector<std::string>     m_availablePrefabs;
+    std::vector<PrefabBrowserEntry> m_availablePrefabEntries;
+    std::vector<std::string>     m_availablePrefabCategories;
+    int                          m_selectedPrefabIndex{-1};
+    char                         m_savePrefabNameBuf[128]{};
+    char                         m_savePrefabCategoryBuf[64]{"Custom"};
+    bool                         m_savePrefabUseCustomCategory{true};
+    std::string                  m_changeCategoryPrefabName;
+    char                         m_changeCategoryBuf[64]{};
+    bool                         m_changeCategoryUseCustom{false};
+    std::string                  m_renamingPrefabPath;
+    char                         m_renamePrefabBuf[128]{};
+    std::string                  m_cloningPrefabPath;
+    char                         m_clonePrefabBuf[128]{};
 
     // ----- BSA -----
     void renderBSATab();

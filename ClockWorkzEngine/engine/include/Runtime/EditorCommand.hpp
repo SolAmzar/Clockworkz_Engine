@@ -2,12 +2,11 @@
 /*!
 \file           EditorCommand.hpp
 \project        ClockWorkz Engine
-\author         [Syafiq]
-\brief          Engine-level undo/redo command system for EditorState.
-                Only references engine-level components (Tag, Transform,
-                SpriteRenderer). Game-specific components are excluded.
+\author(s)      [Syafiq] 97% [Sol-Amzar] 3%
+\brief          Declares the engine-level undo/redo command system used by the
+                editor, including snapshots for built-in ECS components.
 
-All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -21,6 +20,7 @@ reserved.
 #include "Components/Layer.hpp"
 #include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/ParticleEmitter.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/StateMachine.hpp"
 #include "Components/TextRenderer.hpp"
@@ -79,6 +79,7 @@ struct EntitySnapshot {
     bool hasLayer{false};           Components::Layer           layer{};
     bool hasLight{false};           Components::Light           light{};
     bool hasLuaScript{false};       Components::LuaScript       luaScript{};
+    bool hasParticleEmitter{false}; Components::ParticleEmitter particleEmitter{};
     bool hasSpriteAnimator{false};  Components::SpriteAnimator  spriteAnimator{};
     bool hasStateMachine{false};    Components::StateMachine    stateMachine{};
     bool hasTextRenderer{false};    Components::TextRenderer    textRenderer{};
