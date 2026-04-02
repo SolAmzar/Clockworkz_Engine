@@ -4,7 +4,7 @@
 \project        Lights Out
 \author(s)      [Sol-Amzar] 100%
 \brief          Declares the options/settings menu state for Lights Out, backed
-                by OptionsMenu.json.
+                by OptionsMenu.json. Matches the MainMenu overlay style.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
@@ -17,7 +17,6 @@ reserved.
 #include "ECS/World.hpp"
 #include "Systems/UISliderSystem.hpp"
 #include <string>
-#include <vector>
 
 namespace Platform {
 class InputManager;
@@ -53,9 +52,6 @@ public:
 
 private:
   void updateLayout(int w, int h);
-  void collectButtons();
-  void applyHoverColors();
-  void handleAction(const std::string &action);
   void updateSceneText();
   void closeOptions();
   void syncSlidersFromSettings();
@@ -74,7 +70,6 @@ private:
   Runtime::Scene             m_scene;
   Systems::UISliderSystem    m_sliderSystem;
 
-  std::vector<ECS::Entity>   m_buttonEntities;
   int                        m_selected{0};
   bool                       m_debug{false};
 };

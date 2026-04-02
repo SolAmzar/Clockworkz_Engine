@@ -35,7 +35,7 @@ namespace Scripting {
 }
 
 namespace Core {
-	class Config; class Logger; class Time;
+	class Config; class Logger; class Time; class CheatCodeManager;
 }
 namespace Platform {
 	class WindowManager; class InputManager; class LevelEditor; class GamepadManager;
@@ -123,6 +123,7 @@ namespace Core {
 		Platform::GamepadManager& gamepad() { return *m_gamepad; }
 		Platform::LevelEditor& editor() { return *m_editor; }
 		Core::Logger& logger() { return *m_logger; }
+		Core::CheatCodeManager& cheat() { return *m_cheat; }
 		Audio::SurfaceAudioSystem& surfaceAudio() { return *m_sfAudio; }
 		Audio::SurfaceAudioSystem const& surfaceAudio() const { return *m_sfAudio; }
 		Scripting::LuaManager& lua() { return *m_lua; }
@@ -143,6 +144,7 @@ namespace Core {
 		std::unique_ptr<Config> m_config;
 		std::unique_ptr<Logger> m_logger;
 		std::unique_ptr<Time>   m_time;
+		std::unique_ptr<CheatCodeManager> m_cheat;
 
 		// Inside namespace Platform
 		std::unique_ptr<Platform::WindowManager>  m_window;

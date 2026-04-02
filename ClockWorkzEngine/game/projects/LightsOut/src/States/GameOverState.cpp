@@ -173,16 +173,16 @@ void GameOverState::update(double /*dt*/) {
     }
     // Gamepad navigation
     auto& gp   = Core::Engine::Get().gamepad();
-    bool gpUp      = gp.isActionPressed("ui_up");
-    bool gpDown    = gp.isActionPressed("ui_down");
+    bool gpLeft    = gp.isActionPressed("ui_left");
+    bool gpRight   = gp.isActionPressed("ui_right");
     bool gpConfirm = gp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH);
 
     // Keyboard + gamepad navigation — selection persists across frames
-    if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W) || gpUp) {
+    if (m_input.wasKeyPressed(GLFW_KEY_LEFT) || m_input.wasKeyPressed(GLFW_KEY_A) || gpLeft) {
         Assets::SoundManager::Play("ui_move");
         if (--m_selected < 0) m_selected = (int)m_buttonEntities.size() - 1;
     }
-    if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S) || gpDown) {
+    if (m_input.wasKeyPressed(GLFW_KEY_RIGHT) || m_input.wasKeyPressed(GLFW_KEY_D) || gpRight) {
         Assets::SoundManager::Play("ui_move");
         if (++m_selected >= (int)m_buttonEntities.size()) m_selected = 0;
     }

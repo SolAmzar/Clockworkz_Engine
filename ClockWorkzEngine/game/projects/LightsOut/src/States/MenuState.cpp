@@ -304,19 +304,28 @@ void MenuState::setMenuButtonsVisible(bool visible) {
 }
 
 void MenuState::updateOptionsOverlayText() {
-  const glm::vec3 normalColor{0.98f, 0.86f, 0.88f};
-  const glm::vec3 selectedColor{1.0f, 1.0f, 1.0f};
+  const glm::vec3 normalColor{1.0f, 1.0f, 1.0f};
+  const glm::vec3 selectedColor{1.0f, 0.8f, 0.0f};
 
   m_menuScene.GetWorld().each<Components::Tag, Components::TextRenderer>(
       [&](ECS::Entity, Components::Tag &tag, Components::TextRenderer &tr) {
         const std::string &entityTag = tag.tag;
 
         if (entityTag == "options_master_value") {
-          tr.text = std::to_string(static_cast<int>(s_menuMasterVolume * 100.0f)) + "%";
+          tr.text  = std::to_string(static_cast<int>(s_menuMasterVolume * 100.0f)) + "%";
+          tr.color = (m_optionsSelected == 0) ? selectedColor : normalColor;
         } else if (entityTag == "options_bgm_value") {
-          tr.text = std::to_string(static_cast<int>(s_menuBgmVolume * 100.0f)) + "%";
+          tr.text  = std::to_string(static_cast<int>(s_menuBgmVolume * 100.0f)) + "%";
+          tr.color = (m_optionsSelected == 1) ? selectedColor : normalColor;
         } else if (entityTag == "options_sfx_value") {
-          tr.text = std::to_string(static_cast<int>(s_menuSfxVolume * 100.0f)) + "%";
+          tr.text  = std::to_string(static_cast<int>(s_menuSfxVolume * 100.0f)) + "%";
+          tr.color = (m_optionsSelected == 2) ? selectedColor : normalColor;
+        } else if (entityTag == "options_master_label") {
+          tr.color = (m_optionsSelected == 0) ? selectedColor : normalColor;
+        } else if (entityTag == "options_bgm_label") {
+          tr.color = (m_optionsSelected == 1) ? selectedColor : normalColor;
+        } else if (entityTag == "options_sfx_label") {
+          tr.color = (m_optionsSelected == 2) ? selectedColor : normalColor;
         } else if (entityTag == "options_back_label") {
           tr.color = (m_optionsSelected == 3) ? selectedColor : normalColor;
         }
@@ -403,12 +412,15 @@ void MenuState::setOptionVolume(int optionIndex, float value) {
 }
 
 void MenuState::adjustOptionVolume(float delta) {
+  auto stepped = [](float current, float d) {
+    return std::round((current + d) * 10.0f) / 10.0f;
+  };
   if (m_optionsSelected == 0) {
-    setOptionVolume(0, s_menuMasterVolume + delta);
+    setOptionVolume(0, stepped(s_menuMasterVolume, delta));
   } else if (m_optionsSelected == 1) {
-    setOptionVolume(1, s_menuBgmVolume + delta);
+    setOptionVolume(1, stepped(s_menuBgmVolume, delta));
   } else if (m_optionsSelected == 2) {
-    setOptionVolume(2, s_menuSfxVolume + delta);
+    setOptionVolume(2, stepped(s_menuSfxVolume, delta));
   }
 }
 
@@ -455,7 +467,8 @@ void MenuState::activateButton(const Components::UIButton &btn) {
         setOverlayVisible("howtoplay_overlay", true);
       },
       "open_options", [&]() {
-        openOptions();
+        m_gsm.push(std::make_shared<OptionsState>(
+            m_gsm, m_input, Core::Engine::Get().window(), m_audio));
       }
   );
   if (lua.ExecuteScript("assets/scripts/" + btn.uiScript))
@@ -467,11 +480,13 @@ void MenuState::update(double /*dt*/) {
   int h = m_window.height();
 
   if (m_showingHowToPlay) {
+    auto& gpadHtp = Core::Engine::Get().gamepad();
     if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
         m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
         m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
         m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT) ||
-        Core::Engine::Get().gamepad().isActionPressed("escape")) {
+        gpadHtp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH) ||
+        gpadHtp.isActionPressed("escape")) {
       m_showingHowToPlay = false;
       setOverlayVisible("howtoplay_overlay", false);
       setMenuButtonsVisible(true);
@@ -562,6 +577,17 @@ void MenuState::update(double /*dt*/) {
       m_optionsSelected = (m_optionsSelected + 1) % 4;
       movedSelection = true;
     }
+    auto& gp = Core::Engine::Get().gamepad();
+    if (gp.isActionPressed("ui_up")) {
+      Assets::SoundManager::Play("ui_move");
+      m_optionsSelected = (m_optionsSelected + 3) % 4;
+      movedSelection = true;
+    }
+    if (gp.isActionPressed("ui_down")) {
+      Assets::SoundManager::Play("ui_move");
+      m_optionsSelected = (m_optionsSelected + 1) % 4;
+      movedSelection = true;
+    }
     if (movedSelection) {
       updateOptionsOverlayText();
     }
@@ -597,19 +623,21 @@ void MenuState::update(double /*dt*/) {
       }
     }
 
-    if (m_input.wasKeyPressed(GLFW_KEY_LEFT) || m_input.wasKeyPressed(GLFW_KEY_A)) {
+    if (m_input.wasKeyPressed(GLFW_KEY_LEFT) || m_input.wasKeyPressed(GLFW_KEY_A) ||
+        gp.isActionPressed("ui_left")) {
       Assets::SoundManager::Play("ui_move");
       adjustOptionVolume(-kVolumeStep);
     }
-    if (m_input.wasKeyPressed(GLFW_KEY_RIGHT) ||
-        m_input.wasKeyPressed(GLFW_KEY_D)) {
+    if (m_input.wasKeyPressed(GLFW_KEY_RIGHT) || m_input.wasKeyPressed(GLFW_KEY_D) ||
+        gp.isActionPressed("ui_right")) {
       Assets::SoundManager::Play("ui_move");
       adjustOptionVolume(kVolumeStep);
     }
 
     if (m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
         m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) ||
-        m_input.wasKeyPressed(GLFW_KEY_SPACE)) {
+        m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
+        gp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH)) {
       if (m_optionsSelected == 3) {
         Assets::SoundManager::Play("ui_select");
         closeOptions();
@@ -617,7 +645,7 @@ void MenuState::update(double /*dt*/) {
     }
 
     if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
-        Core::Engine::Get().gamepad().isActionPressed("escape")) {
+        gp.isActionPressed("escape")) {
       Assets::SoundManager::Play("ui_select");
       closeOptions();
     }

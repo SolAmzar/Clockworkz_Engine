@@ -35,7 +35,6 @@ reserved.
 #include "Runtime/SceneSerializer.hpp"
 #include "States/MenuState.hpp"
 #include "States/OptionsState.hpp"
-#include "States/SettingsState.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -158,10 +157,16 @@ void PauseState::handleButton(const Components::UIButton &btn) {
           Core::Engine::Get().window(),
           Core::Engine::Get().audio()));
       },
+      "open_options", [&]() {
+           std::cout << "[PauseState] Opening options...\n";
+          GlobalAudioSettings::Apply(m_audio);
+        m_gsm.push(std::make_shared<OptionsState>(
+          m_gsm, m_input, Core::Engine::Get().window(), m_audio));
+      },
       "push_settings", [&]() {
            std::cout << "[PauseState] Opening options...\n";
           GlobalAudioSettings::Apply(m_audio);
-        m_gsm.push(std::make_shared<SettingsState>(
+        m_gsm.push(std::make_shared<OptionsState>(
           m_gsm, m_input, Core::Engine::Get().window(), m_audio));
       }
     );

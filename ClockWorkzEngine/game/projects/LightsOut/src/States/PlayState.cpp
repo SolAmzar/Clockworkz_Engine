@@ -33,6 +33,7 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
+#include "Core/Event.hpp"
 #include "Platform/GamepadManager.hpp"
 #include "Gameplay/Components/Fragment.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
@@ -210,6 +211,16 @@ void PlayState::onEnter() {
 
   // Initialize level editor
   Core::Engine &engine = Core::Engine::Get();
+  engine.events().subscribe<Core::GamepadConnectedEvent>(
+      this, [this](const Core::GamepadConnectedEvent &event) {
+        showControllerNotification("Controller connected: slot " +
+                                   std::to_string(event.index));
+      });
+  engine.events().subscribe<Core::GamepadDisconnectedEvent>(
+      this, [this](const Core::GamepadDisconnectedEvent &event) {
+        showControllerNotification("Controller disconnected: slot " +
+                                   std::to_string(event.index));
+      });
 
   // auto &audio = engine.audio();
 
@@ -364,11 +375,16 @@ void PlayState::onEnter() {
   m_fragmentNotificationTimer = 0.0f;
   m_lastCollectedFragmentId = "";
   m_fragmentIconTexture = "fragment_texture";
+  m_showControllerNotification = false;
+  m_controllerNotificationTimer = 0.0f;
+  m_controllerNotificationText.clear();
 
   std::cout << "[PlayState] Fragment system initialized\n";
 }
 
 void PlayState::onExit() {
+  Core::Engine::Get().events().unsubscribeOwner(this);
+
   // Shutdown level editor FIRST
   if (m_levelEditor && m_editorInitialized) {
     if (auto *scene = m_scenes.current()) {
@@ -395,6 +411,14 @@ void PlayState::onExit() {
 }
 
 void PlayState::update(double dt) {
+  if (m_showControllerNotification) {
+    m_controllerNotificationTimer -= static_cast<float>(dt);
+    if (m_controllerNotificationTimer <= 0.0f) {
+      m_showControllerNotification = false;
+      m_controllerNotificationText.clear();
+    }
+  }
+
   // ESC = Exit editor (or pause if not in editor)
   if (m_input.wasKeyPressed(GLFW_KEY_Z) && m_levelEditor->isActive()) {
     if (m_levelEditor && m_levelEditor->isActive()) {
@@ -1297,6 +1321,8 @@ void PlayState::render(Core::Time *timer) {
                         glm::vec3{1, 0.2, 0.2}, *shader);
   }
 
+  renderControllerNotification();
+
   m_renderer->endFontPass();
 
   (void)timer;
@@ -2016,6 +2042,39 @@ void Runtime::PlayState::renderFragmentUI() {
   }
 
   m_renderer->endFontPass();
+}
+
+void Runtime::PlayState::showControllerNotification(const std::string &message) {
+  m_controllerNotificationText = message;
+  m_showControllerNotification = true;
+  m_controllerNotificationTimer = 3.0f;
+}
+
+void Runtime::PlayState::renderControllerNotification() {
+  if (!m_showControllerNotification || !m_renderer) {
+    return;
+  }
+
+  auto &window = Core::Engine::Get().window();
+  auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+  auto font = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
+  if (!shader || !font) {
+    return;
+  }
+
+  const float boxWidth = 100.0f;
+  const float boxHeight = 100.0f;
+  const float x = (static_cast<float>(window.width()) - boxWidth) * 0.5f;
+  const float y = static_cast<float>(window.height()) - 40.0f;
+
+  font->RenderTextInBox(m_controllerNotificationText,
+                        x, y,
+                        boxWidth, boxHeight,
+                        0.35f,
+                        glm::vec3(1.0f, 1.0f, 1.0f),
+                        *shader,
+                        1, 0,
+                        true, 1.0f);
 }
 #endif
 

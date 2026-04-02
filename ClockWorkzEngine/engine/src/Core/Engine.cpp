@@ -36,6 +36,7 @@ static bool s_hasPostLuaInitState = false;
 #include "Assets/TextureManager.hpp"
 #include "Audio/AudioManager.hpp"
 #include "Audio/SurfaceAudioSystem.hpp"
+#include "Core/CheatCodeManager.hpp"
 #include "Core/Config.hpp"
 #include "Core/EventBus.hpp"
 #include "Core/Logger.hpp"
@@ -184,6 +185,7 @@ bool Engine::init() {
     return false;
   m_input->init(*m_window);
   m_gamepad->init(m_config->gamepadDeadzone, m_config->gamepadSprintThresh);
+  m_cheat    = std::make_unique<CheatCodeManager>(*m_gamepad, *m_input);
   if (!m_gfx->init(*m_window))
     return false;
 
@@ -375,6 +377,7 @@ void Engine::update(double dt) {
   m_audio->update(dt); // Update the audio manager class
   m_input->update();   // Update the input manager class
   m_gamepad->update(); // Pump SDL gamepad events + snapshot state
+  m_cheat->update(static_cast<float>(dt));
   if (m_input->wasKeyPressed(GLFW_KEY_F11)) {
     m_window->toggleFullscreen();
   }

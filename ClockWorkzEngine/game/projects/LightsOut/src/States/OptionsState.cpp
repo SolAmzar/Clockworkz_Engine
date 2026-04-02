@@ -4,7 +4,7 @@
 \project        Lights Out
 \author(s)      [Sol-Amzar] 100%
 \brief          Implements the options/settings menu state for Lights Out,
-                backed by OptionsMenu.json.
+                backed by OptionsMenu.json. Matches the MainMenu overlay style.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
@@ -21,7 +21,6 @@ reserved.
 #include "Components/Tag.hpp"
 #include "Components/TextRenderer.hpp"
 #include "Components/Transform.hpp"
-#include "Components/UIButton.hpp"
 #include "Components/UISlider.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Time.hpp"
@@ -44,6 +43,9 @@ using Graphics::Shader;
 
 namespace {
 constexpr float kVolumeStep = 0.1f;
+
+static const glm::vec3 kNormalColor   = {1.0f, 1.0f, 1.0f};
+static const glm::vec3 kSelectedColor = {1.0f, 0.8f, 0.0f};
 
 float clampVolume(float value) {
   return std::clamp(value, 0.0f, 1.0f);
@@ -73,7 +75,6 @@ OptionsState::OptionsState(GameStateManager &gsm, Platform::InputManager &input,
 
 void OptionsState::onEnter() {
   m_selected = 0;
-  m_buttonEntities.clear();
 
   Core::Engine &engine = Core::Engine::Get();
   m_renderer = &engine.rendering();
@@ -88,7 +89,6 @@ void OptionsState::onEnter() {
 
   m_scene.Init();
   m_scene.LoadFromFile("assets/scenes/OptionsMenu.json");
-  collectButtons();
 
   GlobalAudioSettings::Load();
   GlobalAudioSettings::Apply(m_audio);
@@ -117,44 +117,9 @@ void OptionsState::updateLayout(int w, int h) {
   glViewport(0, 0, w, h);
 }
 
-void OptionsState::collectButtons() {
-  m_buttonEntities.clear();
-  m_scene.GetWorld().each<Components::UIButton>(
-      [this](ECS::Entity e, Components::UIButton &) {
-        m_buttonEntities.push_back(e);
-      });
-}
-
-void OptionsState::applyHoverColors() {
-  for (ECS::Entity e : m_buttonEntities) {
-    auto *btn = m_scene.GetWorld().getComponent<Components::UIButton>(e);
-    auto *sr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(e);
-    auto *tr = m_scene.GetWorld().getComponent<Components::TextRenderer>(e);
-    if (!btn) {
-      continue;
-    }
-
-    const bool selected = (m_selected == 2);
-    const glm::vec3 c = selected ? btn->hoverColor : btn->normalColor;
-    if (sr) {
-      sr->color = glm::vec4(c, sr->color.a);
-      if (!btn->showBackground) {
-        sr->visible = false;
-      }
-    }
-    if (tr) {
-      tr->color = c;
-    }
-  }
-}
-
-void OptionsState::handleAction(const std::string &action) {
-  if (action == "back") {
-    closeOptions();
-  }
-}
-
 void OptionsState::updateSceneText() {
+  const int masterPercent =
+      static_cast<int>(GlobalAudioSettings::GetMasterVolume() * 100.0f);
   const int bgmPercent =
       static_cast<int>(GlobalAudioSettings::GetBGMVolume() * 100.0f);
   const int sfxPercent =
@@ -162,14 +127,26 @@ void OptionsState::updateSceneText() {
 
   m_scene.GetWorld().each<Components::Tag, Components::TextRenderer>(
       [&](ECS::Entity, Components::Tag &tag, Components::TextRenderer &tr) {
-        if (tag.tag == "options_bgm_value") {
+        const std::string &t = tag.tag;
+        if (t == "options_master_value") {
+          tr.text = std::to_string(masterPercent) + "%";
+          tr.color = (m_selected == 0) ? kSelectedColor : kNormalColor;
+        } else if (t == "options_bgm_value") {
           tr.text = std::to_string(bgmPercent) + "%";
-        } else if (tag.tag == "options_sfx_value") {
+          tr.color = (m_selected == 1) ? kSelectedColor : kNormalColor;
+        } else if (t == "options_sfx_value") {
           tr.text = std::to_string(sfxPercent) + "%";
+          tr.color = (m_selected == 2) ? kSelectedColor : kNormalColor;
+        } else if (t == "options_master_label") {
+          tr.color = (m_selected == 0) ? kSelectedColor : kNormalColor;
+        } else if (t == "options_bgm_label") {
+          tr.color = (m_selected == 1) ? kSelectedColor : kNormalColor;
+        } else if (t == "options_sfx_label") {
+          tr.color = (m_selected == 2) ? kSelectedColor : kNormalColor;
+        } else if (t == "options_back_label") {
+          tr.color = (m_selected == 3) ? kSelectedColor : kNormalColor;
         }
       });
-
-  applyHoverColors();
 }
 
 void OptionsState::closeOptions() {
@@ -179,7 +156,9 @@ void OptionsState::closeOptions() {
 void OptionsState::syncSlidersFromSettings() {
   m_scene.GetWorld().each<Components::UISlider>(
       [&](ECS::Entity, Components::UISlider &sl) {
-        if (sl.settingKey == "bgm") {
+        if (sl.settingKey == "master") {
+          sl.value = GlobalAudioSettings::GetMasterVolume();
+        } else if (sl.settingKey == "bgm") {
           sl.value = GlobalAudioSettings::GetBGMVolume();
         } else if (sl.settingKey == "sfx") {
           sl.value = GlobalAudioSettings::GetSFXVolume();
@@ -192,8 +171,12 @@ void OptionsState::applySliderSettings() {
   m_scene.GetWorld().each<Components::UISlider>(
       [&](ECS::Entity, Components::UISlider &sl) {
         const float clamped = clampVolume(sl.value);
-        if (sl.settingKey == "bgm" &&
-            GlobalAudioSettings::GetBGMVolume() != clamped) {
+        if (sl.settingKey == "master" &&
+            GlobalAudioSettings::GetMasterVolume() != clamped) {
+          GlobalAudioSettings::SetMasterVolume(clamped);
+          changed = true;
+        } else if (sl.settingKey == "bgm" &&
+                   GlobalAudioSettings::GetBGMVolume() != clamped) {
           GlobalAudioSettings::SetBGMVolume(clamped);
           changed = true;
         } else if (sl.settingKey == "sfx" &&
@@ -214,8 +197,10 @@ void OptionsState::setOptionVolume(int optionIndex, float value) {
   const float clampedValue = clampVolume(value);
 
   if (optionIndex == 0) {
-    GlobalAudioSettings::SetBGMVolume(clampedValue);
+    GlobalAudioSettings::SetMasterVolume(clampedValue);
   } else if (optionIndex == 1) {
+    GlobalAudioSettings::SetBGMVolume(clampedValue);
+  } else if (optionIndex == 2) {
     GlobalAudioSettings::SetSFXVolume(clampedValue);
   } else {
     return;
@@ -228,10 +213,15 @@ void OptionsState::setOptionVolume(int optionIndex, float value) {
 }
 
 void OptionsState::adjustOptionVolume(float delta) {
+  auto stepped = [](float current, float d) {
+    return std::round((current + d) * 10.0f) / 10.0f;
+  };
   if (m_selected == 0) {
-    setOptionVolume(0, GlobalAudioSettings::GetBGMVolume() + delta);
+    setOptionVolume(0, stepped(GlobalAudioSettings::GetMasterVolume(), delta));
   } else if (m_selected == 1) {
-    setOptionVolume(1, GlobalAudioSettings::GetSFXVolume() + delta);
+    setOptionVolume(1, stepped(GlobalAudioSettings::GetBGMVolume(), delta));
+  } else if (m_selected == 2) {
+    setOptionVolume(2, stepped(GlobalAudioSettings::GetSFXVolume(), delta));
   }
 }
 
@@ -240,78 +230,61 @@ void OptionsState::update(double /*dt*/) {
   int h = m_window.height();
   vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
   const bool mousePressed = m_input.wasMousePressed(GLFW_MOUSE_BUTTON_LEFT);
+  const bool mouseDown    = m_input.isMouseDown(GLFW_MOUSE_BUTTON_LEFT);
   bool movedSelection = false;
+  auto& gp = Core::Engine::Get().gamepad();
 
-  m_sliderSystem.update(m_scene.GetWorld(), m_input, *m_cam, (float)w,
-                        (float)h);
+  m_sliderSystem.update(m_scene.GetWorld(), m_input, *m_cam, (float)w, (float)h);
   applySliderSettings();
 
-  auto getSliderRectByTag =
-      [this](const char *tagName, const RectBounds &fallback) {
-        RectBounds rect = fallback;
-        m_scene.GetWorld().each<Components::Tag, Components::Transform,
-                                Components::UISlider>(
-            [&](ECS::Entity, Components::Tag &tag,
-                Components::Transform &transform, Components::UISlider &sl) {
-              if (tag.tag == tagName) {
-                rect.centerX = transform.position.x;
-                rect.centerY = transform.position.y;
-                rect.width = sl.trackWidth;
-                rect.height = std::max(sl.trackHeight, sl.handleSize);
-              }
-            });
-        return rect;
-      };
+  // Build hit rects from scene transforms
+  auto getSpriteRectByTag = [this](const char *tagName, const RectBounds &fallback) {
+    RectBounds rect = fallback;
+    m_scene.GetWorld().each<Components::Tag, Components::Transform,
+                            Components::SpriteRenderer>(
+        [&](ECS::Entity, Components::Tag &tag, Components::Transform &tf,
+            Components::SpriteRenderer &sr) {
+          if (tag.tag == tagName) {
+            rect.centerX = tf.position.x;
+            rect.centerY = tf.position.y;
+            rect.width   = sr.size.x;
+            rect.height  = sr.size.y;
+          }
+        });
+    return rect;
+  };
 
-  const RectBounds bgmRect = getSliderRectByTag(
-      "options_bgm_bar", RectBounds{200.0f, 70.0f, 500.0f, 48.0f});
-  const RectBounds sfxRect = getSliderRectByTag(
-      "options_sfx_bar", RectBounds{200.0f, -70.0f, 500.0f, 48.0f});
+  auto getTextRectByTag = [this](const char *tagName, const RectBounds &fallback) {
+    RectBounds rect = fallback;
+    m_scene.GetWorld().each<Components::Tag, Components::Transform,
+                            Components::TextRenderer>(
+        [&](ECS::Entity, Components::Tag &tag, Components::Transform &tf,
+            Components::TextRenderer &tr) {
+          if (tag.tag == tagName) {
+            rect.centerX = tf.position.x;
+            rect.centerY = tf.position.y;
+            if (tr.boxSize.x > 0.0f) rect.width  = tr.boxSize.x;
+            if (tr.boxSize.y > 0.0f) rect.height = tr.boxSize.y;
+          }
+        });
+    return rect;
+  };
 
-  int hoveredIndex = -1;
-  for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
-    ECS::Entity e = m_buttonEntities[i];
-    auto *btn = m_scene.GetWorld().getComponent<Components::UIButton>(e);
-    auto *tf = m_scene.GetWorld().getComponent<Components::Transform>(e);
-    if (!btn || !tf || !btn->interactable) {
-      continue;
-    }
+  const RectBounds masterRect = getSpriteRectByTag(
+      "options_master_bar", RectBounds{10.0f,  145.0f,  520.0f, 40.0f});
+  const RectBounds bgmRect = getSpriteRectByTag(
+      "options_bgm_bar",    RectBounds{10.0f,   31.0f,  520.0f, 40.0f});
+  const RectBounds sfxRect = getSpriteRectByTag(
+      "options_sfx_bar",    RectBounds{10.0f,  -90.0f,  520.0f, 40.0f});
+  const RectBounds backRect = getTextRectByTag(
+      "options_back_label", RectBounds{0.0f,  -179.0f,  240.0f, 60.0f});
 
-    float cx    = tf->position.x + btn->offset.x;
-    float cy    = tf->position.y + btn->offset.y;
-    float halfW = btn->size.x * 0.5f;
-    float halfH = btn->size.y * 0.5f;
-    const bool hovered =
-        mouseWorld.x >= cx - halfW && mouseWorld.x <= cx + halfW &&
-        mouseWorld.y >= cy - halfH && mouseWorld.y <= cy + halfH;
-    if (hovered) {
-      hoveredIndex = i;
-      break;
-    }
-  }
-
-  if (hoveredIndex >= 0 && m_selected != 2) {
-    m_selected = 2;
-    Assets::SoundManager::Play("ui_move");
-    movedSelection = true;
-  }
-
-  if (hoveredIndex >= 0 && mousePressed) {
-    Assets::SoundManager::Play("ui_select");
-    auto *btn = m_scene.GetWorld().getComponent<Components::UIButton>(
-        m_buttonEntities[hoveredIndex]);
-    if (btn) {
-      handleAction(btn->action);
-      return;
-    }
-  }
-
+  // Mouse hover detection
   int hoveredOption = -1;
-  if (containsPoint(bgmRect, mouseWorld)) {
-    hoveredOption = 0;
-  } else if (containsPoint(sfxRect, mouseWorld)) {
-    hoveredOption = 1;
-  }
+  if (containsPoint(masterRect, mouseWorld))     hoveredOption = 0;
+  else if (containsPoint(bgmRect, mouseWorld))   hoveredOption = 1;
+  else if (containsPoint(sfxRect, mouseWorld))   hoveredOption = 2;
+  else if (containsPoint(backRect, mouseWorld))  hoveredOption = 3;
 
   if (hoveredOption >= 0 && hoveredOption != m_selected) {
     m_selected = hoveredOption;
@@ -319,44 +292,84 @@ void OptionsState::update(double /*dt*/) {
     movedSelection = true;
   }
 
+  // Mouse click on back label
+  if (mousePressed && hoveredOption == 3) {
+    Assets::SoundManager::Play("ui_select");
+    closeOptions();
+    return;
+  }
+
+  // Mouse slider interaction (click snap + drag)
+  auto applyMouseSlider = [this, &mouseWorld](const RectBounds &rect, int idx) {
+    const float left       = rect.centerX - rect.width * 0.5f;
+    const float normalized = clampVolume((mouseWorld.x - left) / rect.width);
+    setOptionVolume(idx, normalized);
+  };
+
+  if (mousePressed && hoveredOption >= 0 && hoveredOption <= 2) {
+    Assets::SoundManager::Play("ui_move");
+    applyMouseSlider(hoveredOption == 0 ? masterRect : (hoveredOption == 1 ? bgmRect : sfxRect),
+                     hoveredOption);
+  } else if (mouseDown) {
+    if (containsPoint(masterRect, mouseWorld))   applyMouseSlider(masterRect, 0);
+    else if (containsPoint(bgmRect, mouseWorld)) applyMouseSlider(bgmRect,    1);
+    else if (containsPoint(sfxRect, mouseWorld)) applyMouseSlider(sfxRect,    2);
+  }
+
+  // Keyboard UP / DOWN navigation
   if (m_input.wasKeyPressed(GLFW_KEY_UP) || m_input.wasKeyPressed(GLFW_KEY_W)) {
     Assets::SoundManager::Play("ui_move");
-    m_selected = (m_selected + 2) % 3;
+    m_selected = (m_selected + 3) % 4;
     movedSelection = true;
   }
-  if (m_input.wasKeyPressed(GLFW_KEY_DOWN) ||
-      m_input.wasKeyPressed(GLFW_KEY_S)) {
+  if (m_input.wasKeyPressed(GLFW_KEY_DOWN) || m_input.wasKeyPressed(GLFW_KEY_S)) {
     Assets::SoundManager::Play("ui_move");
-    m_selected = (m_selected + 1) % 3;
+    m_selected = (m_selected + 1) % 4;
     movedSelection = true;
   }
+
+  // Gamepad UP / DOWN navigation
+  if (gp.isActionPressed("ui_up")) {
+    Assets::SoundManager::Play("ui_move");
+    m_selected = (m_selected + 3) % 4;
+    movedSelection = true;
+  }
+  if (gp.isActionPressed("ui_down")) {
+    Assets::SoundManager::Play("ui_move");
+    m_selected = (m_selected + 1) % 4;
+    movedSelection = true;
+  }
+
   if (movedSelection) {
     updateSceneText();
   }
 
-  if (m_input.wasKeyPressed(GLFW_KEY_LEFT) ||
-      m_input.wasKeyPressed(GLFW_KEY_A)) {
+  // Keyboard + gamepad LEFT / RIGHT volume adjust
+  if (m_input.wasKeyPressed(GLFW_KEY_LEFT) || m_input.wasKeyPressed(GLFW_KEY_A) ||
+      gp.isActionPressed("ui_left")) {
     Assets::SoundManager::Play("ui_move");
     adjustOptionVolume(-kVolumeStep);
   }
-  if (m_input.wasKeyPressed(GLFW_KEY_RIGHT) ||
-      m_input.wasKeyPressed(GLFW_KEY_D)) {
+  if (m_input.wasKeyPressed(GLFW_KEY_RIGHT) || m_input.wasKeyPressed(GLFW_KEY_D) ||
+      gp.isActionPressed("ui_right")) {
     Assets::SoundManager::Play("ui_move");
     adjustOptionVolume(kVolumeStep);
   }
 
+  // Confirm — only triggers on BACK
   if (m_input.wasKeyPressed(GLFW_KEY_ENTER) ||
       m_input.wasKeyPressed(GLFW_KEY_KP_ENTER) ||
-      m_input.wasKeyPressed(GLFW_KEY_SPACE)) {
-    if (m_selected == 2) {
+      m_input.wasKeyPressed(GLFW_KEY_SPACE) ||
+      gp.wasButtonPressed(SDL_GAMEPAD_BUTTON_SOUTH)) {
+    if (m_selected == 3) {
       Assets::SoundManager::Play("ui_select");
-      handleAction("back");
+      closeOptions();
       return;
     }
   }
 
-  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
-      Core::Engine::Get().gamepad().isActionPressed("escape")) {
+  // Escape always closes
+  if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) || gp.isActionPressed("escape")) {
     Assets::SoundManager::Play("ui_select");
     closeOptions();
     return;
@@ -381,6 +394,7 @@ void OptionsState::renderImGui(Core::Time * /*timer*/) {
   }
   ImGui::Begin("OptionsState Debug");
   ImGui::Text("Selected: %d", m_selected);
+  ImGui::Text("Master: %.2f", GlobalAudioSettings::GetMasterVolume());
   ImGui::Text("BGM: %.2f", GlobalAudioSettings::GetBGMVolume());
   ImGui::Text("SFX: %.2f", GlobalAudioSettings::GetSFXVolume());
   ImGui::End();
