@@ -1,5 +1,5 @@
 {
-    "category": "Custom",
+    "category": "Entity",
     "components": {
         "cameraComponent": {
             "isMain": true,
@@ -26,6 +26,20 @@
             "radius": 30.0,
             "shape": 1,
             "width": 50.0
+        },
+        "footstepAudio": {
+            "concretePrefix": "fs_concrete_",
+            "interval": 0.6000000238418579,
+            "minSpeed": 0.10000000149011612,
+            "resetDelay": 0.05000000074505806,
+            "soundPrefix": "fs_concrete_",
+            "sprintIntervalScale": 0.6000000238418579,
+            "sprintSpeedThreshold": 14.0,
+            "tilePrefix": "fs_tile_",
+            "useSurfaceSounds": true,
+            "variationCount": 4,
+            "volume": 1.0,
+            "woodPrefix": "fs_concrete_"
         },
         "light": {
             "active": false,
@@ -74,7 +88,7 @@
                 "properties": {
                     "collectedCount": 0,
                     "pickupRadius": 50.0,
-                    "requiredFragments": 5
+                    "requiredFragments": 10
                 },
                 "scriptPath": "components/fragment_collector.lua"
             },
@@ -125,8 +139,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": -987.3036499023438,
-                "y": 214.74807739257813
+                "x": -1150.0,
+                "y": 150.0
             },
             "rotation": 2.2303144931793213,
             "scale": {
@@ -141,5 +155,5 @@
             "y": 0.0
         }
     },
-    "name": "player"
+    "name": "Player"
 }

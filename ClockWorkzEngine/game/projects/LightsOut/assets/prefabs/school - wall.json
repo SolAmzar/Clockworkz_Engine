@@ -1,5 +1,5 @@
 {
-    "category": "Concrete",
+    "category": "Custom",
     "components": {
         "collider": {
             "blocksLight": false,
