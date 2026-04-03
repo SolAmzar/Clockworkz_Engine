@@ -48,6 +48,12 @@ namespace Core
     struct WindowFocusLostEvent : public BaseEvent {};
     struct WindowFocusGainedEvent : public BaseEvent {};
 
+    // Fired when the window is minimized (iconified) or restored.
+    // Game states can listen for these to react specifically to minimize/restore
+    // independently of focus changes (e.g. save state on minimize).
+    struct WindowIconifiedEvent : public BaseEvent {};
+    struct WindowRestoredEvent  : public BaseEvent {};
+
 
     struct PlayerDiedEvent : BaseEvent
     {

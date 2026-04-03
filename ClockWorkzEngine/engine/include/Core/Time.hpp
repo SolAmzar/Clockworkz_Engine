@@ -28,6 +28,11 @@ namespace Core {
 		double fixedDelta() const { return m_fixedDT; }
 		int    currentSteps() const { return m_currentSteps; }
 		void   setFixedDelta(double dt) { m_fixedDT = dt; }
+		// Maximum delta-time (seconds).  After a long pause (CTRL-ALT-DEL,
+		// Alt-Tab, etc.) the raw dt would be huge, causing physics to explode
+		// and animations to fast-forward.  Clamping to 100 ms (≈10 FPS) keeps
+		// every subsystem stable on resume.
+		static constexpr double MAX_DT = 0.1;
 	private:
 		double m_last = 0.0, m_dt = 0.0, m_accum = 0.0; 
 		int m_frames = 0; 

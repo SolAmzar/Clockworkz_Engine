@@ -109,6 +109,22 @@ bool GamepadManager::isConnected(int index) const {
     return m_pads[index].handle != nullptr;
 }
 
+void GamepadManager::clearState() {
+    // Zero all button / axis snapshots so no stale button-down state leaks
+    // across a system interruption (Alt-Tab, CTRL-ALT-DEL, etc.).
+    for (int slot = 0; slot < MAX_GAMEPADS; ++slot) {
+        m_pads[slot].prev.fill(false);
+        m_pads[slot].curr.fill(false);
+        m_pads[slot].axes.fill(0.0f);
+    }
+    // Also reset the named action layer
+    for (auto& [name, a] : m_actions) {
+        a.prev  = false;
+        a.curr  = false;
+        a.value = 0.0f;
+    }
+}
+
 bool GamepadManager::isButtonDown(SDL_GamepadButton btn, int index) const {
     if (index < 0 || index >= MAX_GAMEPADS) return false;
     if (!m_pads[index].handle) return false;
