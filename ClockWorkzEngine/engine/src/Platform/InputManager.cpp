@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           InputManager.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 84% [Syafiq] 16%
+\brief          Implements keyboard, mouse, and input state tracking for the engine.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 /*!
 \file           InputManager.cpp
 \project        Lights Out

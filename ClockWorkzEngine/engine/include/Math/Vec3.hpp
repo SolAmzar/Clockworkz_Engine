@@ -2,7 +2,7 @@
 /*!
 \file           Vec3.hpp
 \project        Lights Out
-\author(s)      [Amzar]
+\author(s)      [Sol-Amzar]
 \brief          Establishes 3D vector structure with common vector operations.
                 Responsibilities include:
                 - Defining a vec3 struct with x, y, and z components
@@ -11,7 +11,7 @@
                 - Providing utility functions like dot product, cross product, normalization, length, and angle calculations
                 - Including helper functions for linear interpolation, projection, rejection, reflection, and angle between vectors
 				- Serving as a lightweight, header-only math utility for 3D vector operations
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 
 

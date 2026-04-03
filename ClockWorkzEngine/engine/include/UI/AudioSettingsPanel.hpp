@@ -2,10 +2,10 @@
 /*!
 \file           AudioSettingsPanel.hpp
 \project        ClockWorkz Engine
-\author         [Amzar]
+\author         [Sol-Amzar]
 \brief          Engine-level ImGui panel for audio volume controls.
                 Call Audio::AudioSettingsPanel::draw(visible) between
-                ImGui::NewFrame() and ImGui::Render() — e.g. inside a
+                ImGui::NewFrame() and ImGui::Render() â€” e.g. inside a
                 GameState::renderImGui() implementation.
 
                 Follows the same static-draw pattern as Memory::MemoryDebugPanel.

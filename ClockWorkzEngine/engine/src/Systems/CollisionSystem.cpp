@@ -2,10 +2,10 @@
 /*!
 \file           CollisionSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon] [Syafiq] [Amzar]
+\author(s)      [Lebon] [Syafiq] [Sol-Amzar]
 \brief          CollisionSystem implementation - OBB/Circle intersection.
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights
+All content Â© 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -24,14 +24,14 @@ reserved.
 
 namespace Systems {
 
-// Baumgarte correction constants — apply partial correction to reduce jitter.
+// Baumgarte correction constants â€” apply partial correction to reduce jitter.
 // kPercent: fraction of penetration corrected per frame (< 1 prevents overshoot).
 // kSlop: minimum penetration depth to correct (filters micro-jitter).
 static constexpr float kCorrectPercent = 0.8f;
 static constexpr float kCorrectSlop    = 0.5f;  // pixels
 
 // Returns the AABB (in world space) that encloses the rotated collider.
-// Used for spatial grid broadphase only — not for narrowphase.
+// Used for spatial grid broadphase only â€” not for narrowphase.
 static void getWorldAABB(const Components::Transform &t,
                          const Components::Collider &c,
                          vec2 &outMin, vec2 &outMax) {
@@ -68,7 +68,7 @@ void CollisionSystem::update(ECS::World &world,
                              const std::vector<bool> *layerEnabled) {
   m_collisions.clear();
 
-  // Reuse scratch buffers — clear preserves allocated capacity.
+  // Reuse scratch buffers â€” clear preserves allocated capacity.
   m_entities.clear();
   m_grid.clear();
   m_tested.clear();
@@ -233,7 +233,7 @@ bool CollisionSystem::checkAABB(const Components::Transform &tA,
 
   vec2 d = centerB - centerA;
 
-  // Fast-path: both boxes axis-aligned (most common case — walls, player, tiles).
+  // Fast-path: both boxes axis-aligned (most common case â€” walls, player, tiles).
   // Simple interval overlap is much cheaper than 4-axis SAT.
   static constexpr float kRotEps = 1e-4f;
   if (std::abs(tA.rotation) < kRotEps && std::abs(tB.rotation) < kRotEps) {
@@ -269,7 +269,7 @@ bool CollisionSystem::checkAABB(const Components::Transform &tA,
 
     if (overlap < minOverlap) {
       minOverlap = overlap;
-      // MTV pushes A away from B — ensure axis points from B toward A
+      // MTV pushes A away from B â€” ensure axis points from B toward A
       mtvAxis = (dot(d, axis) > 0.f) ? -axis : axis;
     }
   }
@@ -299,7 +299,7 @@ bool CollisionSystem::checkCircleCircle(const Components::Transform &tA,
 
   float dist = std::sqrt(distSq);
   if (dist < 1e-4f) {
-    // Circles perfectly overlapping — use entity key bit for a deterministic
+    // Circles perfectly overlapping â€” use entity key bit for a deterministic
     // push direction that doesn't oscillate between frames.
     if (keyA & 1u)
       penetration = vec2(radiusSum, 0.f);
@@ -345,7 +345,7 @@ bool CollisionSystem::checkAABBCircle(const Components::Transform &tBox,
   // 6. Penetration in local space
   vec2 penetrationLocal;
   if (dist < 1e-4f) {
-    // Circle center is inside box — find minimum separation axis
+    // Circle center is inside box â€” find minimum separation axis
     vec2 overlap = boxHalf + vec2(radCirc, radCirc) - abs_vec2(localCirc);
     if (overlap.x < overlap.y) {
       float sign = (localCirc.x < 0.f) ? -1.f : 1.f;
@@ -355,7 +355,7 @@ bool CollisionSystem::checkAABBCircle(const Components::Transform &tBox,
       penetrationLocal = vec2(0.f, -sign * overlap.y);
     }
   } else {
-    // Circle center is outside box — push along contact normal
+    // Circle center is outside box â€” push along contact normal
     penetrationLocal = -(diffLocal / dist) * (radCirc - dist);
   }
 

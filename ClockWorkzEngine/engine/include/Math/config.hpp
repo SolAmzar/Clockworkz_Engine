@@ -2,7 +2,7 @@
 /*!
 \file           config.hpp
 \project        Lights Out
-\author(s)      [Amzar]
+\author(s)      [Sol-Amzar]
 \brief          Places math constants and functions to a separate header.
 				Responsibilities include:
 				- Defining mathematical constants like PI, Tau, and Epsilon
@@ -10,7 +10,7 @@
 				- Implementing floating-point comparison with tolerance
 				- Serving as a lightweight, header-only utility for math operations
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content Â© 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 

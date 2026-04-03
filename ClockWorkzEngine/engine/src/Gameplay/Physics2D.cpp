@@ -2,7 +2,7 @@
 /*!
 \file           Physics2D.cpp
 \project        Lights Out
-\author(s)      [Lebon], 50% [Amzar], 50% 
+\author(s)      [Lebon], 50% [Sol-Amzar], 50% 
 \brief          Implements the 2D physics system responsible for collision and
                 raycasting logic.
 
@@ -15,7 +15,7 @@
                 - Supports multiple collider types and flexible collision masks
                   for selective interaction between objects.
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 
@@ -242,7 +242,7 @@ namespace Gameplay {
 	// helpers to identify object types and apply gameplay effects
     namespace {
 
-        // Simple �who is player� utility
+        // Simple ï¿½who is playerï¿½ utility
         inline bool isPlayer(Gameplay::GameObject* g) {
             return g->type() == Gameplay::GameObjectType::Player;
         }
@@ -274,7 +274,7 @@ namespace Gameplay {
             GT at = a.type();
             GT bt = b.type();
 
-            // PLAYER ? ENEMY: player �dies� (respawn / health to 0 / deactivate)
+            // PLAYER ? ENEMY: player ï¿½diesï¿½ (respawn / health to 0 / deactivate)
             if ((at == GT::Player && bt == GT::Enemy) ||
                 (bt == GT::Player && at == GT::Enemy))
             {
@@ -378,7 +378,7 @@ namespace Gameplay {
                     if (hit) best = m;
                 }
                 else {
-                    // AABB�AABB MTV already computed
+                    // AABBï¿½AABB MTV already computed
                 }
 
                 // 1) Decide if this pair should be *physically* non-passable

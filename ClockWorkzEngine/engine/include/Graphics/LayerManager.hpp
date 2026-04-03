@@ -2,7 +2,7 @@
 /*!
 \file           LayerManager.cpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Sol-Amzar], 100%
 \brief          A Manager for organizing GameObjects into layers for rendering and updating.
                 Responsibilities include:
                 - Storing GameObjects in buckets based on their assigned layers

@@ -2,9 +2,10 @@
 /*!
 \file           TilemapCollisionBuilder.cpp
 \project        ClockWorkz Engine
+\author(s)      [Syafiq] 99% [Sol-Amzar] 1%
 \brief          Greedy-rectangle tilemap collision merging implementation.
 
-All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -12,6 +13,7 @@ reserved.
 #include "ECS/World.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Collider.hpp"
+#include "Components/LuaScript.hpp"
 #include "Components/Tag.hpp"
 #include "Components/Layer.hpp"
 #include "Physics/Collision.hpp"
@@ -26,6 +28,25 @@ namespace Systems {
 
 // Tracks which tile entities had isSolid disabled so clear() can restore them.
 static std::vector<ECS::Entity> s_disabledTileEntities;
+
+static bool isMergedColliderExcludedEntity(ECS::World& world, ECS::Entity entity) {
+    if (auto* tag = world.getComponent<Components::Tag>(entity)) {
+        if (tag->tag == "Player" || tag->tag == "Enemy")
+            return true;
+    }
+
+    if (auto* lua = world.getComponent<Components::LuaScript>(entity)) {
+        for (const auto& script : lua->scripts) {
+            if (script.scriptPath == "player_controller.lua"
+                || script.scriptPath == "components/enemy_ai.lua"
+                || script.scriptPath == "components/moth_ai.lua") {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 // ---------------------------------------------------------------------------
 
@@ -70,6 +91,7 @@ void TilemapCollisionBuilder::build(ECS::World& world,
         if (tileCollider->isTrigger)                     continue;
         if (tileCollider->moveable)                      continue;
         if (tileCollider->shape != Collider::Shape::Box) continue; // skip circles
+        if (isMergedColliderExcludedEntity(world, tile.entity))    continue;
         tilesByLayer[tile.layer].push_back(&tile);
     }
 

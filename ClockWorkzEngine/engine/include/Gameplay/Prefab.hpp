@@ -1,4 +1,14 @@
+/******************************************************************************/
+/*!
+\file           Prefab.hpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 47% [Syafiq] 27% [Yusuf] 24% [StarrySol] 2%
+\brief          Declares prefab loading, saving, and instantiation helpers.
 
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 /*
 Prefab.cpp by Amirul Syafiq (100%)
 */

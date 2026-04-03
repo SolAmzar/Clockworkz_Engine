@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           SpriteState.hpp
+\project        Lights Out
+\author(s)      [Lebon] 100%
+\brief          Declares the Lights Out sprite preview state.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 #if 0
 /******************************************************************************/
 /*!

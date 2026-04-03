@@ -24,6 +24,21 @@ Properties = {
 local HudBattery = {}
 HudBattery._timer = 0.0
 
+local function findPlayer()
+    local player = World.findByTag("Player")
+    if player and player:isValid() then
+        return player
+    end
+
+    local found = nil
+    World.eachWithScript("player_controller.lua", function(entityRef)
+        if found == nil and entityRef:isValid() then
+            found = entityRef
+        end
+    end)
+    return found
+end
+
 -- Texture IDs (registered in Textures.json) → source assets:
 --   "battery_full"  → energy 4.png
 --   "battery_3/4"   → energy 3.png
@@ -32,7 +47,7 @@ HudBattery._timer = 0.0
 --   "battery_empty" → energy flat.png
 
 function HudBattery:onUpdate(entity, dt)
-    local player = World.findByTag("Player")
+    local player = findPlayer()
     if not player or not player:isValid() then return end
 
     -- Keep HUD at a fixed screen position by tracking player (= camera) position

@@ -2,7 +2,7 @@
 /*!
 \file           Matrix.hpp
 \project        Lights Out
-\author(s)      [Amzar]
+\author(s)      [Sol-Amzar]
 \brief          Helps with common matrix operations for 2D/3D transformations.
                 Responsibilities include:
                 - Defining Mat2, Mat3, and Mat4 structures for 2x2, 3x3, and 4x4 matrices
@@ -12,7 +12,7 @@
                 - Including utility functions for determinant and inverse of Mat4
 				- Serving as a lightweight, header-only math utility for graphics applications
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content Â© 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #pragma once

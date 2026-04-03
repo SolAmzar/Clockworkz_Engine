@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 85% [Sol-Amzar] 14% [Lebon] 1%
+\author(s)      [Syafiq] 78% [Sol-Amzar] 21% [Lebon] 1%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -27,6 +27,7 @@ reserved.
 #include "Memory/MemoryDebugRegistry.hpp"
 #include "Memory/IPoolStats.hpp"
 #include "Components/Light.hpp"
+#include "Components/ParticleEmitter.hpp"
 #include "Components/Transform.hpp"
 #include "Systems/TilemapCollisionBuilder.hpp"
 #include "Components/Tag.hpp"
@@ -509,6 +510,7 @@ void EditorState::onExit() {
 
 void EditorState::invalidateBrowserCaches() {
     m_assetBrowserCache.dirty = true;
+    m_assetSearchCache.dirty = true;
     m_animBrowserCache.dirty = true;
     m_scriptBrowserCache.dirty = true;
     m_audioBrowserCache.dirty = true;
@@ -2744,7 +2746,7 @@ void EditorState::renderInspector() {
       if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload *pl =
                 ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
-          sr->textureId = static_cast<const char *>(pl->Data);
+          sr->textureId = std::filesystem::path(static_cast<const char *>(pl->Data)).stem().string();
         ImGui::EndDragDropTarget();
       }
 
@@ -3072,7 +3074,7 @@ void EditorState::renderInspector() {
                 if (ImGui::BeginDragDropTarget()) {
                   if (const ImGuiPayload *pl =
                           ImGui::AcceptDragDropPayload("TEXTURE_ASSET"))
-                    val = std::string(static_cast<const char *>(pl->Data));
+                    val = std::filesystem::path(static_cast<const char *>(pl->Data)).stem().string();
                   ImGui::EndDragDropTarget();
                 }
               } else if (def.type == "animation") {
@@ -3163,6 +3165,7 @@ void EditorState::renderInspector() {
             addCompEntry<Components::TextRenderer>("TextRenderer", m_selectedEntity, world, execCmd);
             addCompEntry<Components::VideoPlayer>("VideoPlayer", m_selectedEntity, world, execCmd);
             addCompEntry<Components::Light>("Light", m_selectedEntity, world, execCmd);
+            addCompEntry<Components::ParticleEmitter>("ParticleEmitter", m_selectedEntity, world, execCmd);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Physics")) {
@@ -3207,6 +3210,40 @@ void EditorState::renderInspector() {
                 tag->tag = buf;
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
+            std::string hierarchyPath = "Root";
+            int containingGroupIdx = -1;
+            for (int i = 0; i < static_cast<int>(m_hierarchyGroups.size()); ++i) {
+                const auto& group = m_hierarchyGroups[i];
+                if (std::find(group.entityIds.begin(), group.entityIds.end(), m_selectedEntity.id) !=
+                    group.entityIds.end()) {
+                    containingGroupIdx = i;
+                    break;
+                }
+            }
+
+            if (containingGroupIdx >= 0) {
+                std::vector<std::string> pathParts;
+                int currentGroupIdx = containingGroupIdx;
+                while (currentGroupIdx >= 0 &&
+                       currentGroupIdx < static_cast<int>(m_hierarchyGroups.size())) {
+                    pathParts.push_back(m_hierarchyGroups[currentGroupIdx].name);
+                    int parentIdx = m_hierarchyGroups[currentGroupIdx].parentGroupIdx;
+                    if (parentIdx == currentGroupIdx)
+                        break;
+                    currentGroupIdx = parentIdx;
+                }
+                std::reverse(pathParts.begin(), pathParts.end());
+
+                hierarchyPath.clear();
+                for (size_t i = 0; i < pathParts.size(); ++i) {
+                    if (i > 0)
+                        hierarchyPath += " / ";
+                    hierarchyPath += pathParts[i];
+                }
+            }
+
+            ImGui::TextDisabled("Hierarchy: %s", hierarchyPath.c_str());
         }
     }
 
@@ -3314,7 +3351,7 @@ void EditorState::renderInspector() {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
                     captureInspectorBefore();
-                    sr->textureId = static_cast<const char*>(pl->Data);
+                    sr->textureId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
                     pushInspectorChange();
                 }
                 ImGui::EndDragDropTarget();
@@ -3657,6 +3694,119 @@ void EditorState::renderInspector() {
             ImGui::EndDisabled();
         }
         if (rm) world.removeComponent<Components::FootstepAudio>(m_selectedEntity);
+    }
+    if (world.hasComponent<Components::ParticleEmitter>(m_selectedEntity)) {
+        bool rm = false;
+        bool open = ImGui::CollapsingHeader("ParticleEmitter##hdr",
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 18.f);
+        if (ImGui::SmallButton("X##rpe")) rm = true;
+        if (open) {
+            auto* pe = world.getComponent<Components::ParticleEmitter>(m_selectedEntity);
+            auto& sys = pe->system();
+
+            bool active = pe->active();
+            if (ImGui::Checkbox("Active##pe", &active)) {
+                captureInspectorBefore();
+                pe->setActive(active);
+                pushInspectorChange();
+            }
+
+            float localOffset[2] = {pe->localOffset.x, pe->localOffset.y};
+            if (ImGui::DragFloat2("Local Offset##pe", localOffset, 0.1f)) {
+                captureInspectorBefore();
+                pe->localOffset = {localOffset[0], localOffset[1]};
+                pushInspectorChange();
+            }
+
+            ImGui::DragFloat("Rate##pe", &sys.rate, 1.0f, 0.0f, 5000.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
+            float life[2] = {sys.lifeMin, sys.lifeMax};
+            if (ImGui::DragFloat2("Life Range##pe", life, 0.01f, 0.01f, 60.0f)) {
+                captureInspectorBefore();
+                sys.lifeMin = std::min(life[0], life[1]);
+                sys.lifeMax = std::max(life[0], life[1]);
+                pushInspectorChange();
+            }
+
+            float speed[2] = {sys.speedMin, sys.speedMax};
+            if (ImGui::DragFloat2("Speed Range##pe", speed, 1.0f, 0.0f, 5000.0f)) {
+                captureInspectorBefore();
+                sys.speedMin = std::min(speed[0], speed[1]);
+                sys.speedMax = std::max(speed[0], speed[1]);
+                pushInspectorChange();
+            }
+
+            ImGui::DragFloat("Spread##pe", &sys.spreadDeg, 0.5f, 0.0f, 180.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
+            float direction[2] = {sys.dir.x, sys.dir.y};
+            if (ImGui::DragFloat2("Direction##pe", direction, 0.01f, -1.0f, 1.0f)) {
+                captureInspectorBefore();
+                sys.dir = {direction[0], direction[1]};
+                pushInspectorChange();
+            }
+
+            float acceleration[2] = {sys.acceleration.x, sys.acceleration.y};
+            if (ImGui::DragFloat2("Acceleration##pe", acceleration, 1.0f, -5000.0f, 5000.0f)) {
+                captureInspectorBefore();
+                sys.acceleration = {acceleration[0], acceleration[1]};
+                pushInspectorChange();
+            }
+
+            float size[2] = {sys.sizeStart, sys.sizeEnd};
+            if (ImGui::DragFloat2("Size Start/End##pe", size, 0.05f, 0.0f, 1000.0f)) {
+                captureInspectorBefore();
+                sys.sizeStart = size[0];
+                sys.sizeEnd = size[1];
+                pushInspectorChange();
+            }
+
+            float colorStart[4] = {sys.colorStart.r, sys.colorStart.g, sys.colorStart.b, sys.colorStart.a};
+            if (ImGui::ColorEdit4("Color Start##pe", colorStart)) {
+                captureInspectorBefore();
+                sys.colorStart = {colorStart[0], colorStart[1], colorStart[2], colorStart[3]};
+                pushInspectorChange();
+            }
+
+            float colorEnd[4] = {sys.colorEnd.r, sys.colorEnd.g, sys.colorEnd.b, sys.colorEnd.a};
+            if (ImGui::ColorEdit4("Color End##pe", colorEnd)) {
+                captureInspectorBefore();
+                sys.colorEnd = {colorEnd[0], colorEnd[1], colorEnd[2], colorEnd[3]};
+                pushInspectorChange();
+            }
+
+            ImGui::DragFloat("Spawn Radius##pe", &sys.spawnRadius, 0.1f, 0.0f, 1000.0f);
+            if (ImGui::IsItemActivated()) captureInspectorBefore();
+            if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
+
+            bool looping = sys.looping;
+            if (ImGui::Checkbox("Looping##pe", &looping)) {
+                captureInspectorBefore();
+                sys.looping = looping;
+                pushInspectorChange();
+            }
+            ImGui::SameLine();
+            bool worldSpace = sys.worldSpace;
+            if (ImGui::Checkbox("World Space##pe", &worldSpace)) {
+                captureInspectorBefore();
+                sys.worldSpace = worldSpace;
+                pushInspectorChange();
+            }
+
+            if (ImGui::Button("Burst 32##pe")) {
+                if (auto* t = world.getComponent<Components::Transform>(m_selectedEntity))
+                    pe->burst(ps::v2{t->position.x, t->position.y}, 32);
+                else
+                    pe->burst(32);
+            }
+            ImGui::SameLine();
+            ImGui::TextDisabled("%zu alive", sys.aliveCount());
+        }
+        if (rm) execCmd(std::make_unique<RemoveComponentCmd<Components::ParticleEmitter>>(world, m_selectedEntity));
     }
     if (world.hasComponent<Components::SpriteAnimator>(m_selectedEntity)) {
         bool rm = false;
@@ -4419,7 +4569,7 @@ void EditorState::renderViewport() {
     // ----- Drag-drop: texture / prefab from browsers ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ spawn entity -----
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
-            const char* texName = static_cast<const char*>(pl->Data);
+            std::string texName = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
             ImVec2 mp = ImGui::GetMousePos();
             vec2   wPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
             if (m_snapToGrid) wPos = snapToGrid(wPos, m_gridSize);
@@ -4875,6 +5025,8 @@ void EditorState::renderAssetBrowser() {
     if (m_currentAssetDir != assetsRoot.generic_string()) {
         if (ImGui::Button("<- Back##assets")) {
             m_currentAssetDir = fs::path(m_currentAssetDir).parent_path().generic_string();
+            m_selectedAssetPaths.clear();
+            m_selectedAssetFolderPath.clear();
             m_assetBrowserCache.dirty = true;
         }
         ImGui::SameLine();
@@ -4891,6 +5043,44 @@ void EditorState::renderAssetBrowser() {
     if (ImGui::Button("New Folder##assets")) {
         m_newScriptFolderBuf[0] = '\0'; // reuse buffer
         ImGui::OpenPopup("##NewAssetFolder");
+    }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(220.0f);
+    ImGui::InputTextWithHint("##AssetSearch", "Search asset ID...", m_assetSearchBuf, sizeof(m_assetSearchBuf));
+    ImGui::SameLine();
+    ImGui::Checkbox("Include Folders##AssetSearch", &m_assetSearchIncludeFolders);
+    if (!m_selectedAssetPaths.empty()) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("%zu selected", m_selectedAssetPaths.size());
+        ImGui::SameLine();
+        if (ImGui::Button("Move Selected##assets")) {
+            m_movingAssetPaths = m_selectedAssetPaths;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Delete Selected##assets")) {
+            m_deletingAssetPaths = m_selectedAssetPaths;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear Selection##assets")) {
+            m_selectedAssetPaths.clear();
+            m_selectedAssetFolderPath.clear();
+        }
+    }
+
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+        ImGui::IsKeyPressed(ImGuiKey_F2, false) &&
+        !ImGui::IsPopupOpen("##RenameAsset") &&
+        !ImGui::IsPopupOpen("##RenameAssetDir")) {
+        if (m_selectedAssetPaths.size() == 1) {
+            fs::path selectedPath(m_selectedAssetPaths.front());
+            m_renamingAsset = selectedPath.stem().string();
+            strncpy_s(m_renameAssetBuf, m_renamingAsset.c_str(), sizeof(m_renameAssetBuf) - 1);
+        } else if (!m_selectedAssetFolderPath.empty()) {
+            fs::path selectedFolder(m_selectedAssetFolderPath);
+            m_renamingAssetDirPath = m_selectedAssetFolderPath;
+            strncpy_s(m_renameAssetDirBuf, selectedFolder.filename().string().c_str(),
+                      sizeof(m_renameAssetDirBuf) - 1);
+        }
     }
 
     if (ImGui::BeginPopupModal("##AddTexture", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -4960,20 +5150,31 @@ void EditorState::renderAssetBrowser() {
         ImGui::EndPopup();
     }
 
-    if (!m_deletingAsset.empty()) ImGui::OpenPopup("##DeleteAsset");
+    if (!m_deletingAssetPaths.empty()) ImGui::OpenPopup("##DeleteAsset");
     if (ImGui::BeginPopupModal("##DeleteAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Delete '%s' from disk?", m_deletingAsset.c_str());
+        if (m_deletingAssetPaths.size() == 1) {
+            ImGui::Text("Delete '%s' from disk?", fs::path(m_deletingAssetPaths.front()).stem().string().c_str());
+        } else {
+            ImGui::Text("Delete %zu assets from disk?", m_deletingAssetPaths.size());
+        }
         ImGui::Separator();
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
-            Assets::TextureManager::DeleteFromDisk(m_deletingAsset);
-            m_deletingAsset.clear();
+            for (const auto& assetPath : m_deletingAssetPaths) {
+                Assets::TextureManager::DeleteFromDisk(fs::path(assetPath).stem().string());
+            }
+            for (const auto& assetPath : m_deletingAssetPaths) {
+                m_selectedAssetPaths.erase(
+                    std::remove(m_selectedAssetPaths.begin(), m_selectedAssetPaths.end(), assetPath),
+                    m_selectedAssetPaths.end());
+            }
+            m_deletingAssetPaths.clear();
             invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAsset.clear(); ImGui::CloseCurrentPopup(); }
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAssetPaths.clear(); ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
 
@@ -5016,12 +5217,16 @@ void EditorState::renderAssetBrowser() {
     }
 
     // Move asset modal
-    if (!m_movingAssetPath.empty()) {
+    if (!m_movingAssetPaths.empty()) {
         ImGui::OpenPopup("##MoveAsset");
     }
     if (ImGui::BeginPopupModal("##MoveAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        const std::string movingAssetName = fs::path(m_movingAssetPath).filename().string();
-        ImGui::Text("Move '%s' to:", movingAssetName.c_str());
+        if (m_movingAssetPaths.size() == 1) {
+            const std::string movingAssetName = fs::path(m_movingAssetPaths.front()).filename().string();
+            ImGui::Text("Move '%s' to:", movingAssetName.c_str());
+        } else {
+            ImGui::Text("Move %zu assets to:", m_movingAssetPaths.size());
+        }
         ImGui::Separator();
 
         std::vector<std::string> assetFolders;
@@ -5035,11 +5240,13 @@ void EditorState::renderAssetBrowser() {
         for (const auto& folder : assetFolders) {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? assetsRoot : (assetsRoot / folder);
-                fs::path destFile = destDir / fs::path(m_movingAssetPath).filename();
-                if (!fs::exists(destFile)) {
-                    fs::rename(fs::path(m_movingAssetPath), destFile, ec);
+                for (const auto& movingAssetPath : m_movingAssetPaths) {
+                    fs::path destFile = destDir / fs::path(movingAssetPath).filename();
+                    if (!fs::exists(destFile)) {
+                        fs::rename(fs::path(movingAssetPath), destFile, ec);
+                    }
                 }
-                m_movingAssetPath.clear();
+                m_movingAssetPaths.clear();
                 invalidateBrowserCaches();
                 ImGui::CloseCurrentPopup();
             }
@@ -5047,24 +5254,118 @@ void EditorState::renderAssetBrowser() {
 
         ImGui::Separator();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) {
-            m_movingAssetPath.clear();
+            m_movingAssetPaths.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }
 
     ImGui::Separator();
-    const auto& items = RefreshDirectoryCache(
-        m_assetBrowserCache,
-        m_currentAssetDir,
-        ImGui::GetTime(),
-        BROWSER_CACHE_REFRESH_INTERVAL,
-        [&](const fs::path& path) {
-            if (fs::is_directory(path)) return true;
-            std::string ext = path.extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-            return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga";
-        });
+    auto isTextureFile = [](const fs::path& path) {
+        std::string ext = path.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga";
+    };
+    auto toLower = [](std::string value) {
+        std::transform(value.begin(), value.end(), value.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return value;
+    };
+
+    const std::string searchQuery = toLower(m_assetSearchBuf);
+    const bool searching = !searchQuery.empty();
+
+    if (searching) {
+        const bool searchSettingsChanged =
+            m_assetSearchCache.dirty ||
+            m_assetSearchCache.query != searchQuery ||
+            m_assetSearchCache.includeFolders != m_assetSearchIncludeFolders;
+        if (searchSettingsChanged) {
+            std::vector<fs::path> searchResults;
+            std::unordered_map<std::string, int> searchResultCountsByAssetId;
+
+            for (const auto& entry : fs::recursive_directory_iterator(assetsRoot, ec)) {
+                const fs::path& path = entry.path();
+                const bool isDir = entry.is_directory();
+                const bool isTexture = entry.is_regular_file() && isTextureFile(path);
+                if ((isDir && !m_assetSearchIncludeFolders) || (!isDir && !isTexture)) {
+                    continue;
+                }
+
+                const std::string fileName = toLower(path.filename().string());
+                const std::string assetId = toLower(path.stem().string());
+                const std::string relativePath = toLower(fs::relative(path, assetsRoot, ec).generic_string());
+                if (fileName.find(searchQuery) != std::string::npos ||
+                    assetId.find(searchQuery) != std::string::npos ||
+                    relativePath.find(searchQuery) != std::string::npos) {
+                    searchResults.push_back(path);
+                    if (!isDir)
+                        ++searchResultCountsByAssetId[assetId];
+                }
+            }
+
+            std::sort(searchResults.begin(), searchResults.end(),
+                [](const fs::path& a, const fs::path& b) {
+                    const bool aDir = fs::is_directory(a);
+                    const bool bDir = fs::is_directory(b);
+                    if (aDir != bDir)
+                        return aDir;
+                    return a.generic_string() < b.generic_string();
+                });
+
+            std::unordered_set<std::string> seenAssetIds;
+            std::vector<fs::path> dedupedResults;
+            dedupedResults.reserve(searchResults.size());
+            for (const auto& result : searchResults) {
+                if (fs::is_directory(result)) {
+                    dedupedResults.push_back(result);
+                    continue;
+                }
+
+                const std::string assetId = toLower(result.stem().string());
+                if (seenAssetIds.insert(assetId).second)
+                    dedupedResults.push_back(result);
+            }
+
+            m_assetSearchCache.query = searchQuery;
+            m_assetSearchCache.includeFolders = m_assetSearchIncludeFolders;
+            m_assetSearchCache.items = std::move(dedupedResults);
+            m_assetSearchCache.duplicateCountsByAssetId = std::move(searchResultCountsByAssetId);
+            m_assetSearchCache.dirty = false;
+        }
+    }
+
+    std::vector<fs::path> items;
+    const auto& searchResultCountsByAssetId = m_assetSearchCache.duplicateCountsByAssetId;
+    if (searching) {
+        items = m_assetSearchCache.items;
+    } else {
+        items = RefreshDirectoryCache(
+            m_assetBrowserCache,
+            m_currentAssetDir,
+            ImGui::GetTime(),
+            BROWSER_CACHE_REFRESH_INTERVAL,
+            [&](const fs::path& path) {
+                if (fs::is_directory(path)) return true;
+                return isTextureFile(path);
+            });
+    }
+
+    std::vector<fs::path> folderItems;
+    std::vector<fs::path> assetItems;
+    folderItems.reserve(items.size());
+    assetItems.reserve(items.size());
+    for (const auto& path : items) {
+        if (fs::is_directory(path))
+            folderItems.push_back(path);
+        else
+            assetItems.push_back(path);
+    }
+
+    if (searching) {
+        ImGui::TextDisabled("Search results: %zu", items.size());
+    }
 
     float thumbSize = 64.0f;
     float padding = 8.0f;
@@ -5072,100 +5373,183 @@ void EditorState::renderAssetBrowser() {
     float panelWidth = ImGui::GetContentRegionAvail().x;
     int cols = std::max(1, static_cast<int>(panelWidth / cellSize));
 
-    if (ImGui::BeginTable("##TextureTbl", cols)) {
-        for (const auto& path : items) {
-            ImGui::TableNextColumn();
-            std::string fname = path.filename().string();
-            std::string stem = path.stem().string();
-            bool isDir = fs::is_directory(path);
-            ImGui::PushID(fname.c_str());
+    auto renderAssetGroup = [&](const char* tableId, const char* label, const std::vector<fs::path>& groupItems) {
+        ImGui::SeparatorText(label);
+        if (groupItems.empty()) {
+            ImGui::TextDisabled("No %s.", toLower(label).c_str());
+            return;
+        }
 
-            if (isDir) {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.1f, 1.0f));
-                ImGui::Button("##icon", ImVec2(thumbSize, thumbSize));
-                ImGui::PopStyleColor();
-                DrawFolderIcon();
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                    m_currentAssetDir = path.generic_string();
-                    m_assetBrowserCache.dirty = true;
-                }
-                if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* payloadFile = ImGui::AcceptDragDropPayload("TEXTURE_ASSET_FILE")) {
-                        fs::path src((const char*)payloadFile->Data);
-                        fs::rename(src, path / src.filename(), ec);
-                        invalidateBrowserCaches();
-                    } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
-                        std::string srcPath = Assets::TextureManager::GetFilePath((const char*)payloadAsset->Data);
-                        if (!srcPath.empty()) {
-                            fs::path src(srcPath);
-                            fs::rename(src, path / src.filename(), ec);
-                            invalidateBrowserCaches();
+        auto moveAssetsToFolder = [&](const fs::path& destFolder, const fs::path& draggedPath) {
+            std::vector<fs::path> sources;
+            const std::string draggedPathString = draggedPath.generic_string();
+            const bool dragFromSelection =
+                std::find(m_selectedAssetPaths.begin(), m_selectedAssetPaths.end(), draggedPathString) != m_selectedAssetPaths.end();
+            if (dragFromSelection && m_selectedAssetPaths.size() > 1) {
+                for (const auto& selectedPath : m_selectedAssetPaths)
+                    sources.emplace_back(selectedPath);
+            } else {
+                sources.push_back(draggedPath);
+            }
+
+            for (const auto& src : sources) {
+                fs::path destPath = destFolder / src.filename();
+                if (!fs::exists(destPath))
+                    fs::rename(src, destPath, ec);
+            }
+            invalidateBrowserCaches();
+        };
+
+        if (ImGui::BeginTable(tableId, cols)) {
+            for (const auto& path : groupItems) {
+                ImGui::TableNextColumn();
+                std::string fname = path.filename().string();
+                std::string stem = path.stem().string();
+                bool isDir = fs::is_directory(path);
+                const std::string itemId = path.generic_string();
+                ImGui::PushID(itemId.c_str());
+
+                if (isDir) {
+                    const std::string folderPathString = path.generic_string();
+                    const bool isSelectedFolder = (m_selectedAssetFolderPath == folderPathString);
+                    if (isSelectedFolder)
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.1f, 1.0f));
+                    ImGui::Button("##icon", ImVec2(thumbSize, thumbSize));
+                    ImGui::PopStyleColor();
+                    if (isSelectedFolder)
+                        ImGui::PopStyleColor();
+                    DrawFolderIcon();
+                    if (ImGui::IsItemClicked()) {
+                        m_selectedAssetFolderPath = folderPathString;
+                        m_selectedAssetPaths.clear();
+                    }
+                    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                        m_currentAssetDir = path.generic_string();
+                        m_selectedAssetPaths.clear();
+                        m_selectedAssetFolderPath.clear();
+                        m_assetBrowserCache.dirty = true;
+                    }
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+                            fs::path src((const char*)payloadAsset->Data);
+                            if (!src.empty()) {
+                                moveAssetsToFolder(path, src);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    if (ImGui::BeginPopupContextItem()) {
+                        m_selectedAssetFolderPath = folderPathString;
+                        m_selectedAssetPaths.clear();
+                        if (ImGui::MenuItem("Rename")) {
+                            m_renamingAssetDirPath = path.string();
+                            strncpy_s(m_renameAssetDirBuf, fname.c_str(), sizeof(m_renameAssetDirBuf)-1);
+                        }
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Delete")) m_deletingAssetDirPath = path.string();
+                        ImGui::EndPopup();
+                    }
+                } else {
+                    auto tex = Assets::TextureManager::Get(stem);
+                    if (!tex || tex->id() == 0) {
+                        // Automatically import if it's not in config but exists on disk in assets/textures
+                        if (Assets::TextureManager::GetFilePath(stem).empty()) {
+                            Assets::TextureManager::ImportTexture(path.generic_string(), stem);
+                        } else {
+                            Assets::TextureManager::LoadTexture(stem, path.generic_string());
+                        }
+                        tex = Assets::TextureManager::Get(stem);
+                    }
+
+                    const std::string pathString = path.generic_string();
+                    bool isSelected = std::find(m_selectedAssetPaths.begin(), m_selectedAssetPaths.end(), pathString) != m_selectedAssetPaths.end();
+                    if (isSelected) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+                    if (ImGui::ImageButton("##tb", (ImTextureID)(intptr_t)(tex?tex->id():0), ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0))) {
+                        m_selectedAsset = stem;
+                        m_selectedAssetFolderPath.clear();
+                        if (ImGui::GetIO().KeyShift) {
+                            if (isSelected) {
+                                m_selectedAssetPaths.erase(
+                                    std::remove(m_selectedAssetPaths.begin(), m_selectedAssetPaths.end(), pathString),
+                                    m_selectedAssetPaths.end());
+                            } else {
+                                m_selectedAssetPaths.push_back(pathString);
+                            }
+                        } else {
+                            m_selectedAssetPaths.clear();
+                            m_selectedAssetPaths.push_back(pathString);
+                        }
+                        if (searching) {
+                            m_currentAssetDir = path.parent_path().generic_string();
+                            m_assetBrowserCache.dirty = true;
                         }
                     }
-                    ImGui::EndDragDropTarget();
-                }
-                if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("Rename")) {
-                        m_renamingAssetDirPath = path.string();
-                        strncpy_s(m_renameAssetDirBuf, fname.c_str(), sizeof(m_renameAssetDirBuf)-1);
+                    if (isSelected) ImGui::PopStyleColor();
+                    if (ImGui::IsItemHovered()) {
+                        const std::string relativePath = fs::relative(path, assetsRoot, ec).generic_string();
+                        ImGui::SetTooltip("%s\n%s", stem.c_str(), relativePath.c_str());
                     }
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Delete")) m_deletingAssetDirPath = path.string();
-                    ImGui::EndPopup();
-                }
-            } else {
-                auto tex = Assets::TextureManager::Get(stem);
-                if (!tex || tex->id() == 0) {
-                    // Automatically import if it's not in config but exists on disk in assets/textures
-                    if (Assets::TextureManager::GetFilePath(stem).empty()) {
-                        Assets::TextureManager::ImportTexture(path.generic_string(), stem);
-                    } else {
-                        Assets::TextureManager::LoadTexture(stem, path.generic_string());
-                    }
-                    tex = Assets::TextureManager::Get(stem);
-                }
 
-                bool isSelected = (m_selectedAsset == stem);
-                if (isSelected) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
-                if (ImGui::ImageButton("##tb", (ImTextureID)(intptr_t)(tex?tex->id():0), ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0)))
-                    m_selectedAsset = stem;
-                if (isSelected) ImGui::PopStyleColor();
-                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", stem.c_str());
-
-                if (ImGui::BeginDragDropSource()) {
-                    std::string pstr = path.generic_string();
-                    ImGui::SetDragDropPayload("TEXTURE_ASSET_FILE", pstr.c_str(), pstr.size() + 1);
-                    ImGui::SetDragDropPayload("TEXTURE_ASSET", stem.c_str(), stem.size() + 1);
-                    ImGui::Text("%s", stem.c_str());
-                    ImGui::EndDragDropSource();
-                }
-
-                if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("Apply to selected")) {
-                        if (auto* sr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(m_selectedEntity))
-                            sr->textureId = stem;
+                    if (ImGui::BeginDragDropSource()) {
+                        std::string pstr = path.generic_string();
+                        ImGui::SetDragDropPayload("TEXTURE_ASSET", pstr.c_str(), pstr.size() + 1);
+                        ImGui::Text("%s", stem.c_str());
+                        ImGui::EndDragDropSource();
                     }
-                    if (ImGui::MenuItem("Rename")) { m_renamingAsset = stem; strncpy_s(m_renameAssetBuf, stem.c_str(), sizeof(m_renameAssetBuf)-1); }
-                    if (ImGui::MenuItem("Move to...")) { m_movingAssetPath = path.string(); }
-                    if (ImGui::MenuItem("Duplicate")) {
-                        fs::path src = path;
-                        fs::path dst = src.parent_path() / (src.stem().string() + "_copy" + src.extension().string());
-                        int n = 1;
-                        while (fs::exists(dst))
-                            dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
-                        fs::copy_file(src, dst, ec);
-                        invalidateBrowserCaches();
+
+                    if (ImGui::BeginPopupContextItem()) {
+                        m_selectedAssetFolderPath.clear();
+                        const bool hasMultiSelection = isSelected && m_selectedAssetPaths.size() > 1;
+                        if (ImGui::MenuItem("Apply to selected")) {
+                            if (auto* sr = m_scene.GetWorld().getComponent<Components::SpriteRenderer>(m_selectedEntity))
+                                sr->textureId = stem;
+                        }
+                        if (ImGui::MenuItem("Rename")) { m_renamingAsset = stem; strncpy_s(m_renameAssetBuf, stem.c_str(), sizeof(m_renameAssetBuf)-1); }
+                        if (ImGui::MenuItem(hasMultiSelection ? "Move Selected to..." : "Move to...")) {
+                            if (hasMultiSelection)
+                                m_movingAssetPaths = m_selectedAssetPaths;
+                            else
+                                m_movingAssetPaths = { pathString };
+                        }
+                        if (ImGui::MenuItem("Duplicate")) {
+                            fs::path src = path;
+                            fs::path dst = src.parent_path() / (src.stem().string() + "_copy" + src.extension().string());
+                            int n = 1;
+                            while (fs::exists(dst))
+                                dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
+                            fs::copy_file(src, dst, ec);
+                            invalidateBrowserCaches();
+                        }
+                        ImGui::Separator();
+                        if (ImGui::MenuItem(hasMultiSelection ? "Delete Selected" : "Delete")) {
+                            if (hasMultiSelection)
+                                m_deletingAssetPaths = m_selectedAssetPaths;
+                            else
+                                m_deletingAssetPaths = { pathString };
+                        }
+                        ImGui::EndPopup();
                     }
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Delete")) m_deletingAsset = stem;
-                    ImGui::EndPopup();
                 }
+                ImGui::TextUnformatted(fname.c_str());
+                if (searching) {
+                    const std::string relativePath = fs::relative(path, assetsRoot, ec).generic_string();
+                    ImGui::TextDisabled("%s", relativePath.c_str());
+                    if (!isDir) {
+                        const auto countIt = searchResultCountsByAssetId.find(toLower(stem));
+                        if (countIt != searchResultCountsByAssetId.end() && countIt->second > 1) {
+                            ImGui::TextDisabled("(+%d duplicates)", countIt->second - 1);
+                        }
+                    }
+                }
+                ImGui::PopID();
             }
-            ImGui::TextUnformatted(fname.c_str());
-            ImGui::PopID();
+            ImGui::EndTable();
         }
-        ImGui::EndTable();
-    }
+    };
+
+    renderAssetGroup("##AssetFolderTbl", searching ? "Matching Folders" : "Folders", folderItems);
+    renderAssetGroup("##AssetFileTbl", searching ? "Matching Assets" : "Assets", assetItems);
     ImGui::End();
 }
 
@@ -7153,12 +7537,82 @@ void EditorState::applyHierarchyUndoState(const HierarchyUndoState& state) {
 
 void EditorState::loadAvailablePrefabs() {
     namespace fs = std::filesystem;
+    const std::vector<std::string> previousCategoryOrder = m_availablePrefabCategories;
     m_availablePrefabs.clear();
+    m_availablePrefabEntries.clear();
+    m_availablePrefabCategories.clear();
     std::string dir = "assets/prefabs/";
     if (fs::exists(dir) && fs::is_directory(dir)) {
         for (const auto& entry : fs::directory_iterator(dir)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".json")
-                m_availablePrefabs.push_back(entry.path().stem().string());
+            if (!entry.is_regular_file() || entry.path().extension() != ".json")
+                continue;
+
+            std::string category = "Uncategorized";
+            std::string textureId;
+            std::ifstream prefabFile(entry.path());
+            if (prefabFile.is_open()) {
+                try {
+                    nlohmann::json prefabJson;
+                    prefabFile >> prefabJson;
+                    if (prefabJson.contains("category") && prefabJson["category"].is_string()) {
+                        category = prefabJson["category"].get<std::string>();
+                        if (category.empty())
+                            category = "Uncategorized";
+                    }
+                    if (prefabJson.contains("components") &&
+                        prefabJson["components"].contains("spriteRenderer") &&
+                        prefabJson["components"]["spriteRenderer"].contains("textureId") &&
+                        prefabJson["components"]["spriteRenderer"]["textureId"].is_string()) {
+                        textureId = prefabJson["components"]["spriteRenderer"]["textureId"].get<std::string>();
+                    }
+                } catch (...) {}
+            }
+
+            m_availablePrefabEntries.push_back({
+                entry.path().stem().string(),
+                category,
+                textureId
+            });
+        }
+    }
+
+    std::sort(m_availablePrefabEntries.begin(), m_availablePrefabEntries.end(),
+        [](const PrefabBrowserEntry& a, const PrefabBrowserEntry& b) {
+            if (a.category != b.category)
+                return a.category < b.category;
+            return a.name < b.name;
+        });
+
+    std::vector<std::string> discoveredCategories;
+    for (const auto& prefab : m_availablePrefabEntries) {
+        m_availablePrefabs.push_back(prefab.name);
+        if (std::find(discoveredCategories.begin(), discoveredCategories.end(),
+                      prefab.category) == discoveredCategories.end()) {
+            discoveredCategories.push_back(prefab.category);
+        }
+    }
+
+    for (const auto& category : previousCategoryOrder) {
+        if (std::find(discoveredCategories.begin(), discoveredCategories.end(), category) !=
+                discoveredCategories.end()) {
+            m_availablePrefabCategories.push_back(category);
+        }
+    }
+
+    for (const auto& category : discoveredCategories) {
+        if (std::find(m_availablePrefabCategories.begin(), m_availablePrefabCategories.end(),
+                      category) == m_availablePrefabCategories.end()) {
+            m_availablePrefabCategories.push_back(category);
+        }
+    }
+
+    m_selectedPrefabIndex = -1;
+    if (!m_selectedTilePrefab.empty()) {
+        for (int i = 0; i < static_cast<int>(m_availablePrefabs.size()); ++i) {
+            if (m_availablePrefabs[i] == m_selectedTilePrefab) {
+                m_selectedPrefabIndex = i;
+                break;
+            }
         }
     }
 }
@@ -7278,6 +7732,31 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
             {"tilePrefix", fa->tilePrefix},
             {"woodPrefix", fa->woodPrefix}};
 
+    if (auto* pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+        auto& sys = pe->system();
+        comps["particleEmitter"] = {
+            {"active", pe->active()},
+            {"rate", sys.rate},
+            {"lifeMin", sys.lifeMin},
+            {"lifeMax", sys.lifeMax},
+            {"speedMin", sys.speedMin},
+            {"speedMax", sys.speedMax},
+            {"sizeStart", sys.sizeStart},
+            {"sizeEnd", sys.sizeEnd},
+            {"spreadDeg", sys.spreadDeg},
+            {"spawnRadius", sys.spawnRadius},
+            {"looping", sys.looping},
+            {"worldSpace", sys.worldSpace},
+            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+            {"acceleration", {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+            {"localOffset", {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}},
+            {"colorStart", {{"r", sys.colorStart.r}, {"g", sys.colorStart.g},
+                            {"b", sys.colorStart.b}, {"a", sys.colorStart.a}}},
+            {"colorEnd", {{"r", sys.colorEnd.r}, {"g", sys.colorEnd.g},
+                          {"b", sys.colorEnd.b}, {"a", sys.colorEnd.a}}}
+        };
+    }
+
     if (auto* btn = world.getComponent<Components::UIButton>(entity))
         comps["uiButton"] = {
             {"action", btn->action},
@@ -7323,6 +7802,39 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
     } else {
         std::cerr << "[Editor] Failed to save prefab: " << filepath << "\n";
     }
+}
+
+bool EditorState::updatePrefabCategory(const std::string& prefabName, const std::string& category) {
+    using json = nlohmann::json;
+    namespace fs = std::filesystem;
+
+    if (prefabName.empty() || category.empty())
+        return false;
+
+    const fs::path prefabPath = fs::path("assets/prefabs") / (prefabName + ".json");
+    std::ifstream in(prefabPath);
+    if (!in.is_open())
+        return false;
+
+    json prefabJson;
+    try {
+        in >> prefabJson;
+    } catch (...) {
+        return false;
+    }
+    in.close();
+
+    prefabJson["category"] = category;
+
+    std::ofstream out(prefabPath);
+    if (!out.is_open())
+        return false;
+
+    out << prefabJson.dump(4);
+    out.close();
+
+    loadAvailablePrefabs();
+    return true;
 }
 
 ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 position) {
@@ -7539,6 +8051,47 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
         fa.tilePrefix = fac.value("tilePrefix", fa.tilePrefix);
         fa.woodPrefix = fac.value("woodPrefix", fa.woodPrefix);
         world.addComponent(entity, fa);
+    }
+
+    if (c.contains("particleEmitter")) {
+        auto& pec = c["particleEmitter"];
+        Components::ParticleEmitter pe;
+        pe.setActive(pec.value("active", true));
+        pe.localOffset.x = pec.contains("localOffset") ? pec["localOffset"].value("x", 0.f) : 0.f;
+        pe.localOffset.y = pec.contains("localOffset") ? pec["localOffset"].value("y", 0.f) : 0.f;
+        auto& sys = pe.system();
+        sys.rate = pec.value("rate", sys.rate);
+        sys.lifeMin = pec.value("lifeMin", sys.lifeMin);
+        sys.lifeMax = pec.value("lifeMax", sys.lifeMax);
+        sys.speedMin = pec.value("speedMin", sys.speedMin);
+        sys.speedMax = pec.value("speedMax", sys.speedMax);
+        sys.sizeStart = pec.value("sizeStart", sys.sizeStart);
+        sys.sizeEnd = pec.value("sizeEnd", sys.sizeEnd);
+        sys.spreadDeg = pec.value("spreadDeg", sys.spreadDeg);
+        sys.spawnRadius = pec.value("spawnRadius", sys.spawnRadius);
+        sys.looping = pec.value("looping", sys.looping);
+        sys.worldSpace = pec.value("worldSpace", sys.worldSpace);
+        if (pec.contains("direction")) {
+            sys.dir.x = pec["direction"].value("x", sys.dir.x);
+            sys.dir.y = pec["direction"].value("y", sys.dir.y);
+        }
+        if (pec.contains("acceleration")) {
+            sys.acceleration.x = pec["acceleration"].value("x", sys.acceleration.x);
+            sys.acceleration.y = pec["acceleration"].value("y", sys.acceleration.y);
+        }
+        if (pec.contains("colorStart")) {
+            sys.colorStart.r = pec["colorStart"].value("r", sys.colorStart.r);
+            sys.colorStart.g = pec["colorStart"].value("g", sys.colorStart.g);
+            sys.colorStart.b = pec["colorStart"].value("b", sys.colorStart.b);
+            sys.colorStart.a = pec["colorStart"].value("a", sys.colorStart.a);
+        }
+        if (pec.contains("colorEnd")) {
+            sys.colorEnd.r = pec["colorEnd"].value("r", sys.colorEnd.r);
+            sys.colorEnd.g = pec["colorEnd"].value("g", sys.colorEnd.g);
+            sys.colorEnd.b = pec["colorEnd"].value("b", sys.colorEnd.b);
+            sys.colorEnd.a = pec["colorEnd"].value("a", sys.colorEnd.a);
+        }
+        world.addComponent(entity, pe);
     }
 
     if (c.contains("uiButton")) {
@@ -7957,10 +8510,58 @@ void EditorState::renderPrefabBrowser() {
         }
         ImGui::SetNextItemWidth(-1.f);
         ImGui::InputText("Name##prefabname",     m_savePrefabNameBuf,     sizeof(m_savePrefabNameBuf));
-        ImGui::SetNextItemWidth(-1.f);
-        ImGui::InputText("Category##prefabcat",  m_savePrefabCategoryBuf, sizeof(m_savePrefabCategoryBuf));
+        int categoryComboIndex = static_cast<int>(m_availablePrefabCategories.size());
+        if (!m_savePrefabUseCustomCategory) {
+            for (int i = 0; i < static_cast<int>(m_availablePrefabCategories.size()); ++i) {
+                if (m_availablePrefabCategories[i] == m_savePrefabCategoryBuf) {
+                    categoryComboIndex = i;
+                    break;
+                }
+            }
+            if (categoryComboIndex == static_cast<int>(m_availablePrefabCategories.size()))
+                m_savePrefabUseCustomCategory = true;
+        }
 
-        bool canSave = world.isValid(m_selectedEntity) && m_savePrefabNameBuf[0] != '\0';
+        const char* categoryPreview =
+            (categoryComboIndex < static_cast<int>(m_availablePrefabCategories.size()))
+            ? m_availablePrefabCategories[categoryComboIndex].c_str()
+            : "Custom...";
+
+        if (ImGui::BeginCombo("Category##prefabcatcombo", categoryPreview)) {
+            for (int i = 0; i < static_cast<int>(m_availablePrefabCategories.size()); ++i) {
+                const bool selected = (categoryComboIndex == i);
+                if (ImGui::Selectable(m_availablePrefabCategories[i].c_str(), selected)) {
+                    categoryComboIndex = i;
+                    m_savePrefabUseCustomCategory = false;
+                    strncpy_s(m_savePrefabCategoryBuf, m_availablePrefabCategories[i].c_str(),
+                              sizeof(m_savePrefabCategoryBuf) - 1);
+                }
+                if (selected) ImGui::SetItemDefaultFocus();
+            }
+
+            const bool customSelected =
+                (categoryComboIndex == static_cast<int>(m_availablePrefabCategories.size()));
+            if (ImGui::Selectable("Custom...", customSelected)) {
+                categoryComboIndex = static_cast<int>(m_availablePrefabCategories.size());
+                m_savePrefabUseCustomCategory = true;
+                if (m_savePrefabCategoryBuf[0] == '\0')
+                    strncpy_s(m_savePrefabCategoryBuf, "Custom", sizeof(m_savePrefabCategoryBuf) - 1);
+            }
+            if (customSelected) ImGui::SetItemDefaultFocus();
+            ImGui::EndCombo();
+        }
+
+        if (m_savePrefabUseCustomCategory) {
+            ImGui::SetNextItemWidth(-1.f);
+            ImGui::InputText("Custom Category##prefabcat",  m_savePrefabCategoryBuf,
+                             sizeof(m_savePrefabCategoryBuf));
+        } else {
+            ImGui::TextDisabled("Using existing category: %s", m_savePrefabCategoryBuf);
+        }
+
+        bool canSave = world.isValid(m_selectedEntity) &&
+                       m_savePrefabNameBuf[0] != '\0' &&
+                       m_savePrefabCategoryBuf[0] != '\0';
         if (!canSave) ImGui::BeginDisabled();
         if (ImGui::Button("Save Prefab##save", ImVec2(-1, 0)))
             savePrefabFromEntity(m_selectedEntity, m_savePrefabNameBuf, m_savePrefabCategoryBuf);
@@ -8057,95 +8658,235 @@ void EditorState::renderPrefabBrowser() {
         ImGui::EndPopup();
     }
 
+    if (!m_changeCategoryPrefabName.empty())
+        ImGui::OpenPopup("ChangePrefabCategoryPopup##pfb");
+    if (ImGui::BeginPopupModal("ChangePrefabCategoryPopup##pfb", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Change prefab category:");
+        ImGui::TextDisabled("%s", m_changeCategoryPrefabName.c_str());
+
+        int categoryComboIndex = static_cast<int>(m_availablePrefabCategories.size());
+        if (!m_changeCategoryUseCustom) {
+            for (int i = 0; i < static_cast<int>(m_availablePrefabCategories.size()); ++i) {
+                if (m_availablePrefabCategories[i] == m_changeCategoryBuf) {
+                    categoryComboIndex = i;
+                    break;
+                }
+            }
+            if (categoryComboIndex == static_cast<int>(m_availablePrefabCategories.size()))
+                m_changeCategoryUseCustom = true;
+        }
+
+        const char* categoryPreview =
+            (categoryComboIndex < static_cast<int>(m_availablePrefabCategories.size()))
+            ? m_availablePrefabCategories[categoryComboIndex].c_str()
+            : "Custom...";
+
+        if (ImGui::BeginCombo("Category##changeprefabcatcombo", categoryPreview)) {
+            for (int i = 0; i < static_cast<int>(m_availablePrefabCategories.size()); ++i) {
+                const bool selected = (categoryComboIndex == i);
+                if (ImGui::Selectable(m_availablePrefabCategories[i].c_str(), selected)) {
+                    categoryComboIndex = i;
+                    m_changeCategoryUseCustom = false;
+                    strncpy_s(m_changeCategoryBuf, m_availablePrefabCategories[i].c_str(),
+                              sizeof(m_changeCategoryBuf) - 1);
+                }
+                if (selected) ImGui::SetItemDefaultFocus();
+            }
+
+            const bool customSelected =
+                (categoryComboIndex == static_cast<int>(m_availablePrefabCategories.size()));
+            if (ImGui::Selectable("Custom...", customSelected)) {
+                categoryComboIndex = static_cast<int>(m_availablePrefabCategories.size());
+                m_changeCategoryUseCustom = true;
+                if (m_changeCategoryBuf[0] == '\0')
+                    strncpy_s(m_changeCategoryBuf, "Custom", sizeof(m_changeCategoryBuf) - 1);
+            }
+            if (customSelected) ImGui::SetItemDefaultFocus();
+            ImGui::EndCombo();
+        }
+
+        if (m_changeCategoryUseCustom) {
+            ImGui::SetNextItemWidth(260.0f);
+            ImGui::InputText("Custom Category##changeprefabcat", m_changeCategoryBuf,
+                             sizeof(m_changeCategoryBuf));
+        } else {
+            ImGui::TextDisabled("Using existing category: %s", m_changeCategoryBuf);
+        }
+
+        bool doApply = false;
+        if (ImGui::Button("Apply")) doApply = true;
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel##changeprefabcat")) {
+            m_changeCategoryPrefabName.clear();
+            m_changeCategoryBuf[0] = '\0';
+            m_changeCategoryUseCustom = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (doApply && m_changeCategoryBuf[0] != '\0') {
+            if (updatePrefabCategory(m_changeCategoryPrefabName, m_changeCategoryBuf)) {
+                m_changeCategoryPrefabName.clear();
+                m_changeCategoryBuf[0] = '\0';
+                m_changeCategoryUseCustom = false;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        ImGui::EndPopup();
+    }
+
     // --- Prefab Library ---
     if (ImGui::CollapsingHeader("Prefab Library", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Refresh##prefabrefresh")) loadAvailablePrefabs();
         ImGui::SameLine();
-        ImGui::TextDisabled("%zu prefabs", m_availablePrefabs.size());
+        ImGui::TextDisabled("%zu prefabs across %zu categories",
+                            m_availablePrefabs.size(), m_availablePrefabCategories.size());
 
         float thumbSize  = 64.f;
         float padding    = 8.f;
         float cellSize   = thumbSize + padding;
         float panelWidth = ImGui::GetContentRegionAvail().x;
         int   cols       = std::max(1, static_cast<int>(panelWidth / cellSize));
+        auto categoryCount = [&](const std::string& category) {
+            return static_cast<int>(std::count_if(
+                m_availablePrefabEntries.begin(), m_availablePrefabEntries.end(),
+                [&](const PrefabBrowserEntry& prefab) { return prefab.category == category; }));
+        };
 
-        ImGui::BeginChild("##prefablist", ImVec2(0, 260), true);
-        if (ImGui::BeginTable("##prefabgrid", cols)) {
-            for (int i = 0; i < static_cast<int>(m_availablePrefabs.size()); ++i) {
-                ImGui::TableNextColumn();
-                ImGui::PushID(i);
-                const auto& pname = m_availablePrefabs[i];
-                bool isSelected = (m_selectedPrefabIndex == i);
-
-                // Read texture from prefab JSON for thumbnail
-                std::string texId;
-                {
-                    std::ifstream pf("assets/prefabs/" + pname + ".json");
-                    if (pf.is_open()) {
-                        try {
-                            json pj; pf >> pj;
-                            if (pj.contains("components") &&
-                                pj["components"].contains("spriteRenderer") &&
-                                pj["components"]["spriteRenderer"].contains("textureId"))
-                                texId = pj["components"]["spriteRenderer"]["textureId"].get<std::string>();
-                        } catch (...) {}
-                    }
-                }
-
-                auto tex = texId.empty() ? nullptr : Assets::TextureManager::Get(texId);
-                bool clicked = false;
-                if (tex && tex->id() != 0)
-                    clicked = ImGui::ImageButton("##thumb", (ImTextureID)(intptr_t)tex->id(),
-                                                 ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0));
-                else {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.f));
-                    clicked = ImGui::Button("##fallback", ImVec2(thumbSize, thumbSize));
-                    ImGui::PopStyleColor();
-                }
-                if (clicked) {
-                    m_selectedPrefabIndex = i;
-                    m_selectedTilePrefab  = pname;
-                }
-
-                // Selection highlight
-                if (isSelected) {
-                    ImVec2 rmin = ImGui::GetItemRectMin();
-                    ImVec2 rmax = ImGui::GetItemRectMax();
-                    ImGui::GetWindowDrawList()->AddRect(rmin, rmax,
-                        IM_COL32(255, 200, 0, 255), 0.f, 0, 2.f);
-                }
-
-                // Drag source
-                if (ImGui::BeginDragDropSource()) {
-                    ImGui::SetDragDropPayload("PREFAB_NAME", pname.c_str(), pname.size() + 1);
-                    ImGui::Text("Drag: %s", pname.c_str());
-                    ImGui::EndDragDropSource();
-                }
-
-                // Right-click context menu
-                if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("Spawn at Origin"))
-                        spawnPrefab(pname, {0.f, 0.f});
-                    if (ImGui::MenuItem("Rename")) {
-                        m_renamingPrefabPath = (fs::path("assets/prefabs") / (pname + ".json")).string();
-                        strncpy_s(m_renamePrefabBuf, pname.c_str(),
-                                  sizeof(m_renamePrefabBuf) - 1);
-                    }
-                    if (ImGui::MenuItem("Clone")) {
-                        m_cloningPrefabPath = (fs::path("assets/prefabs") / (pname + ".json")).string();
-                        std::string cloneName = pname + "_copy";
-                        strncpy_s(m_clonePrefabBuf, cloneName.c_str(),
-                                  sizeof(m_clonePrefabBuf) - 1);
-                    }
-                    if (ImGui::MenuItem("Delete Prefab"))
-                        deletePrefab(pname);
-                    ImGui::EndPopup();
-                }
-
-                ImGui::TextWrapped("%s", pname.c_str());
-                ImGui::PopID();
+        auto renderPrefabTile = [&](const PrefabBrowserEntry& prefab, int index) {
+            ImGui::PushID(index);
+            const auto& pname = prefab.name;
+            const bool isSelected = (m_selectedPrefabIndex == index);
+            auto tex = prefab.textureId.empty() ? nullptr : Assets::TextureManager::Get(prefab.textureId);
+            bool clicked = false;
+            if (tex && tex->id() != 0) {
+                clicked = ImGui::ImageButton("##thumb", (ImTextureID)(intptr_t)tex->id(),
+                                             ImVec2(thumbSize, thumbSize), ImVec2(0,1), ImVec2(1,0));
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.f));
+                clicked = ImGui::Button("##fallback", ImVec2(thumbSize, thumbSize));
+                ImGui::PopStyleColor();
             }
-            ImGui::EndTable();
+            if (clicked) {
+                m_selectedPrefabIndex = index;
+                m_selectedTilePrefab  = pname;
+            }
+
+            if (isSelected) {
+                ImVec2 rmin = ImGui::GetItemRectMin();
+                ImVec2 rmax = ImGui::GetItemRectMax();
+                ImGui::GetWindowDrawList()->AddRect(rmin, rmax,
+                    IM_COL32(255, 200, 0, 255), 0.f, 0, 2.f);
+            }
+
+            if (ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload("PREFAB_NAME", pname.c_str(), pname.size() + 1);
+                ImGui::Text("Drag: %s", pname.c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Spawn at Origin"))
+                    spawnPrefab(pname, {0.f, 0.f});
+                if (ImGui::MenuItem("Rename")) {
+                    m_renamingPrefabPath = (fs::path("assets/prefabs") / (pname + ".json")).string();
+                    strncpy_s(m_renamePrefabBuf, pname.c_str(),
+                              sizeof(m_renamePrefabBuf) - 1);
+                }
+                if (ImGui::MenuItem("Clone")) {
+                    m_cloningPrefabPath = (fs::path("assets/prefabs") / (pname + ".json")).string();
+                    std::string cloneName = pname + "_copy";
+                    strncpy_s(m_clonePrefabBuf, cloneName.c_str(),
+                              sizeof(m_clonePrefabBuf) - 1);
+                }
+                if (ImGui::BeginMenu("Change Category")) {
+                    for (const auto& category : m_availablePrefabCategories) {
+                        if (category == prefab.category)
+                            continue;
+                        if (ImGui::MenuItem(category.c_str()))
+                            updatePrefabCategory(pname, category);
+                    }
+                    if (ImGui::MenuItem("Custom...")) {
+                        m_changeCategoryPrefabName = pname;
+                        strncpy_s(m_changeCategoryBuf, prefab.category.c_str(),
+                                  sizeof(m_changeCategoryBuf) - 1);
+                        m_changeCategoryUseCustom = true;
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::MenuItem("Delete Prefab"))
+                    deletePrefab(pname);
+                ImGui::EndPopup();
+            }
+
+            ImGui::TextWrapped("%s", pname.c_str());
+            ImGui::TextDisabled("%s", prefab.category.c_str());
+            ImGui::PopID();
+        };
+
+        const float prefabListHeight = std::max(0.0f, ImGui::GetContentRegionAvail().y);
+        ImGui::BeginChild("##prefablist", ImVec2(0, prefabListHeight), true);
+        for (const auto& category : m_availablePrefabCategories) {
+            const int currentCategoryCount = categoryCount(category);
+
+            std::string headerLabel = category + " (" + std::to_string(currentCategoryCount) +
+                                      ")##prefabcat_" + category;
+            const bool headerOpen =
+                ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+
+            if (ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload("PREFAB_CATEGORY_NAME", category.c_str(), category.size() + 1);
+                ImGui::Text("Move category: %s", category.c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_CATEGORY_NAME")) {
+                    const char* draggedCategory = static_cast<const char*>(payload->Data);
+                    if (draggedCategory != nullptr && category != draggedCategory) {
+                        auto fromIt = std::find(m_availablePrefabCategories.begin(),
+                                                m_availablePrefabCategories.end(), draggedCategory);
+                        auto toIt = std::find(m_availablePrefabCategories.begin(),
+                                              m_availablePrefabCategories.end(), category);
+                        if (fromIt != m_availablePrefabCategories.end() &&
+                            toIt != m_availablePrefabCategories.end()) {
+                            const std::string movedCategory = *fromIt;
+                            const auto fromIndex = std::distance(m_availablePrefabCategories.begin(), fromIt);
+                            const auto toIndex = std::distance(m_availablePrefabCategories.begin(), toIt);
+                            m_availablePrefabCategories.erase(fromIt);
+                            auto insertIt = m_availablePrefabCategories.begin() + toIndex;
+                            if (fromIndex < toIndex)
+                                --insertIt;
+                            m_availablePrefabCategories.insert(insertIt, movedCategory);
+                        }
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            if (!headerOpen)
+                continue;
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
+                    const char* droppedPrefab = static_cast<const char*>(payload->Data);
+                    if (droppedPrefab != nullptr)
+                        updatePrefabCategory(droppedPrefab, category);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            std::string tableId = "##prefabgrid_" + category;
+            if (ImGui::BeginTable(tableId.c_str(), cols)) {
+                for (int i = 0; i < static_cast<int>(m_availablePrefabEntries.size()); ++i) {
+                    if (m_availablePrefabEntries[i].category != category)
+                        continue;
+                    ImGui::TableNextColumn();
+                    renderPrefabTile(m_availablePrefabEntries[i], i);
+                }
+                ImGui::EndTable();
+            }
         }
         ImGui::EndChild();
     }

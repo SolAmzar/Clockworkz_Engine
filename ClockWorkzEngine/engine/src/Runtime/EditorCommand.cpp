@@ -2,10 +2,10 @@
 /*!
 \file           EditorCommand.cpp
 \project        ClockWorkz Engine
-\author         [Syafiq]
-\brief          Implementation of engine-level editor undo/redo commands.
+\author(s)      [Syafiq] 96% [Sol-Amzar] 4%
+\brief          Implements engine-level editor undo/redo commands.
 
-All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -47,6 +47,8 @@ EntitySnapshot EntitySnapshot::capture(ECS::World& world, ECS::Entity entity) {
         { snap.hasLight = true; snap.light = *c; }
     if (auto* c = world.getComponent<Components::LuaScript>(entity))
         { snap.hasLuaScript = true; snap.luaScript = *c; }
+    if (auto* c = world.getComponent<Components::ParticleEmitter>(entity))
+        { snap.hasParticleEmitter = true; snap.particleEmitter = *c; }
     if (auto* c = world.getComponent<Components::SpriteAnimator>(entity))
         { snap.hasSpriteAnimator = true; snap.spriteAnimator = *c; }
     if (auto* c = world.getComponent<Components::StateMachine>(entity))
@@ -75,6 +77,7 @@ ECS::Entity EntitySnapshot::restore(ECS::World& world) const {
     if (hasLayer)            world.addComponent(e, layer);
     if (hasLight)            world.addComponent(e, light);
     if (hasLuaScript)        world.addComponent(e, luaScript);
+    if (hasParticleEmitter)  world.addComponent(e, particleEmitter);
     if (hasSpriteAnimator)   world.addComponent(e, spriteAnimator);
     if (hasStateMachine)     world.addComponent(e, stateMachine);
     if (hasTextRenderer)     world.addComponent(e, textRenderer);
@@ -110,6 +113,7 @@ void EntitySnapshot::restoreInPlace(ECS::World& world, ECS::Entity entity) const
     apply(hasLayer,            layer);
     apply(hasLight,            light);
     apply(hasLuaScript,        luaScript);
+    apply(hasParticleEmitter,  particleEmitter);
     apply(hasSpriteAnimator,   spriteAnimator);
     apply(hasStateMachine,     stateMachine);
     apply(hasTextRenderer,     textRenderer);

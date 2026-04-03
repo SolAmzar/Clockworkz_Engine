@@ -2,7 +2,7 @@
 /*!
 \file           ps_math.hpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Sol-Amzar], 100%
 \brief          A header file that defines basic math types and utilities for the particle system.
 				Responsibilities include:
 				- Defining a 2D vector type (v2) for particle positions and velocities

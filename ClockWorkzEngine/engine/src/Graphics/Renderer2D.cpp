@@ -1,3 +1,14 @@
+/******************************************************************************/
+/*!
+\file           Renderer2D.cpp
+\project        ClockWorkz Engine
+\author(s)      [Lebon] 100%
+\brief          Implements the engine's 2D rendering pipeline.
+
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
+reserved.
+*/
+/******************************************************************************/
 /*!
 \file           Renderer2D.cpp
 \project        Lights Out

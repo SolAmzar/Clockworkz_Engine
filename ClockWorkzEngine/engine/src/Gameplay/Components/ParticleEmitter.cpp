@@ -1,57 +1,68 @@
 /******************************************************************************/
 /*!
 \file           ParticleEmitter.cpp
-\project        Lights Out
-\author(s)      [Amzar], 100%
-\brief          Definines ParticleEmitter, a component for emitting particles
-from a GameObject. Responsibilities include:
-                - Managing a ParticleSystem instance
-                - Updating and rendering particles each frame
-                - Allowing bursts of particles to be emitted on demand
-                - Supporting local offsets and world-space emission
+\project        ClockWorkz Engine
+\author(s)      [Sol-Amzar] 100%
+\brief          Implements the engine-owned particle emitter component.
 
-All content ? 2025 DigiPen Institute of Technology Singapore. All rights
+All content Â© 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 
-#include "Gameplay/Components/ParticleEmitter.hpp"
-#include "Gameplay/GameObject.hpp"
-namespace Components {
-using namespace Gameplay;
+#include "Components/ParticleEmitter.hpp"
 
-ParticleEmitter::ParticleEmitter(std::size_t max) : m_system(max) {}
+#include "Graphics/RenderingManager.hpp"
+
+namespace Components {
+
+ParticleEmitter::ParticleEmitter(std::size_t maxParticles)
+    : m_system(maxParticles) {}
 
 void ParticleEmitter::update(const ps::v2 &position, double dt) {
-  ps::v2 origin = position + localOffset;
+  m_lastPosition = position;
+  m_hasLastPosition = true;
+
+  const ps::v2 origin = position + localOffset;
   if (m_active && m_system.rate > 0.f) {
-    m_system.emitContinuous(m_system.worldSpace ? origin : ps::v2{0, 0}, dt);
+    m_system.emitContinuous(m_system.worldSpace ? origin : ps::v2{0.f, 0.f},
+                            dt);
   }
   m_system.update(dt);
 }
 
-void ParticleEmitter::onUpdate(GameObject &owner, double dt) {
-  // Legacy hook
+void ParticleEmitter::render(Graphics::RenderingManager &renderer) const {
+  if (!m_active && m_system.aliveCount() == 0)
+    return;
+
+  m_system.render(renderer);
+}
+
+void ParticleEmitter::onUpdate(Gameplay::GameObject &owner, double dt) {
   update(ps::v2{owner.transform().position.x, owner.transform().position.y},
          dt);
 }
 
-void ParticleEmitter::onRender(GameObject & /*owner*/) {
-  if (m_renderer) {
-    m_system.render(*m_renderer);
-  };
+void ParticleEmitter::onRender(Gameplay::GameObject & /*owner*/) {
+  if (m_renderer != nullptr)
+    render(*m_renderer);
 }
 
 void ParticleEmitter::burst(const ps::v2 &position, int count) {
-  m_system.emitBurst(position + localOffset, count);
+  const ps::v2 origin = position + localOffset;
+  m_system.emitBurst(m_system.worldSpace ? origin : ps::v2{0.f, 0.f}, count);
 }
 
 void ParticleEmitter::burst(int count) {
-  if (owner()) {
-    ps::v2 origin{owner()->transform().position.x,
-                  owner()->transform().position.y};
-    burst(origin, count);
+  if (!m_hasLastPosition && owner() != nullptr) {
+    m_lastPosition =
+        ps::v2{owner()->transform().position.x, owner()->transform().position.y};
+    m_hasLastPosition = true;
   }
+  if (!m_hasLastPosition)
+    return;
+
+  burst(m_lastPosition, count);
 }
 
 } // namespace Components

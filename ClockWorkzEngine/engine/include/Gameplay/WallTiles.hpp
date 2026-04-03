@@ -2,7 +2,7 @@
 /*!
 \file			WallTiles.hpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Sol-Amzar], 100%
 \brief          Declares helper functions for wall tile UV mapping
                 using a 3x3 texture atlas.
                 Responsibilities include:

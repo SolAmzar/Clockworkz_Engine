@@ -1,5 +1,5 @@
 {
-    "category": "Custom",
+    "category": "Entity",
     "components": {
         "collider": {
             "blocksLight": false,
@@ -93,5 +93,5 @@
             "y": 0.648781955242157
         }
     },
-    "name": "enemy 2"
+    "name": "Enemy Type 2"
 }

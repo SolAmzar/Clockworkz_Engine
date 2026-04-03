@@ -2,7 +2,7 @@
 /*!
 \file           WindowManager.cpp
 \project        Lights Out
-\author(s)      [Lebon], 95%, [Amzar] 5%
+\author(s)      [Lebon], 95% [Sol-Amzar] 5%
 \brief          Declares WindowManager, a wrapper around GLFW for creating
                                 and managing the game window and OpenGL context.
                                 Responsibilities include:
@@ -20,7 +20,7 @@ References:
 - GLEW (OpenGL Extension Wrangler): http://glew.sourceforge.net/basic.html
 - OpenGL Context Basics: https://www.khronos.org/opengl/wiki/OpenGL_Context
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content ï¿½ 2025 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
@@ -155,7 +155,7 @@ bool WindowManager::shouldClose() const {
 void WindowManager::requestClose() { glfwSetWindowShouldClose(m_window, 1); }
 
 void WindowManager::onFocusLost() {
-  // nothing here yet – Engine / InputManager will react by
+  // nothing here yet â€“ Engine / InputManager will react by
   // asking hasFocus() each frame.
   InputManager &input = Core::Engine::Get().input();
   input.clearState();

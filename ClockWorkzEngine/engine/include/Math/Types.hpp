@@ -2,7 +2,7 @@
 /*!
 \file           Types.hpp
 \project        Lights Out
-\author(s)      [Amzar]
+\author(s)      [Sol-Amzar]
 \brief          Establishes fixed-size integer and floating-point types for cross-platform consistency.
 				Responsibilities include:
 				- Defining standard-width integer types (s8, u8, s16, u16, s32, u32, s64, u64)
@@ -10,7 +10,7 @@
 				- Providing a NULL definition if not already defined
 				- Ensuring consistent type sizes across different compilers and platforms
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content Â© 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 
 

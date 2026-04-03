@@ -131,6 +131,21 @@ Properties = {
 
 local HudFragmentCounter = {}
 
+local function findPlayer()
+    local player = World.findByTag("Player")
+    if player and player:isValid() then
+        return player
+    end
+
+    local found = nil
+    World.eachWithScript("player_controller.lua", function(entityRef)
+        if found == nil and entityRef:isValid() then
+            found = entityRef
+        end
+    end)
+    return found
+end
+
 -- ── Fragment visibility (merged from fragment_system.lua) ─────────────────────
 local function updateFragmentVisibility(dt, self)
     World.eachWithScript("components/fragment.lua", function(frag)
@@ -212,7 +227,7 @@ end
 
 -- ── Main update ───────────────────────────────────────────────────────────────
 function HudFragmentCounter:onUpdate(entity, dt)
-    local player = World.findByTag("Player")
+    local player = findPlayer()
     if not player or not player:isValid() then return end
 
     -- Keep HUD at a fixed screen position by tracking player (= camera) position

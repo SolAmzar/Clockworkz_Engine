@@ -231,16 +231,42 @@ void GamepadManager::computeActions(int slot) {
     my.value = ly;
 
     // --- Left stick + D-pad → UI navigation ---
-    bool dpadUp   = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_UP);
-    bool dpadDown = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+    bool dpadUp    = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_UP);
+    bool dpadDown  = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+    bool dpadLeft  = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+    bool dpadRight = SDL_GetGamepadButton(m_pads[slot].handle, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+
+    // Dominant-axis filter: when both stick axes exceed threshold, suppress the weaker one
+    bool stickUp    = (ly >  0.5f);
+    bool stickDown  = (ly < -0.5f);
+    bool stickLeft  = (lx < -0.5f);
+    bool stickRight = (lx >  0.5f);
+
+    if ((stickLeft || stickRight) && (stickUp || stickDown)) {
+        if (std::abs(lx) >= std::abs(ly)) {
+            stickUp   = false;
+            stickDown = false;
+        } else {
+            stickLeft  = false;
+            stickRight = false;
+        }
+    }
 
     ActionState& uiUp   = m_actions["ui_up"];
-    uiUp.curr  = dpadUp || (ly >  0.5f);
+    uiUp.curr  = dpadUp || stickUp;
     uiUp.value = uiUp.curr ? 1.f : 0.f;
 
     ActionState& uiDown = m_actions["ui_down"];
-    uiDown.curr  = dpadDown || (ly < -0.5f);
+    uiDown.curr  = dpadDown || stickDown;
     uiDown.value = uiDown.curr ? 1.f : 0.f;
+
+    ActionState& uiLeft = m_actions["ui_left"];
+    uiLeft.curr  = dpadLeft || stickLeft;
+    uiLeft.value = uiLeft.curr ? 1.f : 0.f;
+
+    ActionState& uiRight = m_actions["ui_right"];
+    uiRight.curr  = dpadRight || stickRight;
+    uiRight.value = uiRight.curr ? 1.f : 0.f;
 
     // --- Right stick → look (same radial deadzone, Y-flipped) ---
     float rx = m_pads[slot].axes[SDL_GAMEPAD_AXIS_RIGHTX];
