@@ -2,7 +2,7 @@
 /*!
 \file           EntityRef.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 96% [Amzar] 4%
 \brief          EntityRef implementation — nil-safe ECS component access.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -15,6 +15,7 @@ reserved.
 #include "Components/Health.hpp"
 #include "Components/Light.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/ParticleEmitter.hpp"
 #include "Components/SpriteAnimator.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
@@ -227,6 +228,47 @@ void EntityRef::setText(const std::string &t) {
                     : nullptr;
   if (r)
     r->text = t;
+}
+bool EntityRef::isTextVisible() const {
+  auto *r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                    : nullptr;
+  return r ? r->visible : false;
+}
+void EntityRef::setTextVisible(bool visible) {
+  auto *r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                    : nullptr;
+  if (r)
+    r->visible = visible;
+}
+float EntityRef::getTextFontSize() const {
+  auto *r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                    : nullptr;
+  return r ? r->fontSize : 0.0f;
+}
+void EntityRef::setTextFontSize(float size) {
+  auto *r = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                    : nullptr;
+  if (r)
+    r->fontSize = size;
+}
+
+// --- ParticleEmitter ---
+bool EntityRef::hasParticleEmitter() const {
+  return m_world &&
+         m_world->hasComponent<Components::ParticleEmitter>(m_entity);
+}
+bool EntityRef::isParticleEmitterActive() const {
+  auto *emitter =
+      m_world ? m_world->getComponent<Components::ParticleEmitter>(m_entity)
+              : nullptr;
+  return emitter ? emitter->active() : false;
+}
+void EntityRef::setParticleEmitterActive(bool active) {
+  auto *emitter =
+      m_world ? m_world->getComponent<Components::ParticleEmitter>(m_entity)
+              : nullptr;
+  if (emitter)
+    emitter->setActive(active);
 }
 
 // --- SpriteRenderer ---

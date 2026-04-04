@@ -2,14 +2,22 @@
     "category": "Concrete",
     "components": {
         "collider": {
+            "blocksLight": true,
             "collisionCategory": 1,
             "collisionMask": 4294967295,
             "height": 100.0,
             "isHazard": false,
             "isSolid": true,
             "isTrigger": false,
+            "mass": 1.0,
             "moveable": false,
-            "width": 100.0
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 50.0
         },
         "spriteRenderer": {
             "color": {
@@ -22,18 +30,35 @@
                 "x": 100.0,
                 "y": 100.0
             },
-            "textureId": "corridor wall4"
+            "sortOrder": 1,
+            "textureId": "corridor wall4",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "concrete l wall"
         },
         "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
             "position": {
-                "x": 150.0,
-                "y": 450.0
+                "x": 1850.0,
+                "y": 1150.0
             },
             "rotation": 0.0,
             "scale": {
                 "x": 1.0,
                 "y": 1.0
-            }
+            },
+            "snapToGrid": false
         }
     },
     "name": "l wall"

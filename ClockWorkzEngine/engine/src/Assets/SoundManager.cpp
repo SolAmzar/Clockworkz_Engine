@@ -2,7 +2,7 @@
 /*!
 \file           SoundManager.cpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Amzar] 100%
 \brief          Implementation of Sound Manager for data-driven sound loading
 and management. Does not manage playback, only loading and unloading sound
 assets.
@@ -255,13 +255,13 @@ SoundManager::ParseConfig(const std::string &configPath) {
     cfg.volume = entry.value("volume", 1.0f);
     cfg.pitch = entry.value("pitch", 1.0f);
     cfg.group = entry.value("group", "SFX");
-    cfg.minDistance = entry.value("minDistance", 24.0f);
-    cfg.maxDistance = entry.value("maxDistance", 320.0f);
-    cfg.falloffStart = entry.value("falloffStart", 40.0f);
-    cfg.falloffAmount = entry.value("falloffAmount", 0.62f);
-    cfg.filterInStart = entry.value("filterInStart", 48.0f);
-    cfg.filterPeak = entry.value("filterPeak", 140.0f);
-    cfg.filterReleaseEnd = entry.value("filterReleaseEnd", 260.0f);
+    cfg.minDistance = entry.value("minDistance", 80.0f);
+    cfg.maxDistance = entry.value("maxDistance", 520.0f);
+    cfg.falloffStart = entry.value("falloffStart", 120.0f);
+    cfg.falloffAmount = entry.value("falloffAmount", 0.25f);
+    cfg.filterInStart = entry.value("filterInStart", 180.0f);
+    cfg.filterPeak = entry.value("filterPeak", 320.0f);
+    cfg.filterReleaseEnd = entry.value("filterReleaseEnd", 480.0f);
 
     if (!cfg.name.empty() && !cfg.path.empty())
       result.push_back(cfg);
@@ -349,13 +349,13 @@ bool SoundManager::GetConfig(const std::string &name, SoundConfig &outConfig,
     outConfig.volume = entry.value("volume", 1.0f);
     outConfig.pitch = entry.value("pitch", 1.0f);
     outConfig.group = entry.value("group", "SFX");
-    outConfig.minDistance = entry.value("minDistance", 24.0f);
-    outConfig.maxDistance = entry.value("maxDistance", 320.0f);
-    outConfig.falloffStart = entry.value("falloffStart", 40.0f);
-    outConfig.falloffAmount = entry.value("falloffAmount", 0.62f);
-    outConfig.filterInStart = entry.value("filterInStart", 48.0f);
-    outConfig.filterPeak = entry.value("filterPeak", 140.0f);
-    outConfig.filterReleaseEnd = entry.value("filterReleaseEnd", 260.0f);
+    outConfig.minDistance = entry.value("minDistance", 80.0f);
+    outConfig.maxDistance = entry.value("maxDistance", 520.0f);
+    outConfig.falloffStart = entry.value("falloffStart", 120.0f);
+    outConfig.falloffAmount = entry.value("falloffAmount", 0.25f);
+    outConfig.filterInStart = entry.value("filterInStart", 180.0f);
+    outConfig.filterPeak = entry.value("filterPeak", 320.0f);
+    outConfig.filterReleaseEnd = entry.value("filterReleaseEnd", 480.0f);
     return true;
   }
 

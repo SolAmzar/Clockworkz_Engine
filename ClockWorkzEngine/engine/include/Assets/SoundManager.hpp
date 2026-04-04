@@ -2,7 +2,7 @@
 /*!
 \file           SoundManager.hpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Amzar] 100%
 \brief          Declaration of Sound Manager for data-driven sound loading and
 management. Does not manage playback, only loading and unloading sound assets.
 
@@ -31,13 +31,13 @@ struct SoundConfig {
   float volume = 1.0f;
   float pitch = 1.0f;
   std::string group = "SFX";
-  float minDistance = 24.0f;
-  float maxDistance = 320.0f;
-  float falloffStart = 40.0f;
-  float falloffAmount = 0.62f;
-  float filterInStart = 48.0f;
-  float filterPeak = 140.0f;
-  float filterReleaseEnd = 260.0f;
+  float minDistance = 80.0f;
+  float maxDistance = 520.0f;
+  float falloffStart = 120.0f;
+  float falloffAmount = 0.25f;
+  float filterInStart = 180.0f;
+  float filterPeak = 320.0f;
+  float filterReleaseEnd = 480.0f;
 };
 
 class SoundManager {

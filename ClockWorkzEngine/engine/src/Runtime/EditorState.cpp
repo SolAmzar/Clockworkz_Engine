@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 62% [Amzar] 37% [Lebon] 1%
+\author(s)      [Syafiq] 55% [Amzar] 44% [Lebon] 1%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -4136,10 +4136,51 @@ void EditorState::renderInspector() {
                     if (!propDefs.empty()) {
                         ImGui::Separator();
                         ImGui::TextDisabled("Script Properties");
+                        std::string activationZoneActionType;
+                        const bool isActivationZoneScript =
+                            entry.scriptPath == "components/activation_zone.lua";
+                        if (isActivationZoneScript) {
+                            auto actionIt = entry.properties.find("actionType");
+                            if (actionIt != entry.properties.end() &&
+                                std::holds_alternative<std::string>(actionIt->second)) {
+                                activationZoneActionType = std::get<std::string>(actionIt->second);
+                            }
+                        }
                         for (auto& def : propDefs) {
                             if (def.label.empty()) continue;
                             if (!entry.properties.count(def.name))
                                 entry.properties[def.name] = def.defaultValue;
+
+                            if (isActivationZoneScript) {
+                                bool activationSetVisible = false;
+                                auto visibleIt = entry.properties.find("setVisible");
+                                if (visibleIt != entry.properties.end() &&
+                                    std::holds_alternative<bool>(visibleIt->second)) {
+                                    activationSetVisible = std::get<bool>(visibleIt->second);
+                                }
+                                const bool isTextRendererOnlyField =
+                                    def.name == "targetTag" ||
+                                    def.name == "setText" ||
+                                    def.name == "textValue" ||
+                                    def.name == "setVisible" ||
+                                    def.name == "visibleValue" ||
+                                    def.name == "restoreVisibilityAfterDelay" ||
+                                    def.name == "visibilityRestoreDelay" ||
+                                    def.name == "setFontSize" ||
+                                    def.name == "fontSizeValue";
+                                if (isTextRendererOnlyField &&
+                                    activationZoneActionType != "ChangeTextRenderer") {
+                                    continue;
+                                }
+                                const bool isVisibilityOnlyField =
+                                    def.name == "visibleValue" ||
+                                    def.name == "restoreVisibilityAfterDelay" ||
+                                    def.name == "visibilityRestoreDelay";
+                                if (isVisibilityOnlyField && !activationSetVisible) {
+                                    continue;
+                                }
+                            }
+
                             auto& val = entry.properties[def.name];
                             if (def.type == "float") {
                                 float v = std::get<float>(val);
@@ -4165,7 +4206,8 @@ void EditorState::renderInspector() {
                                     static const char* actionTypes[] = {
                                         "None",
                                         "PlayAudio",
-                                        "ChangeScene"
+                                        "ChangeScene",
+                                        "ChangeTextRenderer"
                                     };
                                     int currentIndex = 0;
                                     for (int idx = 0; idx < IM_ARRAYSIZE(actionTypes); ++idx) {
@@ -4827,32 +4869,59 @@ void EditorState::renderViewport() {
             bool handledPlainClick = false;
             if (alt &&
                 ecs.isValid(bestEnt) &&
-                ecs.isValid(m_selectedEntity) &&
-                bestEnt.id == m_selectedEntity.id &&
-                bestEnt.generation == m_selectedEntity.generation) {
-                EntitySnapshot snap = EntitySnapshot::capture(ecs, m_selectedEntity);
-                auto cmd = std::make_unique<CreateEntityCmd>(ecs, snap);
-                auto* rawCmd = cmd.get();
-                executeCommand(std::move(cmd));
+                std::any_of(m_selectedEntities.begin(), m_selectedEntities.end(),
+                    [&](ECS::Entity e) {
+                        return e.id == bestEnt.id && e.generation == bestEnt.generation;
+                    })) {
+                std::vector<ECS::Entity> sourceSelection;
+                sourceSelection.reserve(m_selectedEntities.size());
+                for (const auto& selectedEntity : m_selectedEntities) {
+                    if (ecs.isValid(selectedEntity))
+                        sourceSelection.push_back(selectedEntity);
+                }
+                if (sourceSelection.empty())
+                    sourceSelection.push_back(bestEnt);
 
-                ECS::Entity clonedEntity = rawCmd->createdEntity();
-                m_selectedEntities.clear();
-                m_selectedEntity = clonedEntity;
-                if (ecs.isValid(clonedEntity))
-                    m_selectedEntities.push_back(clonedEntity);
+                std::vector<ECS::Entity> clonedEntities;
+                clonedEntities.reserve(sourceSelection.size());
+                ECS::Entity clonedPrimary{0, 0};
+
+                for (const auto& sourceEntity : sourceSelection) {
+                    if (!ecs.isValid(sourceEntity)) continue;
+                    EntitySnapshot snap = EntitySnapshot::capture(ecs, sourceEntity);
+                    auto cmd = std::make_unique<CreateEntityCmd>(ecs, snap);
+                    auto* rawCmd = cmd.get();
+                    executeCommand(std::move(cmd));
+
+                    ECS::Entity clonedEntity = rawCmd->createdEntity();
+                    if (!ecs.isValid(clonedEntity)) continue;
+                    clonedEntities.push_back(clonedEntity);
+
+                    if (sourceEntity.id == bestEnt.id &&
+                        sourceEntity.generation == bestEnt.generation) {
+                        clonedPrimary = clonedEntity;
+                    }
+                }
+
+                m_selectedEntities = clonedEntities;
+                m_selectedEntity = ecs.isValid(clonedPrimary)
+                    ? clonedPrimary
+                    : (clonedEntities.empty() ? ECS::Entity{0, 0} : clonedEntities.front());
 
                 m_lastPickScreenPos = {mp.x, mp.y};
                 m_hasLastPickScreenPos = true;
                 m_lastPickTimeSeconds = ImGui::GetTime();
 
-                if (ecs.isValid(clonedEntity)) {
+                if (!clonedEntities.empty()) {
                     m_pendingEntityDrag = true;
                     m_isDraggingEntity  = false;
                     m_dragStartMousePos = {mp.x, mp.y};
                     m_dragClickWorldPos = worldPos;
                     m_gizmoGroupOriginalPos.clear();
-                    if (auto* t = ecs.getComponent<Components::Transform>(clonedEntity))
-                        m_gizmoGroupOriginalPos.push_back({clonedEntity, {t->position.x, t->position.y}});
+                    for (const auto& clonedEntity : clonedEntities) {
+                        if (auto* t = ecs.getComponent<Components::Transform>(clonedEntity))
+                            m_gizmoGroupOriginalPos.push_back({clonedEntity, {t->position.x, t->position.y}});
+                    }
                 }
                 handledPlainClick = true;
             }
@@ -5418,6 +5487,34 @@ void EditorState::renderAssetBrowser() {
     namespace fs = std::filesystem;
     std::error_code ec;
     const fs::path assetsRoot("assets/textures");
+    auto moveTextureAsset = [&](const fs::path& src, const fs::path& destDir) {
+        fs::path normalizedSrc = src.lexically_normal();
+        fs::path normalizedDestDir = destDir.lexically_normal();
+        fs::path destPath = (normalizedDestDir / normalizedSrc.filename()).lexically_normal();
+
+        if (normalizedSrc == destPath || fs::exists(destPath))
+            return false;
+
+        ec.clear();
+        fs::create_directories(normalizedDestDir, ec);
+        if (ec)
+            return false;
+
+        ec.clear();
+        fs::rename(normalizedSrc, destPath, ec);
+        if (ec)
+            return false;
+
+        Assets::TextureManager::UpdateConfigPath(normalizedSrc.stem().string(),
+                                                 destPath.generic_string());
+
+        for (auto& selectedPath : m_selectedAssetPaths) {
+            if (selectedPath == normalizedSrc.generic_string())
+                selectedPath = destPath.generic_string();
+        }
+
+        return true;
+    };
 
     // Ensure directory exists
     if (!fs::exists(assetsRoot)) {
@@ -5689,10 +5786,7 @@ void EditorState::renderAssetBrowser() {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? assetsRoot : (assetsRoot / folder);
                 for (const auto& movingAssetPath : m_movingAssetPaths) {
-                    fs::path destFile = destDir / fs::path(movingAssetPath).filename();
-                    if (!fs::exists(destFile)) {
-                        fs::rename(fs::path(movingAssetPath), destFile, ec);
-                    }
+                    moveTextureAsset(fs::path(movingAssetPath), destDir);
                 }
                 m_movingAssetPaths.clear();
                 invalidateBrowserCaches();
@@ -5841,9 +5935,7 @@ void EditorState::renderAssetBrowser() {
             }
 
             for (const auto& src : sources) {
-                fs::path destPath = destFolder / src.filename();
-                if (!fs::exists(destPath))
-                    fs::rename(src, destPath, ec);
+                moveTextureAsset(src, destFolder);
             }
             invalidateBrowserCaches();
         };
@@ -6997,6 +7089,15 @@ void EditorState::renderAudioBrowser() {
         m_batchAudioFilterPeak = cfg.filterPeak;
         m_batchAudioFilterReleaseEnd = cfg.filterReleaseEnd;
     };
+    auto applyDefault3DAudioTuning = [&]() {
+        m_editAudioMinDistance = 80.0f;
+        m_editAudioMaxDistance = 520.0f;
+        m_editAudioFalloffStart = 120.0f;
+        m_editAudioFalloffAmount = 0.25f;
+        m_editAudioFilterInStart = 180.0f;
+        m_editAudioFilterPeak = 320.0f;
+        m_editAudioFilterReleaseEnd = 480.0f;
+    };
     if (ImGui::CollapsingHeader("Music Contexts", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Reload Contexts##musicctx")) {
             reloadMusicContexts();
@@ -7103,7 +7204,17 @@ void EditorState::renderAudioBrowser() {
 #endif
         ImGui::Checkbox("Loop", &m_newAudioLoop); ImGui::SameLine();
         ImGui::Checkbox("Stream", &m_newAudioStream); ImGui::SameLine();
+        const bool wasNewAudio3D = m_newAudioIs3D;
         ImGui::Checkbox("3D", &m_newAudioIs3D);
+        if (!wasNewAudio3D && m_newAudioIs3D) {
+            m_batchAudioMinDistance = 80.0f;
+            m_batchAudioMaxDistance = 520.0f;
+            m_batchAudioFalloffStart = 120.0f;
+            m_batchAudioFalloffAmount = 0.25f;
+            m_batchAudioFilterInStart = 180.0f;
+            m_batchAudioFilterPeak = 320.0f;
+            m_batchAudioFilterReleaseEnd = 480.0f;
+        }
         ImGui::Checkbox("BGM", &m_newAudioIsBGM);
         ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 1.0f);
         if (ImGui::Button("Import", ImVec2(100, 0))) {
@@ -7154,7 +7265,11 @@ void EditorState::renderAudioBrowser() {
         ImGui::InputText("Path##editaudio", m_editAudioPathBuf, sizeof(m_editAudioPathBuf));
         ImGui::Checkbox("Loop##editaudio", &m_editAudioLoop); ImGui::SameLine();
         ImGui::Checkbox("Stream##editaudio", &m_editAudioStream); ImGui::SameLine();
+        const bool wasEditAudio3D = m_editAudioIs3D;
         ImGui::Checkbox("3D##editaudio", &m_editAudioIs3D);
+        if (!wasEditAudio3D && m_editAudioIs3D) {
+            applyDefault3DAudioTuning();
+        }
         ImGui::Checkbox("BGM##editaudio", &m_editAudioIsBGM);
         ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 1.0f);
         ImGui::SliderFloat("Pitch##editaudio", &m_editAudioPitch, 0.1f, 3.0f);
@@ -7304,7 +7419,26 @@ void EditorState::renderAudioBrowser() {
 
                 if (m_batchApplyLoop) cfg.loop = m_batchAudioLoop;
                 if (m_batchApplyStream) cfg.stream = m_batchAudioStream;
-                if (m_batchApplyIs3D) cfg.is3D = m_batchAudioIs3D;
+                if (m_batchApplyIs3D) {
+                    const bool enabling3D = !cfg.is3D && m_batchAudioIs3D;
+                    cfg.is3D = m_batchAudioIs3D;
+                    if (enabling3D &&
+                        !m_batchApplyMinDistance &&
+                        !m_batchApplyMaxDistance &&
+                        !m_batchApplyFalloffStart &&
+                        !m_batchApplyFalloffAmount &&
+                        !m_batchApplyFilterInStart &&
+                        !m_batchApplyFilterPeak &&
+                        !m_batchApplyFilterReleaseEnd) {
+                        cfg.minDistance = 80.0f;
+                        cfg.maxDistance = 520.0f;
+                        cfg.falloffStart = 120.0f;
+                        cfg.falloffAmount = 0.25f;
+                        cfg.filterInStart = 180.0f;
+                        cfg.filterPeak = 320.0f;
+                        cfg.filterReleaseEnd = 480.0f;
+                    }
+                }
                 if (m_batchApplyGroup) cfg.group = m_batchAudioIsBGM ? "BGM" : "SFX";
                 if (m_batchApplyVolume) cfg.volume = m_batchAudioVolume;
                 if (m_batchApplyPitch) cfg.pitch = m_batchAudioPitch;

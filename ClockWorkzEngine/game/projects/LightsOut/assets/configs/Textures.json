@@ -1066,13 +1066,13 @@
             "alphaOnlyIsRed": false,
             "flipY": true,
             "name": "cupboard2_texture",
-            "path": "assets/textures/cupboard2.png"
+            "path": "assets/textures/Corridor Props/cupboard2.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
             "name": "cupboard3_texture",
-            "path": "assets/textures/cupboard3.png"
+            "path": "assets/textures/Corridor Props/cupboard3.png"
         },
         {
             "alphaOnlyIsRed": false,
@@ -1391,6 +1391,12 @@
             "flipY": true,
             "name": "orange tape1_texture",
             "path": "assets/textures/Corridor Props/orange tape1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "clothes hanger_texture",
+            "path": "assets/textures/Corridor Props/clothes hanger.png"
         }
     ]
 }

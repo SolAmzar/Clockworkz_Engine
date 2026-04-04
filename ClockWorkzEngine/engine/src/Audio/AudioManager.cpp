@@ -2,7 +2,7 @@
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
-\author(s)      [Amzar], 100%
+\author(s)      [Amzar] 100%
 \brief          Handles Audio using FMOD API.
                 Responsibilities include:
                 - Initializing and shutting down the FMOD system
@@ -48,6 +48,8 @@ static bool isChannelAlive(FMOD::Channel *ch) {
     return false;
   return playing;
 }
+
+static constexpr float k3DVolumeBoost = 5.0f;
 
 int AudioManager::findChannel(const std::string &id) {
   // Walk all tracked channels.
@@ -327,7 +329,9 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
 
     const float shapedDistanceT = std::pow(distanceT, 0.6f);
     const float shapedVolume = volume * (1.0f - (falloffAmount * shapedDistanceT));
-    it->second.ch->setVolume(std::max(0.0f, shapedVolume));
+    const float boosted3DVolume =
+        std::clamp(shapedVolume * k3DVolumeBoost, 0.0f, 5.0f);
+    it->second.ch->setVolume(boosted3DVolume);
 
     float filterT = 0.0f;
     if (distance > filterInStart && distance < filterReleaseEnd) {

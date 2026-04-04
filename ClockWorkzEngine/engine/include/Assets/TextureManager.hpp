@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.hpp
 \project        Lights Out
- \author(s)      [Yusuf] 98% [Amzar] 2%
+ \author(s)      [Yusuf] 96% [Amzar] 4%
 \brief          TextureManager provides a data-driven approach to loading and
                 managing textures using JSON configuration files.
                 It provides:
@@ -167,6 +167,18 @@ namespace Assets {
          */
         static bool DeleteFromDisk(const std::string& name,
                                    const std::string& configPath = "assets/configs/Textures.json");
+
+        /**
+         * @brief Update a texture entry to point to a new file path after a move
+         *
+         * @param name Texture name
+         * @param newPath New file path on disk
+         * @param configPath Path to JSON config file
+         * @return true if updated, false otherwise
+         */
+        static bool UpdateConfigPath(const std::string& name,
+                                     const std::string& newPath,
+                                     const std::string& configPath = "assets/configs/Textures.json");
 
         /**
          * @brief Get the file path for a texture from config

@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.cpp
 \project        Lights Out
- \author(s)      [Yusuf] 96% [Amzar] 4%
+ \author(s)      [Yusuf] 91% [Amzar] 9%
 \brief          Implementation of TextureManager for data-driven texture loading
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights
@@ -461,6 +461,54 @@ bool TextureManager::DeleteFromDisk(const std::string &name,
   }
 
   std::cout << "[TextureManager] Successfully deleted: " << name << std::endl;
+  return true;
+}
+
+bool TextureManager::UpdateConfigPath(const std::string &name,
+                                      const std::string &newPath,
+                                      const std::string &configPath) {
+  const std::string normalizedName = normalize(name);
+  std::ifstream file(configPath);
+  if (!file.is_open())
+    return false;
+
+  json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return false;
+  }
+  file.close();
+
+  if (!j.contains("textures") || !j["textures"].is_array())
+    return false;
+
+  bool updated = false;
+  for (auto &entry : j["textures"]) {
+    const std::string entryName = entry.value("name", "");
+    if (entryName == name || entryName == normalizedName) {
+      entry["path"] = newPath;
+      updated = true;
+      break;
+    }
+  }
+
+  if (!updated)
+    return false;
+
+  std::ofstream outFile(configPath);
+  if (!outFile.is_open())
+    return false;
+
+  outFile << std::setw(4) << j << std::endl;
+  outFile.close();
+
+  const std::string key = normalize(name);
+  s_resolvedTexturePaths[key] = newPath;
+  s_missingTextureKeys.erase(key);
+
+  std::cout << "[TextureManager] Updated config path for " << normalizedName
+            << " -> " << newPath << std::endl;
   return true;
 }
 
