@@ -3,7 +3,7 @@
     "components": {
         "collider": {
             "blocksLight": false,
-            "collisionCategory": 1,
+            "collisionCategory": 2,
             "collisionMask": 4294967295,
             "height": 100.0,
             "isHazard": false,
@@ -19,39 +19,38 @@
             "shape": 0,
             "width": 100.0
         },
-        "footstepAudio": {
-            "concretePrefix": "fs_concrete_",
-            "interval": 0.7099999785423279,
-            "minSpeed": 0.10000000149011612,
-            "resetDelay": 0.23999999463558197,
-            "soundPrefix": "fs_monster_",
-            "sprintIntervalScale": 1.0800000429153442,
-            "sprintSpeedThreshold": 19.0,
-            "tilePrefix": "fs_tile_",
-            "useSurfaceSounds": true,
-            "variationCount": 2,
-            "volume": 1.0,
-            "woodPrefix": "fs_concrete_"
-        },
         "luaScript": [
             {
                 "enabled": true,
                 "properties": {
+                    "hp": 50.0,
+                    "invulnerable": false,
+                    "isDead": false,
+                    "maxHp": 50.0,
+                    "regenRate": 0.0
+                },
+                "scriptPath": "components/health.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "_stateTimer": 0.0,
+                    "_wanderTimer": 0.0,
                     "alertDuration": 3.0,
-                    "alertStateSfxPrefix": "attack_monster2_",
+                    "alertStateSfxPrefix": "",
                     "alertStateSfxVariations": 1,
-                    "attackStateSfxPrefix": "attack_monster_",
+                    "attackStateSfxPrefix": "",
                     "attackStateSfxVariations": 1,
                     "chaseSpeed": 150.0,
-                    "chaseStateSfxPrefix": "idle_monster_",
+                    "chaseStateSfxPrefix": "",
                     "chaseStateSfxVariations": 1,
-                    "deathStateSfxPrefix": "enemy_death_",
+                    "deathStateSfxPrefix": "",
                     "deathStateSfxVariations": 1,
-                    "detectionRadius": 300.0,
+                    "detectionRadius": 400.0,
                     "lightSensitivity": 0.30000001192092896,
-                    "maxHp": 50.0,
+                    "maxHp": 100.0,
                     "patrolSpeed": 50.0,
-                    "patrolStateSfxPrefix": "idle_monster2_",
+                    "patrolStateSfxPrefix": "",
                     "patrolStateSfxVariations": 1,
                     "state": "Patrol",
                     "stateSfxVolume": 1.0,
@@ -59,6 +58,16 @@
                     "wanderInterval": 2.0
                 },
                 "scriptPath": "components/enemy_ai.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "exposureTime": 0.0,
+                    "inLight": false,
+                    "isDangerous": false,
+                    "maxExposureTime": 10.0
+                },
+                "scriptPath": "components/light_exposure.lua"
             }
         ],
         "spriteAnimator": {
@@ -76,7 +85,7 @@
                 "x": 150.0,
                 "y": 150.0
             },
-            "sortOrder": 0,
+            "sortOrder": 2,
             "textureId": "monster_texture",
             "unlit": false,
             "uv": [
@@ -88,7 +97,7 @@
             "visible": true
         },
         "tag": {
-            "tag": "Enemy"
+            "tag": "Enemy (Clone) (Clone)"
         },
         "transform": {
             "pivot": {
@@ -96,8 +105,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": 433.5,
-                "y": 34.0
+                "x": 2050.0,
+                "y": 650.0
             },
             "rotation": 0.0,
             "scale": {
@@ -108,9 +117,9 @@
         },
         "velocity": {
             "moveSpeed": 50.0,
-            "x": -0.7609743475914001,
-            "y": 0.648781955242157
+            "x": 0.4177655279636383,
+            "y": 0.9085548520088196
         }
     },
-    "name": "Enemy Type 1"
+    "name": "Enemy1"
 }

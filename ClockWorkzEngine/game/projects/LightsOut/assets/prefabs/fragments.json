@@ -13,7 +13,7 @@
                     "bobSpeed": 2.0,
                     "collected": false,
                     "fadeSpeed": 5.0,
-                    "fragmentId": 0,
+                    "fragmentId": 4,
                     "pickupSfx": "fragment_collect_1",
                     "requiresLight": true
                 },
@@ -31,7 +31,7 @@
                 "x": 100.0,
                 "y": 100.0
             },
-            "sortOrder": 2,
+            "sortOrder": 0,
             "textureId": "fragmentsample",
             "unlit": true,
             "uv": [
@@ -43,7 +43,7 @@
             "visible": true
         },
         "tag": {
-            "tag": "Fragment"
+            "tag": "Fragment Copy"
         },
         "transform": {
             "pivot": {
@@ -51,8 +51,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": 445.5726318359375,
-                "y": 101.76486206054688
+                "x": -579.8253784179688,
+                "y": -1071.660400390625
             },
             "rotation": 0.0,
             "scale": {
@@ -62,5 +62,5 @@
             "snapToGrid": false
         }
     },
-    "name": "Fragment HDB"
+    "name": "fragments"
 }
