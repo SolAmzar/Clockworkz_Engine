@@ -2,7 +2,7 @@
 /*!
 \file           Particle.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          A header file that defines the structure of a Particle used in a particle system.
 				Responsibilities include:
 				- Storing position, velocity, acceleration, life span, rotation, size, color, and alive status of a particle.

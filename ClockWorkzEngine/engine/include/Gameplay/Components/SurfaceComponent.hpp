@@ -2,7 +2,7 @@
 /*!
 \file			SurfaceComponent.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Declares SurfaceComponent to associate surface types with
 GameObjects. Responsibilities include:
                                 - Storing and retrieving the SurfaceType of the

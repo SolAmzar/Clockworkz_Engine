@@ -2,7 +2,7 @@
 /*!
 \file           SceneSerializer.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 48% [Lebon] 45% [Sol-Amzar] 7%
+\author(s)      [Syafiq] 48% [Lebon] 45% [Amzar] 7%
 \brief          Declares helpers for serializing and deserializing scenes.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

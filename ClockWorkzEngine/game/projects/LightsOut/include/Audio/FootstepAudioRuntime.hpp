@@ -2,7 +2,7 @@
 /*!
 \file           FootstepAudioRuntime.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares runtime helpers for footstep surface audio playback in
                 Lights Out.
 

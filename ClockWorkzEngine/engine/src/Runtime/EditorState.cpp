@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 78% [Sol-Amzar] 21% [Lebon] 1%
+\author(s)      [Syafiq] 62% [Amzar] 37% [Lebon] 1%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -770,9 +770,11 @@ void EditorState::render(Core::Time* timer) {
                     if (!c.isSolid && !c.isTrigger && !c.isHazard) return;
                     auto* tag = world.getComponent<Components::Tag>(entity);
                     if (tag && tag->tag == "TilemapMergedCollider") return; // drawn in pass 2
-                    glm::vec3 col = c.isTrigger
-                        ? glm::vec3(1.f, 1.f, 0.f)   // yellow
-                        : glm::vec3(0.f, 1.f, 0.f);  // green
+                    glm::vec3 col = c.isCombined
+                        ? glm::vec3(0.f, 1.f, 1.f)   // cyan
+                        : (c.isTrigger
+                            ? glm::vec3(1.f, 1.f, 0.f)   // yellow
+                            : glm::vec3(0.f, 1.f, 0.f)); // green
                     drawCollider(t, c, col);
                 });
 
@@ -1025,6 +1027,9 @@ void EditorState::renderToolbar() {
         ImGui::SameLine();
         ImGui::Checkbox("Snap", &m_snapToGrid);
     }
+
+    ImGui::Separator(); ImGui::SameLine();
+    ImGui::Checkbox("Pick Box", &m_showPickBounds);
 
     ImGui::Separator(); ImGui::SameLine();
 
@@ -2523,16 +2528,36 @@ void EditorState::renderHierarchy() {
     // 8. Merged Colliders section (read-only, collapsed by default)
     // -----------------------------------------------------------------------
     {
-        std::vector<ECS::Entity> mergedEntities;
-        world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
-            if (tag.tag == "TilemapMergedCollider") mergedEntities.push_back(e);
+        std::vector<ECS::Entity> generatedMergedEntities;
+        std::unordered_map<uint32_t, std::vector<ECS::Entity>> compositeGroups;
+        std::vector<ECS::Entity> authoredCombinedEntities;
+        world.each<Components::Collider>([&](ECS::Entity e, Components::Collider& collider) {
+            bool isGeneratedMerged = false;
+            if (auto* tag = world.getComponent<Components::Tag>(e))
+                isGeneratedMerged = tag->tag == "TilemapMergedCollider";
+
+            if (isGeneratedMerged) {
+                generatedMergedEntities.push_back(e);
+                return;
+            }
+            if (!collider.isCombined) return;
+
+            if (collider.combinedGroupId != 0)
+                compositeGroups[collider.combinedGroupId].push_back(e);
+            else
+                authoredCombinedEntities.push_back(e);
         });
 
-        if (!mergedEntities.empty()) {
+        int mergedSectionCount =
+            static_cast<int>(generatedMergedEntities.size() + authoredCombinedEntities.size());
+        for (const auto& [groupId, entities] : compositeGroups)
+            mergedSectionCount += static_cast<int>(entities.size());
+
+        if (mergedSectionCount > 0) {
             ImGui::Separator();
             char sectionLabel[64];
             snprintf(sectionLabel, sizeof(sectionLabel),
-                     "Merged Colliders  [%d]##mergedsec", (int)mergedEntities.size());
+                     "Merged Colliders  [%d]##mergedsec", mergedSectionCount);
             ImGuiTreeNodeFlags sectionFlags = ImGuiTreeNodeFlags_SpanAvailWidth;
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 1.0f, 1.0f)); // cyan label
             bool sectionOpen = ImGui::TreeNodeEx(sectionLabel, sectionFlags);
@@ -2541,13 +2566,21 @@ void EditorState::renderHierarchy() {
             if (sectionOpen) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.9f, 0.9f, 1.0f));
                 std::vector<ECS::Entity> mergedToDelete;
-                for (auto& me : mergedEntities) {
-                    char rowLabel[128];
-                    if (auto* c = world.getComponent<Components::Collider>(me))
-                        snprintf(rowLabel, sizeof(rowLabel),
-                                 "  [%.0fx%.0f] (ID:%u)", c->size.x, c->size.y, me.id);
-                    else
-                        snprintf(rowLabel, sizeof(rowLabel), "  (ID:%u)", me.id);
+                auto renderMergedRow = [&](ECS::Entity me, const char* prefix) {
+                    char rowLabel[160];
+                    if (auto* c = world.getComponent<Components::Collider>(me)) {
+                        if (c->combinedGroupId != 0) {
+                            snprintf(rowLabel, sizeof(rowLabel),
+                                     "%s[%.0fx%.0f] Group %u (ID:%u)",
+                                     prefix, c->size.x, c->size.y, c->combinedGroupId, me.id);
+                        } else {
+                            snprintf(rowLabel, sizeof(rowLabel),
+                                     "%s[%.0fx%.0f] (ID:%u)",
+                                     prefix, c->size.x, c->size.y, me.id);
+                        }
+                    } else {
+                        snprintf(rowLabel, sizeof(rowLabel), "%s(ID:%u)", prefix, me.id);
+                    }
 
                     ImGui::PushID((int)me.id);
                     bool selected = isEntitySelected(me);
@@ -2555,13 +2588,35 @@ void EditorState::renderHierarchy() {
                         selectNew(me);
 
                     if (ImGui::BeginPopupContextItem()) {
-                        if (ImGui::MenuItem("Delete")) {
+                        if (ImGui::MenuItem("Delete"))
                             mergedToDelete.push_back(me);
+                        if (auto* collider = world.getComponent<Components::Collider>(me)) {
+                            if (collider->combinedGroupId != 0 && ImGui::MenuItem("Clear Composite Group")) {
+                                collider->combinedGroupId = 0;
+                                collider->isCombined = false;
+                            }
                         }
                         ImGui::EndPopup();
                     }
                     ImGui::PopID();
+                };
+
+                for (auto& [groupId, entities] : compositeGroups) {
+                    char groupLabel[96];
+                    snprintf(groupLabel, sizeof(groupLabel),
+                             "Composite Group %u  [%d]##compgrp%u",
+                             groupId, (int)entities.size(), groupId);
+                    if (ImGui::TreeNodeEx(groupLabel, ImGuiTreeNodeFlags_SpanAvailWidth)) {
+                        for (auto& entity : entities)
+                            renderMergedRow(entity, "  ");
+                        ImGui::TreePop();
+                    }
                 }
+                for (auto& me : authoredCombinedEntities)
+                    renderMergedRow(me, "* ");
+                for (auto& me : generatedMergedEntities)
+                    renderMergedRow(me, "~ ");
+
                 for (auto& me : mergedToDelete) {
                     m_selectedEntities.erase(
                         std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
@@ -3406,6 +3461,13 @@ void EditorState::renderInspector() {
 
         if (selectedCount > 1) {
             ImGui::TextDisabled("%d selected, %d with colliders", selectedCount, colliderCount);
+            auto nextCombinedGroupId = [&]() -> uint32_t {
+                uint32_t maxGroupId = 0;
+                world.each<Components::Collider>([&](ECS::Entity, Components::Collider& collider) {
+                    maxGroupId = std::max(maxGroupId, collider.combinedGroupId);
+                });
+                return maxGroupId + 1;
+            };
             if (colliderCount < selectedCount) {
                 if (ImGui::Button("Add Collider To Selected##colbulk", ImVec2(-1, 0))) {
                     applyToSelected([&](ECS::Entity e) {
@@ -3418,6 +3480,151 @@ void EditorState::renderInspector() {
                 }
             }
             if (colliderCount > 0) {
+                if (colliderCount > 1) {
+                    bool canMarkCombined = true;
+                    bool canCombineColliders = true;
+                    for (const auto& e : selected) {
+                        auto* col = world.getComponent<Components::Collider>(e);
+                        if (!col) continue;
+                        if (col->shape != Components::Collider::Shape::Box) {
+                            canMarkCombined = false;
+                            canCombineColliders = false;
+                            break;
+                        }
+                    }
+
+                    bool mergeWithNeighbors = c ? c->isCombined : false;
+                    if (!canMarkCombined) {
+                        ImGui::BeginDisabled();
+                    }
+                    if (ImGui::Checkbox("Merge With Neighbors On Save##colbulk", &mergeWithNeighbors)) {
+                        const uint32_t newGroupId = mergeWithNeighbors ? nextCombinedGroupId() : 0;
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                if (col->shape == Components::Collider::Shape::Box) {
+                                    col->isCombined = mergeWithNeighbors;
+                                    col->combinedGroupId = mergeWithNeighbors ? newGroupId : 0;
+                                }
+                            }
+                        });
+                    }
+                    if (ImGui::Button("Create Composite Collider Group##colbulk", ImVec2(-1, 0))) {
+                        const uint32_t newGroupId = nextCombinedGroupId();
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                if (col->shape == Components::Collider::Shape::Box) {
+                                    col->isCombined = true;
+                                    col->combinedGroupId = newGroupId;
+                                }
+                            }
+                        });
+                    }
+                    if (ImGui::Button("Clear Composite Group##colbulk", ImVec2(-1, 0))) {
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                col->combinedGroupId = 0;
+                                if (col->shape == Components::Collider::Shape::Box)
+                                    col->isCombined = false;
+                            }
+                        });
+                    }
+                    if (!canMarkCombined) {
+                        ImGui::EndDisabled();
+                        ImGui::TextDisabled("Auto-merge applies to box colliders only.");
+                    }
+                    if (c && c->combinedGroupId != 0)
+                        ImGui::TextDisabled("Composite Group: %u", c->combinedGroupId);
+
+                    float bulkSizeDelta[2] = {m_bulkColliderSizeDelta.x, m_bulkColliderSizeDelta.y};
+                    if (ImGui::DragFloat2("Bulk Size Delta##colbulk", bulkSizeDelta, 1.0f)) {
+                        m_bulkColliderSizeDelta = {bulkSizeDelta[0], bulkSizeDelta[1]};
+                    }
+                    if (ImGui::Button("Apply Size Delta##colbulk", ImVec2(-1, 0))) {
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                if (col->shape != Components::Collider::Shape::Box) return;
+                                col->size.x = std::max(1.0f, col->size.x + m_bulkColliderSizeDelta.x);
+                                col->size.y = std::max(1.0f, col->size.y + m_bulkColliderSizeDelta.y);
+                            }
+                        });
+                    }
+
+                    float bulkOffsetDelta[2] = {m_bulkColliderOffsetDelta.x, m_bulkColliderOffsetDelta.y};
+                    if (ImGui::DragFloat2("Bulk Offset Delta##colbulk", bulkOffsetDelta, 1.0f)) {
+                        m_bulkColliderOffsetDelta = {bulkOffsetDelta[0], bulkOffsetDelta[1]};
+                    }
+                    if (ImGui::Button("Apply Offset Delta##colbulk", ImVec2(-1, 0))) {
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e))
+                                col->offset = {
+                                    col->offset.x + m_bulkColliderOffsetDelta.x,
+                                    col->offset.y + m_bulkColliderOffsetDelta.y
+                                };
+                        });
+                    }
+
+                    if (!canCombineColliders) {
+                        ImGui::BeginDisabled();
+                    }
+                    if (ImGui::Button("Combine Colliders##colbulk", ImVec2(-1, 0))) {
+                        ECS::Entity targetEntity = world.isValid(m_selectedEntity) ? m_selectedEntity : representative;
+                        auto* targetTransform = world.getComponent<Components::Transform>(targetEntity);
+                        auto* targetCollider = world.getComponent<Components::Collider>(targetEntity);
+                        if (targetTransform && targetCollider) {
+                            float minX = std::numeric_limits<float>::max();
+                            float minY = std::numeric_limits<float>::max();
+                            float maxX = std::numeric_limits<float>::lowest();
+                            float maxY = std::numeric_limits<float>::lowest();
+
+                            for (const auto& e : selected) {
+                                auto* t = world.getComponent<Components::Transform>(e);
+                                auto* col = world.getComponent<Components::Collider>(e);
+                                if (!t || !col || col->shape != Components::Collider::Shape::Box) continue;
+
+                                const vec2 center{
+                                    t->position.x + col->offset.x,
+                                    t->position.y + col->offset.y
+                                };
+                                const vec2 halfExtents{
+                                    std::abs(col->size.x * t->scale.x) * 0.5f,
+                                    std::abs(col->size.y * t->scale.y) * 0.5f
+                                };
+                                minX = std::min(minX, center.x - halfExtents.x);
+                                minY = std::min(minY, center.y - halfExtents.y);
+                                maxX = std::max(maxX, center.x + halfExtents.x);
+                                maxY = std::max(maxY, center.y + halfExtents.y);
+                            }
+
+                            if (minX <= maxX && minY <= maxY) {
+                                const vec2 mergedCenter{(minX + maxX) * 0.5f, (minY + maxY) * 0.5f};
+                                const vec2 mergedSize{maxX - minX, maxY - minY};
+                                const float invScaleX = std::abs(targetTransform->scale.x) > 0.0001f ? 1.0f / std::abs(targetTransform->scale.x) : 1.0f;
+                                const float invScaleY = std::abs(targetTransform->scale.y) > 0.0001f ? 1.0f / std::abs(targetTransform->scale.y) : 1.0f;
+
+                                targetCollider->shape = Components::Collider::Shape::Box;
+                                targetCollider->size = {mergedSize.x * invScaleX, mergedSize.y * invScaleY};
+                                targetCollider->offset = {mergedCenter.x - targetTransform->position.x,
+                                                          mergedCenter.y - targetTransform->position.y};
+                                targetCollider->isCombined = true;
+                                targetCollider->combinedGroupId = 0;
+
+                                for (const auto& e : selected) {
+                                    if (e.id == targetEntity.id && e.generation == targetEntity.generation) continue;
+                                    if (world.hasComponent<Components::Collider>(e))
+                                        world.removeComponent<Components::Collider>(e);
+                                }
+
+                                colliderCount = 1;
+                                representative = targetEntity;
+                                c = targetCollider;
+                            }
+                        }
+                    }
+                    if (!canCombineColliders) {
+                        ImGui::EndDisabled();
+                        ImGui::TextDisabled("Combine requires box colliders.");
+                    }
+                }
                 if (ImGui::Button("Remove Colliders From Selected##colbulk", ImVec2(-1, 0))) {
                     applyToSelected([&](ECS::Entity e) {
                         if (world.hasComponent<Components::Collider>(e))
@@ -3498,6 +3705,22 @@ void EditorState::renderInspector() {
                     if (auto* col = world.getComponent<Components::Collider>(e))
                         col->moveable = moveable;
                 });
+            }
+            if (c->shape == Components::Collider::Shape::Box) {
+                bool mergeWithNeighbors = c->isCombined;
+                if (ImGui::Checkbox("Merge With Neighbors On Save##col", &mergeWithNeighbors)) {
+                    applyToSelected([&](ECS::Entity e) {
+                        if (auto* col = world.getComponent<Components::Collider>(e)) {
+                            if (col->shape == Components::Collider::Shape::Box) {
+                                col->isCombined = mergeWithNeighbors;
+                                if (!mergeWithNeighbors)
+                                    col->combinedGroupId = 0;
+                            }
+                        }
+                    });
+                }
+                if (c->combinedGroupId != 0)
+                    ImGui::TextDisabled("Composite Group: %u", c->combinedGroupId);
             }
             if (c->moveable) {
                 float mass = c->mass;
@@ -4347,6 +4570,125 @@ void EditorState::renderViewport() {
     vec2  camP  = {cam.position().x, cam.position().y};
     auto& ecs   = m_scene.GetWorld();
 
+    ECS::Entity hoveredPickEntity{0, 0};
+    if (m_viewportHovered && !m_tileMapMode) {
+        ImVec2 hoverMouse = ImGui::GetMousePos();
+        vec2 hoverWorldPos = screenToWorld({hoverMouse.x, hoverMouse.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+
+        auto containsHoverPickPoint = [&](ECS::Entity e) {
+            if (!ecs.isValid(e) || m_hiddenEntities.count(e.id)) return false;
+
+            auto* t = ecs.getComponent<Components::Transform>(e);
+            if (!t) return false;
+
+            vec2 center{t->position.x, t->position.y};
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return false;
+                float hw = (sr->size.x * std::abs(t->scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t->scale.y)) * 0.5f;
+                return (hoverWorldPos.x >= center.x - hw && hoverWorldPos.x <= center.x + hw &&
+                        hoverWorldPos.y >= center.y - hh && hoverWorldPos.y <= center.y + hh);
+            }
+
+            float d = glm::length(glm::vec2(hoverWorldPos.x - center.x, hoverWorldPos.y - center.y));
+            return d < 60.0f;
+        };
+
+        struct HoverPickCandidate {
+            ECS::Entity entity{0, 0};
+            bool hasSprite{false};
+            int sortOrder{std::numeric_limits<int>::min()};
+            float distance{std::numeric_limits<float>::max()};
+        };
+
+        std::vector<HoverPickCandidate> hoveredPickCandidates;
+        ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+            if (m_hiddenEntities.count(e.id)) return;
+
+            vec2 center{t.position.x, t.position.y};
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return;
+                float hw = (sr->size.x * std::abs(t.scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t.scale.y)) * 0.5f;
+                bool inside = (hoverWorldPos.x >= center.x - hw && hoverWorldPos.x <= center.x + hw &&
+                               hoverWorldPos.y >= center.y - hh && hoverWorldPos.y <= center.y + hh);
+                if (inside)
+                    hoveredPickCandidates.push_back({e, true, sr->sortOrder, 0.0f});
+            } else {
+                float d = glm::length(glm::vec2(hoverWorldPos.x - center.x, hoverWorldPos.y - center.y));
+                if (d < 60.0f)
+                    hoveredPickCandidates.push_back({e, false, std::numeric_limits<int>::min(), d});
+            }
+        });
+
+        std::stable_sort(hoveredPickCandidates.begin(), hoveredPickCandidates.end(),
+            [](const HoverPickCandidate& a, const HoverPickCandidate& b) {
+                if (a.hasSprite != b.hasSprite) return a.hasSprite > b.hasSprite;
+                if (a.hasSprite && b.hasSprite) {
+                    if (a.sortOrder != b.sortOrder) return a.sortOrder > b.sortOrder;
+                    return a.entity.id > b.entity.id;
+                }
+                if (a.distance != b.distance) return a.distance < b.distance;
+                return a.entity.id > b.entity.id;
+            });
+
+        if (!hoveredPickCandidates.empty()) {
+            hoveredPickEntity = hoveredPickCandidates.front().entity;
+
+            const float pickCycleThreshold = 8.0f;
+            const double pickCycleCooldownSeconds = 3.0;
+            bool repeatedPickArea = false;
+            if (m_hasLastPickScreenPos) {
+                float dx = hoverMouse.x - m_lastPickScreenPos.x;
+                float dy = hoverMouse.y - m_lastPickScreenPos.y;
+                repeatedPickArea = std::sqrt(dx * dx + dy * dy) <= pickCycleThreshold;
+            }
+
+            double secondsSinceLastPick = ImGui::GetTime() - m_lastPickTimeSeconds;
+            bool canCyclePick = repeatedPickArea && secondsSinceLastPick <= pickCycleCooldownSeconds;
+
+            if (canCyclePick && containsHoverPickPoint(m_selectedEntity)) {
+                for (size_t i = 0; i < hoveredPickCandidates.size(); ++i) {
+                    const ECS::Entity candidate = hoveredPickCandidates[i].entity;
+                    if (candidate.id == m_selectedEntity.id &&
+                        candidate.generation == m_selectedEntity.generation) {
+                        hoveredPickEntity = hoveredPickCandidates[(i + 1) % hoveredPickCandidates.size()].entity;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (m_showPickBounds && ecs.isValid(hoveredPickEntity)) {
+        if (auto* t = ecs.getComponent<Components::Transform>(hoveredPickEntity)) {
+            vec2 center{t->position.x, t->position.y};
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            ImU32 fillCol = IM_COL32(255, 180, 70, 40);
+            ImU32 lineCol = IM_COL32(255, 180, 70, 220);
+
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(hoveredPickEntity)) {
+                float hw = (sr->size.x * std::abs(t->scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t->scale.y)) * 0.5f;
+
+                vec2 a = worldToScreen({center.x - hw, center.y + hh}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                vec2 b = worldToScreen({center.x + hw, center.y - hh}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                ImVec2 minPt{std::min(a.x, b.x), std::min(a.y, b.y)};
+                ImVec2 maxPt{std::max(a.x, b.x), std::max(a.y, b.y)};
+                dl->AddRectFilled(minPt, maxPt, fillCol);
+                dl->AddRect(minPt, maxPt, lineCol, 0.f, 0, 2.0f);
+            } else {
+                constexpr float pickRadius = 60.0f;
+                vec2 a = worldToScreen({center.x - pickRadius, center.y + pickRadius}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                vec2 b = worldToScreen({center.x + pickRadius, center.y - pickRadius}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                ImVec2 minPt{std::min(a.x, b.x), std::min(a.y, b.y)};
+                ImVec2 maxPt{std::max(a.x, b.x), std::max(a.y, b.y)};
+                dl->AddRectFilled(minPt, maxPt, fillCol);
+                dl->AddRect(minPt, maxPt, lineCol, 0.f, 0, 2.0f);
+            }
+        }
+    }
+
     // ----- Tilemap input (when in tilemap mode) -----
     if (m_tileMapMode)
         handleTileMapInput(vpMin);
@@ -4364,45 +4706,104 @@ void EditorState::renderViewport() {
         ImVec2 mp       = ImGui::GetMousePos();
         vec2   worldPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
 
-        // Pick the topmost entity under the cursor.
-        // Among entities whose bounds contain worldPos, prefer highest sortOrder
-        // (higher sortOrder = rendered last = visually on top).
-        // Fall back to closest-center distance for entities without a SpriteRenderer.
-        ECS::Entity bestEnt{0, 0};
-        int   bestSort  = std::numeric_limits<int>::min();
-        float bestDist  = 60.0f;   // max pick radius for fallback
-        bool  foundBounds = false;
+        auto containsPickPoint = [&](ECS::Entity e) {
+            if (!ecs.isValid(e) || m_hiddenEntities.count(e.id)) return false;
 
+            auto* t = ecs.getComponent<Components::Transform>(e);
+            if (!t) return false;
+
+            vec2 center{t->position.x, t->position.y};
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return false;
+                // Axis-aligned bounds test (ignores rotation, good enough for picking)
+                float hw = (sr->size.x * std::abs(t->scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t->scale.y)) * 0.5f;
+                return (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
+                        worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
+            }
+
+            float d = glm::length(glm::vec2(worldPos.x - center.x, worldPos.y - center.y));
+            return d < 60.0f;
+        };
+
+        struct PickCandidate {
+            ECS::Entity entity{0, 0};
+            bool hasSprite{false};
+            int sortOrder{std::numeric_limits<int>::min()};
+            float distance{std::numeric_limits<float>::max()};
+        };
+
+        std::vector<PickCandidate> pickCandidates;
         ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
             if (m_hiddenEntities.count(e.id)) return; // skip hidden entities
+
             vec2 center{t.position.x, t.position.y};
-            auto* sr = ecs.getComponent<Components::SpriteRenderer>(e);
-            if (sr) {
-                // Axis-aligned bounds test (ignores rotation, good enough for picking)
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return;
                 float hw = (sr->size.x * std::abs(t.scale.x)) * 0.5f;
                 float hh = (sr->size.y * std::abs(t.scale.y)) * 0.5f;
                 bool inside = (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
                                worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
                 if (inside) {
-                    // Higher sortOrder = rendered last = visually on top 
-                    if (!foundBounds || sr->sortOrder > bestSort) {
-                        bestSort    = sr->sortOrder;
-                        bestEnt     = e;
-                        foundBounds = true;
-                    }
+                    pickCandidates.push_back({e, true, sr->sortOrder, 0.0f});
                 }
-            } else if (!foundBounds) {
-                // No sprite
+            } else {
                 float d = glm::length(glm::vec2(worldPos.x - center.x, worldPos.y - center.y));
-                if (d < bestDist) { bestDist = d; bestEnt = e; }
+                if (d < 60.0f) {
+                    pickCandidates.push_back({e, false, std::numeric_limits<int>::min(), d});
+                }
             }
         });
 
+        std::stable_sort(pickCandidates.begin(), pickCandidates.end(),
+            [](const PickCandidate& a, const PickCandidate& b) {
+                if (a.hasSprite != b.hasSprite) return a.hasSprite > b.hasSprite;
+                if (a.hasSprite && b.hasSprite) {
+                    if (a.sortOrder != b.sortOrder) return a.sortOrder > b.sortOrder;
+                    return a.entity.id > b.entity.id;
+                }
+                if (a.distance != b.distance) return a.distance < b.distance;
+                return a.entity.id > b.entity.id;
+            });
+
+        ECS::Entity bestEnt{0, 0};
+        if (!pickCandidates.empty()) {
+            bestEnt = pickCandidates.front().entity;
+
+            const float pickCycleThreshold = 8.0f;
+            const double pickCycleCooldownSeconds = 3.0;
+            bool repeatedPickArea = false;
+            if (m_hasLastPickScreenPos) {
+                float dx = mp.x - m_lastPickScreenPos.x;
+                float dy = mp.y - m_lastPickScreenPos.y;
+                repeatedPickArea = std::sqrt(dx * dx + dy * dy) <= pickCycleThreshold;
+            }
+
+            double secondsSinceLastPick = ImGui::GetTime() - m_lastPickTimeSeconds;
+            bool canCyclePick = repeatedPickArea && secondsSinceLastPick <= pickCycleCooldownSeconds;
+
+            if (canCyclePick && containsPickPoint(m_selectedEntity)) {
+                for (size_t i = 0; i < pickCandidates.size(); ++i) {
+                    const ECS::Entity candidate = pickCandidates[i].entity;
+                    if (candidate.id == m_selectedEntity.id &&
+                        candidate.generation == m_selectedEntity.generation) {
+                        bestEnt = pickCandidates[(i + 1) % pickCandidates.size()].entity;
+                        break;
+                    }
+                }
+            }
+        }
+
         bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
                      ImGui::IsKeyDown(ImGuiKey_RightShift);
+        bool alt = ImGui::IsKeyDown(ImGuiKey_LeftAlt) ||
+                   ImGui::IsKeyDown(ImGuiKey_RightAlt);
 
         if (shift) {
             if (ecs.isValid(bestEnt)) {
+                m_lastPickScreenPos = {mp.x, mp.y};
+                m_hasLastPickScreenPos = true;
+                m_lastPickTimeSeconds = ImGui::GetTime();
                 // Shift+click entity: toggle in multi-selection
                 auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
                     [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
@@ -4415,16 +4816,56 @@ void EditorState::renderViewport() {
                     if (!ecs.isValid(m_selectedEntity)) m_selectedEntity = bestEnt;
                 }
             } else {
+                m_lastPickScreenPos = {mp.x, mp.y};
+                m_hasLastPickScreenPos = true;
                 // Shift+click empty space: start additive box selection
                 m_isBoxSelecting = true;
                 m_boxSelectStart = {mp.x, mp.y};
                 m_boxSelectEnd   = {mp.x, mp.y};
             }
         } else {
+            bool handledPlainClick = false;
+            if (alt &&
+                ecs.isValid(bestEnt) &&
+                ecs.isValid(m_selectedEntity) &&
+                bestEnt.id == m_selectedEntity.id &&
+                bestEnt.generation == m_selectedEntity.generation) {
+                EntitySnapshot snap = EntitySnapshot::capture(ecs, m_selectedEntity);
+                auto cmd = std::make_unique<CreateEntityCmd>(ecs, snap);
+                auto* rawCmd = cmd.get();
+                executeCommand(std::move(cmd));
+
+                ECS::Entity clonedEntity = rawCmd->createdEntity();
+                m_selectedEntities.clear();
+                m_selectedEntity = clonedEntity;
+                if (ecs.isValid(clonedEntity))
+                    m_selectedEntities.push_back(clonedEntity);
+
+                m_lastPickScreenPos = {mp.x, mp.y};
+                m_hasLastPickScreenPos = true;
+                m_lastPickTimeSeconds = ImGui::GetTime();
+
+                if (ecs.isValid(clonedEntity)) {
+                    m_pendingEntityDrag = true;
+                    m_isDraggingEntity  = false;
+                    m_dragStartMousePos = {mp.x, mp.y};
+                    m_dragClickWorldPos = worldPos;
+                    m_gizmoGroupOriginalPos.clear();
+                    if (auto* t = ecs.getComponent<Components::Transform>(clonedEntity))
+                        m_gizmoGroupOriginalPos.push_back({clonedEntity, {t->position.x, t->position.y}});
+                }
+                handledPlainClick = true;
+            }
+
+            if (!handledPlainClick) {
             // Check if clicking an already-selected entity
             bool alreadySelected = ecs.isValid(bestEnt) &&
                 std::any_of(m_selectedEntities.begin(), m_selectedEntities.end(),
                     [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
+
+            m_lastPickScreenPos = {mp.x, mp.y};
+            m_hasLastPickScreenPos = true;
+            m_lastPickTimeSeconds = ImGui::GetTime();
 
             if (!alreadySelected) {
                 // New entity ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â clear selection and select this one
@@ -4456,6 +4897,7 @@ void EditorState::renderViewport() {
                     m_selectedEntities.clear();
                     m_selectedEntity = {0, 0};
                 }
+            }
             }
         }
     }
@@ -4994,11 +5436,10 @@ void EditorState::renderAssetBrowser() {
                 if (ext == e) {
                     std::string stem = fs::path(filePath).stem().string();
                     // Import into CURRENT directory
-                    fs::path dest = fs::path(m_currentAssetDir) / fs::path(filePath).filename();
-                    Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
+                    Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str(),
+                                                         "assets/configs/Textures.json",
+                                                         m_currentAssetDir);
                     invalidateBrowserCaches();
-                    // If imported to a different location than the manager's default,
-                    // we might need to handle the move, but ImportTexture handles the copy to assets/textures.
                     handled = true;
                     break;
                 }
@@ -5032,6 +5473,11 @@ void EditorState::renderAssetBrowser() {
         ImGui::SameLine();
     }
     ImGui::Text("Location: %s", fs::relative(m_currentAssetDir, assetsRoot, ec).generic_string().c_str());
+    ImGui::TextDisabled("Path:");
+    ImGui::SameLine();
+    ImGui::PushTextWrapPos(0.0f);
+    ImGui::TextDisabled("%s", fs::absolute(m_currentAssetDir, ec).generic_string().c_str());
+    ImGui::PopTextWrapPos();
     ImGui::Separator();
 
     if (ImGui::Button("Add Texture")) {
@@ -5106,7 +5552,9 @@ void EditorState::renderAssetBrowser() {
         }
         ImGui::InputText("Asset ID", m_newAssetNameBuf, sizeof(m_newAssetNameBuf));
         if (ImGui::Button("Import", ImVec2(100, 0))) {
-            Assets::TextureManager::ImportTexture(m_newAssetPathBuf, m_newAssetNameBuf);
+            Assets::TextureManager::ImportTexture(m_newAssetPathBuf, m_newAssetNameBuf,
+                                                 "assets/configs/Textures.json",
+                                                 m_currentAssetDir);
             invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
@@ -5455,7 +5903,9 @@ void EditorState::renderAssetBrowser() {
                     if (!tex || tex->id() == 0) {
                         // Automatically import if it's not in config but exists on disk in assets/textures
                         if (Assets::TextureManager::GetFilePath(stem).empty()) {
-                            Assets::TextureManager::ImportTexture(path.generic_string(), stem);
+                            Assets::TextureManager::ImportTexture(path.generic_string(), stem,
+                                                                 "assets/configs/Textures.json",
+                                                                 path.parent_path().generic_string());
                         } else {
                             Assets::TextureManager::LoadTexture(stem, path.generic_string());
                         }
@@ -7335,21 +7785,24 @@ void EditorState::loadScene(const std::string& path) {
         world.each<Components::Transform, Components::Collider>(
             [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
                 if (!c.isSolid || c.isTrigger || c.moveable) return;
-                // Only merge axis-aligned, single-tile-sized box colliders (wall tiles).
-                // Circle colliders, rotated, or differently-sized entities are scene objects.
                 if (c.shape == Components::Collider::Shape::Circle) return;
                 if (std::abs(t.rotation) > rotationTolerance) return;
-                if (std::abs(c.size.x - m_gridSize) > tileSizeTolerance
-                    || std::abs(c.size.y - m_gridSize) > tileSizeTolerance) return;
+                const bool gridSized =
+                    std::abs(c.size.x - m_gridSize) <= tileSizeTolerance &&
+                    std::abs(c.size.y - m_gridSize) <= tileSizeTolerance;
+                if (!gridSized && !c.isCombined) return;
                 // Exclude dynamic entities (player, enemies) by tag
                 auto* tag = world.getComponent<Components::Tag>(e);
                 if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
                             || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
                     return;
+                constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
                 int layerIdx = 0;
                 if (auto* layer = world.getComponent<Components::Layer>(e))
                     layerIdx = layer->index;
-                entries.push_back({t.position, e, layerIdx});
+                const uint32_t mergeBucketId =
+                    c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
+                entries.push_back({t.position, e, layerIdx, mergeBucketId});
             });
         if (!entries.empty())
             Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
@@ -7378,16 +7831,21 @@ void EditorState::saveScene() {
                 if (!c.isSolid || c.isTrigger || c.moveable) return;
                 if (c.shape != Components::Collider::Shape::Box) return;
                 if (std::abs(t.rotation) > 0.01f) return;
-                if (std::abs(c.size.x - m_gridSize) > saveTileSizeTol
-                    || std::abs(c.size.y - m_gridSize) > saveTileSizeTol) return;
+                const bool gridSized =
+                    std::abs(c.size.x - m_gridSize) <= saveTileSizeTol &&
+                    std::abs(c.size.y - m_gridSize) <= saveTileSizeTol;
+                if (!gridSized && !c.isCombined) return;
                 auto* tag = saveWorld.getComponent<Components::Tag>(e);
                 if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
                             || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
                     return;
+                constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
                 int layerIdx = 0;
                 if (auto* layer = saveWorld.getComponent<Components::Layer>(e))
                     layerIdx = layer->index;
-                saveEntries.push_back({t.position, e, layerIdx});
+                const uint32_t mergeBucketId =
+                    c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
+                saveEntries.push_back({t.position, e, layerIdx, mergeBucketId});
             });
         if (!saveEntries.empty())
             Systems::TilemapCollisionBuilder::build(saveWorld, saveEntries, m_gridSize, m_gridSize);

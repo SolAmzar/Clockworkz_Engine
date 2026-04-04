@@ -2,7 +2,7 @@
 /*!
 \file           FootstepAudio.hpp
 \project        ClockWorkz Engine
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares configurable footstep audio settings for entities.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

@@ -2,7 +2,7 @@
 /*!
 \file           ActivationSystem.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Implementation of the Scene class.
 */
 /******************************************************************************/

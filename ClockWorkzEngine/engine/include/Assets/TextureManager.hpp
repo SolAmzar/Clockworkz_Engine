@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.hpp
 \project        Lights Out
-\author(s)      [Yusuf], 100%
+ \author(s)      [Yusuf] 98% [Amzar] 2%
 \brief          TextureManager provides a data-driven approach to loading and
                 managing textures using JSON configuration files.
                 It provides:
@@ -133,16 +133,18 @@ namespace Assets {
          * @param sourcePath Path to the source texture file (e.g., "C:/Downloads/hero.png")
          * @param name Unique name for the texture
          * @param configPath Path to JSON config file (default: "assets/configs/Textures.json")
+         * @param destinationDir Destination folder inside the project
          * @return true if import successful, false otherwise
          *
          * This will:
-         * 1. Copy the file to assets/textures/
+         * 1. Copy the file to the requested assets/textures subfolder
          * 2. Add an entry to the JSON config
          * 3. Load the texture into memory
          */
         static bool ImportTexture(const std::string& sourcePath,
                                   const std::string& name,
-                                  const std::string& configPath = "assets/configs/Textures.json");
+                                  const std::string& configPath = "assets/configs/Textures.json",
+                                  const std::string& destinationDir = "assets/textures");
 
         /**
          * @brief Remove texture entry from JSON config (does not delete file)

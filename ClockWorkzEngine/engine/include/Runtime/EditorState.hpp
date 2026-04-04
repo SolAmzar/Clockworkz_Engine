@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 81% [Sol-Amzar] 19%
+\author(s)      [Syafiq] 77% [Amzar] 23%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -199,6 +199,7 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+    bool                    m_showPickBounds{false};
 
     // ----- UIButton hit-area debug -----
     bool                    m_showUIButtons{false};
@@ -448,6 +449,11 @@ private:
     bool                    m_isDraggingEntity{false};
     vec2                    m_dragStartMousePos{0.f, 0.f};  // screen-space click pos
     vec2                    m_dragClickWorldPos{0.f, 0.f};  // world-space click pos
+    vec2                    m_bulkColliderSizeDelta{0.f, 0.f};
+    vec2                    m_bulkColliderOffsetDelta{0.f, 0.f};
+    vec2                    m_lastPickScreenPos{0.f, 0.f};
+    bool                    m_hasLastPickScreenPos{false};
+    double                  m_lastPickTimeSeconds{-1000.0};
     static constexpr float  kDragThreshold = 5.0f;         // pixels before drag starts
 
     // ----- Box selection -----

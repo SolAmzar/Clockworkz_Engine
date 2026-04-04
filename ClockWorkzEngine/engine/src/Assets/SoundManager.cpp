@@ -2,7 +2,7 @@
 /*!
 \file           SoundManager.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Implementation of Sound Manager for data-driven sound loading
 and management. Does not manage playback, only loading and unloading sound
 assets.

@@ -2,7 +2,7 @@
 /*!
 \file           Chase.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 10%
+\author(s)      [Amzar], 10%
 \brief          Declares Chase component that makes a GameObject chase the player.
 				Responsibilities include:
 				- Moving the owner GameObject towards the player at a specified speed

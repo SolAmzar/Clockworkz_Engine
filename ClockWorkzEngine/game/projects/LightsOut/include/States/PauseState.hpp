@@ -2,7 +2,7 @@
 /*!
 \file           PauseState.hpp
 \project        Lights Out
-\author(s)      [Syafiq] 53% [Sol-Amzar] 47%
+\author(s)      [Syafiq] 53% [Amzar] 47%
 \brief          Pause menu implementation header.
                 Loads PauseMenu.json scene (authored in level editor) and
                 renders it as a semi-transparent overlay on top of the frozen

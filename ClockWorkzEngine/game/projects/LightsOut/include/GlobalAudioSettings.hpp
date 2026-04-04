@@ -2,7 +2,7 @@
 /*!
 \file           GlobalAudioSettings.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares helpers for applying and persisting global audio
                 settings for the game.
 

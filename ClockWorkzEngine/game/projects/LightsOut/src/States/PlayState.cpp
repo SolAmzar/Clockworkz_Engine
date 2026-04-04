@@ -2,7 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon] 76% [Sol-Amzar] 15% [Syafiq] 8% [Yusuf] 0% [StarrySol] 1%
+\author(s)      [Lebon] 75% [Amzar] 17% [Syafiq] 7% [Yusuf] 0% [StarrySol] 1%
 \brief          Implements the Lights Out play state.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights
@@ -297,16 +297,21 @@ void PlayState::onEnter() {
                     if (!c.isSolid || c.isTrigger || c.moveable) return;
                     if (c.shape != Components::Collider::Shape::Box) return;
                     if (std::abs(t.rotation) > 0.01f) return;
-                    if (std::abs(c.size.x - gridSize) > tileSizeTol
-                        || std::abs(c.size.y - gridSize) > tileSizeTol) return;
+                    const bool gridSized =
+                        std::abs(c.size.x - gridSize) <= tileSizeTol &&
+                        std::abs(c.size.y - gridSize) <= tileSizeTol;
+                    if (!gridSized && !c.isCombined) return;
                     auto* tag = world.getComponent<Components::Tag>(e);
                     if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
                                 || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
                         return;
+                    constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
                     int layerIdx = 0;
                     if (auto* layer = world.getComponent<Components::Layer>(e))
                         layerIdx = layer->index;
-                    entries.push_back({t.position, e, layerIdx});
+                    const uint32_t mergeBucketId =
+                        c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
+                    entries.push_back({t.position, e, layerIdx, mergeBucketId});
                 });
             if (!entries.empty())
                 Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);

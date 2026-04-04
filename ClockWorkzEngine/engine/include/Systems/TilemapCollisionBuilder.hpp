@@ -2,6 +2,7 @@
 /*!
 \file           TilemapCollisionBuilder.hpp
 \project        ClockWorkz Engine
+\author(s)      [Syafiq] 94% [Amzar] 6%
 \brief          Greedy-rectangle tilemap collision merging.
 
                 Merges adjacent solid tiles into minimal rectangular colliders,
@@ -25,9 +26,10 @@ namespace Systems {
  * @brief Entry describing one tile for the collision builder.
  */
 struct TilemapTileEntry {
-    vec2        position; ///< World-space center of the tile (= Transform.position)
-    ECS::Entity entity;   ///< The ECS entity for this tile
-    int         layer;    ///< Tilemap layer index
+    vec2        position;        ///< World-space center of the tile (= Transform.position)
+    ECS::Entity entity;          ///< The ECS entity for this tile
+    int         layer;           ///< Tilemap layer index
+    uint32_t    combinedGroupId; ///< Merge bucket: 0 normal, non-zero authored/composite isolation
 };
 
 /**

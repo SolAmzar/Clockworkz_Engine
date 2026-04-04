@@ -2,7 +2,7 @@
 /*!
 \file           EditorCommand.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 96% [Sol-Amzar] 4%
+\author(s)      [Syafiq] 96% [Amzar] 4%
 \brief          Implements engine-level editor undo/redo commands.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

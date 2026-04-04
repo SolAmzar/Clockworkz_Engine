@@ -1319,6 +1319,78 @@
             "flipY": true,
             "name": "exit_texture",
             "path": "assets/textures/Corridor/exit.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "T shape wood_texture",
+            "path": "assets/textures/Corridor/T shape wood.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "T shape concrete_texture",
+            "path": "assets/textures/Corridor/T shape concrete.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "lvl 1 ending_texture",
+            "path": "assets/textures/Corridor/lvl 1 ending.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "danger barrier_texture",
+            "path": "assets/textures/Corridor Props/danger barrier.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign1_texture",
+            "path": "assets/textures/Corridor Props/dangersign1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign2_texture",
+            "path": "assets/textures/Corridor Props/dangersign2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign3_texture",
+            "path": "assets/textures/Corridor Props/dangersign3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orangetaperolledup1_texture",
+            "path": "assets/textures/Corridor Props/orangetaperolledup1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange cone_texture",
+            "path": "assets/textures/Corridor Props/orange cone.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange tape2_texture",
+            "path": "assets/textures/Corridor Props/orange tape2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orangetaperolledup_texture",
+            "path": "assets/textures/Corridor Props/orangetaperolledup.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange tape1_texture",
+            "path": "assets/textures/Corridor Props/orange tape1.png"
         }
     ]
 }

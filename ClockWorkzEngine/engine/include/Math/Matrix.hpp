@@ -2,7 +2,7 @@
 /*!
 \file           Matrix.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar]
+\author(s)      [Amzar]
 \brief          Helps with common matrix operations for 2D/3D transformations.
                 Responsibilities include:
                 - Defining Mat2, Mat3, and Mat4 structures for 2x2, 3x3, and 4x4 matrices

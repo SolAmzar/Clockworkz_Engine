@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.cpp
 \project        Lights Out
-\author(s)      [Yusuf] 99% [Sol-Amzar] 1%
+ \author(s)      [Yusuf] 96% [Amzar] 4%
 \brief          Implementation of TextureManager for data-driven texture loading
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights
@@ -268,7 +268,8 @@ TextureManager::ParseConfig(const std::string &configPath) {
 
 bool TextureManager::ImportTexture(const std::string &sourcePath,
                                    const std::string &name,
-                                   const std::string &configPath) {
+                                   const std::string &configPath,
+                                   const std::string &destinationDir) {
   const std::string key = normalize(name);
   // 1. Validate source file exists
   if (!fs::exists(sourcePath)) {
@@ -280,10 +281,12 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
   // 2. Determine destination path
   fs::path source(sourcePath);
   std::string filename = source.filename().string();
-  std::string destPath = "assets/textures/" + filename;
+  fs::path destDir = destinationDir.empty() ? fs::path("assets/textures")
+                                            : fs::path(destinationDir);
+  std::string destPath = (destDir / filename).generic_string();
 
   // 3. Create destination directory if needed
-  fs::create_directories("assets/textures");
+  fs::create_directories(destDir);
 
   // 4. Copy file to assets folder
   if (fs::absolute(sourcePath) != fs::absolute(destPath)) {
@@ -381,6 +384,7 @@ std::string TextureManager::GetFilePath(const std::string &name,
 
 bool TextureManager::RemoveFromConfig(const std::string &name,
                                       const std::string &configPath) {
+  const std::string normalizedName = normalize(name);
   std::ifstream file(configPath);
   if (!file.is_open())
     return false;
@@ -399,7 +403,8 @@ bool TextureManager::RemoveFromConfig(const std::string &name,
   auto &arr = j["textures"];
   bool removed = false;
   for (auto it = arr.begin(); it != arr.end();) {
-    if (it->value("name", "") == name) {
+    const std::string entryName = it->value("name", "");
+    if (entryName == name || entryName == normalizedName) {
       it = arr.erase(it);
       removed = true;
     } else {
