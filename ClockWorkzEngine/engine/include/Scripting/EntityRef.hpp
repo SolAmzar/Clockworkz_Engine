@@ -2,7 +2,7 @@
 /*!
 \file           EntityRef.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 85% [Lebon] 15%
 \brief          EntityRef — Lua-safe proxy for ECS entity component access.
 
                 Provides nil-safe getters / setters for Transform, Velocity,

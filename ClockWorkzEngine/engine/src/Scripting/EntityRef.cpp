@@ -2,7 +2,7 @@
 /*!
 \file           EntityRef.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 85% [Lebon] 15%
 \brief          EntityRef implementation — nil-safe ECS component access.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights

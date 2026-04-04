@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 81% [Sol-Amzar] 19%
+\author(s)      [Syafiq] 76% [Sol-Amzar] 18% [Lebon] 6%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
