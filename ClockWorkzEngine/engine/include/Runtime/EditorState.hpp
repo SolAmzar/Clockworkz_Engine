@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 77% [Amzar] 23%
+\author(s)      [Syafiq] 76% [Amzar] 24%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -374,6 +374,9 @@ private:
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
     bool                    m_openMoveSelectedAudioPopup{false};
+    std::string             m_audioBrowserStatusMessage;
+    bool                    m_audioBrowserStatusIsError{false};
+    double                  m_audioBrowserStatusUntil{0.0};
 
     // ----- Font browser -----
     char                     m_newFontNameBuf[128]{};

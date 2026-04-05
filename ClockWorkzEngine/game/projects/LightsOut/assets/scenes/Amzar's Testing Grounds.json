@@ -61,7 +61,7 @@
                     "useSurfaceSounds": true,
                     "variationCount": 4,
                     "volume": 0.22100000083446503,
-                    "woodPrefix": "fs_concrete_"
+                    "woodPrefix": "fs_wood_"
                 },
                 "light": {
                     "active": false,
@@ -205,7 +205,7 @@
                     "useSurfaceSounds": true,
                     "variationCount": 2,
                     "volume": 1.0,
-                    "woodPrefix": "fs_concrete_"
+                    "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
                     {
@@ -317,7 +317,7 @@
                     "useSurfaceSounds": true,
                     "variationCount": 2,
                     "volume": 1.0,
-                    "woodPrefix": "fs_concrete_"
+                    "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
                     {
@@ -429,7 +429,7 @@
                     "useSurfaceSounds": true,
                     "variationCount": 2,
                     "volume": 1.0,
-                    "woodPrefix": "fs_concrete_"
+                    "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
                     {
@@ -541,7 +541,7 @@
                     "useSurfaceSounds": true,
                     "variationCount": 2,
                     "volume": 1.0,
-                    "woodPrefix": "fs_concrete_"
+                    "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
                     {

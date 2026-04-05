@@ -1,0 +1,65 @@
+{
+    "category": "Props",
+    "components": {
+        "collider": {
+            "blocksLight": true,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 44.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": false,
+            "offset": {
+                "x": 5.0,
+                "y": -3.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 67.0
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 0,
+            "textureId": "bench",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "bench"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -1170.7655029296875,
+                "y": 124.7249755859375
+            },
+            "rotation": 1.3589999675750732,
+            "scale": {
+                "x": 3.6699891090393066,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "Bench "
+}

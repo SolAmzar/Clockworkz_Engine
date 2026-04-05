@@ -1,0 +1,65 @@
+{
+    "category": "Props",
+    "components": {
+        "collider": {
+            "blocksLight": true,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 100.0,
+            "isHazard": false,
+            "isSolid": false,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": false,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 19.0,
+            "shape": 1,
+            "width": 100.0
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 2,
+            "textureId": "plant4",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "Plant4"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": 1109.6656494140625,
+                "y": 286.9300842285156
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "plant4"
+}

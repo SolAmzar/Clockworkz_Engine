@@ -17,6 +17,7 @@ reserved.
 #include "Components/Collider.hpp"
 #include "Components/FootstepAudio.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
@@ -26,6 +27,7 @@ reserved.
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <cctype>
 #include <string>
 
 namespace Audio {
@@ -59,16 +61,77 @@ inline bool PointInCollider(const vec2 &point, const Components::Transform &tran
          point.y >= worldPos.y - half.y && point.y <= worldPos.y + half.y;
 }
 
+inline bool PointInSpriteBounds(const vec2 &point,
+                                const Components::Transform &transform,
+                                const Components::SpriteRenderer &sprite) {
+  const vec2 half{(sprite.size.x * transform.scale.x) * 0.5f,
+                  (sprite.size.y * transform.scale.y) * 0.5f};
+  return point.x >= transform.position.x - half.x &&
+         point.x <= transform.position.x + half.x &&
+         point.y >= transform.position.y - half.y &&
+         point.y <= transform.position.y + half.y;
+}
+
+inline std::string Lowercase(std::string value) {
+  std::transform(value.begin(), value.end(), value.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  return value;
+}
+
+inline Gameplay::SurfaceType SurfaceFromTextureId(const std::string &textureId) {
+  const std::string lowered = Lowercase(textureId);
+  if (lowered.find("wfloor") != std::string::npos)
+    return Gameplay::SurfaceType::Wood;
+  return Gameplay::SurfaceType::Default;
+}
+
 inline Gameplay::SurfaceType ResolveSurfaceType(ECS::World &world,
                                                 const vec2 &position) {
   Gameplay::SurfaceType resolved = Gameplay::SurfaceType::Default;
-  world.each<Gameplay::SurfaceComponent, Components::Transform, Components::Collider>(
-      [&](ECS::Entity, Gameplay::SurfaceComponent &surface,
-          Components::Transform &transform, Components::Collider &collider) {
-        if (resolved != Gameplay::SurfaceType::Default)
+  int bestPriority = -1;
+  int bestSortOrder = std::numeric_limits<int>::min();
+
+  auto considerSurface = [&](Gameplay::SurfaceType candidate, int priority,
+                             int sortOrder) {
+    if (candidate == Gameplay::SurfaceType::Default)
+      return;
+    if (priority > bestPriority ||
+        (priority == bestPriority && sortOrder > bestSortOrder)) {
+      resolved = candidate;
+      bestPriority = priority;
+      bestSortOrder = sortOrder;
+    }
+  };
+
+  world.each<Gameplay::SurfaceComponent, Components::Transform>(
+      [&](ECS::Entity entity, Gameplay::SurfaceComponent &surface,
+          Components::Transform &transform) {
+        const auto *sprite = world.getComponent<Components::SpriteRenderer>(entity);
+        const int sortOrder = sprite ? sprite->sortOrder : 0;
+
+        if (auto *collider = world.getComponent<Components::Collider>(entity)) {
+          if (PointInCollider(position, transform, *collider))
+            considerSurface(surface.type(), 2, sortOrder);
           return;
-        if (PointInCollider(position, transform, collider))
-          resolved = surface.type();
+        }
+
+        if (sprite) {
+          if (PointInSpriteBounds(position, transform, *sprite))
+            considerSurface(surface.type(), 1, sprite->sortOrder);
+        }
+      });
+
+  if (resolved != Gameplay::SurfaceType::Default)
+    return resolved;
+
+  world.each<Components::SpriteRenderer, Components::Transform>(
+      [&](ECS::Entity, Components::SpriteRenderer &sprite,
+          Components::Transform &transform) {
+        if (!PointInSpriteBounds(position, transform, sprite))
+          return;
+
+        const Gameplay::SurfaceType inferred = SurfaceFromTextureId(sprite.textureId);
+        considerSurface(inferred, 0, sprite.sortOrder);
       });
   return resolved;
 }

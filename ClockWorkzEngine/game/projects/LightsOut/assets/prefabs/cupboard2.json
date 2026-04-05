@@ -1,0 +1,65 @@
+{
+    "category": "Props",
+    "components": {
+        "collider": {
+            "blocksLight": true,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 60.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": false,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 52.0
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 2,
+            "textureId": "cupboard2",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "cupboard2"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -835.8016357421875,
+                "y": 295.9970397949219
+            },
+            "rotation": -3.139050006866455,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "cupboard2"
+}

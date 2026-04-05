@@ -31,7 +31,7 @@
             "useSurfaceSounds": true,
             "variationCount": 2,
             "volume": 1.0,
-            "woodPrefix": "fs_concrete_"
+            "woodPrefix": "fs_wood_"
         },
         "luaScript": [
             {

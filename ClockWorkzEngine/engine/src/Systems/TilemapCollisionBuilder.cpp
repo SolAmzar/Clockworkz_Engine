@@ -2,7 +2,7 @@
 /*!
 \file           TilemapCollisionBuilder.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 94% [Amzar] 6%
+\author(s)      [Syafiq] 90% [Amzar] 10%
 \brief          Greedy-rectangle tilemap collision merging implementation.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights
@@ -55,6 +55,19 @@ static ColliderBounds getColliderBounds(const Components::Transform& transform,
         center.x + halfExtents.x,
         center.y + halfExtents.y
     };
+}
+
+static bool intervalsOverlapOrTouch(float minA, float maxA,
+                                    float minB, float maxB,
+                                    float epsilon = 0.001f) {
+    return !(maxA < minB - epsilon || maxB < minA - epsilon);
+}
+
+static bool boundsOverlapOrTouch(const ColliderBounds& a,
+                                 const ColliderBounds& b,
+                                 float epsilon = 0.001f) {
+    return intervalsOverlapOrTouch(a.minX, a.maxX, b.minX, b.maxX, epsilon)
+        && intervalsOverlapOrTouch(a.minY, a.maxY, b.minY, b.maxY, epsilon);
 }
 
 static bool isMergedColliderExcludedEntity(ECS::World& world, ECS::Entity entity) {
@@ -145,167 +158,210 @@ void TilemapCollisionBuilder::build(ECS::World& world,
     for (auto& [bucketKey, tilesOnLayer] : tilesByLayer) {
         if (tilesOnLayer.empty()) continue;
 
-        // --- Find the world-space bounding box of all colliders on this layer ---
-        float leftmostX = std::numeric_limits<float>::max();
-        float topmostY = std::numeric_limits<float>::max();
-        float rightmostX = std::numeric_limits<float>::lowest();
-        float bottommostY = std::numeric_limits<float>::lowest();
-        for (const auto* tile : tilesOnLayer) {
-            auto* transform = world.getComponent<Transform>(tile->entity);
-            auto* collider = world.getComponent<Collider>(tile->entity);
-            if (!transform || !collider) continue;
+        std::vector<std::vector<const TilemapTileEntry*>> tileGroups;
+        if (bucketKey.combinedGroupId == 0) {
+            tileGroups.push_back(tilesOnLayer);
+        } else {
+            std::vector<ColliderBounds> tileBounds(tilesOnLayer.size());
+            for (int tileIdx = 0; tileIdx < static_cast<int>(tilesOnLayer.size()); ++tileIdx) {
+                auto* transform = world.getComponent<Transform>(tilesOnLayer[tileIdx]->entity);
+                auto* collider = world.getComponent<Collider>(tilesOnLayer[tileIdx]->entity);
+                if (!transform || !collider) continue;
+                tileBounds[tileIdx] = getColliderBounds(*transform, *collider);
+            }
 
-            const ColliderBounds bounds = getColliderBounds(*transform, *collider);
-            leftmostX = std::min(leftmostX, bounds.minX);
-            topmostY = std::min(topmostY, bounds.minY);
-            rightmostX = std::max(rightmostX, bounds.maxX);
-            bottommostY = std::max(bottommostY, bounds.maxY);
-        }
+            std::vector<bool> visited(tilesOnLayer.size(), false);
+            for (int startIdx = 0; startIdx < static_cast<int>(tilesOnLayer.size()); ++startIdx) {
+                if (visited[startIdx]) continue;
 
-        // Convert bounding box to grid dimensions (number of columns and rows).
-        int gridCols = std::max(1, static_cast<int>(std::ceil((rightmostX - leftmostX) / tileWidth)));
-        int gridRows = std::max(1, static_cast<int>(std::ceil((bottommostY - topmostY) / tileHeight)));
+                std::vector<const TilemapTileEntry*> connectedGroup;
+                std::vector<int> stack{startIdx};
+                visited[startIdx] = true;
 
-        // Build a flat 2D array: each grid cell stores every tile index whose
-        // collider bounds overlap that cell.
-        std::vector<std::vector<int>> solidTileIndices(gridRows * gridCols);
-        for (int tileIdx = 0; tileIdx < static_cast<int>(tilesOnLayer.size()); ++tileIdx) {
-            auto* transform = world.getComponent<Transform>(tilesOnLayer[tileIdx]->entity);
-            auto* collider = world.getComponent<Collider>(tilesOnLayer[tileIdx]->entity);
-            if (!transform || !collider) continue;
+                while (!stack.empty()) {
+                    const int currentIdx = stack.back();
+                    stack.pop_back();
+                    connectedGroup.push_back(tilesOnLayer[currentIdx]);
 
-            const ColliderBounds bounds = getColliderBounds(*transform, *collider);
-            const float epsilon = 0.001f;
-            int startCol = static_cast<int>(std::floor((bounds.minX - leftmostX) / tileWidth));
-            int endCol = static_cast<int>(std::floor(((bounds.maxX - leftmostX) - epsilon) / tileWidth));
-            int startRow = static_cast<int>(std::floor((bounds.minY - topmostY) / tileHeight));
-            int endRow = static_cast<int>(std::floor(((bounds.maxY - topmostY) - epsilon) / tileHeight));
-
-            startCol = std::clamp(startCol, 0, gridCols - 1);
-            endCol = std::clamp(endCol, 0, gridCols - 1);
-            startRow = std::clamp(startRow, 0, gridRows - 1);
-            endRow = std::clamp(endRow, 0, gridRows - 1);
-
-            for (int row = startRow; row <= endRow; ++row) {
-                for (int col = startCol; col <= endCol; ++col) {
-                    solidTileIndices[row * gridCols + col].push_back(tileIdx);
+                    for (int nextIdx = 0; nextIdx < static_cast<int>(tilesOnLayer.size()); ++nextIdx) {
+                        if (visited[nextIdx]) continue;
+                        if (!boundsOverlapOrTouch(tileBounds[currentIdx], tileBounds[nextIdx]))
+                            continue;
+                        visited[nextIdx] = true;
+                        stack.push_back(nextIdx);
+                    }
                 }
+
+                if (!connectedGroup.empty())
+                    tileGroups.push_back(std::move(connectedGroup));
             }
         }
 
-        // --- Greedy row-major rectangle merge ---
-        // For each unmerged solid cell, extend right then down to form the
-        // largest possible rectangle, then emit one merged collider for it.
-        std::vector<bool> alreadyMerged(gridRows * gridCols, false);
+        for (const auto& tilesInGroup : tileGroups) {
+            if (tilesInGroup.empty()) continue;
 
-        for (int startRow = 0; startRow < gridRows; ++startRow) {
-            for (int startCol = 0; startCol < gridCols; ++startCol) {
-                // Skip empty cells and cells already consumed by a previous rect.
-                if (solidTileIndices[startRow * gridCols + startCol].empty()
-                    || alreadyMerged[startRow * gridCols + startCol]) continue;
+            // --- Find the world-space bounding box of all colliders in this group ---
+            float leftmostX = std::numeric_limits<float>::max();
+            float topmostY = std::numeric_limits<float>::max();
+            float rightmostX = std::numeric_limits<float>::lowest();
+            float bottommostY = std::numeric_limits<float>::lowest();
+            for (const auto* tile : tilesInGroup) {
+                auto* transform = world.getComponent<Transform>(tile->entity);
+                auto* collider = world.getComponent<Collider>(tile->entity);
+                if (!transform || !collider) continue;
 
-                // Extend right: find how many consecutive solid, unmerged cells
-                // exist in this row starting at startCol.
-                int endCol = startCol;
-                while (endCol + 1 < gridCols
-                    && !solidTileIndices[startRow * gridCols + (endCol + 1)].empty()
-                    && !alreadyMerged[startRow * gridCols + (endCol + 1)])
-                    ++endCol;
+                const ColliderBounds bounds = getColliderBounds(*transform, *collider);
+                leftmostX = std::min(leftmostX, bounds.minX);
+                topmostY = std::min(topmostY, bounds.minY);
+                rightmostX = std::max(rightmostX, bounds.maxX);
+                bottommostY = std::max(bottommostY, bounds.maxY);
+            }
 
-                // Extend down: keep adding rows as long as every cell in the
-                // column range [startCol, endCol] is solid and unmerged.
-                int endRow = startRow;
-                while (endRow + 1 < gridRows) {
-                    bool nextRowFullySolid = true;
-                    for (int col = startCol; col <= endCol; ++col) {
-                        if (solidTileIndices[(endRow + 1) * gridCols + col].empty()
-                            || alreadyMerged[(endRow + 1) * gridCols + col]) {
-                            nextRowFullySolid = false;
-                            break;
-                        }
-                    }
-                    if (!nextRowFullySolid) break;
-                    ++endRow;
-                }
+            // Convert bounding box to grid dimensions (number of columns and rows).
+            int gridCols = std::max(1, static_cast<int>(std::ceil((rightmostX - leftmostX) / tileWidth)));
+            int gridRows = std::max(1, static_cast<int>(std::ceil((bottommostY - topmostY) / tileHeight)));
 
-                // Mark all cells in this rectangle as merged.
-                for (int row = startRow; row <= endRow; ++row)
-                    for (int col = startCol; col <= endCol; ++col)
-                        alreadyMerged[row * gridCols + col] = true;
+            // Build a flat 2D array: each grid cell stores every tile index whose
+            // collider bounds overlap that cell.
+            std::vector<std::vector<int>> solidTileIndices(gridRows * gridCols);
+            for (int tileIdx = 0; tileIdx < static_cast<int>(tilesInGroup.size()); ++tileIdx) {
+                auto* transform = world.getComponent<Transform>(tilesInGroup[tileIdx]->entity);
+                auto* collider = world.getComponent<Collider>(tilesInGroup[tileIdx]->entity);
+                if (!transform || !collider) continue;
 
-                // Compute the merged bounds from the actual source colliders so
-                // authored offsets and slight overhangs are preserved instead of
-                // snapping the merged result back to the tile grid.
-                float mergedMinX = std::numeric_limits<float>::max();
-                float mergedMinY = std::numeric_limits<float>::max();
-                float mergedMaxX = std::numeric_limits<float>::lowest();
-                float mergedMaxY = std::numeric_limits<float>::lowest();
-                std::unordered_set<int> mergedSourceTiles;
+                const ColliderBounds bounds = getColliderBounds(*transform, *collider);
+                const float epsilon = 0.001f;
+                int startCol = static_cast<int>(std::floor((bounds.minX - leftmostX) / tileWidth));
+                int endCol = static_cast<int>(std::floor(((bounds.maxX - leftmostX) - epsilon) / tileWidth));
+                int startRow = static_cast<int>(std::floor((bounds.minY - topmostY) / tileHeight));
+                int endRow = static_cast<int>(std::floor(((bounds.maxY - topmostY) - epsilon) / tileHeight));
+
+                startCol = std::clamp(startCol, 0, gridCols - 1);
+                endCol = std::clamp(endCol, 0, gridCols - 1);
+                startRow = std::clamp(startRow, 0, gridRows - 1);
+                endRow = std::clamp(endRow, 0, gridRows - 1);
 
                 for (int row = startRow; row <= endRow; ++row) {
                     for (int col = startCol; col <= endCol; ++col) {
-                        const int cellIndex = row * gridCols + col;
-                        for (int tileIndex : solidTileIndices[cellIndex]) {
-                            if (!mergedSourceTiles.insert(tileIndex).second) continue;
+                        solidTileIndices[row * gridCols + col].push_back(tileIdx);
+                    }
+                }
+            }
 
-                            const ECS::Entity sourceEntity = tilesOnLayer[tileIndex]->entity;
-                            auto* sourceTransform = world.getComponent<Transform>(sourceEntity);
-                            auto* sourceCollider  = world.getComponent<Collider>(sourceEntity);
-                            if (!sourceTransform || !sourceCollider) continue;
+            // --- Greedy row-major rectangle merge ---
+            // For each unmerged solid cell, extend right then down to form the
+            // largest possible rectangle, then emit one merged collider for it.
+            std::vector<bool> alreadyMerged(gridRows * gridCols, false);
 
-                            const ColliderBounds bounds = getColliderBounds(*sourceTransform, *sourceCollider);
-                            mergedMinX = std::min(mergedMinX, bounds.minX);
-                            mergedMinY = std::min(mergedMinY, bounds.minY);
-                            mergedMaxX = std::max(mergedMaxX, bounds.maxX);
-                            mergedMaxY = std::max(mergedMaxY, bounds.maxY);
+            for (int startRow = 0; startRow < gridRows; ++startRow) {
+                for (int startCol = 0; startCol < gridCols; ++startCol) {
+                    // Skip empty cells and cells already consumed by a previous rect.
+                    if (solidTileIndices[startRow * gridCols + startCol].empty()
+                        || alreadyMerged[startRow * gridCols + startCol]) continue;
+
+                    // Extend right: find how many consecutive solid, unmerged cells
+                    // exist in this row starting at startCol.
+                    int endCol = startCol;
+                    while (endCol + 1 < gridCols
+                        && !solidTileIndices[startRow * gridCols + (endCol + 1)].empty()
+                        && !alreadyMerged[startRow * gridCols + (endCol + 1)])
+                        ++endCol;
+
+                    // Extend down: keep adding rows as long as every cell in the
+                    // column range [startCol, endCol] is solid and unmerged.
+                    int endRow = startRow;
+                    while (endRow + 1 < gridRows) {
+                        bool nextRowFullySolid = true;
+                        for (int col = startCol; col <= endCol; ++col) {
+                            if (solidTileIndices[(endRow + 1) * gridCols + col].empty()
+                                || alreadyMerged[(endRow + 1) * gridCols + col]) {
+                                nextRowFullySolid = false;
+                                break;
+                            }
+                        }
+                        if (!nextRowFullySolid) break;
+                        ++endRow;
+                    }
+
+                    // Mark all cells in this rectangle as merged.
+                    for (int row = startRow; row <= endRow; ++row)
+                        for (int col = startCol; col <= endCol; ++col)
+                            alreadyMerged[row * gridCols + col] = true;
+
+                    // Compute the merged bounds from the actual source colliders so
+                    // authored offsets and slight overhangs are preserved instead of
+                    // snapping the merged result back to the tile grid.
+                    float mergedMinX = std::numeric_limits<float>::max();
+                    float mergedMinY = std::numeric_limits<float>::max();
+                    float mergedMaxX = std::numeric_limits<float>::lowest();
+                    float mergedMaxY = std::numeric_limits<float>::lowest();
+                    std::unordered_set<int> mergedSourceTiles;
+
+                    for (int row = startRow; row <= endRow; ++row) {
+                        for (int col = startCol; col <= endCol; ++col) {
+                            const int cellIndex = row * gridCols + col;
+                            for (int tileIndex : solidTileIndices[cellIndex]) {
+                                if (!mergedSourceTiles.insert(tileIndex).second) continue;
+
+                                const ECS::Entity sourceEntity = tilesInGroup[tileIndex]->entity;
+                                auto* sourceTransform = world.getComponent<Transform>(sourceEntity);
+                                auto* sourceCollider  = world.getComponent<Collider>(sourceEntity);
+                                if (!sourceTransform || !sourceCollider) continue;
+
+                                const ColliderBounds bounds = getColliderBounds(*sourceTransform, *sourceCollider);
+                                mergedMinX = std::min(mergedMinX, bounds.minX);
+                                mergedMinY = std::min(mergedMinY, bounds.minY);
+                                mergedMaxX = std::max(mergedMaxX, bounds.maxX);
+                                mergedMaxY = std::max(mergedMaxY, bounds.maxY);
+                            }
                         }
                     }
-                }
 
-                if (mergedMinX > mergedMaxX || mergedMinY > mergedMaxY)
-                    continue;
+                    if (mergedMinX > mergedMaxX || mergedMinY > mergedMaxY)
+                        continue;
 
-                const float rectCenterX = (mergedMinX + mergedMaxX) * 0.5f;
-                const float rectCenterY = (mergedMinY + mergedMaxY) * 0.5f;
-                const float rectPixelWidth  = mergedMaxX - mergedMinX;
-                const float rectPixelHeight = mergedMaxY - mergedMinY;
+                    const float rectCenterX = (mergedMinX + mergedMaxX) * 0.5f;
+                    const float rectCenterY = (mergedMinY + mergedMaxY) * 0.5f;
+                    const float rectPixelWidth  = mergedMaxX - mergedMinX;
+                    const float rectPixelHeight = mergedMaxY - mergedMinY;
 
-                // Create the merged collider entity (no sprite, physics-only).
-                ECS::Entity mergedEntity = world.createEntity();
+                    // Create the merged collider entity (no sprite, physics-only).
+                    ECS::Entity mergedEntity = world.createEntity();
 
-                Transform mergedTransform;
-                mergedTransform.position = {rectCenterX, rectCenterY};
-                world.addComponent<Transform>(mergedEntity, mergedTransform);
+                    Transform mergedTransform;
+                    mergedTransform.position = {rectCenterX, rectCenterY};
+                    world.addComponent<Transform>(mergedEntity, mergedTransform);
 
-                Collider mergedCollider;
-                mergedCollider.shape             = Collider::Shape::Box;
-                mergedCollider.size              = {rectPixelWidth, rectPixelHeight};
-                mergedCollider.isSolid           = true;
-                mergedCollider.isTrigger         = false;
-                mergedCollider.moveable          = false;
-                mergedCollider.blocksLight       = false;
-                mergedCollider.isCombined        = bucketKey.combinedGroupId != 0;
-                mergedCollider.combinedGroupId   = bucketKey.combinedGroupId;
-                mergedCollider.collisionCategory = Gameplay::Layer::Wall;
-                mergedCollider.collisionMask     = 0xFFFFFFFF;
-                mergedCollider.mass              = 0.f; // immoveable
-                world.addComponent<Collider>(mergedEntity, mergedCollider);
+                    Collider mergedCollider;
+                    mergedCollider.shape             = Collider::Shape::Box;
+                    mergedCollider.size              = {rectPixelWidth, rectPixelHeight};
+                    mergedCollider.isSolid           = true;
+                    mergedCollider.isTrigger         = false;
+                    mergedCollider.moveable          = false;
+                    mergedCollider.blocksLight       = false;
+                    mergedCollider.isCombined        = bucketKey.combinedGroupId != 0;
+                    mergedCollider.combinedGroupId   = bucketKey.combinedGroupId;
+                    mergedCollider.collisionCategory = Gameplay::Layer::Wall;
+                    mergedCollider.collisionMask     = 0xFFFFFFFF;
+                    mergedCollider.mass              = 0.f; // immoveable
+                    world.addComponent<Collider>(mergedEntity, mergedCollider);
 
-                world.addComponent<Tag>(mergedEntity, Tag{"TilemapMergedCollider"});
-                world.addComponent<Components::Layer>(mergedEntity, Components::Layer{bucketKey.layer});
+                    world.addComponent<Tag>(mergedEntity, Tag{"TilemapMergedCollider"});
+                    world.addComponent<Components::Layer>(mergedEntity, Components::Layer{bucketKey.layer});
 
-                // Disable isSolid on every original tile collider absorbed into
-                // this merged rect so only the merged collider stays active.
-                for (int tileIndex : mergedSourceTiles) {
-                    ECS::Entity originalTileEntity = tilesOnLayer[tileIndex]->entity;
-                    auto* originalCollider = world.getComponent<Components::Collider>(originalTileEntity);
-                    if (originalCollider && originalCollider->isSolid) {
-                        originalCollider->isSolid = false;
-                        s_disabledTileEntities.push_back(originalTileEntity);
+                    // Disable isSolid on every original tile collider absorbed into
+                    // this merged rect so only the merged collider stays active.
+                    for (int tileIndex : mergedSourceTiles) {
+                        ECS::Entity originalTileEntity = tilesInGroup[tileIndex]->entity;
+                        auto* originalCollider = world.getComponent<Components::Collider>(originalTileEntity);
+                        if (originalCollider && originalCollider->isSolid) {
+                            originalCollider->isSolid = false;
+                            s_disabledTileEntities.push_back(originalTileEntity);
+                        }
                     }
-                }
 
-                ++totalMergedRects;
+                    ++totalMergedRects;
+                }
             }
         }
     }

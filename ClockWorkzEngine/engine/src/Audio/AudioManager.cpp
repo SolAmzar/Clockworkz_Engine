@@ -262,8 +262,18 @@ int AudioManager::play(const std::string &id, Group g, float volume,
     return 0;
   }
 
+  float finalVolume = volume;
+  float finalPitch = 1.0f;
+  auto profileIt = m_soundProfiles.find(id);
+  if (profileIt != m_soundProfiles.end()) {
+    finalVolume *= profileIt->second.volume;
+    finalPitch = profileIt->second.pitch;
+  }
+
   if (ch) {
-    ch->setVolume(volume);
+    ch->setVolume(finalVolume);
+    if (finalPitch != 1.0f)
+      ch->setPitch(finalPitch);
     ch->setChannelGroup(groupHandle(g));
     ch->setPaused(paused);
 

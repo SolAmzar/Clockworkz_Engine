@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 55% [Amzar] 44% [Lebon] 1%
+\author(s)      [Syafiq] 54% [Amzar] 45% [Lebon] 1%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -3899,7 +3899,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("Target Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
             ImGui::DragFloat("Min Speed##fa", &fa->minSpeed, 0.01f, 0.0f, 1000.0f);
             ImGui::DragFloat("Reset Delay##fa", &fa->resetDelay, 0.01f, 0.0f, 1.0f);
-            ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 1.0f);
+            ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 5.0f);
             ImGui::DragInt("Variations##fa", &fa->variationCount, 1.0f, 1, 16);
             const float previewSpeed = std::max(fa->minSpeed, fa->sprintSpeedThreshold);
             float previewInterval = fa->interval;
@@ -6954,6 +6954,11 @@ void EditorState::renderAudioBrowser() {
     namespace fs = std::filesystem;
     std::error_code ec;
     const fs::path audioRoot("assets/audio");
+    auto setAudioBrowserStatus = [&](std::string message, bool isError) {
+        m_audioBrowserStatusMessage = std::move(message);
+        m_audioBrowserStatusIsError = isError;
+        m_audioBrowserStatusUntil = ImGui::GetTime() + 4.0;
+    };
 
     if (!fs::exists(audioRoot)) fs::create_directories(audioRoot, ec);
     const std::string kSoundConfig = "assets/configs/sounds.json";
@@ -6990,6 +6995,7 @@ void EditorState::renderAudioBrowser() {
             cfg.group = "SFX";
 
             if (!Assets::SoundManager::ImportSound(filePath, uniqueName, cfg, kSoundConfig)) {
+                setAudioBrowserStatus("Failed to import '" + uniqueName + "'.", true);
                 continue;
             }
 
@@ -7014,6 +7020,11 @@ void EditorState::renderAudioBrowser() {
         if (!importedSounds.empty()) {
             m_selectedAudioAssets = importedSounds;
             invalidateBrowserCaches();
+            if (importedSounds.size() == 1) {
+                setAudioBrowserStatus("Imported '" + importedSounds.front() + "'.", false);
+            } else {
+                setAudioBrowserStatus("Imported " + std::to_string(importedSounds.size()) + " audio files.", false);
+            }
         }
 
         auto& remainingDrops = Core::Engine::Get().window().droppedFilesMutable();
@@ -7021,6 +7032,12 @@ void EditorState::renderAudioBrowser() {
     }
 
     ImGui::Text("Location: %s", fs::relative(m_currentAudioDir, audioRoot, ec).generic_string().c_str());
+    if (!m_audioBrowserStatusMessage.empty() && ImGui::GetTime() <= m_audioBrowserStatusUntil) {
+        const ImVec4 statusColor = m_audioBrowserStatusIsError
+            ? ImVec4(0.95f, 0.45f, 0.45f, 1.0f)
+            : ImVec4(0.45f, 0.95f, 0.55f, 1.0f);
+        ImGui::TextColored(statusColor, "%s", m_audioBrowserStatusMessage.c_str());
+    }
     ImGui::Separator();
 
     struct MusicContextEditorEntry {
@@ -7216,14 +7233,18 @@ void EditorState::renderAudioBrowser() {
             m_batchAudioFilterReleaseEnd = 480.0f;
         }
         ImGui::Checkbox("BGM", &m_newAudioIsBGM);
-        ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 5.0f);
         if (ImGui::Button("Import", ImVec2(100, 0))) {
             Assets::SoundConfig cfg; cfg.name = m_newAudioNameBuf; cfg.path = m_newAudioPathBuf;
             cfg.loop = m_newAudioLoop; cfg.stream = m_newAudioStream; cfg.is3D = m_newAudioIs3D;
             cfg.volume = m_newAudioVolume; cfg.group = m_newAudioIsBGM ? "BGM" : "SFX";
-            Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg);
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg)) {
+                invalidateBrowserCaches();
+                setAudioBrowserStatus("Imported '" + cfg.name + "'.", false);
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to import '" + cfg.name + "'.", true);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
@@ -7234,9 +7255,16 @@ void EditorState::renderAudioBrowser() {
         ImGui::Text("Create Folder in: %s", m_currentAudioDir.c_str());
         ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
         if (ImGui::Button("Create", ImVec2(100, 0))) {
-            if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAudioDir) / m_newScriptFolderBuf, ec);
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (m_newScriptFolderBuf[0]) {
+                fs::create_directories(fs::path(m_currentAudioDir) / m_newScriptFolderBuf, ec);
+                if (ec) {
+                    setAudioBrowserStatus("Failed to create audio folder.", true);
+                } else {
+                    invalidateBrowserCaches();
+                    setAudioBrowserStatus("Created folder '" + std::string(m_newScriptFolderBuf) + "'.", false);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
@@ -7247,10 +7275,17 @@ void EditorState::renderAudioBrowser() {
     if (ImGui::BeginPopupModal("##DeleteAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete '%s'?", m_deletingAudio.c_str());
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
-            Assets::SoundManager::DeleteFromDisk(m_deletingAudio);
-            m_deletingAudio.clear();
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (Assets::SoundManager::DeleteFromDisk(m_deletingAudio)) {
+                m_selectedAudioAssets.erase(
+                    std::remove(m_selectedAudioAssets.begin(), m_selectedAudioAssets.end(), m_deletingAudio),
+                    m_selectedAudioAssets.end());
+                setAudioBrowserStatus("Deleted '" + m_deletingAudio + "'.", false);
+                m_deletingAudio.clear();
+                invalidateBrowserCaches();
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to delete '" + m_deletingAudio + "'.", true);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAudio.clear(); ImGui::CloseCurrentPopup(); }
@@ -7271,7 +7306,7 @@ void EditorState::renderAudioBrowser() {
             applyDefault3DAudioTuning();
         }
         ImGui::Checkbox("BGM##editaudio", &m_editAudioIsBGM);
-        ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 5.0f);
         ImGui::SliderFloat("Pitch##editaudio", &m_editAudioPitch, 0.1f, 3.0f);
         if (m_editAudioIs3D) {
             ImGui::SeparatorText("3D Tuning");
@@ -7285,6 +7320,7 @@ void EditorState::renderAudioBrowser() {
         }
 
         if (ImGui::Button("Save", ImVec2(100, 0))) {
+            const std::string originalAudioName = m_editingAudio;
             Assets::SoundConfig cfg;
             cfg.name = m_editAudioNameBuf;
             cfg.path = m_editAudioPathBuf;
@@ -7301,10 +7337,18 @@ void EditorState::renderAudioBrowser() {
             cfg.filterInStart = std::clamp(m_editAudioFilterInStart, 0.0f, cfg.maxDistance - 1.0f);
             cfg.filterPeak = std::clamp(m_editAudioFilterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
             cfg.filterReleaseEnd = std::clamp(m_editAudioFilterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
-            if (Assets::SoundManager::UpdateConfig(m_editingAudio, cfg, kSoundConfig)) {
+            if (Assets::SoundManager::UpdateConfig(originalAudioName, cfg, kSoundConfig)) {
+                for (auto& selectedAudio : m_selectedAudioAssets) {
+                    if (selectedAudio == originalAudioName) {
+                        selectedAudio = cfg.name;
+                    }
+                }
+                setAudioBrowserStatus("Saved audio settings for '" + cfg.name + "'.", false);
                 m_editingAudio.clear();
                 invalidateBrowserCaches();
                 ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to save audio settings for '" + originalAudioName + "'.", true);
             }
         }
         ImGui::SameLine();
@@ -7351,7 +7395,7 @@ void EditorState::renderAudioBrowser() {
         ImGui::Checkbox("Apply Volume##batch", &m_batchApplyVolume);
         ImGui::SameLine();
         ImGui::BeginDisabled(!m_batchApplyVolume);
-        ImGui::SliderFloat("Volume##batchvalue", &m_batchAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Volume##batchvalue", &m_batchAudioVolume, 0.0f, 5.0f);
         ImGui::EndDisabled();
 
         ImGui::Checkbox("Apply Pitch##batch", &m_batchApplyPitch);
@@ -7411,6 +7455,7 @@ void EditorState::renderAudioBrowser() {
         }
 
         if (ImGui::Button("Apply To Selected", ImVec2(140, 0))) {
+            size_t updatedCount = 0;
             for (const auto& soundName : m_selectedAudioAssets) {
                 Assets::SoundConfig cfg;
                 if (!Assets::SoundManager::GetConfig(soundName, cfg, kSoundConfig)) {
@@ -7456,10 +7501,17 @@ void EditorState::renderAudioBrowser() {
                 cfg.filterInStart = std::clamp(cfg.filterInStart, 0.0f, cfg.maxDistance - 1.0f);
                 cfg.filterPeak = std::clamp(cfg.filterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
                 cfg.filterReleaseEnd = std::clamp(cfg.filterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
-                Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig);
+                if (Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig)) {
+                    ++updatedCount;
+                }
             }
             invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (updatedCount > 0) {
+                setAudioBrowserStatus("Updated " + std::to_string(updatedCount) + " audio file(s).", false);
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to update the selected audio files.", true);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel##batchaudio", ImVec2(100, 0))) {
@@ -7482,8 +7534,17 @@ void EditorState::renderAudioBrowser() {
                     ? std::string{}
                     : Assets::SoundManager::GetNameForPath(renamePath.generic_string(), kSoundConfig);
                 fs::rename(renamePath, dst, ec);
-                if (!isAudioDir && ec.value() == 0 && !soundName.empty())
-                    Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
+                if (ec.value() == 0) {
+                    if (!isAudioDir && !soundName.empty()) {
+                        Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
+                    }
+                    setAudioBrowserStatus(
+                        std::string(isAudioDir ? "Renamed folder to '" : "Renamed audio to '") +
+                        dst.filename().string() + "'.",
+                        false);
+                } else {
+                    setAudioBrowserStatus("Failed to rename '" + renamePath.filename().string() + "'.", true);
+                }
             }
             m_renamingAudioPath.clear();
             invalidateBrowserCaches();
@@ -7502,11 +7563,16 @@ void EditorState::renderAudioBrowser() {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
             fs::remove_all(fs::path(m_deletingAudioPath), ec);
-            if (m_currentAudioDir.find(m_deletingAudioPath) == 0)
-                m_currentAudioDir = audioRoot.generic_string();
-            m_deletingAudioPath.clear();
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (!ec) {
+                if (m_currentAudioDir.find(m_deletingAudioPath) == 0)
+                    m_currentAudioDir = audioRoot.generic_string();
+                setAudioBrowserStatus("Deleted folder '" + fs::path(m_deletingAudioPath).filename().string() + "'.", false);
+                m_deletingAudioPath.clear();
+                invalidateBrowserCaches();
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to delete folder '" + fs::path(m_deletingAudioPath).filename().string() + "'.", true);
+            }
         }
         ImGui::PopStyleColor();
         ImGui::SameLine();
@@ -7516,19 +7582,19 @@ void EditorState::renderAudioBrowser() {
 
     auto moveAudioFileToFolder = [&](const std::string& soundName, const fs::path& srcPath, const fs::path& destDir) {
         if (soundName.empty() || srcPath.empty() || destDir.empty()) {
-            return;
+            return false;
         }
 
         std::error_code moveEc;
         fs::create_directories(destDir, moveEc);
         if (moveEc) {
-            return;
+            return false;
         }
 
         const fs::path normalizedSrc = srcPath.lexically_normal();
         const fs::path normalizedDestDir = destDir.lexically_normal();
         if (normalizedSrc.parent_path() == normalizedDestDir) {
-            return;
+            return true;
         }
 
         fs::path destFile = normalizedDestDir / normalizedSrc.filename();
@@ -7542,7 +7608,9 @@ void EditorState::renderAudioBrowser() {
         if (!moveEc) {
             Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
             invalidateBrowserCaches();
+            return true;
         }
+        return false;
     };
 
     if (!m_movingAudioPath.empty()) ImGui::OpenPopup("##MoveAudio");
@@ -7559,7 +7627,11 @@ void EditorState::renderAudioBrowser() {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
                 const std::string soundName =
                     Assets::SoundManager::GetNameForPath(fs::path(m_movingAudioPath).generic_string(), kSoundConfig);
-                moveAudioFileToFolder(soundName, fs::path(m_movingAudioPath), destDir);
+                if (moveAudioFileToFolder(soundName, fs::path(m_movingAudioPath), destDir)) {
+                    setAudioBrowserStatus("Moved '" + soundName + "'.", false);
+                } else {
+                    setAudioBrowserStatus("Failed to move '" + soundName + "'.", true);
+                }
                 m_movingAudioPath.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -7584,10 +7656,18 @@ void EditorState::renderAudioBrowser() {
         for (const auto& folder : audioFolders) {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
+                size_t movedCount = 0;
                 for (const auto& soundName : m_selectedAudioAssets) {
                     std::string srcPath = Assets::SoundManager::GetFilePath(soundName, kSoundConfig);
                     if (srcPath.empty()) continue;
-                    moveAudioFileToFolder(soundName, fs::path(srcPath), destDir);
+                    if (moveAudioFileToFolder(soundName, fs::path(srcPath), destDir)) {
+                        ++movedCount;
+                    }
+                }
+                if (movedCount > 0) {
+                    setAudioBrowserStatus("Moved " + std::to_string(movedCount) + " audio file(s).", false);
+                } else {
+                    setAudioBrowserStatus("Failed to move the selected audio files.", true);
                 }
                 ImGui::CloseCurrentPopup();
             }
@@ -7665,8 +7745,12 @@ void EditorState::renderAudioBrowser() {
                         const std::string movedName = Assets::SoundManager::GetNameForPath(src.generic_string(), kSoundConfig);
                         fs::path dest = path / src.filename();
                         fs::rename(src, dest, ec);
-                        if (ec.value() == 0 && !movedName.empty())
+                        if (ec.value() == 0 && !movedName.empty()) {
                             Assets::SoundManager::UpdatePathInConfig(movedName, dest.generic_string(), kSoundConfig);
+                            setAudioBrowserStatus("Moved '" + movedName + "'.", false);
+                        } else {
+                            setAudioBrowserStatus("Failed to move audio into '" + fname + "'.", true);
+                        }
                         invalidateBrowserCaches();
                     } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
                         std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data, kSoundConfig);
@@ -7674,8 +7758,12 @@ void EditorState::renderAudioBrowser() {
                             fs::path src(srcPath);
                             fs::path dest = path / src.filename();
                             fs::rename(src, dest, ec);
-                            if (ec.value() == 0)
+                            if (ec.value() == 0) {
                                 Assets::SoundManager::UpdatePathInConfig((const char*)payloadAsset->Data, dest.generic_string(), kSoundConfig);
+                                setAudioBrowserStatus("Moved '" + std::string((const char*)payloadAsset->Data) + "'.", false);
+                            } else {
+                                setAudioBrowserStatus("Failed to move audio into '" + fname + "'.", true);
+                            }
                             invalidateBrowserCaches();
                         }
                     }
@@ -7771,6 +7859,12 @@ void EditorState::renderAudioBrowser() {
                         while (fs::exists(dst))
                             dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
                         fs::copy_file(src, dst, ec);
+                        if (!ec) {
+                            setAudioBrowserStatus("Duplicated '" + soundKey + "'.", false);
+                            invalidateBrowserCaches();
+                        } else {
+                            setAudioBrowserStatus("Failed to duplicate '" + soundKey + "'.", true);
+                        }
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Delete")) m_deletingAudio = soundKey;
