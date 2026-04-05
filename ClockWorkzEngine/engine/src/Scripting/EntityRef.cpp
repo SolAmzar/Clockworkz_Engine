@@ -228,6 +228,12 @@ void EntityRef::setText(const std::string &t) {
   if (r)
     r->text = t;
 }
+void EntityRef::setTextColor(float r, float g, float b) {
+  auto *tr = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                     : nullptr;
+  if (tr)
+    tr->color = glm::vec3(r, g, b);
+}
 
 // --- SpriteRenderer ---
 bool EntityRef::hasSpriteRenderer() const {
