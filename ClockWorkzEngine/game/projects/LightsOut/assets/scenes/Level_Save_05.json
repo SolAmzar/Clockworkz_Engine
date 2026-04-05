@@ -5,8 +5,8 @@
         "g": 0.0,
         "r": 0.0
     },
-    "darknessIntensity": 0.0,
-    "enableDarkness": false,
+    "darknessIntensity": 0.5199999809265137,
+    "enableDarkness": true,
     "hiddenEntities": [],
     "hiddenEntityIndices": [],
     "hierarchyGroups": [
@@ -1795,7 +1795,7 @@
             "sortOrderBase": 0
         },
         {
-            "collapsed": false,
+            "collapsed": true,
             "entities": [
                 "canteentable",
                 "canteentable",
@@ -1835,7 +1835,17 @@
                 "fan",
                 "fan",
                 "fan",
-                "fan"
+                "fan",
+                "bookshelf2",
+                "bookcart",
+                "bookshelf1",
+                "bookshelftall2",
+                "bookshelftall1",
+                "chair",
+                "chair",
+                "computertable",
+                "bookshelftall1",
+                "Player"
             ],
             "entityIndices": [
                 1115,
@@ -1876,7 +1886,17 @@
                 1226,
                 1227,
                 1228,
-                1229
+                1229,
+                1231,
+                1232,
+                1233,
+                1234,
+                1235,
+                1196,
+                1195,
+                1194,
+                1193,
+                1162
             ],
             "name": "terrains",
             "parentGroupIdx": -1,
@@ -2429,7 +2449,19 @@
                 "Enemy",
                 "Enemy",
                 "Enemy (Clone) (Clone)",
-                "Player"
+                "table",
+                "table",
+                "cabinet",
+                "speaker",
+                "plant6",
+                "powerbox1",
+                "plant8",
+                "paperstack",
+                "bench",
+                "bench",
+                "dumpster",
+                "trashstack",
+                "trash"
             ],
             "entityIndices": [
                 1147,
@@ -2454,7 +2486,19 @@
                 1136,
                 1135,
                 1134,
-                1162
+                1192,
+                1191,
+                1190,
+                1189,
+                1188,
+                1187,
+                1186,
+                1185,
+                1184,
+                1183,
+                1182,
+                1181,
+                1179
             ],
             "name": "Entities",
             "parentGroupIdx": -1,
@@ -3627,7 +3671,6 @@
         "concrete l wall",
         "concrete l wall",
         "concrete l wall",
-        "Player",
         "staircase",
         "CheatManager",
         "CheatNotification",
@@ -3641,30 +3684,6 @@
         "study bench",
         "study bench",
         "study bench",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
         "doorframe",
         "dustpan",
         "broom",
@@ -3709,36 +3728,39 @@
         "fan",
         "fan",
         "schfinaldoorR",
-        "bookshelf2",
+        "Fragment Copy",
+        "Fragment Copy",
+        "Fragment Copy",
+        "Fragment Copy",
         "bookcart",
+        "bookshelf2",
         "bookshelf1",
         "bookshelftall2",
         "bookshelftall1",
-        "Enemy",
-        "Enemy",
-        "Enemy",
-        "Enemy",
-        "Fragment Copy",
-        "Fragment Copy",
-        "Fragment Copy",
-        "Fragment Copy",
         "chair",
         "chair",
-        "computertable",
         "bookshelftall1",
-        "table",
+        "computertable",
+        "powerbox1",
+        "speaker",
         "table",
         "cabinet",
-        "speaker",
-        "plant6",
-        "powerbox1",
-        "plant8",
-        "paperstack",
-        "bench",
         "bench",
         "dumpster",
+        "paperstack",
+        "plant8",
+        "trash",
         "trashstack",
-        "trash"
+        "bench",
+        "plant6",
+        "table",
+        "Player",
+        "Fragment Copy",
+        "Enemy",
+        "Enemy",
+        "Enemy",
+        "Enemy",
+        "Fragment Copy"
     ],
     "hierarchyOrderIndices": [
         28,
@@ -4890,7 +4912,6 @@
         1157,
         1158,
         1159,
-        1162,
         0,
         1163,
         1164,
@@ -4904,30 +4925,6 @@
         1109,
         1110,
         1111,
-        1244,
-        1246,
-        1252,
-        1254,
-        1249,
-        1257,
-        1247,
-        1255,
-        1241,
-        1239,
-        1258,
-        1242,
-        1250,
-        1243,
-        1251,
-        1240,
-        1245,
-        1248,
-        1253,
-        1256,
-        1259,
-        1260,
-        1237,
-        1238,
         1180,
         1177,
         1178,
@@ -4972,36 +4969,39 @@
         1228,
         1229,
         1230,
-        1231,
-        1232,
-        1233,
-        1234,
-        1235,
-        1236,
-        1203,
-        1202,
-        1201,
         1200,
         1199,
         1198,
         1197,
-        1196,
+        1232,
+        1231,
+        1233,
+        1234,
+        1235,
         1195,
-        1194,
+        1196,
         1193,
-        1192,
-        1191,
-        1190,
-        1189,
-        1188,
+        1194,
         1187,
-        1186,
-        1185,
+        1189,
+        1192,
+        1190,
         1184,
-        1183,
         1182,
+        1185,
+        1186,
+        1179,
         1181,
-        1179
+        1183,
+        1188,
+        1191,
+        1162,
+        1201,
+        1237,
+        1236,
+        1203,
+        1202,
+        1238
     ],
     "musicContext": "",
     "objects": [
@@ -59165,24 +59165,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -59630,9 +59612,15 @@
                         "enabled": true,
                         "properties": {
                             "attackRange": 182.8000030517578,
-                            "chaseSpeed": 3.299999952316284,
-                            "dashDuration": 0.25,
-                            "dashSpeed": 10.0
+                            "chaseSpeed": 68.5999984741211,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "dashDuration": 0.6499999761581421,
+                            "dashSpeed": 355.3999938964844,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "idleStateSfxPrefix": "",
+                            "idleStateSfxVariations": 1
                         },
                         "scriptPath": "components/moth_ai.lua"
                     }
@@ -63315,6 +63303,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63403,6 +63409,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63447,6 +63471,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63491,6 +63533,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63535,6 +63595,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63579,6 +63657,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63623,6 +63719,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63667,6 +63781,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63711,6 +63843,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63755,6 +63905,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63799,6 +63967,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63843,6 +64029,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63887,6 +64091,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63931,6 +64153,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -63975,6 +64215,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -64019,6 +64277,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -64063,6 +64339,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -64359,6 +64653,69 @@
         {
             "active": true,
             "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 4,
+                            "pickupSfx": "fragment_collect_1",
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragmentsample",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1029.90966796875,
+                        "y": -872.9500122070313
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment Copy"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": false,
                     "collisionCategory": 1,
@@ -64393,9 +64750,15 @@
                         "enabled": true,
                         "properties": {
                             "attackRange": 182.8000030517578,
-                            "chaseSpeed": 3.299999952316284,
-                            "dashDuration": 0.25,
-                            "dashSpeed": 10.0
+                            "chaseSpeed": 68.5999984741211,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "dashDuration": 0.6499999761581421,
+                            "dashSpeed": 355.3999938964844,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "idleStateSfxPrefix": "",
+                            "idleStateSfxVariations": 1
                         },
                         "scriptPath": "components/moth_ai.lua"
                     }
@@ -64431,8 +64794,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -2050.0,
-                        "y": -450.0
+                        "x": -1880.2845458984375,
+                        "y": -559.1640625
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -64486,9 +64849,15 @@
                         "enabled": true,
                         "properties": {
                             "attackRange": 182.8000030517578,
-                            "chaseSpeed": 3.299999952316284,
-                            "dashDuration": 0.25,
-                            "dashSpeed": 10.0
+                            "chaseSpeed": 68.5999984741211,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "dashDuration": 0.6499999761581421,
+                            "dashSpeed": 355.3999938964844,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "idleStateSfxPrefix": "",
+                            "idleStateSfxVariations": 1
                         },
                         "scriptPath": "components/moth_ai.lua"
                     }
@@ -64524,101 +64893,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1850.0,
-                        "y": -350.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                },
-                "velocity": {
-                    "moveSpeed": 50.0,
-                    "x": -0.7609743475914001,
-                    "y": 0.648781955242157
-                }
-            },
-            "name": "Enemy"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": true,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "luaScript": [
-                    {
-                        "enabled": true,
-                        "properties": {
-                            "hp": 50.0,
-                            "invulnerable": true,
-                            "isDead": false,
-                            "maxHp": 50.0,
-                            "regenRate": 0.0
-                        },
-                        "scriptPath": "components/health.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "properties": {
-                            "attackRange": 182.8000030517578,
-                            "chaseSpeed": 3.299999952316284,
-                            "dashDuration": 0.25,
-                            "dashSpeed": 10.0
-                        },
-                        "scriptPath": "components/moth_ai.lua"
-                    }
-                ],
-                "spriteAnimator": {
-                    "filename": "moth.json"
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 150.0,
-                        "y": 150.0
-                    },
-                    "sortOrder": 1,
-                    "textureId": "completedMonster 2 export",
-                    "unlit": false,
-                    "uv": [
-                        0.25,
-                        0.25,
-                        0.25,
-                        0.25
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -450.0
+                        "x": -1744.281982421875,
+                        "y": -447.61138916015625
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -65916,6 +66192,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -65960,6 +66254,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -66004,6 +66316,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -66048,6 +66378,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -66092,6 +66440,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -66170,9 +66536,15 @@
                         "enabled": true,
                         "properties": {
                             "attackRange": 182.8000030517578,
-                            "chaseSpeed": 3.299999952316284,
-                            "dashDuration": 0.25,
-                            "dashSpeed": 10.0
+                            "chaseSpeed": 68.5999984741211,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "dashDuration": 0.6499999761581421,
+                            "dashSpeed": 355.3999938964844,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "idleStateSfxPrefix": "",
+                            "idleStateSfxVariations": 1
                         },
                         "scriptPath": "components/moth_ai.lua"
                     }
@@ -66208,8 +66580,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1850.0,
-                        "y": -550.0
+                        "x": -2007.118408203125,
+                        "y": -464.42071533203125
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -66225,6 +66597,168 @@
                 }
             },
             "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "hp": 50.0,
+                            "invulnerable": true,
+                            "isDead": false,
+                            "maxHp": 50.0,
+                            "regenRate": 0.0
+                        },
+                        "scriptPath": "components/health.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "attackRange": 182.8000030517578,
+                            "chaseSpeed": 68.5999984741211,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "dashDuration": 0.6499999761581421,
+                            "dashSpeed": 355.3999938964844,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "idleStateSfxPrefix": "",
+                            "idleStateSfxVariations": 1
+                        },
+                        "scriptPath": "components/moth_ai.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "moth.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "completedMonster 2 export",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1843.609619140625,
+                        "y": -380.3741760253906
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": -0.7609743475914001,
+                    "y": 0.648781955242157
+                }
+            },
+            "name": "Enemy"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 4,
+                            "pickupSfx": "fragment_collect_1",
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragmentsample",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1755.4014892578125,
+                        "y": -171.0384521484375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment Copy"
         },
         {
             "active": true,

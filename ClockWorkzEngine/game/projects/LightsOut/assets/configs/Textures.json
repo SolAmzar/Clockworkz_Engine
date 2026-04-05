@@ -1529,6 +1529,210 @@
             "flipY": true,
             "name": "doubleshelf_texture",
             "path": "assets/textures/doubleshelf.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "basket_texture",
+            "path": "assets/textures/basket.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "clothes hanger_texture",
+            "path": "assets/textures/clothes hanger.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "danger barrier_texture",
+            "path": "assets/textures/danger barrier.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign1_texture",
+            "path": "assets/textures/dangersign1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign2_texture",
+            "path": "assets/textures/dangersign2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign3_texture",
+            "path": "assets/textures/dangersign3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "HDB stairs_texture",
+            "path": "assets/textures/HDB stairs.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "ladder_texture",
+            "path": "assets/textures/ladder.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "lvl 1 ending_texture",
+            "path": "assets/textures/lvl 1 ending.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange cone_texture",
+            "path": "assets/textures/orange cone.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange tape1_texture",
+            "path": "assets/textures/orange tape1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange tape2_texture",
+            "path": "assets/textures/orange tape2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orangetaperolledup_texture",
+            "path": "assets/textures/orangetaperolledup.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orangetaperolledup1_texture",
+            "path": "assets/textures/orangetaperolledup1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pushtrolley_texture",
+            "path": "assets/textures/pushtrolley.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "random_texture",
+            "path": "assets/textures/random.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "trolley_texture",
+            "path": "assets/textures/trolley.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroomwall1_texture",
+            "path": "assets/textures/classroomwall1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroomwall2_texture",
+            "path": "assets/textures/classroomwall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroomwall3_texture",
+            "path": "assets/textures/classroomwall3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "Corridor T wall tip_texture",
+            "path": "assets/textures/Corridor T wall tip.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "corridorwall1_texture",
+            "path": "assets/textures/corridorwall1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "corridorwall2_texture",
+            "path": "assets/textures/corridorwall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "corridorwall3_texture",
+            "path": "assets/textures/corridorwall3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "corridorwallT_texture",
+            "path": "assets/textures/corridorwallT.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "house T wall tip_texture",
+            "path": "assets/textures/house T wall tip.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "school T wall tip_texture",
+            "path": "assets/textures/school T wall tip.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schoolwall1_texture",
+            "path": "assets/textures/schoolwall1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schoolwall2_texture",
+            "path": "assets/textures/schoolwall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schoolwall3_texture",
+            "path": "assets/textures/schoolwall3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schoolwallt_texture",
+            "path": "assets/textures/schoolwallt.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteen T wall tip_texture",
+            "path": "assets/textures/canteen T wall tip.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroom T wall tip_texture",
+            "path": "assets/textures/classroom T wall tip.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroomwall for door_texture",
+            "path": "assets/textures/classroomwall for door.png"
         }
     ]
 }
