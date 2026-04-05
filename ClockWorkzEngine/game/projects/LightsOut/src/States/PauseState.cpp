@@ -193,8 +193,6 @@ void PauseState::update(double /*dt*/) {
   // Mouse world-space position (vec2 is the engine's custom type)
   vec2 mouseWorld = m_input.getMouseWorldPos(*m_cam, (float)w, (float)h);
   bool clicked    = m_input.wasMouseClicked(GLFW_MOUSE_BUTTON_LEFT);
-  bool mouseHover = false;
-
   int hoveredIndex = -1;
   for (int i = 0; i < (int)m_buttonEntities.size(); ++i) {
     ECS::Entity e = m_buttonEntities[i];
