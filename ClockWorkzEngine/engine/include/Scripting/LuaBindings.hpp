@@ -1,8 +1,8 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           LuaBindings.hpp
 \project        Lights Out
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 90% [Lebon] 10%
 \brief          Declares registration functions for all Lua type bindings.
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights reserved.

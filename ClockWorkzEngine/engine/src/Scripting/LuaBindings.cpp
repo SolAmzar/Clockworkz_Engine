@@ -2,7 +2,7 @@
 /*!
 \file           LuaBindings.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 97% [Amzar] 3%
+\author(s)      [Syafiq] 90% [Amzar] 3% [Lebon] 7%
 \brief          Implements Sol2 usertype registrations for Lua scripting.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -12,7 +12,6 @@ reserved.
 
 #include "Scripting/LuaBindings.hpp"
 #include "Audio/AudioManager.hpp"
-#include "Core/CheatCodeManager.hpp"
 #include "Core/Engine.hpp"
 #include "Gameplay/Components/DamageDealer.hpp"
 #include "Gameplay/Components/Health.hpp"
@@ -524,6 +523,7 @@ void RegisterEntityRef(sol::state &lua) {
       "isParticleEmitterActive", &Scripting::EntityRef::isParticleEmitterActive,
       "setParticleEmitterActive",
       &Scripting::EntityRef::setParticleEmitterActive,
+      "setTextColor", &Scripting::EntityRef::setTextColor,
 
       // SpriteRenderer
       "hasSpriteRenderer", &Scripting::EntityRef::hasSpriteRenderer,
@@ -771,42 +771,6 @@ void RegisterGamepadGlobal(sol::state &lua) {
     lua["Gamepad"] = &Core::Engine::Get().gamepad();
 }
 
-static void LuaRegisterCheat(sol::table sequenceTable, sol::function callback, sol::optional<std::string> name) {
-    std::vector<Core::CheatInput> sequence;
-    for (size_t i = 1; i <= sequenceTable.size(); ++i) {
-        sol::optional<Core::CheatInput> input = sequenceTable[i];
-        if (input) {
-            sequence.push_back(*input);
-        }
-    }
-    Core::Engine::Get().cheat().registerCheat(sequence, [callback]() {
-        callback();
-    }, name.value_or(""));
-}
-
-void RegisterCheatGlobal(sol::state &lua) {
-    lua.new_enum<Core::CheatInput>("CheatInput", {
-        {"Up", Core::CheatInput::Up},
-        {"Down", Core::CheatInput::Down},
-        {"Left", Core::CheatInput::Left},
-        {"Right", Core::CheatInput::Right},
-        {"A", Core::CheatInput::A},
-        {"B", Core::CheatInput::B},
-        {"X", Core::CheatInput::X},
-        {"Y", Core::CheatInput::Y},
-        {"L1", Core::CheatInput::L1},
-        {"R1", Core::CheatInput::R1},
-        {"L2", Core::CheatInput::L2},
-        {"R2", Core::CheatInput::R2},
-        {"Select", Core::CheatInput::Select},
-        {"Start", Core::CheatInput::Start}
-    });
-
-    auto t = lua.create_table();
-    t.set_function("register", &LuaRegisterCheat);
-    t.set_function("reset", []() { Core::Engine::Get().cheat().resetBuffer(); });
-    lua["Cheat"] = t;
-}
 
 void RegisterAllBindings(sol::state &lua) {
   std::cout << "[LuaBindings] Registering engine types..." << std::endl;
@@ -841,9 +805,6 @@ void RegisterAllBindings(sol::state &lua) {
 
   RegisterGamepadGlobal(lua);
   std::cout << "[LuaBindings] Registered Gamepad global" << std::endl;
-
-  RegisterCheatGlobal(lua);
-  std::cout << "[LuaBindings] Registered Cheat global" << std::endl;
 
   // Create Engine global table for accessing engine services
   auto engine = lua.create_table();

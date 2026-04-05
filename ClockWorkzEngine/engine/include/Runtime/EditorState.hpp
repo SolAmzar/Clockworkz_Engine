@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 73% [Amzar] 27%
+\author(s)      [Syafiq] 73% [Amzar] 23% [Lebon] 4%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -54,6 +54,7 @@ public:
     void renderImGui(Core::Time* timer) override;
 
 private:
+    friend class CreateTilemapTileCmd;
     friend class HierarchyChangeCmd;
     friend class GroupCloneCmd;
     friend class DeleteTilemapTileCmd;
@@ -142,11 +143,13 @@ private:
     void         saveTilemap(const std::string& filepath);
     void         loadTilemap(const std::string& filepath);
     void         clearTilemap();
+    void         flushTilemapCollisionRebuild();
     bool         isCellOccupied(vec2 worldPos, int layer) const;
     EntityGroup* getOrCreateLayerGroup(int layer);
     void         removeEntityFromGroups(ECS::Entity entity);
 
     // ----- Undo/redo -----
+    void executeRecordedCommand(std::unique_ptr<IEditorCommand> cmd);
     void executeCommand(std::unique_ptr<IEditorCommand> cmd);
     void undo();
     void redo();
@@ -203,6 +206,7 @@ private:
     // ----- Collider debug -----
     bool                    m_showColliders{false};
     bool                    m_showPickBounds{false};
+    bool                    m_showMergedColliders{false};
 
     // ----- UIButton hit-area debug -----
     bool                    m_showUIButtons{false};
@@ -439,6 +443,7 @@ private:
     bool                     m_paintedThisFrame{false};
     bool                     m_tilemapDirty{false}; ///< Set when tiles are added/removed; triggers merged-collider rebuild on mouse release
     bool                     m_tileStrokeActive{false};
+    std::unique_ptr<CompositeEditorCmd> m_activeTileStrokeCommand;
     std::string              m_selectedTilePrefab;
     PaintMode                m_paintMode{PaintMode::Paint};
     int                      m_currentLayer{0};

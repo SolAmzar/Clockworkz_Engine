@@ -2,19 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon] 75% [Amzar] 17% [Syafiq] 7% [Yusuf] 0% [StarrySol] 1%
-\brief          Implements the Lights Out play state.
-
-All content © 2026 DigiPen Institute of Technology Singapore. All rights
-reserved.
-*/
-/******************************************************************************/
-#if 1
-/******************************************************************************/
-/*!
-\file           PlayState.cpp
-\project        Lights Out
-\author(s)      [Lebon], 70% [Syafiq] 20%
+\author(s)      [Lebon] 75% [Amzar] 18% [Syafiq] 7% [Yusuf] 0% 
 \brief          Declares PlayState, the main gameplay loop state.
                                 Responsibilities include:
                                 - Loading and managing the current Scene and its
@@ -26,11 +14,12 @@ Object Render not done yet)
                                 - Transitioning back to other states (e.g.,
 pause or menu)
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 
+#if 1
 #include "States/PlayState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -44,7 +33,6 @@ reserved.
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
 #include "Core/Profiler.hpp"
-#include "Core/Event.hpp"
 #include "Platform/GamepadManager.hpp"
 #include "Gameplay/Components/Fragment.hpp"
 #include "Gameplay/Components/ParticleEmitter.hpp"
@@ -222,17 +210,6 @@ void PlayState::onEnter() {
 
   // Initialize level editor
   Core::Engine &engine = Core::Engine::Get();
-  engine.events().subscribe<Core::GamepadConnectedEvent>(
-      this, [this](const Core::GamepadConnectedEvent &event) {
-        showControllerNotification("Controller connected: slot " +
-                                   std::to_string(event.index));
-      });
-  engine.events().subscribe<Core::GamepadDisconnectedEvent>(
-      this, [this](const Core::GamepadDisconnectedEvent &event) {
-        showControllerNotification("Controller disconnected: slot " +
-                                   std::to_string(event.index));
-      });
-
   // auto &audio = engine.audio();
 
   // play the gameplay BGM (make sure "level_bgm" is loaded via SoundManager)
@@ -286,7 +263,7 @@ void PlayState::onEnter() {
         std::cout << "[PlayState] Loading level file: " << path << "\n";
         SceneSerializer::Deserialize(*scene, path);
         scene->registerExistingObjectsToLayers();
-        // Build merged wall colliders to eliminate ghost collisions at tile borders.
+        // Use saved merged colliders as-is; otherwise build them from wall tiles.
         {
             auto& world = scene->GetWorld();
             std::vector<Systems::TilemapTileEntry> entries;
@@ -306,6 +283,21 @@ void PlayState::onEnter() {
                                 || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
                         return;
                     constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
+            bool hasMergedColliders = false;
+            constexpr float gridSize = 100.f;
+            world.each<Components::Tag>([&](ECS::Entity, Components::Tag& tag) {
+                if (tag.tag == "TilemapMergedCollider") hasMergedColliders = true;
+            });
+
+            if (hasMergedColliders) {
+                Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
+                    world, gridSize, gridSize);
+            } else {
+                std::vector<Systems::TilemapTileEntry> entries;
+                world.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                    if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(world, e, gridSize, gridSize))
+                        return;
+
                     int layerIdx = 0;
                     if (auto* layer = world.getComponent<Components::Layer>(e))
                         layerIdx = layer->index;
@@ -313,8 +305,9 @@ void PlayState::onEnter() {
                         c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
                     entries.push_back({t.position, e, layerIdx, mergeBucketId});
                 });
-            if (!entries.empty())
-                Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
+                if (!entries.empty())
+                    Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
+            }
         }
       } else {
         std::cout << "[PlayState] Level file not found: " << path
@@ -391,16 +384,10 @@ void PlayState::onEnter() {
   m_fragmentNotificationTimer = 0.0f;
   m_lastCollectedFragmentId = "";
   m_fragmentIconTexture = "fragment_texture";
-  m_showControllerNotification = false;
-  m_controllerNotificationTimer = 0.0f;
-  m_controllerNotificationText.clear();
-
   std::cout << "[PlayState] Fragment system initialized\n";
 }
 
 void PlayState::onExit() {
-  Core::Engine::Get().events().unsubscribeOwner(this);
-
   // Shutdown level editor FIRST
   if (m_levelEditor && m_editorInitialized) {
     if (auto *scene = m_scenes.current()) {
@@ -427,14 +414,6 @@ void PlayState::onExit() {
 }
 
 void PlayState::update(double dt) {
-  if (m_showControllerNotification) {
-    m_controllerNotificationTimer -= static_cast<float>(dt);
-    if (m_controllerNotificationTimer <= 0.0f) {
-      m_showControllerNotification = false;
-      m_controllerNotificationText.clear();
-    }
-  }
-
   // ESC = Exit editor (or pause if not in editor)
   if (m_input.wasKeyPressed(GLFW_KEY_Z) && m_levelEditor->isActive()) {
     if (m_levelEditor && m_levelEditor->isActive()) {
@@ -1337,8 +1316,6 @@ void PlayState::render(Core::Time *timer) {
                         glm::vec3{1, 0.2, 0.2}, *shader);
   }
 
-  renderControllerNotification();
-
   m_renderer->endFontPass();
 
   (void)timer;
@@ -2060,38 +2037,6 @@ void Runtime::PlayState::renderFragmentUI() {
   m_renderer->endFontPass();
 }
 
-void Runtime::PlayState::showControllerNotification(const std::string &message) {
-  m_controllerNotificationText = message;
-  m_showControllerNotification = true;
-  m_controllerNotificationTimer = 3.0f;
-}
-
-void Runtime::PlayState::renderControllerNotification() {
-  if (!m_showControllerNotification || !m_renderer) {
-    return;
-  }
-
-  auto &window = Core::Engine::Get().window();
-  auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
-  auto font = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
-  if (!shader || !font) {
-    return;
-  }
-
-  const float boxWidth = 100.0f;
-  const float boxHeight = 100.0f;
-  const float x = (static_cast<float>(window.width()) - boxWidth) * 0.5f;
-  const float y = static_cast<float>(window.height()) - 40.0f;
-
-  font->RenderTextInBox(m_controllerNotificationText,
-                        x, y,
-                        boxWidth, boxHeight,
-                        0.35f,
-                        glm::vec3(1.0f, 1.0f, 1.0f),
-                        *shader,
-                        1, 0,
-                        true, 1.0f);
-}
 #endif
 
 // Helper for ECS Raycasting (AABB only for now, matching Components::Collider)

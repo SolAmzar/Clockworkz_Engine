@@ -293,8 +293,9 @@ function Enemy:onCollisionEnter(entity, other)
                 Audio.playOneShot(attackSfx)
             end
         end
-        local isDead = World.getScriptProp(other.id, "_isDead")
-        if not isDead then
+        local isDead      = World.getScriptProp(other.id, "_isDead")
+        local invincible  = World.getScriptProp(other.id, "_invincible")
+        if not isDead and not invincible then
             World.setScriptProp(other.id, "_isDead", true)
             if other:hasSpriteAnimator() and other:getCurrentClip() ~= "death" then
                 other:playAnimation("death")

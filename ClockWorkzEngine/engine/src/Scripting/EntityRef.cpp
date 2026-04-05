@@ -2,7 +2,7 @@
 /*!
 \file           EntityRef.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 96% [Amzar] 4%
+\author(s)      [Syafiq] 87% [Amzar] 4% [Lebon] 9%
 \brief          EntityRef implementation — nil-safe ECS component access.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -269,6 +269,11 @@ void EntityRef::setParticleEmitterActive(bool active) {
               : nullptr;
   if (emitter)
     emitter->setActive(active);
+void EntityRef::setTextColor(float r, float g, float b) {
+  auto *tr = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
+                     : nullptr;
+  if (tr)
+    tr->color = glm::vec3(r, g, b);
 }
 
 // --- SpriteRenderer ---

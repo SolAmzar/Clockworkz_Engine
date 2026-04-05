@@ -2,7 +2,7 @@
 /*!
 \file           UISliderSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 79% [Amzar] 21%
+\author(s)      [Syafiq] 78% [Amzar] 21% [Lebon] 7%
 \brief          UISliderSystem implementation.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights

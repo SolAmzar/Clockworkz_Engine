@@ -78,8 +78,9 @@ local function setState(self, entity, newState)
 end
 
 local function killPlayer(player)
-    local isDead = World.getScriptProp(player.id, "_isDead")
-    if isDead then return end
+    local isDead     = World.getScriptProp(player.id, "_isDead")
+    local invincible = World.getScriptProp(player.id, "_invincible")
+    if isDead or invincible then return end
     World.setScriptProp(player.id, "_isDead", true)
     if player:hasSpriteAnimator() and player:getCurrentClip() ~= "death" then
         player:playAnimation("death")

@@ -23,6 +23,7 @@ Properties = {
     { name = "pushSfxVariations", type = "int",       default = 3,      label = "Push SFX Variations"  },
     { name = "pushSfxInterval",   type = "float",     default = 0.35,   label = "Push SFX Interval s"  },
     { name = "pushSfxVolume",     type = "float",     default = 1.0,    label = "Push SFX Volume"      },
+    { name = "_invincible",       type = "bool",      default = false,  label = "Invincible"           },
 }
 
 local PlayerController = {}
@@ -60,6 +61,7 @@ PlayerController._batteryDying   = false
 PlayerController._flickerTimer   = 0.0
 PlayerController._flickerStep    = 0.0
 PlayerController._isDead         = false
+PlayerController._invincible     = false
 PlayerController._deathTimer     = 0.0
 PlayerController._usingGamepad   = false
 PlayerController._prevMouseX     = nil   -- nil until first frame so no false delta
@@ -377,7 +379,7 @@ end
 
 function PlayerController:onCollisionEnter(entity, other)
 if other:getTagValue() == "Enemy" then
-        if not self._isDead then
+        if not self._isDead and not self._invincible then
             self._isDead = true
             if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
                 entity:playAnimation("death")

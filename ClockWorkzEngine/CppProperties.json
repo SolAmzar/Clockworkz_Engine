@@ -18,6 +18,10 @@
         "${workspaceRoot}\\out\\build\\_deps\\glfw-src\\include",
         "${workspaceRoot}\\out\\build\\_deps\\glew-src\\include",
         "${workspaceRoot}\\out\\build\\_deps\\glm-src",
+        "${workspaceRoot}\\out\\build\\_deps\\sdl3-src\\include",
+        "${workspaceRoot}\\out\\build\\LightsOut-Debug\\_deps\\sdl3-src\\include",
+        "${workspaceRoot}\\out\\build\\All-Debug\\_deps\\sdl3-src\\include",
+        "${workspaceRoot}\\out\\build\\x64-Debug\\_deps\\sdl3-src\\include",
         "${workspaceRoot}\\out\\build\\_deps\\freetype-src\\include",
         "${workspaceRoot}\\fmod\\api\\core\\inc"
       ],
@@ -27,6 +31,10 @@
         "${workspaceRoot}\\out\\build\\_deps\\glfw-src\\include",
         "${workspaceRoot}\\out\\build\\_deps\\glew-src\\include",
         "${workspaceRoot}\\out\\build\\_deps\\glm-src",
+        "${workspaceRoot}\\out\\build\\_deps\\sdl3-src\\include",
+        "${workspaceRoot}\\out\\build\\LightsOut-Debug\\_deps\\sdl3-src\\include",
+        "${workspaceRoot}\\out\\build\\All-Debug\\_deps\\sdl3-src\\include",
+        "${workspaceRoot}\\out\\build\\x64-Debug\\_deps\\sdl3-src\\include",
         "${workspaceRoot}\\out\\build\\_deps\\freetype-src\\include",
         "${workspaceRoot}\\fmod\\api\\core\\inc"
       ],
