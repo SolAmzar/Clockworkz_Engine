@@ -54,6 +54,7 @@ public:
     void renderImGui(Core::Time* timer) override;
 
 private:
+    friend class CreateTilemapTileCmd;
     friend class HierarchyChangeCmd;
     friend class GroupCloneCmd;
     friend class DeleteTilemapTileCmd;
@@ -139,11 +140,13 @@ private:
     void         saveTilemap(const std::string& filepath);
     void         loadTilemap(const std::string& filepath);
     void         clearTilemap();
+    void         flushTilemapCollisionRebuild();
     bool         isCellOccupied(vec2 worldPos, int layer) const;
     EntityGroup* getOrCreateLayerGroup(int layer);
     void         removeEntityFromGroups(ECS::Entity entity);
 
     // ----- Undo/redo -----
+    void executeRecordedCommand(std::unique_ptr<IEditorCommand> cmd);
     void executeCommand(std::unique_ptr<IEditorCommand> cmd);
     void undo();
     void redo();
@@ -422,6 +425,7 @@ private:
     bool                     m_paintedThisFrame{false};
     bool                     m_tilemapDirty{false}; ///< Set when tiles are added/removed; triggers merged-collider rebuild on mouse release
     bool                     m_tileStrokeActive{false};
+    std::unique_ptr<CompositeEditorCmd> m_activeTileStrokeCommand;
     std::string              m_selectedTilePrefab;
     PaintMode                m_paintMode{PaintMode::Paint};
     int                      m_currentLayer{0};
