@@ -30494,8 +30494,8 @@
                         "enabled": true,
                         "properties": {
                             "levelName": "Level_Save_03.json",
-                            "spawnX": 0,
-                            "spawnY": 0
+                            "spawnX": -100,
+                            "spawnY": -100
                         },
                         "scriptPath": "components/portal.lua"
                     }
@@ -52269,6 +52269,11 @@
                         "enabled": true,
                         "properties": {},
                         "scriptPath": "fragment_reveal.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {},
+                        "scriptPath": "skip_level.lua"
                     }
                 ],
                 "transform": {

@@ -28647,6 +28647,11 @@
                         "enabled": true,
                         "properties": {},
                         "scriptPath": "fragment_reveal.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {},
+                        "scriptPath": "skip_level.lua"
                     }
                 ],
                 "transform": {

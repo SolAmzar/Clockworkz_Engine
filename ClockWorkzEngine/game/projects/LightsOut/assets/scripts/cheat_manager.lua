@@ -25,6 +25,8 @@ local keyMap = {
     Num2   = Keys.NUM_2,
     Num3   = Keys.NUM_3,
     Num4   = Keys.NUM_4,
+    Num5   = Keys.NUM_5,
+    Num6   = Keys.NUM_6,
     Select = Keys.BACKSPACE,
     Start  = Keys.BACKSLASH,
 }
