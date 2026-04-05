@@ -727,8 +727,8 @@ void EditorState::render(Core::Time* timer) {
         Systems::renderLightPass(m_scene.GetWorld(), renderer);
         m_lastViewportRenderTime = now;
 
-        // Grid + collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
-        if (m_showGrid || m_showColliders || m_showUIButtons || m_showTextBoxes) {
+        // Grid + collider + merged collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
+        if (m_showGrid || m_showColliders || m_showMergedColliders || m_showUIButtons || m_showTextBoxes) {
             renderer.beginDebugPass(camera.viewProj());
 
         if (m_showGrid)
@@ -776,12 +776,44 @@ void EditorState::render(Core::Time* timer) {
                     drawCollider(t, c, col);
                 });
 
-            // Pass 2: cyan — greedy-merged wall colliders, drawn on top
+        }
+
+        if (m_showMergedColliders) {
+            auto& world = m_scene.GetWorld();
+
+            auto drawCollider = [&](Components::Transform& t,
+                                    Components::Collider& c, glm::vec3 col) {
+                auto rotVec = [](glm::vec2 v, float a) {
+                    return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
+                                    v.x * std::sin(a) + v.y * std::cos(a));
+                };
+                glm::vec2 offset = rotVec(
+                    glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
+                    t.rotation);
+                glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
+                if (c.shape == Components::Collider::Shape::Box) {
+                    glm::vec2 half(c.size.x * t.scale.x * 0.5f,
+                                   c.size.y * t.scale.y * 0.5f);
+                    glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
+                    glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
+                    renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
+                    renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
+                    renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
+                    renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
+                } else {
+                    float r = c.radius * std::max(t.scale.x, t.scale.y);
+                    renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
+                }
+            };
+
+            // Cyan: greedy-merged wall colliders, drawn on top
             world.each<Components::Transform, Components::Collider>(
                 [&](ECS::Entity entity, Components::Transform& t, Components::Collider& c) {
                     auto* tag = world.getComponent<Components::Tag>(entity);
                     if (!tag || tag->tag != "TilemapMergedCollider") return;
-                    drawCollider(t, c, glm::vec3(0.f, 1.f, 1.f)); // cyan
+                    drawCollider(t, c, glm::vec3(0.f, 1.f, 1.f));
                 });
         }
 
@@ -1026,6 +1058,10 @@ void EditorState::renderToolbar() {
         ImGui::Checkbox("Snap", &m_snapToGrid);
     }
 
+    ImGui::Separator(); ImGui::SameLine();
+
+    ImGui::Checkbox("Merged", &m_showMergedColliders);
+    ImGui::SameLine();
     ImGui::Separator(); ImGui::SameLine();
 
     // Tilemap mode
@@ -2520,7 +2556,7 @@ void EditorState::renderHierarchy() {
     }
 
     // -----------------------------------------------------------------------
-    // 8. Merged Colliders section (read-only, collapsed by default)
+    // 8. Merged Colliders section
     // -----------------------------------------------------------------------
     {
         std::vector<ECS::Entity> mergedEntities;
@@ -3519,15 +3555,15 @@ void EditorState::renderInspector() {
                 ImGui::SetNextItemWidth(-1.f);
                 if (ImGui::BeginCombo("Category##col", categoryNames[currentIdx])) {
                     for (int i = 0; i < 4; ++i) {
-                        bool selected = (currentIdx == i);
-                        if (ImGui::Selectable(categoryNames[i], selected)) {
+                        const bool isCurrentSelection = (currentIdx == i);
+                        if (ImGui::Selectable(categoryNames[i], isCurrentSelection)) {
                             const uint32_t newCategory = categoryValues[i];
                             applyToSelected([&](ECS::Entity e) {
                                 if (auto* col = world.getComponent<Components::Collider>(e))
                                     col->collisionCategory = newCategory;
                             });
                         }
-                        if (selected) ImGui::SetItemDefaultFocus();
+                        if (isCurrentSelection) ImGui::SetItemDefaultFocus();
                     }
                     ImGui::EndCombo();
                 }
@@ -7324,35 +7360,32 @@ void EditorState::loadScene(const std::string& path) {
         }
     }
 
-    // Auto-build greedy merged colliders from all solid static wall entities.
-    // Individual tile colliders get isSolid=false (hidden from debug view);
-    // merged boxes are drawn in cyan so you can see which walls were greedy-merged.
+    // Auto-build merged wall colliders only when the scene does not already
+    // contain saved merged colliders.
     {
         auto& world = m_scene.GetWorld();
-        std::vector<Systems::TilemapTileEntry> entries;
-        const float tileSizeTolerance = 1.0f;
-        const float rotationTolerance = 0.01f; // radians — excludes rotated objects
-        world.each<Components::Transform, Components::Collider>(
-            [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
-                if (!c.isSolid || c.isTrigger || c.moveable) return;
-                // Only merge axis-aligned, single-tile-sized box colliders (wall tiles).
-                // Circle colliders, rotated, or differently-sized entities are scene objects.
-                if (c.shape == Components::Collider::Shape::Circle) return;
-                if (std::abs(t.rotation) > rotationTolerance) return;
-                if (std::abs(c.size.x - m_gridSize) > tileSizeTolerance
-                    || std::abs(c.size.y - m_gridSize) > tileSizeTolerance) return;
-                // Exclude dynamic entities (player, enemies) by tag
-                auto* tag = world.getComponent<Components::Tag>(e);
-                if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
-                            || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
+        bool hasMergedColliders = false;
+        world.each<Components::Tag>([&](ECS::Entity, Components::Tag& tag) {
+            if (tag.tag == "TilemapMergedCollider") hasMergedColliders = true;
+        });
+
+        if (hasMergedColliders) {
+            Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
+                world, m_gridSize, m_gridSize);
+        } else {
+            std::vector<Systems::TilemapTileEntry> entries;
+            world.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(world, e, m_gridSize, m_gridSize))
                     return;
+
                 int layerIdx = 0;
                 if (auto* layer = world.getComponent<Components::Layer>(e))
                     layerIdx = layer->index;
                 entries.push_back({t.position, e, layerIdx});
             });
-        if (!entries.empty())
-            Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+            if (!entries.empty())
+                Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+        }
     }
 }
 
@@ -7364,34 +7397,26 @@ void EditorState::saveScene() {
     namespace fs = std::filesystem;
     std::error_code ec;
     fs::create_directories(fs::path(m_sceneFilePath).parent_path(), ec);
-    // Clear merged colliders before saving so tiles are serialized with isSolid=true.
-    // Rebuild them after so the editor continues to work correctly.
-    auto& saveWorld = m_scene.GetWorld();
-    Systems::TilemapCollisionBuilder::clear(saveWorld);
-    SceneSerializer::Serialize(m_scene, m_sceneFilePath);
-    // Rebuild merged colliders so editor state is restored after save.
+
     {
-        std::vector<Systems::TilemapTileEntry> saveEntries;
-        const float saveTileSizeTol = 1.0f;
-        saveWorld.each<Components::Transform, Components::Collider>(
-            [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
-                if (!c.isSolid || c.isTrigger || c.moveable) return;
-                if (c.shape != Components::Collider::Shape::Box) return;
-                if (std::abs(t.rotation) > 0.01f) return;
-                if (std::abs(c.size.x - m_gridSize) > saveTileSizeTol
-                    || std::abs(c.size.y - m_gridSize) > saveTileSizeTol) return;
-                auto* tag = saveWorld.getComponent<Components::Tag>(e);
-                if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
-                            || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
-                    return;
-                int layerIdx = 0;
-                if (auto* layer = saveWorld.getComponent<Components::Layer>(e))
-                    layerIdx = layer->index;
-                saveEntries.push_back({t.position, e, layerIdx});
-            });
-        if (!saveEntries.empty())
-            Systems::TilemapCollisionBuilder::build(saveWorld, saveEntries, m_gridSize, m_gridSize);
+        auto& world = m_scene.GetWorld();
+        Systems::TilemapCollisionBuilder::clear(world);
+
+        std::vector<Systems::TilemapTileEntry> entries;
+        world.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+            if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(world, e, m_gridSize, m_gridSize))
+                return;
+
+            int layerIdx = 0;
+            if (auto* layer = world.getComponent<Components::Layer>(e))
+                layerIdx = layer->index;
+            entries.push_back({t.position, e, layerIdx});
+        });
+        if (!entries.empty())
+            Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
     }
+
+    SceneSerializer::Serialize(m_scene, m_sceneFilePath);
 
     // Append hierarchy groups metadata (entity names used as stable keys)
     {

@@ -274,30 +274,32 @@ void PlayState::onEnter() {
         std::cout << "[PlayState] Loading level file: " << path << "\n";
         SceneSerializer::Deserialize(*scene, path);
         scene->registerExistingObjectsToLayers();
-        // Build merged wall colliders to eliminate ghost collisions at tile borders.
+        // Use saved merged colliders as-is; otherwise build them from wall tiles.
         {
             auto& world = scene->GetWorld();
-            std::vector<Systems::TilemapTileEntry> entries;
-            float gridSize = 100.f; // standard tile size
-            const float tileSizeTol = 1.0f;
-            world.each<Components::Transform, Components::Collider>(
-                [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
-                    if (!c.isSolid || c.isTrigger || c.moveable) return;
-                    if (c.shape != Components::Collider::Shape::Box) return;
-                    if (std::abs(t.rotation) > 0.01f) return;
-                    if (std::abs(c.size.x - gridSize) > tileSizeTol
-                        || std::abs(c.size.y - gridSize) > tileSizeTol) return;
-                    auto* tag = world.getComponent<Components::Tag>(e);
-                    if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
-                                || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
+            bool hasMergedColliders = false;
+            constexpr float gridSize = 100.f;
+            world.each<Components::Tag>([&](ECS::Entity, Components::Tag& tag) {
+                if (tag.tag == "TilemapMergedCollider") hasMergedColliders = true;
+            });
+
+            if (hasMergedColliders) {
+                Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
+                    world, gridSize, gridSize);
+            } else {
+                std::vector<Systems::TilemapTileEntry> entries;
+                world.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                    if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(world, e, gridSize, gridSize))
                         return;
+
                     int layerIdx = 0;
                     if (auto* layer = world.getComponent<Components::Layer>(e))
                         layerIdx = layer->index;
                     entries.push_back({t.position, e, layerIdx});
                 });
-            if (!entries.empty())
-                Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
+                if (!entries.empty())
+                    Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
+            }
         }
       } else {
         std::cout << "[PlayState] Level file not found: " << path

@@ -199,6 +199,7 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+    bool                    m_showMergedColliders{false};
 
     // ----- UIButton hit-area debug -----
     bool                    m_showUIButtons{false};

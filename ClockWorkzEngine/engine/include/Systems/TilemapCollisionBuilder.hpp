@@ -45,6 +45,27 @@ struct TilemapTileEntry {
  */
 class TilemapCollisionBuilder {
 public:
+    static bool shouldMergeEntity(ECS::World& world,
+                                  ECS::Entity entity,
+                                  float tileW,
+                                  float tileH,
+                                  float positionTolerance = 0.05f,
+                                  float rotationTolerance = 0.01f);
+
+    /**
+     * @brief Rebuild persisted merged-collider scenes into a stable editor/runtime state.
+     *
+     * Older saved scenes may already contain TilemapMergedCollider entities and have
+     * their source wall tiles serialized with Collider.isSolid = false. This helper
+     * restores solid wall sources, removes the persisted merged colliders, and rebuilds
+     * fresh merged colliders so subsequent saves keep the collision data intact.
+     */
+    static void normalizePersistedMergedScene(ECS::World& world,
+                                              float tileW,
+                                              float tileH,
+                                              float positionTolerance = 0.05f,
+                                              float rotationTolerance = 0.01f);
+
     /**
      * @brief Build merged solid colliders from tilemap tile entries.
      *

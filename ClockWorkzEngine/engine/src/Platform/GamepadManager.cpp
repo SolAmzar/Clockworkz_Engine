@@ -28,7 +28,7 @@ void GamepadManager::init(float deadzone, float sprintThreshold) {
     m_deadzone     = deadzone;
     m_sprintThresh = sprintThreshold;
 
-    if (SDL_Init(SDL_INIT_GAMEPAD) < 0) {
+    if (!SDL_Init(SDL_INIT_GAMEPAD)) {
         std::cerr << "[GamepadManager] SDL_Init(SDL_INIT_GAMEPAD) failed: "
                   << SDL_GetError() << "\n";
         return;
