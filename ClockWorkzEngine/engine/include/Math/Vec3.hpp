@@ -2,7 +2,7 @@
 /*!
 \file           Vec3.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar]
+\author(s)      [Amzar]
 \brief          Establishes 3D vector structure with common vector operations.
                 Responsibilities include:
                 - Defining a vec3 struct with x, y, and z components

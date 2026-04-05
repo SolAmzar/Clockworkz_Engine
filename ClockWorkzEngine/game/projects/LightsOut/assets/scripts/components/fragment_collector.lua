@@ -123,6 +123,9 @@ function onUpdate(self, entity, dt)
         local dist = diff:length()
         if dist <= self.pickupRadius then
             World.setScriptProp(frag.id, "collected", true)
+            if frag:hasParticleEmitter() then
+                frag:setParticleEmitterActive(false)
+            end
             self.collectedCount = self.collectedCount + 1
 
             local fragId = World.getScriptProp(frag.id, "fragmentId")

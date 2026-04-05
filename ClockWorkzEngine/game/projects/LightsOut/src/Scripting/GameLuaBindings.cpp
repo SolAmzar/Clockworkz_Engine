@@ -2,7 +2,7 @@
 /*!
 \file           GameLuaBindings.cpp
 \project        Lights Out
-\author(s)      [Lebon] 86% [Syafiq] 13% [Sol-Amzar] 1%
+\author(s)      [Lebon] 86% [Syafiq] 13% [Amzar] 1%
 \brief          Extends EntityRef with game component accessors backed by Lua
                 script properties (components/battery.lua, fragment.lua, etc.)
                 instead of C++ component structs. Engine remains clean.

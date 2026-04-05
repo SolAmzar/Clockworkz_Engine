@@ -2,7 +2,7 @@
 /*!
 \file           EditorCommand.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 97% [Sol-Amzar] 3%
+\author(s)      [Syafiq] 97% [Amzar] 3%
 \brief          Declares the engine-level undo/redo command system used by the
                 editor, including snapshots for built-in ECS components.
 

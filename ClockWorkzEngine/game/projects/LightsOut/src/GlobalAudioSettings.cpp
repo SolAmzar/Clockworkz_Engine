@@ -2,7 +2,7 @@
 /*!
 \file           GlobalAudioSettings.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Implements application of global game audio settings.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

@@ -104,6 +104,7 @@ private:
   bool m_haveLastFootPos = false;
   vec2 m_spawnPoint;
   void resetScene();
+  void resetFragmentProgress();
   Gameplay::GameObject *m_player;
   std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
 

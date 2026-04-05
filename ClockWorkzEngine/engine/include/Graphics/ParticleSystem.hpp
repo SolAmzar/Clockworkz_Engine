@@ -2,7 +2,7 @@
 /*!
 \file           ParticleSystem.hpp
 \project        ClockWorkz Engine
-\author(s)      [StarrySol] 90% [Sol-Amzar] 10%
+\author(s)      [StarrySol] 90% [Amzar] 10%
 \brief          Declares particle system runtime data and update helpers.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

@@ -2,7 +2,7 @@
 /*!
 \file           GamePlayState.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 82% [Sol-Amzar] 8% [Lebon] 10%
+\author(s)      [Syafiq] 82% [Amzar] 8% [Lebon] 10%
 \brief          ECS-based gameplay state implementation.
 
 All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reserved.

@@ -2,7 +2,7 @@
 /*!
 \file           Collider.hpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon]
+\author(s)      [Lebon] 95% [Amzar] 5%
 \brief          Collider component - pure data for collision detection.
 
 All content © 2025 DigiPen Institute of Technology Singapore. All rights
@@ -43,6 +43,8 @@ struct Collider {
   bool isTrigger{false};   ///< Doesn't block, just detects overlap
   bool blocksLight{false}; ///< Blocks light rays
   bool moveable{false};    ///< Can be pushed
+  bool isCombined{false};  ///< Opts this collider into save-time merge rebuilding
+  uint32_t combinedGroupId{0}; ///< Shared non-zero ID for authored composite groups
   float mass{1.0f}; ///< Mass for physics resolution (heavier objects move less)
 };
 

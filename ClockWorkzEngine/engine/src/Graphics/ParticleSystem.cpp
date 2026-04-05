@@ -2,7 +2,7 @@
 /*!
 \file           ParticleSystem.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Declares ParticleSystem, a simple 2D particle system for effects
                 like smoke, fire, explosions, etc.
                 Responsibilities include:

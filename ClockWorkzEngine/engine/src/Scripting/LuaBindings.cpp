@@ -2,7 +2,7 @@
 /*!
 \file           LuaBindings.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 90% [Lebon] 10%
+\author(s)      [Syafiq] 90% [Amzar] 3% [Lebon] 7%
 \brief          Implements Sol2 usertype registrations for Lua scripting.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -513,6 +513,16 @@ void RegisterEntityRef(sol::state &lua) {
       // TextRenderer
       "hasTextRenderer", &Scripting::EntityRef::hasTextRenderer, "getText",
       &Scripting::EntityRef::getText, "setText", &Scripting::EntityRef::setText,
+      "isTextVisible", &Scripting::EntityRef::isTextVisible, "setTextVisible",
+      &Scripting::EntityRef::setTextVisible, "getTextFontSize",
+      &Scripting::EntityRef::getTextFontSize, "setTextFontSize",
+      &Scripting::EntityRef::setTextFontSize,
+
+      // ParticleEmitter
+      "hasParticleEmitter", &Scripting::EntityRef::hasParticleEmitter,
+      "isParticleEmitterActive", &Scripting::EntityRef::isParticleEmitterActive,
+      "setParticleEmitterActive",
+      &Scripting::EntityRef::setParticleEmitterActive,
       "setTextColor", &Scripting::EntityRef::setTextColor,
 
       // SpriteRenderer

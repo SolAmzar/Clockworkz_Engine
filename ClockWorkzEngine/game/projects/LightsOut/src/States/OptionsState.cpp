@@ -2,7 +2,7 @@
 /*!
 \file           OptionsState.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Implements the options/settings menu state for Lights Out,
                 backed by OptionsMenu.json. Matches the MainMenu overlay style.
 

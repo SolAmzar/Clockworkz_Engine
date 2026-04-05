@@ -2,7 +2,7 @@
 /*!
 \file           LevelMusicManager.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Implements level music context and layered music management.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

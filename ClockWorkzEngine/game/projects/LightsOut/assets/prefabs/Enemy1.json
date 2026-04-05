@@ -19,6 +19,20 @@
             "shape": 0,
             "width": 100.0
         },
+        "footstepAudio": {
+            "concretePrefix": "fs_concrete_",
+            "interval": 0.7099999785423279,
+            "minSpeed": 0.10000000149011612,
+            "resetDelay": 0.23999999463558197,
+            "soundPrefix": "fs_monster_",
+            "sprintIntervalScale": 1.0800000429153442,
+            "sprintSpeedThreshold": 19.0,
+            "tilePrefix": "fs_tile_",
+            "useSurfaceSounds": true,
+            "variationCount": 2,
+            "volume": 1.0,
+            "woodPrefix": "fs_wood_"
+        },
         "luaScript": [
             {
                 "enabled": true,
@@ -121,5 +135,5 @@
             "y": 0.9085548520088196
         }
     },
-    "name": "Enemy1"
+    "name": "Enemy Type 1"
 }

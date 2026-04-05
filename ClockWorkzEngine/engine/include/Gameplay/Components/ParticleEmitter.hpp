@@ -2,7 +2,7 @@
 /*!
 \file           ParticleEmitter.hpp
 \project        ClockWorkz Engine
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Backward-compatible include for the engine-owned particle
                 emitter component.
 

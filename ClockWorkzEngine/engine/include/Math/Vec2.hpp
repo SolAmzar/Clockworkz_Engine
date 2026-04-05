@@ -2,7 +2,7 @@
 /*!
 \file           Vec2.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar]
+\author(s)      [Amzar]
 \brief          Establishes a 2D vector structure with common vector operations.
 				Responsibilities include:
 				- Defining a vec2 struct with x and y components

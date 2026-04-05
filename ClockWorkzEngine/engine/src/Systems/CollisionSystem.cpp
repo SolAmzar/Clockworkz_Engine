@@ -2,7 +2,7 @@
 /*!
 \file           CollisionSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon] [Syafiq] [Sol-Amzar]
+\author(s)      [Lebon] [Syafiq] [Amzar]
 \brief          CollisionSystem implementation - OBB/Circle intersection.
 
 All content Â© 2025 DigiPen Institute of Technology Singapore. All rights

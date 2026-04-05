@@ -2,7 +2,7 @@
 /*!
 \file           AudioSettingsPanel.hpp
 \project        ClockWorkz Engine
-\author         [Sol-Amzar]
+\author         [Amzar]
 \brief          Engine-level ImGui panel for audio volume controls.
                 Call Audio::AudioSettingsPanel::draw(visible) between
                 ImGui::NewFrame() and ImGui::Render() â€” e.g. inside a

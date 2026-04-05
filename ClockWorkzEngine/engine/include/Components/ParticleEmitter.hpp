@@ -1,12 +1,12 @@
-﻿/******************************************************************************/
+/******************************************************************************/
 /*!
 \file           ParticleEmitter.hpp
 \project        ClockWorkz Engine
-\author(s)      [Sol-Amzar] 90% [Sol-Amzar] 10%
+\author(s)      [Amzar] 90% [Amzar] 10%
 \brief          Declares an ECS particle emitter component that wraps the
                 engine particle system and exposes editor-friendly controls.
 
-All content Â© 2026 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/

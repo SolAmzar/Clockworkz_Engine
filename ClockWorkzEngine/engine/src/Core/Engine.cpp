@@ -2,7 +2,7 @@
 /*!
 \file           Engine.cpp
 \project        Lights Out
-\author(s)      [Lebon], 80% [Wei An], 5% [Sol-Amzar] 15%
+\author(s)      [Lebon], 80% [Wei An], 5% [Amzar] 15%
 \brief          Declares Engine, the central orchestrator of the game loop.
                                 Responsibilities include:
                                 - Initializing and shutting down all subsystems

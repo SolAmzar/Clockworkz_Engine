@@ -2,7 +2,7 @@
 /*!
 \file           MenuState.hpp
 \project        Lights Out
-\author(s)      [Lebon] 53% [Sol-Amzar] 24% [Amirul Syafiq] 22% [StarrySol] 1%
+\author(s)      [Lebon] 53% [Amzar] 24% [Amirul Syafiq] 22% [StarrySol] 1%
 \brief          Declares MenuState, the state representing the game's main menu.
                 Responsibilities include:
                 - Loading MainMenu.json scene (authored in level editor)

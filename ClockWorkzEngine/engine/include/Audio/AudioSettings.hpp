@@ -2,7 +2,7 @@
 /*!
 \file           AudioSettings.hpp
 \project        ClockWorkz Engine
-\author         [Sol-Amzar]
+\author         [Amzar]
 \brief          Engine-level singleton storing user-desired audio group volumes.
                 Persists across state transitions (static storage).
                 Any game state can read/write via AudioSettings::Get().

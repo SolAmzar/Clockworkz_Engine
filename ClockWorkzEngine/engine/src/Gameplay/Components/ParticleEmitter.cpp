@@ -2,7 +2,7 @@
 /*!
 \file           ParticleEmitter.cpp
 \project        ClockWorkz Engine
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Implements the engine-owned particle emitter component.
 
 All content Â© 2026 DigiPen Institute of Technology Singapore. All rights

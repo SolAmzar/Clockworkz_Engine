@@ -2,7 +2,7 @@
 /*!
 \file           ActivationZone.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares the activation zone component used by Lights Out gameplay.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights

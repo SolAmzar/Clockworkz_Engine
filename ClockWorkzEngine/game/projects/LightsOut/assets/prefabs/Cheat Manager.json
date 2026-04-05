@@ -1,0 +1,58 @@
+{
+    "category": "UI",
+    "components": {
+        "luaScript": [
+            {
+                "enabled": true,
+                "scriptPath": "cheat_manager.lua"
+            },
+            {
+                "enabled": true,
+                "scriptPath": "cheat_notification.lua"
+            },
+            {
+                "enabled": true,
+                "scriptPath": "konami_invincibility.lua"
+            },
+            {
+                "enabled": true,
+                "scriptPath": "fragment_reveal.lua"
+            },
+            {
+                "enabled": true,
+                "scriptPath": "unlimited_flashlight.lua"
+            },
+            {
+                "enabled": true,
+                "scriptPath": "speed_hack.lua"
+            },
+            {
+                "enabled": true,
+                "scriptPath": "skip_level.lua"
+            }
+        ],
+        "stateMachine": {
+            "currentState": "Idle"
+        },
+        "tag": {
+            "tag": "Entity"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "Cheat Manager"
+}

@@ -2,7 +2,7 @@
 /*!
 \file           ScriptSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 97% [Amzar] 3%
 \brief          ScriptSystem implementation — loads and runs per-entity Lua
                 scripts with sandboxed environments.
 
@@ -233,7 +233,9 @@ void ScriptSystem::update(ECS::World& world, double dt,
     auto dispatchEnter = [&](ECS::Entity self, ECS::Entity other) {
       auto it = m_states.find(self.id);
       if (it == m_states.end()) return;
-      for (auto& state : it->second) {
+      auto* luaScript = world.getComponent<Components::LuaScript>(self);
+      for (size_t stateIndex = 0; stateIndex < it->second.size(); ++stateIndex) {
+        auto& state = it->second[stateIndex];
         if (!state.started) continue;
         Scripting::EntityRef selfRef(self, &world);
         Scripting::EntityRef otherRef(other, &world);
@@ -251,6 +253,10 @@ void ScriptSystem::update(ECS::World& world, double dt,
                       << self.id << "): " << e.what() << std::endl;
           }
         }
+        if (luaScript && stateIndex < luaScript->scripts.size()) {
+          for (auto& [propKey, propValue] : luaScript->scripts[stateIndex].properties)
+            pullPropFromLua(state.scriptTable, propKey, propValue);
+        }
       }
     };
     dispatchEnter(pair.first, pair.second);
@@ -263,7 +269,9 @@ void ScriptSystem::update(ECS::World& world, double dt,
     auto dispatchExit = [&](ECS::Entity self, ECS::Entity other) {
       auto it = m_states.find(self.id);
       if (it == m_states.end()) return;
-      for (auto& state : it->second) {
+      auto* luaScript = world.getComponent<Components::LuaScript>(self);
+      for (size_t stateIndex = 0; stateIndex < it->second.size(); ++stateIndex) {
+        auto& state = it->second[stateIndex];
         if (!state.started) continue;
         Scripting::EntityRef selfRef(self, &world);
         Scripting::EntityRef otherRef(other, &world);
@@ -280,6 +288,10 @@ void ScriptSystem::update(ECS::World& world, double dt,
             std::cerr << "[ScriptSystem] onCollisionExit error (entity "
                       << self.id << "): " << e.what() << std::endl;
           }
+        }
+        if (luaScript && stateIndex < luaScript->scripts.size()) {
+          for (auto& [propKey, propValue] : luaScript->scripts[stateIndex].properties)
+            pullPropFromLua(state.scriptTable, propKey, propValue);
         }
       }
     };

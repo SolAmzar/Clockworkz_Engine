@@ -2,7 +2,7 @@
 /*!
 \file           MenuState.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 72% [Amirul Syafiq] 14% [Lebon] 14%
+\author(s)      [Amzar] 72% [Amirul Syafiq] 14% [Lebon] 14%
 \brief          Main menu state. Loads MainMenu.json scene from the level
                 editor. Button entities are identified by UIButton components;
                 positions, sizes, and colors are all controlled in the editor.

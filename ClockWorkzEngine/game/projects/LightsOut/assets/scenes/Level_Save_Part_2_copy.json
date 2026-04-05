@@ -20511,8 +20511,8 @@
                     "tilePrefix": "fs_tile_",
                     "useSurfaceSounds": true,
                     "variationCount": 2,
-                    "volume": 1,
-                    "woodPrefix": "fs_concrete_"
+                    "volume": 1.0,
+                    "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
                     {

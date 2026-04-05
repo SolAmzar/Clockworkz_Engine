@@ -2,7 +2,7 @@
 /*!
 \file			AudioSource.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Defines the AudioSourceComponent for attaching audio playback
                 capabilities to GameObjects.
                 Responsibilities include:

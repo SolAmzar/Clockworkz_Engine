@@ -2,19 +2,7 @@
 /*!
 \file           PlayState.cpp
 \project        Lights Out
-\author(s)      [Lebon] 76% [Sol-Amzar] 15% [Syafiq] 8% [Yusuf] 0% [StarrySol] 1%
-\brief          Implements the Lights Out play state.
-
-All content © 2026 DigiPen Institute of Technology Singapore. All rights
-reserved.
-*/
-/******************************************************************************/
-#if 1
-/******************************************************************************/
-/*!
-\file           PlayState.cpp
-\project        Lights Out
-\author(s)      [Lebon], 70% [Syafiq] 20%
+\author(s)      [Lebon] 75% [Amzar] 18% [Syafiq] 7% [Yusuf] 0% 
 \brief          Declares PlayState, the main gameplay loop state.
                                 Responsibilities include:
                                 - Loading and managing the current Scene and its
@@ -26,11 +14,12 @@ Object Render not done yet)
                                 - Transitioning back to other states (e.g.,
 pause or menu)
 
-All content � 2025 DigiPen Institute of Technology Singapore. All rights
+All content © 2026 DigiPen Institute of Technology Singapore. All rights
 reserved.
 */
 /******************************************************************************/
 
+#if 1
 #include "States/PlayState.hpp"
 #include "Assets/FontManager.hpp"
 #include "Assets/ResourceManager.hpp"
@@ -81,6 +70,7 @@ reserved.
 #include <Math/VecCompatGLM.hpp>
 #include <Platform/LevelEditorState.hpp>
 #include <Scripting/LuaScriptComponent.hpp>
+#include <Scripting/LuaManager.hpp>
 #include "Systems/TilemapCollisionBuilder.hpp"
 #include "Components/Layer.hpp"
 #include <algorithm>
@@ -261,6 +251,13 @@ void PlayState::onEnter() {
   if (m_scenes.loadScene(m_initialSceneId)) {
     m_loaded = true;
 
+    if (auto *scene = m_scenes.current()) {
+      scene->setWorldTableExtension([this](ECS::World &, sol::table &worldTable) {
+        worldTable.set_function("resetFragments",
+                                [this]() { resetFragmentProgress(); });
+      });
+    }
+
     // Attempt to load scene content from JSON if exists
     if (auto *scene = m_scenes.current()) {
       std::string filename = m_initialSceneId;
@@ -274,32 +271,51 @@ void PlayState::onEnter() {
         std::cout << "[PlayState] Loading level file: " << path << "\n";
         SceneSerializer::Deserialize(*scene, path);
         scene->registerExistingObjectsToLayers();
-        // Use saved merged colliders as-is; otherwise build them from wall tiles.
+        // Rebuild or normalize merged tilemap colliders after scene load.
         {
-            auto& world = scene->GetWorld();
-            bool hasMergedColliders = false;
-            constexpr float gridSize = 100.f;
-            world.each<Components::Tag>([&](ECS::Entity, Components::Tag& tag) {
-                if (tag.tag == "TilemapMergedCollider") hasMergedColliders = true;
-            });
+          auto &world = scene->GetWorld();
+          constexpr float gridSize = 100.f;
+          bool hasMergedColliders = false;
 
-            if (hasMergedColliders) {
-                Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
-                    world, gridSize, gridSize);
-            } else {
-                std::vector<Systems::TilemapTileEntry> entries;
-                world.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
-                    if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(world, e, gridSize, gridSize))
-                        return;
+          world.each<Components::Tag>([&](ECS::Entity, Components::Tag &tag) {
+            if (tag.tag == "TilemapMergedCollider")
+              hasMergedColliders = true;
+          });
 
-                    int layerIdx = 0;
-                    if (auto* layer = world.getComponent<Components::Layer>(e))
-                        layerIdx = layer->index;
-                    entries.push_back({t.position, e, layerIdx});
+          if (hasMergedColliders) {
+            Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
+                world, gridSize, gridSize);
+          } else {
+            std::vector<Systems::TilemapTileEntry> entries;
+            world.each<Components::Transform>(
+                [&](ECS::Entity e, Components::Transform &t) {
+                  if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(
+                          world, e, gridSize, gridSize))
+                    return;
+
+                  int layerIdx = 0;
+                  if (auto *layer = world.getComponent<Components::Layer>(e))
+                    layerIdx = layer->index;
+
+                  uint32_t mergeBucketId = 0;
+                  if (auto *collider =
+                          world.getComponent<Components::Collider>(e)) {
+                    constexpr uint32_t kUniqueCombinedMergeBucket =
+                        0xFFFFFFFFu;
+                    mergeBucketId = collider->isCombined
+                                        ? (collider->combinedGroupId != 0
+                                               ? collider->combinedGroupId
+                                               : kUniqueCombinedMergeBucket)
+                                        : 0u;
+                  }
+
+                  entries.push_back({t.position, e, layerIdx, mergeBucketId});
                 });
-                if (!entries.empty())
-                    Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
-            }
+
+            if (!entries.empty())
+              Systems::TilemapCollisionBuilder::build(world, entries, gridSize,
+                                                      gridSize);
+          }
         }
       } else {
         std::cout << "[PlayState] Level file not found: " << path
@@ -450,6 +466,10 @@ void PlayState::update(double dt) {
 
   if (!m_loaded)
     return;
+
+  if (m_input.wasKeyPressed(GLFW_KEY_F9)) {
+    resetFragmentProgress();
+  }
 
   // Check for pause input
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
@@ -1823,6 +1843,63 @@ void PlayState::resetScene() {
   }
 
   m_player->setMoveable(true);
+}
+
+void PlayState::resetFragmentProgress() {
+  auto *scene = m_scenes.current();
+  if (!scene) {
+    return;
+  }
+
+  Gameplay::GameObject *player = findFirstPlayer(scene);
+  if (!player) {
+    return;
+  }
+
+  if (auto *collector =
+          player->getComponent<Gameplay::FragmentCollectorComponent>()) {
+    collector->resetCollection();
+  }
+
+  // Clear cross-scene fragment progress so counters/goals only reset when
+  // resetFragmentProgress() is explicitly invoked.
+  {
+    auto &lua = Core::Engine::Get().lua().GetState();
+    sol::object progressObj = lua["FragmentProgress"];
+    if (progressObj.valid() && progressObj.get_type() == sol::type::table) {
+      sol::table progress = progressObj.as<sol::table>();
+      sol::protected_function resetAll = progress["resetAll"];
+      if (resetAll.valid()) {
+        resetAll();
+      } else {
+        lua["FragmentProgress"] = sol::nil;
+      }
+    }
+  }
+
+  for (auto &obj : scene->objects()) {
+    if (!obj || obj->type() != Gameplay::GameObjectType::Fragment) {
+      continue;
+    }
+
+    obj->setActive(true);
+
+    auto *fragmentComp = obj->getComponent<Gameplay::FragmentComponent>();
+    if (!fragmentComp || !fragmentComp->isCollected()) {
+      continue;
+    }
+
+    const std::string fragmentId = fragmentComp->fragmentId();
+    const int value = fragmentComp->value();
+    obj->removeComponent<Gameplay::FragmentComponent>();
+    obj->addComponent<Gameplay::FragmentComponent>(fragmentId, value);
+  }
+
+  m_showFragmentNotification = false;
+  m_fragmentNotificationTimer = 0.0f;
+  m_lastCollectedFragmentId.clear();
+
+  std::cout << "[PlayState] Fragment progress reset\n";
 }
 
 } // namespace Runtime

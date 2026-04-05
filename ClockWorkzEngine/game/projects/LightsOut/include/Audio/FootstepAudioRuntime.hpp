@@ -2,7 +2,7 @@
 /*!
 \file           FootstepAudioRuntime.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares runtime helpers for footstep surface audio playback in
                 Lights Out.
 
@@ -17,6 +17,7 @@ reserved.
 #include "Components/Collider.hpp"
 #include "Components/FootstepAudio.hpp"
 #include "Components/LuaScript.hpp"
+#include "Components/SpriteRenderer.hpp"
 #include "Components/Tag.hpp"
 #include "Components/Transform.hpp"
 #include "Components/Velocity.hpp"
@@ -26,6 +27,7 @@ reserved.
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <cctype>
 #include <string>
 
 namespace Audio {
@@ -59,16 +61,86 @@ inline bool PointInCollider(const vec2 &point, const Components::Transform &tran
          point.y >= worldPos.y - half.y && point.y <= worldPos.y + half.y;
 }
 
+inline bool PointInSpriteBounds(const vec2 &point,
+                                const Components::Transform &transform,
+                                const Components::SpriteRenderer &sprite) {
+  const vec2 half{(sprite.size.x * transform.scale.x) * 0.5f,
+                  (sprite.size.y * transform.scale.y) * 0.5f};
+  return point.x >= transform.position.x - half.x &&
+         point.x <= transform.position.x + half.x &&
+         point.y >= transform.position.y - half.y &&
+         point.y <= transform.position.y + half.y;
+}
+
+inline std::string Lowercase(std::string value) {
+  std::transform(value.begin(), value.end(), value.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  return value;
+}
+
+inline Gameplay::SurfaceType SurfaceFromTextureId(const std::string &textureId) {
+  const std::string lowered = Lowercase(textureId);
+  if (lowered.find("wfloor") != std::string::npos)
+    return Gameplay::SurfaceType::Wood;
+  if (lowered.find("floor tiles") != std::string::npos ||
+      lowered.find("schoolfloor") != std::string::npos ||
+      lowered.find("hse floor") != std::string::npos)
+    return Gameplay::SurfaceType::Tile;
+  if (lowered.find("concrete floor") != std::string::npos ||
+      lowered.find("concrete_floor") != std::string::npos ||
+      lowered.find("corridor floor") != std::string::npos ||
+      lowered.find("corridorfloor") != std::string::npos)
+    return Gameplay::SurfaceType::Concrete;
+  return Gameplay::SurfaceType::Default;
+}
+
 inline Gameplay::SurfaceType ResolveSurfaceType(ECS::World &world,
                                                 const vec2 &position) {
   Gameplay::SurfaceType resolved = Gameplay::SurfaceType::Default;
-  world.each<Gameplay::SurfaceComponent, Components::Transform, Components::Collider>(
-      [&](ECS::Entity, Gameplay::SurfaceComponent &surface,
-          Components::Transform &transform, Components::Collider &collider) {
-        if (resolved != Gameplay::SurfaceType::Default)
+  int bestPriority = -1;
+  int bestSortOrder = std::numeric_limits<int>::min();
+
+  auto considerSurface = [&](Gameplay::SurfaceType candidate, int priority,
+                             int sortOrder) {
+    if (candidate == Gameplay::SurfaceType::Default)
+      return;
+    if (priority > bestPriority ||
+        (priority == bestPriority && sortOrder > bestSortOrder)) {
+      resolved = candidate;
+      bestPriority = priority;
+      bestSortOrder = sortOrder;
+    }
+  };
+
+  world.each<Gameplay::SurfaceComponent, Components::Transform>(
+      [&](ECS::Entity entity, Gameplay::SurfaceComponent &surface,
+          Components::Transform &transform) {
+        const auto *sprite = world.getComponent<Components::SpriteRenderer>(entity);
+        const int sortOrder = sprite ? sprite->sortOrder : 0;
+
+        if (auto *collider = world.getComponent<Components::Collider>(entity)) {
+          if (PointInCollider(position, transform, *collider))
+            considerSurface(surface.type(), 2, sortOrder);
           return;
-        if (PointInCollider(position, transform, collider))
-          resolved = surface.type();
+        }
+
+        if (sprite) {
+          if (PointInSpriteBounds(position, transform, *sprite))
+            considerSurface(surface.type(), 1, sprite->sortOrder);
+        }
+      });
+
+  if (resolved != Gameplay::SurfaceType::Default)
+    return resolved;
+
+  world.each<Components::SpriteRenderer, Components::Transform>(
+      [&](ECS::Entity, Components::SpriteRenderer &sprite,
+          Components::Transform &transform) {
+        if (!PointInSpriteBounds(position, transform, sprite))
+          return;
+
+        const Gameplay::SurfaceType inferred = SurfaceFromTextureId(sprite.textureId);
+        considerSurface(inferred, 0, sprite.sortOrder);
       });
   return resolved;
 }
@@ -124,7 +196,10 @@ inline void UpdateFootstepListener(ECS::World &world) {
         const vec3 position = detail::ToVec3(transform.position);
         const vec3 forward{std::cos(transform.rotation),
                            std::sin(transform.rotation), 0.0f};
-        const vec3 up{0.0f, 0.0f, 1.0f};
+        // FMOD's handedness for 3D panning works better for our top-down
+        // XY gameplay space when "up" points along negative Z, otherwise the
+        // computed left/right side ends up inverted.
+        const vec3 up{0.0f, 0.0f, -1.0f};
         audio.setListener(position, velocity, forward, up);
         listenerSet = true;
       });
