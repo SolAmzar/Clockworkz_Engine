@@ -1239,12 +1239,6 @@
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
-            "name": "blockage_texture",
-            "path": "assets/textures/blockage.png"
-        },
-        {
-            "alphaOnlyIsRed": false,
-            "flipY": true,
             "name": "blockage(New)_texture",
             "path": "assets/textures/blockage.png"
         },

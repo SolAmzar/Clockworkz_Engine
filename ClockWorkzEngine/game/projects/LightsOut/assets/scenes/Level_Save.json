@@ -27302,7 +27302,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 1,
                     "textureId": "blockage",
                     "unlit": false,
                     "uv": [
@@ -27324,8 +27324,8 @@
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 2.700000047683716,
-                        "y": 4.090000152587891
+                        "x": 2.380000114440918,
+                        "y": 3.5999999046325684
                     },
                     "snapToGrid": false
                 }
@@ -30398,7 +30398,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
+                    "sortOrder": 2,
                     "textureId": "trashstack",
                     "unlit": false,
                     "uv": [
@@ -30462,7 +30462,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
+                    "sortOrder": 2,
                     "textureId": "trashstack",
                     "unlit": false,
                     "uv": [

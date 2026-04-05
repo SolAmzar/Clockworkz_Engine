@@ -244,4 +244,9 @@ void WindowManager::setFullscreen(bool enable) {
     m_width = m_windowedWidth;
     m_height = m_windowedHeight;
   }
+
+  // Some platforms/drivers keep the cursor in hidden/captured mode after
+  // monitor switches. Force a visible OS cursor after fullscreen toggles.
+  glfwSetCursor(m_window, nullptr);
+  glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
