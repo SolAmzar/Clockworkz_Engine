@@ -292,7 +292,7 @@
             "path": "assets/audio/fs/monster/fs_monster_1.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.0
+            "volume": 0.4440000057220459
         },
         {
             "falloffAmount": 0.20000000298023224,
@@ -309,7 +309,7 @@
             "path": "assets/audio/fs/monster/fs_monster_2.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.0
+            "volume": 0.4440000057220459
         },
         {
             "group": "SFX",

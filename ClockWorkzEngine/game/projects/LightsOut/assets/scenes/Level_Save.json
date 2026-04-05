@@ -1758,7 +1758,8 @@
         "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
-        "TilemapMergedCollider"
+        "TilemapMergedCollider",
+        "Entity"
     ],
     "hierarchyOrderIndices": [
         485,
@@ -2317,7 +2318,8 @@
         553,
         554,
         555,
-        556
+        556,
+        557
     ],
     "musicContext": "level_default",
     "objects": [
@@ -7928,6 +7930,20 @@
                     "shape": 0,
                     "width": 100.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 2,
+                    "volume": 0.2280000001192093,
+                    "woodPrefix": "fs_wood_"
+                },
                 "luaScript": [
                     {
                         "enabled": true,
@@ -8010,7 +8026,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2186.453125,
+                        "x": 2202.988525390625,
                         "y": 649.2027587890625
                     },
                     "rotation": 0.0,
@@ -8114,6 +8130,20 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
+                },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 2,
+                    "volume": 0.2590000033378601,
+                    "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
                     {
@@ -19944,7 +19974,7 @@
                     "tilePrefix": "fs_tile_",
                     "useSurfaceSounds": false,
                     "variationCount": 2,
-                    "volume": 0.8100000023841858,
+                    "volume": 0.27799999713897705,
                     "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
@@ -31681,6 +31711,61 @@
                 }
             },
             "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "cheat_manager.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "cheat_notification.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "konami_invincibility.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "fragment_reveal.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "unlimited_flashlight.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "speed_hack.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "skip_level.lua"
+                    }
+                ],
+                "stateMachine": {
+                    "currentState": "Idle"
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity"
         }
     ],
     "sfxVolume": 1.0,

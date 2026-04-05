@@ -1279,7 +1279,7 @@
             "sortOrderBase": 0
         },
         {
-            "collapsed": false,
+            "collapsed": true,
             "entities": [],
             "entityIndices": [],
             "name": "Full Falt Top Right",
@@ -2834,7 +2834,8 @@
         "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
-        "TilemapMergedCollider"
+        "TilemapMergedCollider",
+        "Entity"
     ],
     "hierarchyOrderIndices": [
         196,
@@ -3725,7 +3726,8 @@
         888,
         885,
         886,
-        887
+        887,
+        889
     ],
     "musicContext": "level_default",
     "objects": [
@@ -21290,9 +21292,9 @@
                     "sprintIntervalScale": 1.0800000429153442,
                     "sprintSpeedThreshold": 19.0,
                     "tilePrefix": "fs_tile_",
-                    "useSurfaceSounds": true,
+                    "useSurfaceSounds": false,
                     "variationCount": 2,
-                    "volume": 1.0,
+                    "volume": 0.16300000250339508,
                     "woodPrefix": "fs_wood_"
                 },
                 "luaScript": [
@@ -30265,6 +30267,20 @@
                     "shape": 0,
                     "width": 100.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 2,
+                    "volume": 0.14399999380111694,
+                    "woodPrefix": "fs_wood_"
+                },
                 "luaScript": [
                     {
                         "enabled": true,
@@ -30452,6 +30468,20 @@
                     "shape": 0,
                     "width": 100.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 2,
+                    "volume": 0.2849999964237213,
+                    "woodPrefix": "fs_wood_"
+                },
                 "luaScript": [
                     {
                         "enabled": true,
@@ -30534,7 +30564,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1605.0709228515625,
+                        "x": 1607.8267822265625,
                         "y": -284.79248046875
                     },
                     "rotation": 0.0,
@@ -52007,6 +52037,20 @@
                     "shape": 0,
                     "width": 100.0
                 },
+                "footstepAudio": {
+                    "concretePrefix": "fs_concrete_",
+                    "interval": 0.6000000238418579,
+                    "minSpeed": 0.10000000149011612,
+                    "resetDelay": 0.05000000074505806,
+                    "soundPrefix": "fs_monster_",
+                    "sprintIntervalScale": 0.6000000238418579,
+                    "sprintSpeedThreshold": 14.0,
+                    "tilePrefix": "fs_tile_",
+                    "useSurfaceSounds": false,
+                    "variationCount": 2,
+                    "volume": 0.20200000703334808,
+                    "woodPrefix": "fs_wood_"
+                },
                 "luaScript": [
                     {
                         "enabled": true,
@@ -52316,6 +52360,61 @@
                 }
             },
             "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "cheat_manager.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "cheat_notification.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "konami_invincibility.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "fragment_reveal.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "unlimited_flashlight.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "speed_hack.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "skip_level.lua"
+                    }
+                ],
+                "stateMachine": {
+                    "currentState": "Idle"
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1429.093994140625,
+                        "y": -491.4345397949219
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity"
         }
     ],
     "sfxVolume": 1.0,
