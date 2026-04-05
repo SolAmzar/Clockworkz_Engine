@@ -1,0 +1,60 @@
+{
+    "category": "Custom",
+    "components": {
+        "luaScript": [
+            {
+                "enabled": true,
+                "properties": {
+                    "groupMaxFragments": 10,
+                    "levelGroupId": "Zone1",
+                    "marginX": 60.0,
+                    "marginY": 70.0
+                },
+                "scriptPath": "ui/hud_fragment_counter.lua"
+            }
+        ],
+        "tag": {
+            "tag": "fragment Counter"
+        },
+        "textRenderer": {
+            "alignment": 0,
+            "boxSize": {
+                "x": 300.0,
+                "y": 60.0
+            },
+            "color": {
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "fontId": "Debug",
+            "fontSize": 1.0,
+            "lineSpacing": 1.0,
+            "padding": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "text": "0 / 0 fragments collected",
+            "verticalAlignment": 0,
+            "visible": true,
+            "wordWrap": false
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -272.79058837890625,
+                "y": -227.58120727539063
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "Fragment counter hud"
+}

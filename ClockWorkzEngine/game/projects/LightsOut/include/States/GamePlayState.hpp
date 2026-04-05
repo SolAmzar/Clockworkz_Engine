@@ -2,7 +2,7 @@
 /*!
 \file           GamePlayState.hpp
 \project        Lights Out
-\author(s)      [Lebon]
+\author(s)      [Lebon] 54%, [wei an] 46%
 \brief          ECS-based gameplay state. Loads level_save.json via the engine's
                 ECS Scene system, wires all game callbacks via
 invokeSceneSetup(), handles ESC→PauseState and portal-based level transitions.

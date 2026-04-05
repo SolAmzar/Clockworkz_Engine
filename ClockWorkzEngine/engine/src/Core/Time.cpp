@@ -32,6 +32,12 @@ void Core::Time::beginFrame() {
 	double now = glfwGetTime();
 	m_dt = (m_last == 0.0) ? 0.0 : (now - m_last);
 	m_last = now;
+
+	// Clamp dt so a long system interruption (CTRL-ALT-DEL, Alt-Tab,
+	// screen-saver, etc.) never causes a single enormous frame update.
+	if (m_dt > MAX_DT)
+		m_dt = MAX_DT;
+
 	m_accum += m_dt;
 	m_frames++;
 	if (m_accum >= 1.0) { 

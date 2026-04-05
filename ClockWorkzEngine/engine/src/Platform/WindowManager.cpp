@@ -80,6 +80,33 @@ void WindowManager::GLFWIconifyCallback(GLFWwindow *window, int iconified) {
   if (!wm)
     return;
   wm->m_iconified = (iconified == GLFW_TRUE);
+
+  if (wm->m_iconified) {
+    // Remember whether we were fullscreen before the minimize so we can
+    // restore to the correct mode later.
+    wm->m_wasFullscreenBeforeIconify = wm->m_fullscreen;
+
+    // GLFW does not always fire a separate focus-lost callback when the
+    // window is iconified (e.g. via CTRL-ALT-DEL or Win key), so we
+    // ensure the engine receives a focus-lost notification here.
+    if (wm->m_focused) {
+      wm->m_focused = false;
+      wm->onFocusLost();
+    }
+  } else {
+    // Window is being restored from minimized state.
+    // If we were in fullscreen before being minimized, restore to fullscreen.
+    if (wm->m_wasFullscreenBeforeIconify && !wm->m_fullscreen) {
+      wm->setFullscreen(true);
+    }
+    wm->m_wasFullscreenBeforeIconify = false;
+
+    // Ensure the engine receives a focus-gained notification.
+    if (!wm->m_focused) {
+      wm->m_focused = true;
+      wm->onFocusGained();
+    }
+  }
 }
 
 void WindowManager::GLFWResizeCallback(GLFWwindow *window, int w, int h) {
@@ -163,7 +190,21 @@ void WindowManager::onFocusLost() {
 }
 
 void WindowManager::onFocusGained() {
-  // same, but you *could* put logging here if you want
+  // Re-query the actual framebuffer size.  Windows may silently change
+  // the window dimensions during CTRL-ALT-DEL, lock-screen, or DPI
+  // changes.  If we don't refresh here, the stored m_width / m_height
+  // and the OpenGL viewport will be stale, causing the rendered image
+  // to appear letterboxed or pillarboxed incorrectly.
+  int fbW = 0, fbH = 0;
+  glfwGetFramebufferSize(m_window, &fbW, &fbH);
+  if (fbW > 0 && fbH > 0) {
+    m_width  = fbW;
+    m_height = fbH;
+    // Force every subscriber (GraphicsManager, Camera2D, etc.) to
+    // recalculate the viewport / projection from the true size.
+    Core::Engine::Get().events().publish(Core::WindowResizeEvent(fbW, fbH));
+  }
+
   Core::Engine::Get().events().publish(Core::WindowFocusGainedEvent());
 }
 

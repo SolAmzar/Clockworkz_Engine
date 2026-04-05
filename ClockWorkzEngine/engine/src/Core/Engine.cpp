@@ -241,17 +241,29 @@ bool Engine::init() {
 
   events().subscribe<WindowFocusLostEvent>(
       this, [this](const WindowFocusLostEvent &) {
-        // pause audio & gameplay
-        this->audio().setGroupPaused(Audio::Group::BGM, true);
-        this->audio().setGroupPaused(Audio::Group::SFX, true);
+        // Pause ALL audio via the Master group — covers BGM, SFX, and any
+        // future groups.  The game is fully frozen during focus-loss so
+        // nothing should be audible.
+        this->audio().setGroupPaused(Audio::Group::Master, true);
+
+        // Clear gamepad state so no stale button-down leaks into the
+        // first frame after resume.
+        this->m_gamepad->clearState();
+
         this->m_pausedByFocus = true;
       });
 
   events().subscribe<WindowFocusGainedEvent>(
       this, [this](const WindowFocusGainedEvent &) {
-        // resume audio
-        this->audio().setGroupPaused(Audio::Group::BGM, false);
-        this->audio().setGroupPaused(Audio::Group::SFX, false);
+        // Resume all audio.
+        this->audio().setGroupPaused(Audio::Group::Master, false);
+
+        // Clear both keyboard/mouse AND gamepad state so that keys/buttons
+        // held before the pause don't produce wasKeyPressed / wasButtonPressed
+        // edge-triggers on the first frame back.
+        this->m_input->clearState();
+        this->m_gamepad->clearState();
+
         this->m_pausedByFocus = false;
       });
   return true;

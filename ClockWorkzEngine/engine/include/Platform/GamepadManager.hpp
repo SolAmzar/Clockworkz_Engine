@@ -48,6 +48,11 @@ public:
     // Core::EventBus for runtime changes. Use isConnected() for startup queries.
     bool isConnected(int index = 0) const;
 
+    // Reset all button / axis / action state to zero.  Called on focus-loss
+    // and focus-gain so that stale button-down states never leak across an
+    // Alt-Tab, CTRL-ALT-DEL, or other system interruption.
+    void clearState();
+
     // ---------- Buttons (edge detection) ----------
     bool isButtonDown(SDL_GamepadButton btn, int index = 0) const;
     bool wasButtonPressed(SDL_GamepadButton btn, int index = 0) const;   // up -> down this frame

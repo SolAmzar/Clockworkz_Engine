@@ -76,6 +76,7 @@ private:
 
   bool m_focused = true;
   bool m_iconified = false;
+  bool m_wasFullscreenBeforeIconify = false; // remember fullscreen state across minimize/restore
   static void GLFWFocusCallback(GLFWwindow *window, int focused);
   static void GLFWIconifyCallback(GLFWwindow *window, int iconified);
   static void GLFWResizeCallback(GLFWwindow *win, int w, int h);
