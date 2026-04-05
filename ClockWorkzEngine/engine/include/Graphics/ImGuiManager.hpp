@@ -8,7 +8,7 @@
 				- Loading ImGui Window
 				- Intergrating all the external ImGui files
 
-All content © 2025 DigiPen Institute of Technology Singapore. All rights reserved.
+All content (C) 2025 DigiPen Institute of Technology Singapore. All rights reserved.
 */
 /******************************************************************************/
 #pragma once
@@ -28,9 +28,11 @@ namespace Graphics{
 		void beginFrame();
 		void endFrame();
 
+		void setDockspaceTopInset(float inset) { m_dockspaceTopInset = inset; }
 		void beginDockspace();
 		void endDockspace();
 	private:
 		bool m_initialised = false;
+		float m_dockspaceTopInset = 0.0f;
 	};
 }
