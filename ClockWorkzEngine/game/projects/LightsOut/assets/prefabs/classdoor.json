@@ -1,0 +1,65 @@
+{
+    "category": "Custom",
+    "components": {
+        "collider": {
+            "blocksLight": true,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 100.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": false,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 100.0
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 1,
+            "textureId": "classroomdoor",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "classroomdoor"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -1050.0,
+                "y": 250.0
+            },
+            "rotation": 1.5707963705062866,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "classdoor"
+}
