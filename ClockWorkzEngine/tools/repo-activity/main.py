@@ -51,7 +51,11 @@ _EXT_COMMENT_PREFIXES: dict[str, tuple[str, ...]] = {
 
 def _app_dir() -> Path:
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
+        exe_dir = Path(sys.executable).resolve().parent
+        dist_dir = exe_dir.parent
+        if dist_dir.name.lower() == "dist-current":
+            return dist_dir.parent
+        return exe_dir
     return Path(__file__).resolve().parent
 
 
@@ -113,13 +117,8 @@ def _excel_output_path(raw_name: str) -> Path:
 
 
 def _should_exclude_file(path: str) -> bool:
-    normalized = path.replace("\\", "/").lower().lstrip("./")
-    return (
-        normalized.startswith("tools/")
-        or normalized.startswith("tool-repo/")
-        or "/tools/" in normalized
-        or "/tool-repo/" in normalized
-    )
+    normalized = path.replace("\\", "/").lower().lstrip("./\"'")
+    return normalized.endswith(".py") or normalized.startswith("tools/repo-activity/") or "/tools/repo-activity/" in normalized
 
 
 def _format_display_date(value: date) -> str:
@@ -427,7 +426,7 @@ def generate_report(
     stats = {
         key: value
         for key, value in stats.items()
-        if not key[1].endswith(".json") and not _should_exclude_file(key[1])
+        if not key[1].lower().endswith(".json") and not _should_exclude_file(key[1])
     }
     if author and author != ALL_AUTHORS_LABEL:
         stats = {key: value for key, value in stats.items() if key[0] == author}
