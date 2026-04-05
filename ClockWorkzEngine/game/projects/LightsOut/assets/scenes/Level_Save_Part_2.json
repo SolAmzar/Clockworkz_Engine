@@ -2834,7 +2834,6 @@
         "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
-        "TilemapMergedCollider",
         "Entity"
     ],
     "hierarchyOrderIndices": [
@@ -3722,12 +3721,11 @@
         287,
         882,
         883,
-        884,
         888,
         885,
         886,
         887,
-        889
+        884
     ],
     "musicContext": "level_default",
     "objects": [
@@ -18891,7 +18889,7 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 100.0,
+                    "height": 152.0,
                     "isCombined": false,
                     "isHazard": false,
                     "isSolid": false,
@@ -18904,7 +18902,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 169.0
                 },
                 "luaScript": [
                     {
@@ -18913,7 +18911,7 @@
                             "actionType": "ResetFragments",
                             "active": true,
                             "fontSizeValue": 1.0,
-                            "oneShot": false,
+                            "oneShot": true,
                             "payload": "",
                             "restoreVisibilityAfterDelay": false,
                             "setFontSize": false,
@@ -18935,7 +18933,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1447.431640625,
+                        "x": -1424.3095703125,
                         "y": 99.87960052490234
                     },
                     "rotation": 0.0,
@@ -28474,8 +28472,8 @@
                         "enabled": true,
                         "properties": {
                             "levelName": "Level_Save_03.json",
-                            "spawnX": 0.0,
-                            "spawnY": 0.0
+                            "spawnX": -3450.0,
+                            "spawnY": -2750.0
                         },
                         "scriptPath": "components/portal.lua"
                     }
@@ -46196,26 +46194,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -52114,25 +52092,38 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "scriptPath": "cheat_manager.lua"
                     },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
+                    {
+                        "enabled": true,
+                        "scriptPath": "cheat_notification.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "konami_invincibility.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "fragment_reveal.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "unlimited_flashlight.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "speed_hack.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "scriptPath": "skip_level.lua"
+                    }
+                ],
+                "stateMachine": {
+                    "currentState": "Idle"
                 },
                 "transform": {
                     "pivot": {
@@ -52140,8 +52131,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -150.0,
-                        "y": 350.0
+                        "x": -1429.093994140625,
+                        "y": -491.4345397949219
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -52151,7 +52142,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "TilemapMergedCollider"
+            "name": "Entity"
         },
         {
             "active": true,
@@ -52320,61 +52311,6 @@
                 }
             },
             "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "luaScript": [
-                    {
-                        "enabled": true,
-                        "scriptPath": "cheat_manager.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "cheat_notification.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "konami_invincibility.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "fragment_reveal.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "unlimited_flashlight.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "speed_hack.lua"
-                    },
-                    {
-                        "enabled": true,
-                        "scriptPath": "skip_level.lua"
-                    }
-                ],
-                "stateMachine": {
-                    "currentState": "Idle"
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1429.093994140625,
-                        "y": -491.4345397949219
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "Entity"
         }
     ],
     "sfxVolume": 1.0,
