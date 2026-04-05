@@ -40092,26 +40092,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -43676,26 +43656,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": true,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
