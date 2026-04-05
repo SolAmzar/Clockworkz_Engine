@@ -70,6 +70,7 @@ reserved.
 #include <Math/VecCompatGLM.hpp>
 #include <Platform/LevelEditorState.hpp>
 #include <Scripting/LuaScriptComponent.hpp>
+#include <Scripting/LuaManager.hpp>
 #include "Systems/TilemapCollisionBuilder.hpp"
 #include "Components/Layer.hpp"
 #include <algorithm>
@@ -250,6 +251,13 @@ void PlayState::onEnter() {
   if (m_scenes.loadScene(m_initialSceneId)) {
     m_loaded = true;
 
+    if (auto *scene = m_scenes.current()) {
+      scene->setWorldTableExtension([this](ECS::World &, sol::table &worldTable) {
+        worldTable.set_function("resetFragments",
+                                [this]() { resetFragmentProgress(); });
+      });
+    }
+
     // Attempt to load scene content from JSON if exists
     if (auto *scene = m_scenes.current()) {
       std::string filename = m_initialSceneId;
@@ -263,51 +271,51 @@ void PlayState::onEnter() {
         std::cout << "[PlayState] Loading level file: " << path << "\n";
         SceneSerializer::Deserialize(*scene, path);
         scene->registerExistingObjectsToLayers();
-        // Use saved merged colliders as-is; otherwise build them from wall tiles.
+        // Rebuild or normalize merged tilemap colliders after scene load.
         {
-            auto& world = scene->GetWorld();
+          auto &world = scene->GetWorld();
+          constexpr float gridSize = 100.f;
+          bool hasMergedColliders = false;
+
+          world.each<Components::Tag>([&](ECS::Entity, Components::Tag &tag) {
+            if (tag.tag == "TilemapMergedCollider")
+              hasMergedColliders = true;
+          });
+
+          if (hasMergedColliders) {
+            Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
+                world, gridSize, gridSize);
+          } else {
             std::vector<Systems::TilemapTileEntry> entries;
-            float gridSize = 100.f; // standard tile size
-            const float tileSizeTol = 1.0f;
-            world.each<Components::Transform, Components::Collider>(
-                [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
-                    if (!c.isSolid || c.isTrigger || c.moveable) return;
-                    if (c.shape != Components::Collider::Shape::Box) return;
-                    if (std::abs(t.rotation) > 0.01f) return;
-                    const bool gridSized =
-                        std::abs(c.size.x - gridSize) <= tileSizeTol &&
-                        std::abs(c.size.y - gridSize) <= tileSizeTol;
-                    if (!gridSized && !c.isCombined) return;
-                    auto* tag = world.getComponent<Components::Tag>(e);
-                    if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
-                                || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
-                        return;
-                    constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
-            bool hasMergedColliders = false;
-            constexpr float gridSize = 100.f;
-            world.each<Components::Tag>([&](ECS::Entity, Components::Tag& tag) {
-                if (tag.tag == "TilemapMergedCollider") hasMergedColliders = true;
-            });
+            world.each<Components::Transform>(
+                [&](ECS::Entity e, Components::Transform &t) {
+                  if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(
+                          world, e, gridSize, gridSize))
+                    return;
 
-            if (hasMergedColliders) {
-                Systems::TilemapCollisionBuilder::normalizePersistedMergedScene(
-                    world, gridSize, gridSize);
-            } else {
-                std::vector<Systems::TilemapTileEntry> entries;
-                world.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
-                    if (!Systems::TilemapCollisionBuilder::shouldMergeEntity(world, e, gridSize, gridSize))
-                        return;
+                  int layerIdx = 0;
+                  if (auto *layer = world.getComponent<Components::Layer>(e))
+                    layerIdx = layer->index;
 
-                    int layerIdx = 0;
-                    if (auto* layer = world.getComponent<Components::Layer>(e))
-                        layerIdx = layer->index;
-                    const uint32_t mergeBucketId =
-                        c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
-                    entries.push_back({t.position, e, layerIdx, mergeBucketId});
+                  uint32_t mergeBucketId = 0;
+                  if (auto *collider =
+                          world.getComponent<Components::Collider>(e)) {
+                    constexpr uint32_t kUniqueCombinedMergeBucket =
+                        0xFFFFFFFFu;
+                    mergeBucketId = collider->isCombined
+                                        ? (collider->combinedGroupId != 0
+                                               ? collider->combinedGroupId
+                                               : kUniqueCombinedMergeBucket)
+                                        : 0u;
+                  }
+
+                  entries.push_back({t.position, e, layerIdx, mergeBucketId});
                 });
-                if (!entries.empty())
-                    Systems::TilemapCollisionBuilder::build(world, entries, gridSize, gridSize);
-            }
+
+            if (!entries.empty())
+              Systems::TilemapCollisionBuilder::build(world, entries, gridSize,
+                                                      gridSize);
+          }
         }
       } else {
         std::cout << "[PlayState] Level file not found: " << path
@@ -458,6 +466,10 @@ void PlayState::update(double dt) {
 
   if (!m_loaded)
     return;
+
+  if (m_input.wasKeyPressed(GLFW_KEY_F9)) {
+    resetFragmentProgress();
+  }
 
   // Check for pause input
   if (m_input.wasKeyPressed(GLFW_KEY_ESCAPE) ||
@@ -1831,6 +1843,63 @@ void PlayState::resetScene() {
   }
 
   m_player->setMoveable(true);
+}
+
+void PlayState::resetFragmentProgress() {
+  auto *scene = m_scenes.current();
+  if (!scene) {
+    return;
+  }
+
+  Gameplay::GameObject *player = findFirstPlayer(scene);
+  if (!player) {
+    return;
+  }
+
+  if (auto *collector =
+          player->getComponent<Gameplay::FragmentCollectorComponent>()) {
+    collector->resetCollection();
+  }
+
+  // Clear cross-scene fragment progress so counters/goals only reset when
+  // resetFragmentProgress() is explicitly invoked.
+  {
+    auto &lua = Core::Engine::Get().lua().GetState();
+    sol::object progressObj = lua["FragmentProgress"];
+    if (progressObj.valid() && progressObj.get_type() == sol::type::table) {
+      sol::table progress = progressObj.as<sol::table>();
+      sol::protected_function resetAll = progress["resetAll"];
+      if (resetAll.valid()) {
+        resetAll();
+      } else {
+        lua["FragmentProgress"] = sol::nil;
+      }
+    }
+  }
+
+  for (auto &obj : scene->objects()) {
+    if (!obj || obj->type() != Gameplay::GameObjectType::Fragment) {
+      continue;
+    }
+
+    obj->setActive(true);
+
+    auto *fragmentComp = obj->getComponent<Gameplay::FragmentComponent>();
+    if (!fragmentComp || !fragmentComp->isCollected()) {
+      continue;
+    }
+
+    const std::string fragmentId = fragmentComp->fragmentId();
+    const int value = fragmentComp->value();
+    obj->removeComponent<Gameplay::FragmentComponent>();
+    obj->addComponent<Gameplay::FragmentComponent>(fragmentId, value);
+  }
+
+  m_showFragmentNotification = false;
+  m_fragmentNotificationTimer = 0.0f;
+  m_lastCollectedFragmentId.clear();
+
+  std::cout << "[PlayState] Fragment progress reset\n";
 }
 
 } // namespace Runtime

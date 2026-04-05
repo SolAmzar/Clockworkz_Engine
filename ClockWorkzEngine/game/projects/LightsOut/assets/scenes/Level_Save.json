@@ -1757,6 +1757,7 @@
         "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
+        "TilemapMergedCollider",
         "TilemapMergedCollider"
     ],
     "hierarchyOrderIndices": [
@@ -2315,7 +2316,8 @@
         551,
         553,
         554,
-        555
+        555,
+        556
     ],
     "musicContext": "level_default",
     "objects": [
@@ -10954,7 +10956,7 @@
                     "height": 800.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11872,7 +11874,7 @@
                     "height": 1500.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12264,7 +12266,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12328,7 +12330,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12608,7 +12610,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12915,7 +12917,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12979,7 +12981,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -13527,7 +13529,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -13963,7 +13965,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -14071,7 +14073,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -14639,7 +14641,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -15179,7 +15181,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -15393,7 +15395,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -15521,7 +15523,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -15585,7 +15587,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16307,7 +16309,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16479,7 +16481,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16924,6 +16926,7 @@
                     {
                         "enabled": true,
                         "properties": {
+                            "_invincible": false,
                             "baseWalkSpeed": 10.0,
                             "bobAmount": 8.0,
                             "bobSpeed": 6.0,
@@ -16943,6 +16946,7 @@
                     {
                         "enabled": true,
                         "properties": {
+                            "_unlimited": false,
                             "charge": 100.0,
                             "chargeRate": 20.0,
                             "drainRate": 5.0,
@@ -17037,7 +17041,7 @@
                     "snapToGrid": false
                 },
                 "velocity": {
-                    "moveSpeed": 10.0,
+                    "moveSpeed": 20.0,
                     "x": 0.0,
                     "y": 0.0
                 }
@@ -17535,7 +17539,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17599,7 +17603,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17663,7 +17667,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17727,7 +17731,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17791,7 +17795,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17855,7 +17859,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17919,7 +17923,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17983,7 +17987,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18047,7 +18051,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18111,7 +18115,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18175,7 +18179,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18239,7 +18243,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18921,7 +18925,7 @@
                     "height": 900.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19205,7 +19209,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19401,7 +19405,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19465,7 +19469,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19529,7 +19533,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19593,7 +19597,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19657,7 +19661,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19853,7 +19857,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20119,7 +20123,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20183,7 +20187,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20247,7 +20251,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20355,7 +20359,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20419,7 +20423,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20483,7 +20487,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21207,7 +21211,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21599,7 +21603,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -28969,7 +28973,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -29165,7 +29169,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -30585,6 +30589,1098 @@
                 }
             },
             "name": "clothes hanger"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 800.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1850.0,
+                        "y": 800.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 1500.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2450.0,
+                        "y": 450.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2150.0,
+                        "y": -350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -500.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1150.0,
+                        "y": 550.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 1300.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1150.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 1400.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1150.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 749.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -500.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1150.0,
+                        "y": -250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 700.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1350.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 900.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 350.0,
+                        "y": -650.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 400.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 700.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 700.0,
+                        "y": -1150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 535.8831787109375,
+                        "y": -983.4613037109375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 200.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 950.0,
+                        "y": -1000.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 300.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1150.0,
+                        "y": -850.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 300.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 950.0,
+                        "y": -650.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1500.0,
+                        "y": -750.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 400.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1750.0,
+                        "y": -500.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 200.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1800.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1850.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 452.5,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1450.0,
+                        "y": 373.75
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -850.0,
+                        "y": 550.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -500.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
         }
     ],
     "sfxVolume": 1.0,

@@ -4896,6 +4896,7 @@ void EditorState::renderInspector() {
                                         "None",
                                         "PlayAudio",
                                         "ChangeScene",
+                                        "ResetFragments",
                                         "ChangeTextRenderer"
                                     };
                                     int currentIndex = 0;
@@ -8745,9 +8746,8 @@ void EditorState::loadScene(const std::string& path) {
                     c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
                 entries.push_back({t.position, e, layerIdx, mergeBucketId});
             });
-            if (!entries.empty())
-                Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
-        }
+        if (!entries.empty())
+            Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
     }
 }
 
@@ -8761,6 +8761,7 @@ void EditorState::saveScene() {
     fs::create_directories(fs::path(m_sceneFilePath).parent_path(), ec);
 
     {
+        auto& saveWorld = m_scene.GetWorld();
         std::vector<Systems::TilemapTileEntry> saveEntries;
         const float saveTileSizeTol = 1.0f;
         saveWorld.each<Components::Transform, Components::Collider>(

@@ -38,6 +38,8 @@ public:
     void renderImGui(Core::Time* timer) override;
 
 private:
+    void resetFragmentPlaytestState();
+
     Platform::InputManager& m_input;
     GameStateManager&       m_gsm;
     std::string             m_sceneFilePath;

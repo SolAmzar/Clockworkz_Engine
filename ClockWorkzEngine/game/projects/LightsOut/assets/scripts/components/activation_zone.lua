@@ -1,5 +1,6 @@
 Properties = {
     { name = "active",      type = "bool",   default = true,   label = "Active" },
+    { name = "triggerTag",  type = "string", default = "Player", label = "Trigger Tag (empty = any)" },
     { name = "actionType",  type = "string", default = "None", label = "Action Type" },
     { name = "payload",     type = "string", default = "",     label = "Payload" },
     { name = "targetTag",   type = "string", default = "",     label = "Target Text Tag" },
@@ -14,6 +15,31 @@ Properties = {
     { name = "oneShot",     type = "bool",   default = false,  label = "One Shot" },
     { name = "triggered",   type = "bool",   default = false,  label = "Triggered" },
 }
+
+-- Reset transient/runtime-only fields each time the script instance starts.
+-- This prevents stale trigger/timer state from carrying across editor play sessions.
+function onStart(self, entity)
+    self.triggered = false
+    self._visibilityRestoreRemaining = nil
+    self._originalTextVisible = nil
+end
+
+local function isAllowedTrigger(self, other)
+    if other == nil or not other:isValid() then
+        return false
+    end
+
+    local requiredTag = self.triggerTag or "Player"
+    if requiredTag == "" then
+        return true
+    end
+
+    if not other:hasTag() then
+        return false
+    end
+
+    return other:getTagValue() == requiredTag
+end
 
 local function findTargetTextEntity(self)
     if self.targetTag == nil or self.targetTag == "" then
@@ -57,6 +83,7 @@ end
 -- onTriggerEnter is called by the C++ collision system when a trigger fires.
 function onTriggerEnter(self, entity, other)
     if not self.active then return end
+    if not isAllowedTrigger(self, other) then return end
     if self.oneShot and self.triggered then return end
     self.triggered = true
     if self.actionType == "PlayAudio" then
@@ -65,6 +92,8 @@ function onTriggerEnter(self, entity, other)
         if self.payload ~= nil and self.payload ~= "" then
             World.loadLevel(self.payload)
         end
+    elseif self.actionType == "ResetFragments" then
+        World.resetFragments()
     elseif self.actionType == "ChangeTextRenderer" then
         applyTextRendererChange(self)
     end
@@ -90,6 +119,7 @@ function onUpdate(self, entity, dt)
 end
 
 return {
+    onStart        = onStart,
     onTriggerEnter = onTriggerEnter,
     onUpdate       = onUpdate,
 }

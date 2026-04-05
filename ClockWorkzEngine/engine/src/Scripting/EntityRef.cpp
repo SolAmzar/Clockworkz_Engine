@@ -269,6 +269,8 @@ void EntityRef::setParticleEmitterActive(bool active) {
               : nullptr;
   if (emitter)
     emitter->setActive(active);
+}
+
 void EntityRef::setTextColor(float r, float g, float b) {
   auto *tr = m_world ? m_world->getComponent<Components::TextRenderer>(m_entity)
                      : nullptr;

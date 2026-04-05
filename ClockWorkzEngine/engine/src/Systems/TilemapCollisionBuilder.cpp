@@ -265,7 +265,10 @@ void TilemapCollisionBuilder::normalizePersistedMergedScene(ECS::World& world,
         int layerIdx = 0;
         if (auto* layer = world.getComponent<Layer>(entity))
             layerIdx = layer->index;
-        entries.push_back({transform.position, entity, layerIdx});
+        uint32_t combinedGroupId = 0;
+        if (auto* collider = world.getComponent<Collider>(entity))
+            combinedGroupId = collider->combinedGroupId;
+        entries.push_back({transform.position, entity, layerIdx, combinedGroupId});
     });
 
     if (!entries.empty())
@@ -281,32 +284,17 @@ void TilemapCollisionBuilder::build(ECS::World& world,
 
     if (tiles.empty() || tileWidth <= 0.f || tileHeight <= 0.f) return;
 
-    // Group qualifying tiles by layer.
-    // A tile qualifies if it is a static solid wall: isSolid, not a trigger,
-    // not moveable, and not a player/enemy entity.
     std::unordered_map<MergeBucketKey, std::vector<const TilemapTileEntry*>, MergeBucketKeyHash> tilesByLayer;
     for (const auto& tile : tiles) {
         if (!world.isValid(tile.entity)) continue;
         auto* tileCollider = world.getComponent<Collider>(tile.entity);
-        if (!tileCollider)               continue;
-        if (!tileCollider->isSolid)                      continue;
-        if (tileCollider->isTrigger)                     continue;
-        if (tileCollider->moveable)                      continue;
+        if (!tileCollider) continue;
+        if (!tileCollider->isSolid) continue;
+        if (tileCollider->isTrigger) continue;
+        if (tileCollider->moveable) continue;
         if (tileCollider->shape != Collider::Shape::Box) continue; // skip circles
-        if (isMergedColliderExcludedEntity(world, tile.entity))    continue;
+        if (isMergedColliderExcludedEntity(world, tile.entity)) continue;
         tilesByLayer[{tile.layer, tile.combinedGroupId}].push_back(&tile);
-    std::unordered_map<int, std::vector<MergeCandidate>> tilesByLayer;
-    for (const auto& tile : tiles) {
-        if (!shouldMergeEntity(world, tile.entity, tileWidth, tileHeight)) continue;
-
-        tilesByLayer[tile.layer].push_back({
-            tile.entity,
-            tile.layer,
-            {
-                snapToGridCenter(tile.position.x, tileWidth),
-                snapToGridCenter(tile.position.y, tileHeight)
-            }
-        });
     }
 
     int totalMergedRects = 0;
@@ -329,18 +317,9 @@ void TilemapCollisionBuilder::build(ECS::World& world,
             std::vector<bool> visited(tilesOnLayer.size(), false);
             for (int startIdx = 0; startIdx < static_cast<int>(tilesOnLayer.size()); ++startIdx) {
                 if (visited[startIdx]) continue;
-
-        // Build a flat 2D array: solidTileIndex[row * gridCols + col] = index into
-        // tilesOnLayer, or -1 if that grid cell is empty.
-        std::vector<int> solidTileIndex(gridRows * gridCols, -1);
-        for (int tileIdx = 0; tileIdx < static_cast<int>(tilesOnLayer.size()); ++tileIdx) {
-            int col = static_cast<int>(std::round((tilesOnLayer[tileIdx].snappedPosition.x - leftmostX) / tileWidth));
-            int row = static_cast<int>(std::round((tilesOnLayer[tileIdx].snappedPosition.y - topmostY)  / tileHeight));
-            if (col >= 0 && col < gridCols && row >= 0 && row < gridRows
-                && solidTileIndex[row * gridCols + col] < 0) {
-                solidTileIndex[row * gridCols + col] = tileIdx;
-            }
-        }
+                visited[startIdx] = true;
+                std::vector<int> stack{startIdx};
+                std::vector<const TilemapTileEntry*> connectedGroup;
 
                 while (!stack.empty()) {
                     const int currentIdx = stack.back();
@@ -526,54 +505,6 @@ void TilemapCollisionBuilder::build(ECS::World& world,
 
                     ++totalMergedRects;
                 }
-                // Mark all cells in this rectangle as merged.
-                for (int row = startRow; row <= endRow; ++row)
-                    for (int col = startCol; col <= endCol; ++col)
-                        alreadyMerged[row * gridCols + col] = true;
-
-                // Compute the world-space center and pixel size of the merged rect.
-                // Tile positions are their centers, so we average across the span.
-                float rectCenterX = leftmostX + (startCol + (rectWidthInTiles  - 1) * 0.5f) * tileWidth;
-                float rectCenterY = topmostY  + (startRow + (rectHeightInTiles - 1) * 0.5f) * tileHeight;
-                float rectPixelWidth  = static_cast<float>(rectWidthInTiles)  * tileWidth;
-                float rectPixelHeight = static_cast<float>(rectHeightInTiles) * tileHeight;
-
-                // Create the merged collider entity (no sprite, physics-only).
-                ECS::Entity mergedEntity = world.createEntity();
-
-                Transform mergedTransform;
-                mergedTransform.position = {rectCenterX, rectCenterY};
-                mergedTransform.snapToGrid = true;
-                world.addComponent<Transform>(mergedEntity, mergedTransform);
-
-                Collider mergedCollider;
-                mergedCollider.shape             = Collider::Shape::Box;
-                mergedCollider.size              = {rectPixelWidth, rectPixelHeight};
-                mergedCollider.isSolid           = true;
-                mergedCollider.isTrigger         = false;
-                mergedCollider.moveable          = false;
-                mergedCollider.blocksLight       = false;
-                mergedCollider.collisionCategory = Gameplay::Layer::Wall;
-                mergedCollider.collisionMask     = 0xFFFFFFFF;
-                mergedCollider.mass              = 0.f; // immoveable
-                world.addComponent<Collider>(mergedEntity, mergedCollider);
-
-                world.addComponent<Tag>(mergedEntity, Tag{"TilemapMergedCollider"});
-                world.addComponent<Components::Layer>(mergedEntity, Components::Layer{layerIndex});
-
-                ++totalMergedRects;
-            }
-        }
-
-        // Disable isSolid on every individual tile entity that was absorbed into
-        // a merged rect, so it no longer participates in solid collision.
-        for (int cellIndex = 0; cellIndex < gridRows * gridCols; ++cellIndex) {
-            if (!alreadyMerged[cellIndex] || solidTileIndex[cellIndex] < 0) continue;
-            ECS::Entity originalTileEntity = tilesOnLayer[solidTileIndex[cellIndex]].entity;
-            auto* originalCollider = world.getComponent<Components::Collider>(originalTileEntity);
-            if (originalCollider && originalCollider->isSolid) {
-                originalCollider->isSolid = false;
-                s_disabledTileEntities.push_back(originalTileEntity);
             }
         }
     }

@@ -146,7 +146,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.7100000381469727
+            "volume": 0.3449999988079071
         },
         {
             "falloffAmount": 0.25,
@@ -163,7 +163,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.7100000381469727
+            "volume": 0.3449999988079071
         },
         {
             "falloffAmount": 0.25,
@@ -180,7 +180,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_3.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.7100000381469727
+            "volume": 0.3449999988079071
         },
         {
             "falloffAmount": 0.25,
@@ -197,7 +197,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_4.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.7100000381469727
+            "volume": 0.3449999988079071
         },
         {
             "falloffAmount": 0.25,

@@ -106,12 +106,8 @@
         },
         {
             "collapsed": true,
-            "entities": [
-                "Player"
-            ],
-            "entityIndices": [
-                299
-            ],
+            "entities": [],
+            "entityIndices": [],
             "name": "Floor 1",
             "parentGroupIdx": -1,
             "sortOrderBase": 0
@@ -316,7 +312,7 @@
                 "concrete floor",
                 "concrete floor",
                 "concrete floor",
-                "concrete floor",
+                "corridor floor duplicate",
                 "concrete floor",
                 "concrete floor",
                 "concrete floor",
@@ -409,7 +405,7 @@
                 "concrete floor",
                 "concrete floor",
                 "concrete floor",
-                "concrete floor",
+                "TestSpawn",
                 "concrete floor",
                 "concrete floor",
                 "concrete floor",
@@ -1235,7 +1231,7 @@
                 365
             ],
             "name": "UI",
-            "parentGroupIdx": 2,
+            "parentGroupIdx": -1,
             "sortOrderBase": 0
         },
         {
@@ -1257,7 +1253,7 @@
                 841
             ],
             "name": "Fragments",
-            "parentGroupIdx": 2,
+            "parentGroupIdx": -1,
             "sortOrderBase": 0
         },
         {
@@ -1271,7 +1267,7 @@
                 354
             ],
             "name": "Enemies",
-            "parentGroupIdx": 2,
+            "parentGroupIdx": -1,
             "sortOrderBase": 0
         },
         {
@@ -1283,7 +1279,7 @@
             "sortOrderBase": 0
         },
         {
-            "collapsed": true,
+            "collapsed": false,
             "entities": [],
             "entityIndices": [],
             "name": "Full Falt Top Right",
@@ -1635,13 +1631,12 @@
             "entities": [],
             "entityIndices": [],
             "name": "Flat Top Left",
-            "parentGroupIdx": -1,
+            "parentGroupIdx": 12,
             "sortOrderBase": 0
         },
         {
-            "collapsed": false,
+            "collapsed": true,
             "entities": [
-                "Fragment Copy Copy",
                 "marble top left Copy Copy",
                 "marble l Copy Copy",
                 "marble l Copy Copy",
@@ -1674,7 +1669,6 @@
                 "marble l Copy"
             ],
             "entityIndices": [
-                454,
                 466,
                 468,
                 458,
@@ -1815,7 +1809,7 @@
             "sortOrderBase": 0
         },
         {
-            "collapsed": true,
+            "collapsed": false,
             "entities": [
                 "Entity 490 Copy Copy",
                 "Entity 491 Copy Copy",
@@ -1857,7 +1851,6 @@
         {
             "collapsed": true,
             "entities": [
-                "Fragment",
                 "concrete -",
                 "concrete -",
                 "concrete -",
@@ -1894,11 +1887,9 @@
                 "boxes",
                 "paperstack",
                 "bench",
-                "bench",
-                "Starting Text Trigger"
+                "bench"
             ],
             "entityIndices": [
-                310,
                 274,
                 273,
                 272,
@@ -1935,16 +1926,26 @@
                 849,
                 850,
                 853,
-                854,
-                287
+                854
             ],
             "name": "Group",
+            "parentGroupIdx": -1,
+            "sortOrderBase": 0
+        },
+        {
+            "collapsed": true,
+            "entities": [
+                "Wall Text Trigger"
+            ],
+            "entityIndices": [
+                287
+            ],
+            "name": "Activation",
             "parentGroupIdx": -1,
             "sortOrderBase": 0
         }
     ],
     "hierarchyOrder": [
-        "Player",
         "concrete l wall",
         "concrete l wall",
         "concrete l wall",
@@ -2005,7 +2006,7 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
+        "corridor floor duplicate",
         "concrete floor",
         "concrete floor",
         "concrete floor",
@@ -2101,7 +2102,7 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
+        "TestSpawn",
         "concrete floor",
         "concrete floor",
         "concrete floor",
@@ -2495,7 +2496,6 @@
         "Carpet Copy Copy",
         "Entity 506 (Clone) Copy Copy",
         "Entity 502 Copy Copy",
-        "Fragment Copy Copy",
         "marble top left Copy Copy",
         "marble l Copy Copy",
         "marble l Copy Copy",
@@ -2759,7 +2759,6 @@
         "Fragment",
         "Fragment",
         "paperstack",
-        "Fragment",
         "concrete top_left wall",
         "concrete top_left wall",
         "Trash",
@@ -2796,15 +2795,48 @@
         "boxes",
         "bench",
         "bench",
-        "Starting Text Trigger",
         "orange tape2",
         "orange tape1",
+        "Player",
         "dangersign1",
         "danger barrier",
-        "danger barrier"
+        "danger barrier",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "blockage",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "Entity",
+        "Wall Text Trigger",
+        "Entity",
+        "Enemy (Clone) (Clone)",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider"
     ],
     "hierarchyOrderIndices": [
-        299,
         196,
         197,
         198,
@@ -3355,7 +3387,6 @@
         260,
         769,
         773,
-        454,
         466,
         468,
         464,
@@ -3619,7 +3650,6 @@
         488,
         512,
         850,
-        310,
         353,
         267,
         842,
@@ -3656,12 +3686,46 @@
         849,
         853,
         854,
-        287,
         845,
         857,
+        299,
         856,
         855,
-        846
+        846,
+        859,
+        864,
+        868,
+        872,
+        876,
+        860,
+        858,
+        861,
+        862,
+        863,
+        865,
+        866,
+        867,
+        869,
+        870,
+        871,
+        873,
+        874,
+        875,
+        877,
+        878,
+        879,
+        880,
+        454,
+        881,
+        310,
+        287,
+        882,
+        883,
+        884,
+        888,
+        885,
+        886,
+        887
     ],
     "musicContext": "level_default",
     "objects": [
@@ -4983,7 +5047,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete floor"
+            "name": "TestSpawn"
         },
         {
             "active": true,
@@ -10675,7 +10739,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete floor"
+            "name": "corridor floor duplicate"
         },
         {
             "active": true,
@@ -12008,7 +12072,7 @@
                     "height": 800.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12449,7 +12513,7 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": -92.0,
+                        "x": -91.0,
                         "y": 11.0
                     },
                     "radius": 50.0,
@@ -12755,7 +12819,7 @@
                     "height": 1400.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -13519,7 +13583,7 @@
                     "height": 200.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -13691,7 +13755,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -14136,14 +14200,14 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -14207,7 +14271,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -14643,7 +14707,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -14967,7 +15031,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16703,7 +16767,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17550,7 +17614,7 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 100.0,
+                    "height": 333.0,
                     "isCombined": false,
                     "isHazard": false,
                     "isSolid": false,
@@ -17558,12 +17622,12 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 2.0,
+                        "y": -31.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 93.0
                 },
                 "luaScript": [
                     {
@@ -17580,8 +17644,9 @@
                             "setVisible": true,
                             "targetTag": "Player",
                             "textValue": "",
+                            "triggerTag": "Player",
                             "triggered": false,
-                            "visibilityRestoreDelay": 3.200000047683716,
+                            "visibilityRestoreDelay": 3.700000047683716,
                             "visibleValue": true
                         },
                         "scriptPath": "components/activation_zone.lua"
@@ -17593,8 +17658,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -854.8123168945313,
-                        "y": 124.30642700195313
+                        "x": -154.31298828125,
+                        "y": 174.17840576171875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -17604,7 +17669,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Starting Text Trigger"
+            "name": "Wall Text Trigger"
         },
         {
             "active": true,
@@ -17789,7 +17854,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18192,7 +18257,7 @@
                     "tilePrefix": "fs_tile_",
                     "useSurfaceSounds": true,
                     "variationCount": 4,
-                    "volume": 1.215999960899353,
+                    "volume": 1.0829999446868896,
                     "woodPrefix": "fs_wood_"
                 },
                 "light": {
@@ -18214,6 +18279,7 @@
                     {
                         "enabled": true,
                         "properties": {
+                            "_invincible": false,
                             "baseWalkSpeed": 10.0,
                             "bobAmount": 8.0,
                             "bobSpeed": 6.0,
@@ -18233,6 +18299,7 @@
                     {
                         "enabled": true,
                         "properties": {
+                            "_unlimited": false,
                             "charge": 100.0,
                             "chargeRate": 20.0,
                             "drainRate": 5.0,
@@ -18287,6 +18354,29 @@
                     ],
                     "visible": true
                 },
+                "textRenderer": {
+                    "alignment": 1,
+                    "boxSize": {
+                        "x": 200.0,
+                        "y": 100.0
+                    },
+                    "color": {
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "fontId": "Debug",
+                    "fontSize": 1.0,
+                    "lineSpacing": 1.0,
+                    "padding": {
+                        "x": 0.0,
+                        "y": -84.0
+                    },
+                    "text": "That wall..feels different",
+                    "verticalAlignment": 0,
+                    "visible": false,
+                    "wordWrap": true
+                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
@@ -18304,7 +18394,7 @@
                     "snapToGrid": false
                 },
                 "velocity": {
-                    "moveSpeed": 10.0,
+                    "moveSpeed": 20.0,
                     "x": 0.0,
                     "y": 0.0
                 }
@@ -18322,7 +18412,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18731,14 +18821,14 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18794,93 +18884,57 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": true,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "luaScript": [
                     {
                         "enabled": true,
                         "properties": {
-                            "_alpha": 1.0,
-                            "_baseY": 0.0,
-                            "_initialized": false,
-                            "_timer": 0.0,
-                            "bobAmount": 10.0,
-                            "bobSpeed": 2.0,
-                            "collected": false,
-                            "fadeSpeed": 5.0,
-                            "fragmentId": 2,
-                            "pickupSfx": "fragment_collect_1",
-                            "requiresLight": true
+                            "actionType": "ResetFragments",
+                            "active": true,
+                            "fontSizeValue": 1.0,
+                            "oneShot": false,
+                            "payload": "",
+                            "restoreVisibilityAfterDelay": false,
+                            "setFontSize": false,
+                            "setText": false,
+                            "setVisible": false,
+                            "targetTag": "",
+                            "textValue": "",
+                            "triggerTag": "Player",
+                            "triggered": false,
+                            "visibilityRestoreDelay": 1.0,
+                            "visibleValue": true
                         },
-                        "scriptPath": "components/fragment.lua"
+                        "scriptPath": "components/activation_zone.lua"
                     }
                 ],
-                "particleEmitter": {
-                    "acceleration": {
-                        "x": 0.0,
-                        "y": 100.0
-                    },
-                    "active": true,
-                    "colorEnd": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "colorStart": {
-                        "a": 1.0,
-                        "b": 0.9471510648727417,
-                        "g": 1.0,
-                        "r": 0.619217038154602
-                    },
-                    "direction": {
-                        "x": 0.2800000011920929,
-                        "y": -0.23999999463558197
-                    },
-                    "lifeMax": 1.6200000047683716,
-                    "lifeMin": 0.5,
-                    "localOffset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "looping": true,
-                    "rate": 0.6000000238418579,
-                    "sizeEnd": 0.0,
-                    "sizeStart": 2.6500000953674316,
-                    "spawnRadius": 62.79999923706055,
-                    "speedMax": 8.0,
-                    "speedMin": 0.0,
-                    "spreadDeg": 45.0,
-                    "worldSpace": true
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "fragmentsample",
-                    "unlit": true,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": -850.0,
-                        "y": 150.0
+                        "x": -1447.431640625,
+                        "y": 99.87960052490234
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -18890,7 +18944,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Fragment"
+            "name": "Entity"
         },
         {
             "active": true,
@@ -19287,7 +19341,7 @@
                     "height": 400.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20355,7 +20409,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20419,7 +20473,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20483,7 +20537,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21087,7 +21141,7 @@
                     "height": 900.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21151,7 +21205,7 @@
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21300,8 +21354,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 3050.0,
-                        "y": 150.0
+                        "x": 951.2451171875,
+                        "y": 145.10897827148438
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -21461,7 +21515,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21923,7 +21977,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -22071,8 +22125,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -152.22048950195313,
-                        "y": -4.720409393310547
+                        "x": -150.0,
+                        "y": -50.0
                     },
                     "rotation": -6.323741912841797,
                     "scale": {
@@ -25099,7 +25153,7 @@
                     "height": 50.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26523,46 +26577,25 @@
         {
             "active": true,
             "components": {
-                "luaScript": [
-                    {
-                        "enabled": true,
-                        "properties": {
-                            "_alpha": 1.0,
-                            "_baseY": 0.0,
-                            "_initialized": false,
-                            "_timer": 0.0,
-                            "bobAmount": 10.0,
-                            "bobSpeed": 2.0,
-                            "collected": false,
-                            "fadeSpeed": 5.0,
-                            "fragmentId": 4,
-                            "pickupSfx": "fragment_collect_1",
-                            "requiresLight": true
-                        },
-                        "scriptPath": "components/fragment.lua"
-                    }
-                ],
-                "spriteRenderer": {
-                    "color": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
                     },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 0,
-                    "textureId": "fragmentsample",
-                    "unlit": true,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
                 },
                 "transform": {
                     "pivot": {
@@ -26570,10 +26603,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -115.92207336425781,
-                        "y": 1374.4217529296875
+                        "x": -500.0,
+                        "y": 350.0
                     },
-                    "rotation": 3.137509822845459,
+                    "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -26581,7 +26614,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Fragment Copy Copy"
+            "name": "TilemapMergedCollider"
         },
         {
             "active": true,
@@ -28479,7 +28512,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 4,
+                            "fragmentId": 7,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -28535,7 +28568,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 3,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -28552,8 +28585,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 312.6400146484375,
-                        "y": -1300.7752685546875
+                        "x": 445.07269287109375,
+                        "y": -1064.288330078125
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -29820,7 +29853,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 2,
+                            "fragmentId": 9,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -29876,7 +29909,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 3,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -29921,7 +29954,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 5,
+                            "fragmentId": 8,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -29977,7 +30010,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 3,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -29994,7 +30027,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -759.041015625,
+                        "x": -294.65997314453125,
                         "y": 151.51553344726563
                     },
                     "rotation": 0.0,
@@ -30022,7 +30055,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 3,
+                            "fragmentId": 6,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -30078,7 +30111,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 3,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -30123,7 +30156,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 1,
+                            "fragmentId": 10,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -30179,7 +30212,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 3,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -30314,8 +30347,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2950.0,
-                        "y": 50.0
+                        "x": 2213.134521484375,
+                        "y": 517.2805786132813
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -30501,8 +30534,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2950.0,
-                        "y": -150.0
+                        "x": 1605.0709228515625,
+                        "y": -284.79248046875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -30790,7 +30823,7 @@
                     "height": 500.0,
                     "isCombined": true,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -39581,6 +39614,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -39625,6 +39678,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -39925,6 +39998,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -39969,6 +40062,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -40141,6 +40254,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -40314,15 +40447,15 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
+                    "isSolid": true,
+                    "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
@@ -40825,6 +40958,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -40869,6 +41022,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -41297,6 +41470,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -41917,6 +42110,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -45994,15 +46207,15 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": false,
-                    "isTrigger": true,
+                    "isSolid": true,
+                    "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
@@ -46057,6 +46270,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -46101,6 +46334,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -46145,6 +46398,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -49593,7 +49866,7 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 6,
+                            "fragmentId": 11,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
@@ -49649,7 +49922,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
+                    "sortOrder": 3,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -50582,6 +50855,1467 @@
                 }
             },
             "name": "orange tape1"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 800.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1850.0,
+                        "y": 800.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 1400.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2450.0,
+                        "y": 500.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 200.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1850.0,
+                        "y": -200.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 300.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2150.0,
+                        "y": -350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -500.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 600.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -500.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 1000.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1200.0,
+                        "y": -50.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1150.0,
+                        "y": 550.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 300.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 650.0,
+                        "y": -1150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 700.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1350.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 400.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 950.0,
+                        "y": -400.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 300.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1450.0,
+                        "y": -750.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 900.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 350.0,
+                        "y": -650.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1150.0,
+                        "y": -250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 1200.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1100.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 300.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 750.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 500.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1750.0,
+                        "y": -450.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 950.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1450.0,
+                        "y": 550.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -850.0,
+                        "y": 550.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 124.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "actionType": "MoveTarget",
+                            "active": true,
+                            "levelGroupId": "",
+                            "moveOffsetX": -3000.0,
+                            "moveOffsetY": 0.0,
+                            "oneShot": true,
+                            "requiredFragments": 2,
+                            "targetTag": "blockage",
+                            "triggered": false,
+                            "useAllGroupsWhenNoLevelId": true
+                        },
+                        "scriptPath": "components/fragment_goal_trigger.lua"
+                    }
+                ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.8647686839103699,
+                        "g": 0.5232353806495667,
+                        "r": 0.3569863736629486
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.30000001192092896
+                    },
+                    "lifeMax": 1.600000023841858,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 15.600000381469727,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 82.80000305175781,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.6901960968971252,
+                        "b": 0.4446752369403839,
+                        "g": 0.4446752369403839,
+                        "r": 0.5480427145957947
+                    },
+                    "size": {
+                        "x": 140.0,
+                        "y": 142.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "blockage",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -728.2530517578125,
+                        "y": 148.45993041992188
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.7599999904632568,
+                        "y": 2.859999895095825
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "blockage"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 4294967295,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 150.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 72.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": -26.0,
+                        "y": 6.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 185.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 2233.1279296875,
+                        "y": 1256.6494140625
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Entity"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "hp": 50.0,
+                            "invulnerable": false,
+                            "isDead": false,
+                            "maxHp": 50.0,
+                            "regenRate": 0.0
+                        },
+                        "scriptPath": "components/health.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_stateTimer": 0.0,
+                            "_wanderTimer": 0.0,
+                            "alertDuration": 3.0,
+                            "alertStateSfxPrefix": "",
+                            "alertStateSfxVariations": 1,
+                            "attackStateSfxPrefix": "",
+                            "attackStateSfxVariations": 1,
+                            "chaseSpeed": 150.0,
+                            "chaseStateSfxPrefix": "",
+                            "chaseStateSfxVariations": 1,
+                            "deathStateSfxPrefix": "",
+                            "deathStateSfxVariations": 1,
+                            "detectionRadius": 400.0,
+                            "lightSensitivity": 0.30000001192092896,
+                            "maxHp": 100.0,
+                            "patrolSpeed": 50.0,
+                            "patrolStateSfxPrefix": "",
+                            "patrolStateSfxVariations": 1,
+                            "state": "Patrol",
+                            "stateSfxVolume": 1.0,
+                            "usePositionalStateSfx": true,
+                            "wanderInterval": 2.0
+                        },
+                        "scriptPath": "components/enemy_ai.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "exposureTime": 0.0,
+                            "inLight": false,
+                            "isDangerous": false,
+                            "maxExposureTime": 10.0
+                        },
+                        "scriptPath": "components/light_exposure.lua"
+                    }
+                ],
+                "spriteAnimator": {
+                    "filename": "enemy.json"
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 150.0,
+                        "y": 150.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "monster_texture",
+                    "unlit": false,
+                    "uv": [
+                        0.25,
+                        0.25,
+                        0.25,
+                        0.25
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1140.7855224609375,
+                        "y": 592.8562622070313
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                },
+                "velocity": {
+                    "moveSpeed": 50.0,
+                    "x": 0.4177655279636383,
+                    "y": 0.9085548520088196
+                }
+            },
+            "name": "Enemy (Clone) (Clone)"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -150.0,
+                        "y": 350.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1250.0,
+                        "y": 1050.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 200.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 350.0,
+                        "y": 1200.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 950.0,
+                        "y": 1250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": false,
+                    "collisionCategory": 4,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 0.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": 1150.0,
+                        "y": 1250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "TilemapMergedCollider"
         }
     ],
     "sfxVolume": 1.0,
@@ -50589,9 +52323,9 @@
         "enemy_death_1": 0.1889999955892563,
         "enemy_death_2": 0.15800000727176666,
         "enemy_death_3": 0.20499999821186066,
-        "fs_concrete_1": 1.7100000381469727,
-        "fs_concrete_2": 1.7100000381469727,
-        "fs_concrete_4": 1.7100000381469727,
+        "fs_concrete_1": 0.3449999988079071,
+        "fs_concrete_2": 0.3449999988079071,
+        "fs_concrete_4": 0.3449999988079071,
         "fs_tile_1": 0.13099999725818634,
         "fs_tile_2": 0.13099999725818634,
         "fs_tile_3": 0.13099999725818634,
