@@ -51,11 +51,7 @@ _EXT_COMMENT_PREFIXES: dict[str, tuple[str, ...]] = {
 
 def _app_dir() -> Path:
     if getattr(sys, "frozen", False):
-        exe_dir = Path(sys.executable).resolve().parent
-        dist_dir = exe_dir.parent
-        if dist_dir.name.lower() == "dist-current":
-            return dist_dir.parent
-        return exe_dir
+        return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent
 
 

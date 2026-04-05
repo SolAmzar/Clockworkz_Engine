@@ -5,9 +5,9 @@ cd /d "%~dp0"
 
 where py >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    py -3 -m PyInstaller --noconfirm --clean --onedir --windowed --name RepoActivity --distpath dist-current --workpath build-current --specpath . main.py
+    py -3 -m PyInstaller --noconfirm --clean --onedir --windowed --name RepoActivity --distpath dist-current --workpath build-current --specpath . ..\main.py
 ) else (
-    python -m PyInstaller --noconfirm --clean --onedir --windowed --name RepoActivity --distpath dist-current --workpath build-current --specpath . main.py
+    python -m PyInstaller --noconfirm --clean --onedir --windowed --name RepoActivity --distpath dist-current --workpath build-current --specpath . ..\main.py
 )
 
 echo.
