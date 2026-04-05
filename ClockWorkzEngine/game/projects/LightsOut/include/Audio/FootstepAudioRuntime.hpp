@@ -82,6 +82,15 @@ inline Gameplay::SurfaceType SurfaceFromTextureId(const std::string &textureId) 
   const std::string lowered = Lowercase(textureId);
   if (lowered.find("wfloor") != std::string::npos)
     return Gameplay::SurfaceType::Wood;
+  if (lowered.find("floor tiles") != std::string::npos ||
+      lowered.find("schoolfloor") != std::string::npos ||
+      lowered.find("hse floor") != std::string::npos)
+    return Gameplay::SurfaceType::Tile;
+  if (lowered.find("concrete floor") != std::string::npos ||
+      lowered.find("concrete_floor") != std::string::npos ||
+      lowered.find("corridor floor") != std::string::npos ||
+      lowered.find("corridorfloor") != std::string::npos)
+    return Gameplay::SurfaceType::Concrete;
   return Gameplay::SurfaceType::Default;
 }
 
@@ -187,7 +196,10 @@ inline void UpdateFootstepListener(ECS::World &world) {
         const vec3 position = detail::ToVec3(transform.position);
         const vec3 forward{std::cos(transform.rotation),
                            std::sin(transform.rotation), 0.0f};
-        const vec3 up{0.0f, 0.0f, 1.0f};
+        // FMOD's handedness for 3D panning works better for our top-down
+        // XY gameplay space when "up" points along negative Z, otherwise the
+        // computed left/right side ends up inverted.
+        const vec3 up{0.0f, 0.0f, -1.0f};
         audio.setListener(position, velocity, forward, up);
         listenerSet = true;
       });

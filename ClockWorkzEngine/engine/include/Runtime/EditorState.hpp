@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 76% [Amzar] 24%
+\author(s)      [Syafiq] 73% [Amzar] 27%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -88,6 +88,9 @@ private:
     ECS::Entity spawnPrefab(const std::string& prefabName, vec2 position);
     void        deletePrefab(const std::string& prefabName);
     bool        updatePrefabCategory(const std::string& prefabName, const std::string& category);
+    void        loadAvailableEntityGroups();
+    void        saveEntityGroupFromSelection(const std::string& name, const std::string& category);
+    std::vector<ECS::Entity> spawnEntityGroup(const std::string& groupName, vec2 position);
 
     // ----- Tilemap types (declared here so method signatures can use them) -----
     struct TileData {
@@ -391,6 +394,12 @@ private:
         std::string category;
         std::string textureId;
     };
+    struct EntityGroupBrowserEntry {
+        std::string name;
+        std::string category;
+        std::string textureId;
+        int         entityCount{0};
+    };
     std::vector<std::string>     m_availablePrefabs;
     std::vector<PrefabBrowserEntry> m_availablePrefabEntries;
     std::vector<std::string>     m_availablePrefabCategories;
@@ -405,6 +414,11 @@ private:
     char                         m_renamePrefabBuf[128]{};
     std::string                  m_cloningPrefabPath;
     char                         m_clonePrefabBuf[128]{};
+    std::vector<EntityGroupBrowserEntry> m_availableEntityGroupEntries;
+    std::vector<std::string>             m_availableEntityGroupCategories;
+    char                                 m_saveEntityGroupNameBuf[128]{};
+    char                                 m_saveEntityGroupCategoryBuf[64]{"Custom"};
+    bool                                 m_saveEntityGroupUseCustomCategory{true};
 
     // ----- BSA -----
     void renderBSATab();

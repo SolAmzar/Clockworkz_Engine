@@ -13,10 +13,7 @@
         {
             "collapsed": true,
             "entities": [
-                "Entity 472",
-                "Entity 473",
                 "Entity 474",
-                "Entity 475",
                 "Entity 476",
                 "Entity 477",
                 "Entity 479",
@@ -34,17 +31,14 @@
                 "Beer Bottles",
                 "Syrofoam box",
                 "Enemy (Clone) (Clone)",
-                "House Gate Open",
+                "House Gate",
                 "House Gate Open",
                 "House Gate Open",
                 "House Gate Open",
                 "Syrofoam box"
             ],
             "entityIndices": [
-                471,
-                472,
                 473,
-                474,
                 475,
                 476,
                 478,
@@ -77,7 +71,6 @@
             "entities": [
                 "Entity 487",
                 "Entity 506 (Clone)",
-                "Fragment",
                 "Entity 500",
                 "Entity 496",
                 "Entity 506",
@@ -94,7 +87,6 @@
             "entityIndices": [
                 489,
                 507,
-                488,
                 500,
                 496,
                 506,
@@ -143,23 +135,6 @@
                 "concrete l wall",
                 "concrete l wall",
                 "concrete l wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete bottom left wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete l wall",
-                "concrete top_left wall",
-                "concrete -",
-                "concrete -",
-                "concrete -",
-                "concrete -",
-                "concrete -",
-                "concrete -",
                 "concrete -",
                 "concrete -",
                 "concrete -",
@@ -227,23 +202,16 @@
                 "wood bottom right support",
                 "wood wall Bottom Left",
                 "wood bottom left support",
-                "concrete -",
-                "concrete -",
-                "concrete top_right",
-                "concrete -",
-                "concrete -",
                 "concrete top_right",
                 "wood ",
                 "concrete bottom right wall",
-                "concrete bottom right wall",
                 "concrete -",
                 "concrete -",
-                "wood "
+                "concrete top_right",
+                "concrete -"
             ],
             "entityIndices": [
                 373,
-                277,
-                287,
                 196,
                 197,
                 198,
@@ -259,15 +227,6 @@
                 208,
                 213,
                 222,
-                281,
-                279,
-                247,
-                276,
-                278,
-                280,
-                282,
-                286,
-                285,
                 356,
                 372,
                 376,
@@ -278,9 +237,6 @@
                 256,
                 258,
                 262,
-                268,
-                272,
-                274,
                 242,
                 243,
                 244,
@@ -307,12 +263,9 @@
                 381,
                 375,
                 289,
-                273,
                 263,
-                269,
                 265,
                 255,
-                267,
                 257,
                 259,
                 264,
@@ -341,18 +294,13 @@
                 221,
                 215,
                 210,
-                361,
-                358,
                 343,
-                342,
-                340,
-                446,
                 359,
-                310,
                 349,
                 315,
                 312,
-                353
+                236,
+                239
             ],
             "name": "Concrete Wall",
             "parentGroupIdx": 2,
@@ -518,7 +466,7 @@
                 "concrete floor",
                 "concrete floor",
                 "concrete floor",
-                "concrete floor",
+                "Concrete Floor",
                 "concrete floor",
                 "concrete floor",
                 "concrete floor",
@@ -603,8 +551,8 @@
                 305,
                 331,
                 325,
-                329,
-                209,
+                330,
+                322,
                 327,
                 231,
                 238,
@@ -614,11 +562,11 @@
                 294,
                 296,
                 308,
-                322,
+                209,
                 324,
                 326,
                 328,
-                330,
+                329,
                 143,
                 144,
                 139,
@@ -1296,13 +1244,17 @@
                 "Fragment",
                 "Fragment",
                 "Fragment",
+                "Fragment",
+                "Fragment",
                 "Fragment"
             ],
             "entityIndices": [
                 511,
+                488,
                 510,
                 509,
-                512
+                512,
+                841
             ],
             "name": "Fragments",
             "parentGroupIdx": 2,
@@ -1901,6 +1853,94 @@
             "name": "Item Props Copy",
             "parentGroupIdx": 19,
             "sortOrderBase": 0
+        },
+        {
+            "collapsed": true,
+            "entities": [
+                "Fragment",
+                "concrete -",
+                "concrete -",
+                "concrete -",
+                "concrete top_left wall",
+                "paperstack",
+                "concrete -",
+                "concrete -",
+                "concrete -",
+                "concrete -",
+                "concrete -",
+                "concrete -",
+                "bench",
+                "concrete l wall",
+                "concrete l wall",
+                "lvl 1 ending",
+                "boxes",
+                "bench",
+                "concrete l wall",
+                "concrete l wall",
+                "concrete bottom left wall",
+                "concrete bottom right wall",
+                "concrete top_left wall",
+                "concrete l wall",
+                "concrete bottom left wall",
+                "concrete top right wall",
+                "concrete -",
+                "concrete l wall",
+                "Dumpster",
+                "Trash",
+                "Boxes",
+                "concrete l wall",
+                "cupboard2",
+                "cupboard",
+                "boxes",
+                "paperstack",
+                "bench",
+                "bench",
+                "Starting Text Trigger"
+            ],
+            "entityIndices": [
+                310,
+                274,
+                273,
+                272,
+                353,
+                474,
+                471,
+                472,
+                269,
+                237,
+                358,
+                361,
+                851,
+                276,
+                277,
+                278,
+                279,
+                280,
+                281,
+                282,
+                852,
+                342,
+                267,
+                268,
+                446,
+                340,
+                247,
+                285,
+                286,
+                842,
+                843,
+                844,
+                847,
+                848,
+                849,
+                850,
+                853,
+                854,
+                287
+            ],
+            "name": "Group",
+            "parentGroupIdx": -1,
+            "sortOrderBase": 0
         }
     ],
     "hierarchyOrder": [
@@ -1921,22 +1961,6 @@
         "concrete l wall",
         "concrete l wall",
         "concrete l wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete bottom left wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete l wall",
-        "concrete top_left wall",
-        "concrete -",
-        "concrete -",
-        "concrete -",
-        "concrete -",
-        "concrete -",
         "concrete -",
         "concrete -",
         "concrete -",
@@ -2040,7 +2064,6 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete -",
         "concrete floor",
         "concrete floor",
         "concrete -",
@@ -2135,7 +2158,7 @@
         "concrete floor",
         "concrete floor",
         "concrete floor",
-        "concrete floor",
+        "Concrete Floor",
         "concrete floor",
         "concrete floor",
         "concrete floor",
@@ -2262,7 +2285,6 @@
         "marble l Copy",
         "marble Copy",
         "Entity 494",
-        "Fragment",
         "Entity 492",
         "Entity 496",
         "Entity 500",
@@ -2275,10 +2297,7 @@
         "Entity 505",
         "Entity 506 (Clone)",
         "Entity 479",
-        "Entity 473",
         "Entity 477",
-        "Entity 475",
-        "Entity 472",
         "Entity 474",
         "Entity 476",
         "Entity 483",
@@ -2298,9 +2317,6 @@
         "Enemy (Clone) (Clone)",
         "HUD_Battery",
         "fragment Counter",
-        "Fragment",
-        "Fragment",
-        "Fragment",
         "Concrete Floor",
         "Entity 482 (Clone)",
         "Enemy",
@@ -2549,7 +2565,7 @@
         "marble l Copy",
         "marble",
         "concrete floor",
-        "House Gate Open",
+        "House Gate",
         "House Gate Open",
         "House Gate Open",
         "concrete -",
@@ -2593,13 +2609,6 @@
         "concrete -",
         "wood ",
         "concrete top_right",
-        "concrete bottom right wall",
-        "concrete -",
-        "concrete -",
-        "concrete top_right",
-        "concrete -",
-        "concrete -",
-        "Fragment",
         "Cabinet",
         "concrete bottom right wall",
         "concrete -",
@@ -2623,7 +2632,6 @@
         "wood bottom right support",
         "wood top right",
         "wood bottom right",
-        "wood ",
         "hse w4",
         "hse w4",
         "hse w4",
@@ -2656,9 +2664,6 @@
         "Wood top_right",
         "Wood top_right",
         "door",
-        "concrete top_right",
-        "concrete top_right",
-        "concrete -",
         "hse wfloor2",
         "hse wfloor3",
         "hse wfloor3",
@@ -2745,34 +2750,61 @@
         "hse wfloor2",
         "hse wfloor2",
         "marble l",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider"
+        "concrete top_right",
+        "concrete -",
+        "Fragment",
+        "Fragment",
+        "Fragment",
+        "Fragment",
+        "Fragment",
+        "Fragment",
+        "paperstack",
+        "Fragment",
+        "concrete top_left wall",
+        "concrete top_left wall",
+        "Trash",
+        "concrete -",
+        "concrete -",
+        "concrete l wall",
+        "concrete l wall",
+        "concrete l wall",
+        "concrete -",
+        "Boxes",
+        "cupboard2",
+        "concrete -",
+        "concrete -",
+        "concrete -",
+        "paperstack",
+        "concrete -",
+        "concrete -",
+        "concrete -",
+        "concrete -",
+        "bench",
+        "concrete l wall",
+        "lvl 1 ending",
+        "boxes",
+        "bench",
+        "concrete l wall",
+        "concrete bottom left wall",
+        "concrete bottom right wall",
+        "concrete bottom left wall",
+        "concrete top right wall",
+        "concrete l wall",
+        "Dumpster",
+        "concrete l wall",
+        "cupboard",
+        "boxes",
+        "bench",
+        "bench",
+        "Starting Text Trigger",
+        "orange tape2",
+        "orange tape1",
+        "dangersign1",
+        "danger barrier",
+        "danger barrier"
     ],
     "hierarchyOrderIndices": [
         299,
-        277,
-        287,
         196,
         197,
         198,
@@ -2788,16 +2820,7 @@
         208,
         213,
         222,
-        281,
-        279,
-        247,
         373,
-        276,
-        278,
-        280,
-        282,
-        286,
-        285,
         356,
         372,
         376,
@@ -2808,9 +2831,6 @@
         256,
         258,
         262,
-        268,
-        272,
-        274,
         242,
         243,
         244,
@@ -2837,9 +2857,7 @@
         381,
         375,
         289,
-        273,
         263,
-        269,
         145,
         146,
         147,
@@ -2882,8 +2900,8 @@
         305,
         331,
         325,
-        329,
-        209,
+        330,
+        322,
         327,
         231,
         238,
@@ -2893,11 +2911,11 @@
         294,
         296,
         308,
-        322,
+        209,
         324,
         326,
         328,
-        330,
+        329,
         265,
         143,
         144,
@@ -2906,7 +2924,6 @@
         140,
         141,
         142,
-        267,
         137,
         138,
         257,
@@ -3128,7 +3145,6 @@
         542,
         610,
         494,
-        488,
         492,
         496,
         500,
@@ -3141,10 +3157,7 @@
         505,
         507,
         478,
-        472,
         476,
-        474,
-        471,
         473,
         475,
         482,
@@ -3164,9 +3177,6 @@
         515,
         364,
         365,
-        511,
-        510,
-        509,
         24,
         514,
         354,
@@ -3459,13 +3469,6 @@
         384,
         359,
         343,
-        310,
-        358,
-        361,
-        446,
-        340,
-        342,
-        512,
         508,
         349,
         312,
@@ -3489,7 +3492,6 @@
         313,
         385,
         314,
-        353,
         317,
         333,
         363,
@@ -3522,9 +3524,6 @@
         611,
         374,
         423,
-        237,
-        236,
-        239,
         778,
         779,
         810,
@@ -3611,29 +3610,58 @@
         389,
         387,
         840,
-        847,
-        851,
-        855,
-        859,
-        848,
-        852,
-        856,
-        860,
-        844,
+        236,
+        239,
+        510,
+        509,
+        511,
         841,
-        842,
-        843,
-        845,
-        846,
-        849,
+        488,
+        512,
         850,
+        310,
+        353,
+        267,
+        842,
+        471,
+        358,
+        277,
+        281,
+        268,
+        247,
+        843,
+        847,
+        274,
+        273,
+        272,
+        474,
+        472,
+        269,
+        237,
+        361,
+        851,
+        276,
+        278,
+        279,
+        280,
+        282,
+        852,
+        342,
+        446,
+        340,
+        285,
+        286,
+        844,
+        848,
+        849,
         853,
         854,
+        287,
+        845,
         857,
-        858,
-        861,
-        862,
-        863
+        856,
+        855,
+        846
     ],
     "musicContext": "level_default",
     "objects": [
@@ -7679,7 +7707,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete floor"
+            "name": "Concrete Floor"
         },
         {
             "active": true,
@@ -8113,7 +8141,7 @@
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
+                        "x": 1.1299999952316284,
                         "y": 1.0
                     },
                     "snapToGrid": false
@@ -8157,7 +8185,7 @@
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
+                        "x": 1.1200000047683716,
                         "y": 1.0
                     },
                     "snapToGrid": false
@@ -13296,7 +13324,7 @@
                     },
                     "position": {
                         "x": 1650.0,
-                        "y": 150.0
+                        "y": 50.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -14779,26 +14807,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 25.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 1.0,
-                        "y": -37.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 51.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -14811,7 +14819,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall1",
+                    "textureId": "corridor wall2",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -14827,18 +14835,18 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1450.0,
-                        "y": 550.0
+                        "x": -1250.0,
+                        "y": -250.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
-            "name": "concrete top_right"
+            "name": "concrete -"
         },
         {
             "active": true,
@@ -14952,7 +14960,7 @@
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": false,
+                    "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
@@ -15319,26 +15327,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -15351,7 +15339,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall7",
+                    "textureId": "corridor wall2",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -15367,18 +15355,18 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -850.0,
-                        "y": 350.0
+                        "x": -1250.0,
+                        "y": 550.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
-            "name": "concrete bottom left wall"
+            "name": "concrete -"
         },
         {
             "active": true,
@@ -16324,20 +16312,20 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 50.0,
-                    "isCombined": true,
+                    "height": 25.0,
+                    "isCombined": false,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 100.0,
-                        "y": 0.0
+                        "x": 0.0,
+                        "y": -37.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 300.0
+                    "width": 50.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -16351,7 +16339,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall2",
+                    "textureId": "corridor wall1",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -16367,8 +16355,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1250.0,
-                        "y": 550.0
+                        "x": -850.0,
+                        "y": -50.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -16378,7 +16366,71 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete -"
+            "name": "concrete top_left wall"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 175.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": -37.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "corridor wall4",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -850.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "concrete l wall"
         },
         {
             "active": true,
@@ -16412,58 +16464,14 @@
                     },
                     "position": {
                         "x": -1150.0,
-                        "y": 550.0
+                        "y": -250.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
-                }
-            },
-            "name": "concrete -"
-        },
-        {
-            "active": true,
-            "components": {
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 1,
-                    "textureId": "corridor wall2",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1050.0,
-                        "y": 550.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
             "name": "concrete -"
@@ -16599,70 +16607,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 50.0,
-                    "isCombined": true,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 100.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 300.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 1,
-                    "textureId": "corridor wall2",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1250.0,
-                        "y": -250.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "concrete -"
-        },
-        {
-            "active": true,
-            "components": {
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -16692,14 +16636,14 @@
                     },
                     "position": {
                         "x": -1150.0,
-                        "y": -250.0
+                        "y": 550.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
             "name": "concrete -"
@@ -16736,14 +16680,78 @@
                     },
                     "position": {
                         "x": -1050.0,
-                        "y": -250.0
+                        "y": 550.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
+                }
+            },
+            "name": "concrete -"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 50.0,
+                    "isCombined": true,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": -200.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 500.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "corridor wall2",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -950.0,
+                        "y": 550.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": true
                 }
             },
             "name": "concrete -"
@@ -16815,6 +16823,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -16859,6 +16887,26 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -16903,6 +16951,64 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 102.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 45.0,
+                        "y": -2.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 15.0
+                },
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "direction": {
+                        "x": 0.9100000262260437,
+                        "y": 1.0
+                    },
+                    "lifeMax": 1.0399999618530273,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 4.0,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 1.4500000476837158,
+                    "spawnRadius": 65.4000015258789,
+                    "speedMax": 2.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 0.0,
+                    "worldSpace": true
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -16914,8 +17020,8 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "sortOrder": 0,
+                    "textureId": "lvl 1 ending",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -16931,18 +17037,18 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1450.0,
-                        "y": 250.0
+                        "x": -1453.1434326171875,
+                        "y": 96.0
                     },
-                    "rotation": 0.0,
+                    "rotation": 3.140000104904175,
                     "scale": {
                         "x": 1.0,
-                        "y": 1.0
+                        "y": 1.440000057220459
                     },
                     "snapToGrid": false
                 }
             },
-            "name": "concrete l wall"
+            "name": "lvl 1 ending"
         },
         {
             "active": true,
@@ -16955,11 +17061,11 @@
                         "r": 1.0
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 123.0,
+                        "y": 88.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "boxes",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -16975,22 +17081,42 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1450.0,
-                        "y": 150.0
+                        "x": -1060.0457763671875,
+                        "y": 428.53070068359375
                     },
                     "rotation": 0.0,
                     "scale": {
-                        "x": 1.0,
+                        "x": 1.0199999809265137,
                         "y": 1.0
                     },
                     "snapToGrid": false
                 }
             },
-            "name": "concrete l wall"
+            "name": "boxes"
         },
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 44.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 5.0,
+                        "y": -3.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 67.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -17002,8 +17128,8 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "sortOrder": 0,
+                    "textureId": "bench",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -17019,22 +17145,42 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1450.0,
-                        "y": 50.0
+                        "x": -1112.55517578125,
+                        "y": -173.28118896484375
                     },
-                    "rotation": 0.0,
+                    "rotation": 3.0860676765441895,
                     "scale": {
-                        "x": 1.0,
+                        "x": 3.6699891090393066,
                         "y": 1.0
                     },
                     "snapToGrid": false
                 }
             },
-            "name": "concrete l wall"
+            "name": "bench"
         },
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 23.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -17069,7 +17215,7 @@
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
-                        "y": 1.0
+                        "y": 1.6200000047683716
                     },
                     "snapToGrid": false
                 }
@@ -17084,8 +17230,8 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 700.0,
-                    "isCombined": true,
+                    "height": 166.0,
+                    "isCombined": false,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -17093,11 +17239,11 @@
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
-                        "y": 300.0
+                        "y": -42.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 50.0
+                    "width": 49.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -17285,11 +17431,11 @@
                     "moveable": false,
                     "offset": {
                         "x": 0.0,
-                        "y": 0.0
+                        "y": -21.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 50.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -17303,7 +17449,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall1",
+                    "textureId": "corridor wall4",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -17319,7 +17465,71 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -850.0,
+                        "x": -1450.0,
+                        "y": 250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.6299999952316284
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 85.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 85.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "dumpster",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -950.0,
                         "y": -50.0
                     },
                     "rotation": 0.0,
@@ -17330,21 +17540,21 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete top_left wall"
+            "name": "Dumpster"
         },
         {
             "active": true,
             "components": {
                 "collider": {
-                    "blocksLight": true,
+                    "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
                     "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
+                    "isSolid": false,
+                    "isTrigger": true,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
@@ -17355,36 +17565,36 @@
                     "shape": 0,
                     "width": 100.0
                 },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 1,
-                    "textureId": "corridor wall4",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "actionType": "ChangeTextRenderer",
+                            "active": true,
+                            "fontSizeValue": 1.0,
+                            "oneShot": true,
+                            "payload": "",
+                            "restoreVisibilityAfterDelay": true,
+                            "setFontSize": false,
+                            "setText": false,
+                            "setVisible": true,
+                            "targetTag": "Player",
+                            "textValue": "",
+                            "triggered": false,
+                            "visibilityRestoreDelay": 3.200000047683716,
+                            "visibleValue": true
+                        },
+                        "scriptPath": "components/activation_zone.lua"
+                    }
+                ],
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": -850.0,
-                        "y": -150.0
+                        "x": -854.8123168945313,
+                        "y": 124.30642700195313
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -17394,71 +17604,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 1,
-                    "textureId": "corridor wall4",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -850.0,
-                        "y": 450.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "concrete l wall"
+            "name": "Starting Text Trigger"
         },
         {
             "active": true,
@@ -18147,8 +18293,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2150.0,
-                        "y": 1050.0
+                        "x": 2149.936279296875,
+                        "y": 974.72705078125
                     },
                     "rotation": -1.5716428756713867,
                     "scale": {
@@ -18648,29 +18794,66 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 24.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 2,
+                            "pickupSfx": "fragment_collect_1",
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "particleEmitter": {
+                    "acceleration": {
                         "x": 0.0,
-                        "y": 36.0
+                        "y": 100.0
                     },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 46.0
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
+                        "a": 0.0,
                         "b": 1.0,
                         "g": 1.0,
                         "r": 1.0
@@ -18679,9 +18862,9 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 0,
-                    "textureId": "corridor wall7",
-                    "unlit": false,
+                    "sortOrder": 2,
+                    "textureId": "fragmentsample",
+                    "unlit": true,
                     "uv": [
                         0.0,
                         0.0,
@@ -18696,8 +18879,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1450.0,
-                        "y": -250.0
+                        "x": -850.0,
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -18707,7 +18890,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete bottom right wall"
+            "name": "Fragment"
         },
         {
             "active": true,
@@ -19385,7 +19568,7 @@
                     },
                     "position": {
                         "x": 1750.0,
-                        "y": 150.0
+                        "y": 50.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -19713,7 +19896,7 @@
                     },
                     "position": {
                         "x": 1650.0,
-                        "y": 50.0
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -19757,7 +19940,7 @@
                     },
                     "position": {
                         "x": 1750.0,
-                        "y": 50.614315032958984
+                        "y": 150.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -20233,7 +20416,7 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 45.0,
+                    "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
                     "isSolid": true,
@@ -20241,12 +20424,12 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 38.0,
-                        "y": -1.0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 177.0
+                    "width": 100.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -20260,7 +20443,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall2",
+                    "textureId": "corridor wall3",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -20276,7 +20459,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -950.0,
+                        "x": -850.0,
                         "y": 550.0
                     },
                     "rotation": 0.0,
@@ -20287,7 +20470,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete -"
+            "name": "concrete top right wall"
         },
         {
             "active": true,
@@ -20361,7 +20544,7 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 45.0,
+                    "height": 50.0,
                     "isCombined": false,
                     "isHazard": false,
                     "isSolid": true,
@@ -20369,12 +20552,12 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": -38.0,
-                        "y": -1.0
+                        "x": -37.0,
+                        "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 177.0
+                    "width": 25.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -20388,7 +20571,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall2",
+                    "textureId": "corridor wall9",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -20404,8 +20587,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1350.0,
-                        "y": 550.0
+                        "x": -850.0,
+                        "y": -250.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -20415,7 +20598,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete -"
+            "name": "concrete bottom right wall"
         },
         {
             "active": true,
@@ -20965,7 +21148,7 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 25.0,
+                    "height": 100.0,
                     "isCombined": false,
                     "isHazard": false,
                     "isSolid": true,
@@ -20973,12 +21156,12 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 1.0,
-                        "y": 37.0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 51.0
+                    "width": 100.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -20992,7 +21175,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall9",
+                    "textureId": "corridor wall1",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -21008,8 +21191,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -850.0,
-                        "y": -250.0
+                        "x": -1450.0,
+                        "y": 550.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -21019,7 +21202,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "wood "
+            "name": "concrete top_left wall"
         },
         {
             "active": true,
@@ -21276,19 +21459,19 @@
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
                     "height": 50.0,
-                    "isCombined": false,
+                    "isCombined": true,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": -38.0,
-                        "y": -1.0
+                        "x": 200.0,
+                        "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 177.0
+                    "width": 500.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -21326,7 +21509,7 @@
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
             "name": "concrete -"
@@ -21442,26 +21625,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 50.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 38.0,
-                        "y": -1.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 177.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21490,15 +21653,15 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -950.0,
-                        "y": -250.0
+                        "x": -1350.0,
+                        "y": 550.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
             "name": "concrete -"
@@ -25853,7 +26016,7 @@
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "combinedGroupId": 0,
-                    "height": 25.0,
+                    "height": 50.0,
                     "isCombined": false,
                     "isHazard": false,
                     "isSolid": true,
@@ -25861,12 +26024,12 @@
                     "mass": 1.0,
                     "moveable": false,
                     "offset": {
-                        "x": 1.0,
-                        "y": -37.0
+                        "x": 37.0,
+                        "y": 0.0
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 51.0
+                    "width": 25.0
                 },
                 "spriteRenderer": {
                     "color": {
@@ -25880,7 +26043,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall3",
+                    "textureId": "corridor wall7",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -25897,7 +26060,7 @@
                     },
                     "position": {
                         "x": -850.0,
-                        "y": 550.0
+                        "y": 350.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -25907,7 +26070,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "concrete top_right"
+            "name": "concrete bottom left wall"
         },
         {
             "active": true,
@@ -27427,90 +27590,6 @@
         {
             "active": true,
             "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 85.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": true,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 85.0
-                },
-                "spriteRenderer": {
-                    "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
-                    },
-                    "size": {
-                        "x": 100.0,
-                        "y": 100.0
-                    },
-                    "sortOrder": 2,
-                    "textureId": "dumpster",
-                    "unlit": false,
-                    "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
-                    ],
-                    "visible": true
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -954.8947143554688,
-                        "y": -34.06465148925781
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": false
-                }
-            },
-            "name": "Entity 472"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "combinedGroupId": 0,
-                    "height": 100.0,
-                    "isCombined": false,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": true,
-                    "offset": {
-                        "x": -3.0,
-                        "y": -6.0
-                    },
-                    "radius": 25.0,
-                    "shape": 1,
-                    "width": 100.0
-                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -27523,7 +27602,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "trash",
+                    "textureId": "corridor wall2",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -27539,18 +27618,62 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -1020.3876342773438,
-                        "y": -72.78610229492188
+                        "x": -950.0,
+                        "y": -250.0
                     },
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
                     },
-                    "snapToGrid": false
+                    "snapToGrid": true
                 }
             },
-            "name": "Entity 473"
+            "name": "concrete -"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "corridor wall2",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1050.0,
+                        "y": -250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": true
+                }
+            },
+            "name": "concrete -"
         },
         {
             "active": true,
@@ -27630,8 +27753,8 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 1,
-                    "textureId": "boxes",
+                    "sortOrder": 0,
+                    "textureId": "paperstack",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -27647,10 +27770,10 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -930.8536987304688,
-                        "y": -143.20785522460938
+                        "x": -1150.0,
+                        "y": 450.0
                     },
-                    "rotation": 0.0,
+                    "rotation": 0.36012542247772217,
                     "scale": {
                         "x": 1.0,
                         "y": 1.0
@@ -27658,7 +27781,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity 475"
+            "name": "paperstack"
         },
         {
             "active": true,
@@ -28147,8 +28270,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 442.3819885253906,
-                        "y": -1.714447021484375
+                        "x": 442.384033203125,
+                        "y": -1.6643400192260742
                     },
                     "rotation": -6.323741912841797,
                     "scale": {
@@ -28158,7 +28281,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "House Gate Open"
+            "name": "House Gate"
         },
         {
             "active": true,
@@ -28309,7 +28432,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 115.0
+                    "width": 68.0
                 },
                 "luaScript": [
                     {
@@ -28328,8 +28451,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2250.0,
-                        "y": 1250.0
+                        "x": -1450.9541015625,
+                        "y": 88.69686126708984
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -28363,6 +28486,44 @@
                         "scriptPath": "components/fragment.lua"
                     }
                 ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 0.0,
@@ -28391,8 +28552,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 420.17462158203125,
-                        "y": -1071.660400390625
+                        "x": 312.6400146484375,
+                        "y": -1300.7752685546875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -29659,13 +29820,51 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 3,
-                            "pickupSfx": "",
+                            "fragmentId": 2,
+                            "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
                         "scriptPath": "components/fragment.lua"
                     }
                 ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 0.0,
@@ -29677,7 +29876,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 0,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -29694,8 +29893,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1255.8975830078125,
-                        "y": -656.7152709960938
+                        "x": 1157.22265625,
+                        "y": 717.969482421875
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -29729,6 +29928,44 @@
                         "scriptPath": "components/fragment.lua"
                     }
                 ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 0.0,
@@ -29740,7 +29977,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 0,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -29757,8 +29994,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 2296.81982421875,
-                        "y": -237.29734802246094
+                        "x": -759.041015625,
+                        "y": 151.51553344726563
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -29785,13 +30022,51 @@
                             "bobSpeed": 2.0,
                             "collected": false,
                             "fadeSpeed": 5.0,
-                            "fragmentId": 2,
+                            "fragmentId": 3,
                             "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
                         "scriptPath": "components/fragment.lua"
                     }
                 ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 0.0,
@@ -29803,7 +30078,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 0,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -29820,8 +30095,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 445.5726318359375,
-                        "y": 101.76486206054688
+                        "x": 1063.5888671875,
+                        "y": -843.651611328125
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -29849,12 +30124,50 @@
                             "collected": false,
                             "fadeSpeed": 5.0,
                             "fragmentId": 1,
-                            "pickupSfx": "",
+                            "pickupSfx": "fragment_collect_1",
                             "requiresLight": true
                         },
                         "scriptPath": "components/fragment.lua"
                     }
                 ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 0.0,
@@ -29866,7 +30179,7 @@
                         "x": 100.0,
                         "y": 100.0
                     },
-                    "sortOrder": 2,
+                    "sortOrder": 0,
                     "textureId": "fragmentsample",
                     "unlit": true,
                     "uv": [
@@ -29883,8 +30196,8 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": 1656.330078125,
-                        "y": -248.01339721679688
+                        "x": -389.4388427734375,
+                        "y": -501.1368103027344
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -49264,6 +49577,1011 @@
                 }
             },
             "name": "marble l"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {
+                            "_alpha": 1.0,
+                            "_baseY": 0.0,
+                            "_initialized": false,
+                            "_timer": 0.0,
+                            "bobAmount": 10.0,
+                            "bobSpeed": 2.0,
+                            "collected": false,
+                            "fadeSpeed": 5.0,
+                            "fragmentId": 6,
+                            "pickupSfx": "fragment_collect_1",
+                            "requiresLight": true
+                        },
+                        "scriptPath": "components/fragment.lua"
+                    }
+                ],
+                "particleEmitter": {
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 100.0
+                    },
+                    "active": true,
+                    "colorEnd": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "colorStart": {
+                        "a": 1.0,
+                        "b": 0.9471510648727417,
+                        "g": 1.0,
+                        "r": 0.619217038154602
+                    },
+                    "direction": {
+                        "x": 0.2800000011920929,
+                        "y": -0.23999999463558197
+                    },
+                    "lifeMax": 1.6200000047683716,
+                    "lifeMin": 0.5,
+                    "localOffset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "looping": true,
+                    "rate": 0.6000000238418579,
+                    "sizeEnd": 0.0,
+                    "sizeStart": 2.6500000953674316,
+                    "spawnRadius": 62.79999923706055,
+                    "speedMax": 8.0,
+                    "speedMin": 0.0,
+                    "spreadDeg": 45.0,
+                    "worldSpace": true
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 0.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "fragmentsample",
+                    "unlit": true,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -359.88720703125,
+                        "y": 1020.9154052734375
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Fragment"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 100.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": true,
+                    "offset": {
+                        "x": -3.0,
+                        "y": -6.0
+                    },
+                    "radius": 25.0,
+                    "shape": 1,
+                    "width": 100.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "trash",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -950.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Trash"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "boxes",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -950.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "Boxes"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 172.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": -39.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 50.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "corridor wall4",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -850.0,
+                        "y": 450.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "orange tape2",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1422.6788330078125,
+                        "y": 157.5178985595703
+                    },
+                    "rotation": -1.864974021911621,
+                    "scale": {
+                        "x": 0.5600000023841858,
+                        "y": 0.5799999833106995
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "orange tape2"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 51.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": -1.0,
+                        "y": -6.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 59.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "danger barrier",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1259.77294921875,
+                        "y": -51.99066925048828
+                    },
+                    "rotation": 4.240051746368408,
+                    "scale": {
+                        "x": 1.1299999952316284,
+                        "y": 0.7300000190734863
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "danger barrier"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 60.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 52.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 2,
+                    "textureId": "cupboard2",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -850.1157836914063,
+                        "y": 295.5351257324219
+                    },
+                    "rotation": -3.139050006866455,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "cupboard2"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 47.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": -3.0,
+                        "y": -6.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 49.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "cupboard",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1350.0,
+                        "y": -150.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "cupboard"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "boxes",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1350.0,
+                        "y": 450.0
+                    },
+                    "rotation": 2.6566810607910156,
+                    "scale": {
+                        "x": 1.649999976158142,
+                        "y": 1.100000023841858
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "boxes"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "paperstack",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -950.0,
+                        "y": 450.0
+                    },
+                    "rotation": 0.36012542247772217,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "paperstack"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 44.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 5.0,
+                        "y": -3.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 67.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "bench",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1299.1337890625,
+                        "y": -107.68222045898438
+                    },
+                    "rotation": 2.430588722229004,
+                    "scale": {
+                        "x": 3.6699891090393066,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "bench"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 50.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 37.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": -26.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "corridor wall7",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1450.0,
+                        "y": -250.0
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "concrete bottom left wall"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 44.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 5.0,
+                        "y": -3.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 67.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 3,
+                    "textureId": "bench",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -991.5294189453125,
+                        "y": 450.0
+                    },
+                    "rotation": 6.132269382476807,
+                    "scale": {
+                        "x": 3.6699891090393066,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "bench"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 44.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 5.0,
+                        "y": -3.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 67.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 3,
+                    "textureId": "bench",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1250.0,
+                        "y": 450.0
+                    },
+                    "rotation": 6.3635663986206055,
+                    "scale": {
+                        "x": 3.6699891090393066,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "bench"
+        },
+        {
+            "active": true,
+            "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "combinedGroupId": 0,
+                    "height": 51.0,
+                    "isCombined": false,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": -1.0,
+                        "y": -6.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 59.0
+                },
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 0,
+                    "textureId": "danger barrier",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1380.7872314453125,
+                        "y": 188.27764892578125
+                    },
+                    "rotation": 1.8153622150421143,
+                    "scale": {
+                        "x": 1.1299999952316284,
+                        "y": 0.7300000190734863
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "danger barrier"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "dangersign1",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1392.8592529296875,
+                        "y": 41.29169845581055
+                    },
+                    "rotation": 0.0,
+                    "scale": {
+                        "x": 0.6600000262260437,
+                        "y": 0.6700000166893005
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "dangersign1"
+        },
+        {
+            "active": true,
+            "components": {
+                "spriteRenderer": {
+                    "color": {
+                        "a": 1.0,
+                        "b": 1.0,
+                        "g": 1.0,
+                        "r": 1.0
+                    },
+                    "size": {
+                        "x": 100.0,
+                        "y": 100.0
+                    },
+                    "sortOrder": 1,
+                    "textureId": "orange tape1",
+                    "unlit": false,
+                    "uv": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "visible": true
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "position": {
+                        "x": -1434.023681640625,
+                        "y": 16.487686157226563
+                    },
+                    "rotation": -4.352344512939453,
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "orange tape1"
         }
     ],
     "sfxVolume": 1.0,
@@ -49271,12 +50589,12 @@
         "enemy_death_1": 0.1889999955892563,
         "enemy_death_2": 0.15800000727176666,
         "enemy_death_3": 0.20499999821186066,
-        "fs_concrete_1": 0.05400000140070915,
-        "fs_concrete_2": 0.06300000101327896,
-        "fs_concrete_4": 0.06300000101327896,
-        "fs_tile_1": 0.029999999329447746,
-        "fs_tile_2": 0.05299999937415123,
-        "fs_tile_3": 0.04899999871850014,
+        "fs_concrete_1": 1.7100000381469727,
+        "fs_concrete_2": 1.7100000381469727,
+        "fs_concrete_4": 1.7100000381469727,
+        "fs_tile_1": 0.13099999725818634,
+        "fs_tile_2": 0.13099999725818634,
+        "fs_tile_3": 0.13099999725818634,
         "level_bgm": 0.2669999897480011,
         "menu_bgm": 0.7720000147819519
     },

@@ -1756,6 +1756,7 @@
         "TilemapMergedCollider",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
+        "TilemapMergedCollider",
         "TilemapMergedCollider"
     ],
     "hierarchyOrderIndices": [
@@ -2313,7 +2314,8 @@
         550,
         551,
         553,
-        554
+        554,
+        555
     ],
     "musicContext": "level_default",
     "objects": [
@@ -16900,7 +16902,7 @@
                     "tilePrefix": "fs_tile_",
                     "useSurfaceSounds": true,
                     "variationCount": 4,
-                    "volume": 0.5130000114440918,
+                    "volume": 1.065000057220459,
                     "woodPrefix": "fs_wood_"
                 },
                 "light": {
@@ -16928,10 +16930,10 @@
                             "footstepInterval": 0.6000000238418579,
                             "pushAnimFile": "pushing.json",
                             "pushClipName": "push",
-                            "pushSfxInterval": 0.3499999940395355,
+                            "pushSfxInterval": 0.949999988079071,
                             "pushSfxPrefix": "player_push_",
                             "pushSfxVariations": 3,
-                            "pushSfxVolume": 1.0,
+                            "pushSfxVolume": 0.20000000298023224,
                             "pushSpriteSheet": "pushing-export",
                             "sprintMultiplier": 2.0,
                             "walkSpeed": 10.0
@@ -30590,9 +30592,6 @@
         "enemy_death_1": 0.1889999955892563,
         "enemy_death_2": 0.15800000727176666,
         "enemy_death_3": 0.20499999821186066,
-        "fs_concrete_1": 0.05400000140070915,
-        "fs_concrete_2": 0.06300000101327896,
-        "fs_concrete_4": 0.06300000101327896,
         "fs_tile_1": 0.029999999329447746,
         "fs_tile_2": 0.05299999937415123,
         "fs_tile_3": 0.04899999871850014,

@@ -338,7 +338,9 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
     }
 
     const float shapedDistanceT = std::pow(distanceT, 0.6f);
-    const float shapedVolume = volume * (1.0f - (falloffAmount * shapedDistanceT));
+    const float profileVolume = std::max(0.0f, profile.volume);
+    const float shapedVolume =
+        (volume * profileVolume) * (1.0f - (falloffAmount * shapedDistanceT));
     const float boosted3DVolume =
         std::clamp(shapedVolume * k3DVolumeBoost, 0.0f, 5.0f);
     it->second.ch->setVolume(boosted3DVolume);
@@ -415,12 +417,9 @@ int AudioManager::play(const std::string &name) {
   auto it = m_soundProfiles.find(name);
   if (it != m_soundProfiles.end()) {
     const auto &p = it->second;
-    // Defaults: pitch is not supported in the main play() yet?
-    // Wait, main play() takes (id, group, volume, paused).
-    // It does NOT take pitch.
-    // If I need pitch, I must add pitch support to the main play() or handle it
-    // here.
-    int h = play(name, p.group, p.volume, false);
+    // Base volume stays at 1.0 here because play(id, group, volume, paused)
+    // already multiplies by the saved sound-profile volume.
+    int h = play(name, p.group, 1.0f, false);
 
     // Apply pitch if handle is valid
     if (h > 0 && p.pitch != 1.0f) {

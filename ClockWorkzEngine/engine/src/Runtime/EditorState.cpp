@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 54% [Amzar] 45% [Lebon] 1%
+\author(s)      [Syafiq] 49% [Amzar] 50% [Lebon] 1%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -224,6 +224,541 @@ private:
 // ---------------------------------------------------------------------------
 // Static helpers
 // ---------------------------------------------------------------------------
+
+using json = nlohmann::json;
+
+static json serializeEditorAssetEntity(ECS::World& world, ECS::Entity entity,
+                                       const vec2* positionOverride = nullptr) {
+    json obj;
+    std::string name = "Entity_" + std::to_string(entity.id);
+    if (auto* tag = world.getComponent<Components::Tag>(entity))
+        name = tag->tag;
+
+    obj["name"] = name;
+    obj["components"] = json::object();
+    auto& comps = obj["components"];
+
+    if (auto* t = world.getComponent<Components::Transform>(entity)) {
+        const vec2 position = positionOverride ? *positionOverride : t->position;
+        comps["transform"] = {
+            {"position", {{"x", position.x}, {"y", position.y}}},
+            {"rotation", t->rotation},
+            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}},
+            {"pivot",    {{"x", t->pivot.x},    {"y", t->pivot.y}}},
+            {"snapToGrid", t->snapToGrid}};
+    }
+
+    if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity)) {
+        comps["spriteRenderer"] = {
+            {"textureId", sr->textureId},
+            {"uv",    {sr->uv.x, sr->uv.y, sr->uv.z, sr->uv.w}},
+            {"size",  {{"x", sr->size.x},  {"y", sr->size.y}}},
+            {"color", {{"r", sr->color.r}, {"g", sr->color.g},
+                       {"b", sr->color.b}, {"a", sr->color.a}}},
+            {"visible", sr->visible},
+            {"unlit", sr->unlit},
+            {"sortOrder", sr->sortOrder}};
+    }
+
+    if (auto* c = world.getComponent<Components::Collider>(entity)) {
+        comps["collider"] = {
+            {"shape",    static_cast<int>(c->shape)},
+            {"width",    c->size.x},
+            {"height",   c->size.y},
+            {"offset",   {{"x", c->offset.x}, {"y", c->offset.y}}},
+            {"radius",   c->radius},
+            {"isSolid",  c->isSolid},
+            {"isTrigger", c->isTrigger},
+            {"blocksLight", c->blocksLight},
+            {"isHazard", c->isHazard},
+            {"moveable", c->moveable},
+            {"isCombined", c->isCombined},
+            {"combinedGroupId", c->combinedGroupId},
+            {"mass",     c->mass},
+            {"collisionCategory", c->collisionCategory},
+            {"collisionMask",     c->collisionMask}};
+    }
+
+    if (auto* tag = world.getComponent<Components::Tag>(entity))
+        comps["tag"] = {{"tag", tag->tag}};
+
+    if (auto* vel = world.getComponent<Components::Velocity>(entity)) {
+        comps["velocity"] = {
+            {"x", vel->velocity.x},
+            {"y", vel->velocity.y},
+            {"moveSpeed", vel->moveSpeed}};
+    }
+
+    if (auto* au = world.getComponent<Components::AudioSource>(entity)) {
+        comps["audioSource"] = {
+            {"soundId", au->soundId},
+            {"volume", au->volume},
+            {"loop", au->loop},
+            {"playOnStart", au->playOnStart}};
+    }
+
+    if (auto* ls = world.getComponent<Components::LuaScript>(entity)) {
+        json arr = json::array();
+        for (auto& entry : ls->scripts) {
+            json lsj;
+            lsj["scriptPath"] = entry.scriptPath;
+            lsj["enabled"] = entry.enabled;
+            if (!entry.properties.empty()) {
+                json propsJ = json::object();
+                for (auto& [key, val] : entry.properties)
+                    std::visit([&](auto&& v) { propsJ[key] = v; }, val);
+                lsj["properties"] = propsJ;
+            }
+            arr.push_back(lsj);
+        }
+        comps["luaScript"] = arr;
+    }
+
+    if (auto* sa = world.getComponent<Components::SpriteAnimator>(entity)) {
+        comps["spriteAnimator"] = {
+            {"filename", sa->filename},
+            {"currentClip", sa->currentClip}};
+    }
+
+    if (auto* sm = world.getComponent<Components::StateMachine>(entity))
+        comps["stateMachine"] = {{"currentState", sm->currentState}};
+
+    if (auto* textComp = world.getComponent<Components::TextRenderer>(entity)) {
+        comps["textRenderer"] = {
+            {"text", textComp->text},
+            {"fontId", textComp->fontId},
+            {"fontSize", textComp->fontSize},
+            {"color", {{"r", textComp->color.r}, {"g", textComp->color.g},
+                       {"b", textComp->color.b}}},
+            {"visible", textComp->visible},
+            {"boxSize", {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
+            {"alignment", static_cast<int>(textComp->alignment)},
+            {"verticalAlignment", static_cast<int>(textComp->verticalAlign)},
+            {"wordWrap", textComp->wordWrap},
+            {"lineSpacing", textComp->lineSpacing},
+            {"padding", {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
+    }
+
+    if (auto* lt = world.getComponent<Components::Light>(entity)) {
+        comps["light"] = {
+            {"active", lt->active},
+            {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
+            {"color", {{"r", lt->color.r}, {"g", lt->color.g}, {"b", lt->color.b}}},
+            {"radius", lt->radius},
+            {"angle", lt->angle},
+            {"intensity", lt->intensity}};
+    }
+
+    if (auto* fa = world.getComponent<Components::FootstepAudio>(entity)) {
+        comps["footstepAudio"] = {
+            {"interval", fa->interval},
+            {"sprintIntervalScale", fa->sprintIntervalScale},
+            {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
+            {"minSpeed", fa->minSpeed},
+            {"resetDelay", fa->resetDelay},
+            {"volume", fa->volume},
+            {"variationCount", fa->variationCount},
+            {"useSurfaceSounds", fa->useSurfaceSounds},
+            {"soundPrefix", fa->soundPrefix},
+            {"concretePrefix", fa->concretePrefix},
+            {"tilePrefix", fa->tilePrefix},
+            {"woodPrefix", fa->woodPrefix}};
+    }
+
+    if (auto* pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+        auto& sys = pe->system();
+        comps["particleEmitter"] = {
+            {"active", pe->active()},
+            {"rate", sys.rate},
+            {"lifeMin", sys.lifeMin},
+            {"lifeMax", sys.lifeMax},
+            {"speedMin", sys.speedMin},
+            {"speedMax", sys.speedMax},
+            {"sizeStart", sys.sizeStart},
+            {"sizeEnd", sys.sizeEnd},
+            {"spreadDeg", sys.spreadDeg},
+            {"spawnRadius", sys.spawnRadius},
+            {"looping", sys.looping},
+            {"worldSpace", sys.worldSpace},
+            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+            {"acceleration", {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+            {"localOffset", {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}},
+            {"colorStart", {{"r", sys.colorStart.r}, {"g", sys.colorStart.g},
+                            {"b", sys.colorStart.b}, {"a", sys.colorStart.a}}},
+            {"colorEnd", {{"r", sys.colorEnd.r}, {"g", sys.colorEnd.g},
+                          {"b", sys.colorEnd.b}, {"a", sys.colorEnd.a}}}
+        };
+    }
+
+    if (auto* btn = world.getComponent<Components::UIButton>(entity)) {
+        comps["uiButton"] = {
+            {"action", btn->action},
+            {"uiScript", btn->uiScript},
+            {"interactable", btn->interactable},
+            {"showBackground", btn->showBackground},
+            {"size", {{"x", btn->size.x}, {"y", btn->size.y}}},
+            {"offset", {{"x", btn->offset.x}, {"y", btn->offset.y}}},
+            {"normalColor", {{"r", btn->normalColor.r}, {"g", btn->normalColor.g},
+                             {"b", btn->normalColor.b}}},
+            {"hoverColor", {{"r", btn->hoverColor.r}, {"g", btn->hoverColor.g},
+                            {"b", btn->hoverColor.b}}}
+        };
+    }
+
+    if (auto* sl = world.getComponent<Components::UISlider>(entity)) {
+        comps["uiSlider"] = {
+            {"settingKey", sl->settingKey},
+            {"minValue", sl->minValue},
+            {"maxValue", sl->maxValue},
+            {"value", sl->value},
+            {"trackWidth", sl->trackWidth},
+            {"trackHeight", sl->trackHeight},
+            {"handleSize", sl->handleSize},
+            {"trackColor", {{"r", sl->trackColor.r}, {"g", sl->trackColor.g},
+                            {"b", sl->trackColor.b}, {"a", sl->trackColor.a}}},
+            {"fillColor", {{"r", sl->fillColor.r}, {"g", sl->fillColor.g},
+                           {"b", sl->fillColor.b}, {"a", sl->fillColor.a}}},
+            {"handleColor", {{"r", sl->handleColor.r}, {"g", sl->handleColor.g},
+                             {"b", sl->handleColor.b}, {"a", sl->handleColor.a}}}
+        };
+    }
+
+    if (auto* cam = world.getComponent<Components::CameraComponent>(entity)) {
+        comps["cameraComponent"] = {
+            {"isMain", cam->isMain},
+            {"zoom", cam->zoom},
+            {"offset", {{"x", cam->offset.x}, {"y", cam->offset.y}}}};
+    }
+
+    return obj;
+}
+
+static ECS::Entity spawnEditorAssetEntity(ECS::World& world, const json& objectData,
+                                          vec2 position, bool applyStoredPositionAsOffset) {
+    auto entity = world.createEntity();
+    if (!objectData.contains("components"))
+        return entity;
+
+    const auto& c = objectData["components"];
+    std::string entityTag = objectData.value("name", "Entity");
+    if (c.contains("tag"))
+        entityTag = c["tag"].value("tag", entityTag);
+    world.addComponent(entity, Components::Tag{entityTag});
+
+    if (c.contains("transform")) {
+        Components::Transform t;
+        vec2 finalPosition = position;
+        if (c["transform"].contains("position")) {
+            const vec2 storedPosition{
+                c["transform"]["position"].value("x", 0.f),
+                c["transform"]["position"].value("y", 0.f)
+            };
+            finalPosition = applyStoredPositionAsOffset ? position + storedPosition : storedPosition;
+        }
+        t.position = finalPosition;
+        t.rotation = c["transform"].value("rotation", 0.f);
+        if (c["transform"].contains("scale")) {
+            t.scale.x = c["transform"]["scale"].value("x", 1.f);
+            t.scale.y = c["transform"]["scale"].value("y", 1.f);
+        }
+        if (c["transform"].contains("pivot")) {
+            t.pivot.x = c["transform"]["pivot"].value("x", 0.f);
+            t.pivot.y = c["transform"]["pivot"].value("y", 0.f);
+        }
+        t.snapToGrid = c["transform"].value("snapToGrid", false);
+        world.addComponent(entity, t);
+    } else {
+        Components::Transform t;
+        t.position = position;
+        world.addComponent(entity, t);
+    }
+
+    if (c.contains("spriteRenderer")) {
+        Components::SpriteRenderer sr;
+        sr.textureId = c["spriteRenderer"].value("textureId", "");
+        if (c["spriteRenderer"].contains("uv") &&
+            c["spriteRenderer"]["uv"].is_array() &&
+            c["spriteRenderer"]["uv"].size() == 4) {
+            sr.uv = {
+                c["spriteRenderer"]["uv"][0],
+                c["spriteRenderer"]["uv"][1],
+                c["spriteRenderer"]["uv"][2],
+                c["spriteRenderer"]["uv"][3]
+            };
+        }
+        if (c["spriteRenderer"].contains("size")) {
+            sr.size.x = c["spriteRenderer"]["size"].value("x", 50.f);
+            sr.size.y = c["spriteRenderer"]["size"].value("y", 50.f);
+        }
+        if (c["spriteRenderer"].contains("color")) {
+            sr.color.r = c["spriteRenderer"]["color"].value("r", 1.f);
+            sr.color.g = c["spriteRenderer"]["color"].value("g", 1.f);
+            sr.color.b = c["spriteRenderer"]["color"].value("b", 1.f);
+            sr.color.a = c["spriteRenderer"]["color"].value("a", 1.f);
+        }
+        sr.visible = c["spriteRenderer"].value("visible", true);
+        sr.unlit = c["spriteRenderer"].value("unlit", false);
+        sr.sortOrder = c["spriteRenderer"].value("sortOrder", 0);
+        world.addComponent(entity, sr);
+    }
+
+    if (c.contains("collider")) {
+        Components::Collider col;
+        col.shape   = static_cast<Components::Collider::Shape>(c["collider"].value("shape", 0));
+        col.size.x  = c["collider"].value("width", 50.f);
+        col.size.y  = c["collider"].value("height", 50.f);
+        if (c["collider"].contains("offset")) {
+            col.offset.x = c["collider"]["offset"].value("x", 0.f);
+            col.offset.y = c["collider"]["offset"].value("y", 0.f);
+        }
+        col.radius = c["collider"].value("radius", 25.f);
+        col.isSolid = c["collider"].value("isSolid", true);
+        col.isTrigger = c["collider"].value("isTrigger", false);
+        col.blocksLight = c["collider"].value("blocksLight", false);
+        col.isHazard = c["collider"].value("isHazard", false);
+        col.moveable = c["collider"].value("moveable", false);
+        col.isCombined = c["collider"].value("isCombined", false);
+        col.combinedGroupId = c["collider"].value("combinedGroupId", 0u);
+        col.mass = c["collider"].value("mass", 1.f);
+        col.collisionCategory = c["collider"].value("collisionCategory", 1);
+        col.collisionMask = c["collider"].value("collisionMask", 0xFFFFFFFF);
+        world.addComponent(entity, col);
+    }
+
+    if (c.contains("velocity")) {
+        Components::Velocity vel;
+        vel.velocity.x = c["velocity"].value("x", 0.f);
+        vel.velocity.y = c["velocity"].value("y", 0.f);
+        vel.moveSpeed = c["velocity"].value("moveSpeed", 100.f);
+        world.addComponent(entity, vel);
+    }
+
+    if (c.contains("audioSource")) {
+        Components::AudioSource au;
+        au.soundId = c["audioSource"].value("soundId", "");
+        au.volume = c["audioSource"].value("volume", 1.f);
+        au.loop = c["audioSource"].value("loop", false);
+        au.playOnStart = c["audioSource"].value("playOnStart", false);
+        world.addComponent(entity, au);
+    }
+
+    if (c.contains("luaScript")) {
+        Components::LuaScript ls;
+        auto& lsData = c["luaScript"];
+        auto deserializeEntry = [](const json& lsj) {
+            Components::LuaScriptEntry entry;
+            entry.scriptPath = lsj.value("scriptPath", "");
+            entry.enabled = lsj.value("enabled", true);
+            if (lsj.contains("properties") && !entry.scriptPath.empty()) {
+                auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
+                for (auto& def : propDefs) {
+                    if (!lsj["properties"].contains(def.name))
+                        continue;
+                    auto& jv = lsj["properties"][def.name];
+                    if      (def.type == "float") entry.properties[def.name] = jv.get<float>();
+                    else if (def.type == "int") entry.properties[def.name] = jv.get<int>();
+                    else if (def.type == "bool") entry.properties[def.name] = jv.get<bool>();
+                    else if (def.type == "string" || def.type == "texture" || def.type == "animation")
+                        entry.properties[def.name] = jv.get<std::string>();
+                }
+            }
+            return entry;
+        };
+        if (lsData.is_array()) {
+            for (auto& item : lsData)
+                ls.scripts.push_back(deserializeEntry(item));
+        } else {
+            ls.scripts.push_back(deserializeEntry(lsData));
+        }
+        world.addComponent(entity, ls);
+    }
+
+    if (c.contains("spriteAnimator")) {
+        Components::SpriteAnimator sa;
+        sa.filename = c["spriteAnimator"].value("filename", "");
+        sa.currentClip = c["spriteAnimator"].value("currentClip", "");
+        if (!sa.filename.empty())
+            sa.loadFromPath("assets/animations/" + sa.filename);
+        world.addComponent(entity, sa);
+    }
+
+    if (c.contains("stateMachine")) {
+        Components::StateMachine sm;
+        sm.currentState = c["stateMachine"].value("currentState", "idle");
+        world.addComponent(entity, sm);
+    }
+
+    if (c.contains("textRenderer")) {
+        const auto& textRendererJson = c["textRenderer"];
+        Components::TextRenderer textComp;
+        textComp.text = textRendererJson.value("text", "");
+        textComp.fontId = textRendererJson.value("fontId", "Debug");
+        textComp.fontSize = textRendererJson.value("fontSize", 1.f);
+        textComp.visible = textRendererJson.value("visible", true);
+        textComp.alignment = static_cast<Components::TextAlignment>(textRendererJson.value("alignment", 0));
+        textComp.verticalAlign = static_cast<Components::VerticalAlignment>(textRendererJson.value("verticalAlignment", 0));
+        textComp.wordWrap = textRendererJson.value("wordWrap", true);
+        textComp.lineSpacing = textRendererJson.value("lineSpacing", 1.f);
+        if (textRendererJson.contains("color")) {
+            textComp.color.r = textRendererJson["color"].value("r", 1.f);
+            textComp.color.g = textRendererJson["color"].value("g", 1.f);
+            textComp.color.b = textRendererJson["color"].value("b", 1.f);
+        }
+        if (textRendererJson.contains("boxSize")) {
+            textComp.boxSize.x = textRendererJson["boxSize"].value("x", 200.f);
+            textComp.boxSize.y = textRendererJson["boxSize"].value("y", 100.f);
+        }
+        if (textRendererJson.contains("padding")) {
+            textComp.padding.x = textRendererJson["padding"].value("x", 0.f);
+            textComp.padding.y = textRendererJson["padding"].value("y", 0.f);
+        }
+        world.addComponent(entity, textComp);
+    }
+
+    if (c.contains("light")) {
+        Components::Light lt;
+        lt.active = c["light"].value("active", true);
+        if (c["light"].contains("offset")) {
+            lt.offset.x = c["light"]["offset"].value("x", 35.f);
+            lt.offset.y = c["light"]["offset"].value("y", -20.f);
+        }
+        if (c["light"].contains("color")) {
+            lt.color.r = c["light"]["color"].value("r", 1.f);
+            lt.color.g = c["light"]["color"].value("g", 0.9f);
+            lt.color.b = c["light"]["color"].value("b", 0.6f);
+        }
+        lt.radius = c["light"].value("radius", 300.f);
+        lt.angle = c["light"].value("angle", 60.f);
+        lt.intensity = c["light"].value("intensity", 1.f);
+        world.addComponent(entity, lt);
+    }
+
+    if (c.contains("footstepAudio")) {
+        Components::FootstepAudio fa;
+        fa.interval = c["footstepAudio"].value("interval", fa.interval);
+        fa.sprintIntervalScale = c["footstepAudio"].value("sprintIntervalScale", fa.sprintIntervalScale);
+        fa.sprintSpeedThreshold = c["footstepAudio"].value("sprintSpeedThreshold", fa.sprintSpeedThreshold);
+        fa.minSpeed = c["footstepAudio"].value("minSpeed", fa.minSpeed);
+        fa.resetDelay = c["footstepAudio"].value("resetDelay", fa.resetDelay);
+        fa.volume = c["footstepAudio"].value("volume", fa.volume);
+        fa.variationCount = c["footstepAudio"].value("variationCount", fa.variationCount);
+        fa.useSurfaceSounds = c["footstepAudio"].value("useSurfaceSounds", fa.useSurfaceSounds);
+        fa.soundPrefix = c["footstepAudio"].value("soundPrefix", fa.soundPrefix);
+        fa.concretePrefix = c["footstepAudio"].value("concretePrefix", fa.concretePrefix);
+        fa.tilePrefix = c["footstepAudio"].value("tilePrefix", fa.tilePrefix);
+        fa.woodPrefix = c["footstepAudio"].value("woodPrefix", fa.woodPrefix);
+        world.addComponent(entity, fa);
+    }
+
+    if (c.contains("particleEmitter")) {
+        const auto& pec = c["particleEmitter"];
+        Components::ParticleEmitter pe;
+        pe.setActive(pec.value("active", true));
+        pe.localOffset.x = pec.contains("localOffset") ? pec["localOffset"].value("x", 0.f) : 0.f;
+        pe.localOffset.y = pec.contains("localOffset") ? pec["localOffset"].value("y", 0.f) : 0.f;
+        auto& sys = pe.system();
+        sys.rate = pec.value("rate", sys.rate);
+        sys.lifeMin = pec.value("lifeMin", sys.lifeMin);
+        sys.lifeMax = pec.value("lifeMax", sys.lifeMax);
+        sys.speedMin = pec.value("speedMin", sys.speedMin);
+        sys.speedMax = pec.value("speedMax", sys.speedMax);
+        sys.sizeStart = pec.value("sizeStart", sys.sizeStart);
+        sys.sizeEnd = pec.value("sizeEnd", sys.sizeEnd);
+        sys.spreadDeg = pec.value("spreadDeg", sys.spreadDeg);
+        sys.spawnRadius = pec.value("spawnRadius", sys.spawnRadius);
+        sys.looping = pec.value("looping", sys.looping);
+        sys.worldSpace = pec.value("worldSpace", sys.worldSpace);
+        if (pec.contains("direction")) {
+            sys.dir.x = pec["direction"].value("x", sys.dir.x);
+            sys.dir.y = pec["direction"].value("y", sys.dir.y);
+        }
+        if (pec.contains("acceleration")) {
+            sys.acceleration.x = pec["acceleration"].value("x", sys.acceleration.x);
+            sys.acceleration.y = pec["acceleration"].value("y", sys.acceleration.y);
+        }
+        if (pec.contains("colorStart")) {
+            sys.colorStart.r = pec["colorStart"].value("r", sys.colorStart.r);
+            sys.colorStart.g = pec["colorStart"].value("g", sys.colorStart.g);
+            sys.colorStart.b = pec["colorStart"].value("b", sys.colorStart.b);
+            sys.colorStart.a = pec["colorStart"].value("a", sys.colorStart.a);
+        }
+        if (pec.contains("colorEnd")) {
+            sys.colorEnd.r = pec["colorEnd"].value("r", sys.colorEnd.r);
+            sys.colorEnd.g = pec["colorEnd"].value("g", sys.colorEnd.g);
+            sys.colorEnd.b = pec["colorEnd"].value("b", sys.colorEnd.b);
+            sys.colorEnd.a = pec["colorEnd"].value("a", sys.colorEnd.a);
+        }
+        world.addComponent(entity, pe);
+    }
+
+    if (c.contains("uiButton")) {
+        Components::UIButton btn;
+        btn.action = c["uiButton"].value("action", "");
+        btn.uiScript = c["uiButton"].value("uiScript", "");
+        btn.interactable = c["uiButton"].value("interactable", true);
+        btn.showBackground = c["uiButton"].value("showBackground", true);
+        if (c["uiButton"].contains("size")) {
+            btn.size = {c["uiButton"]["size"].value("x", 0.f), c["uiButton"]["size"].value("y", 0.f)};
+        }
+        if (c["uiButton"].contains("offset")) {
+            btn.offset = {c["uiButton"]["offset"].value("x", 0.f), c["uiButton"]["offset"].value("y", 0.f)};
+        }
+        if (c["uiButton"].contains("normalColor")) {
+            btn.normalColor = {c["uiButton"]["normalColor"].value("r", 1.f),
+                               c["uiButton"]["normalColor"].value("g", 1.f),
+                               c["uiButton"]["normalColor"].value("b", 1.f)};
+        }
+        if (c["uiButton"].contains("hoverColor")) {
+            btn.hoverColor = {c["uiButton"]["hoverColor"].value("r", 1.f),
+                              c["uiButton"]["hoverColor"].value("g", 0.8f),
+                              c["uiButton"]["hoverColor"].value("b", 0.f)};
+        }
+        world.addComponent(entity, btn);
+    }
+
+    if (c.contains("uiSlider")) {
+        Components::UISlider sl;
+        sl.settingKey = c["uiSlider"].value("settingKey", "");
+        sl.minValue = c["uiSlider"].value("minValue", 0.f);
+        sl.maxValue = c["uiSlider"].value("maxValue", 1.f);
+        sl.value = c["uiSlider"].value("value", 1.f);
+        sl.trackWidth = c["uiSlider"].value("trackWidth", 400.f);
+        sl.trackHeight = c["uiSlider"].value("trackHeight", 18.f);
+        sl.handleSize = c["uiSlider"].value("handleSize", 22.f);
+        if (c["uiSlider"].contains("trackColor")) {
+            sl.trackColor = {c["uiSlider"]["trackColor"].value("r", 0.25f),
+                             c["uiSlider"]["trackColor"].value("g", 0.25f),
+                             c["uiSlider"]["trackColor"].value("b", 0.25f),
+                             c["uiSlider"]["trackColor"].value("a", 1.f)};
+        }
+        if (c["uiSlider"].contains("fillColor")) {
+            sl.fillColor = {c["uiSlider"]["fillColor"].value("r", 0.85f),
+                            c["uiSlider"]["fillColor"].value("g", 0.55f),
+                            c["uiSlider"]["fillColor"].value("b", 0.10f),
+                            c["uiSlider"]["fillColor"].value("a", 1.f)};
+        }
+        if (c["uiSlider"].contains("handleColor")) {
+            sl.handleColor = {c["uiSlider"]["handleColor"].value("r", 1.f),
+                              c["uiSlider"]["handleColor"].value("g", 1.f),
+                              c["uiSlider"]["handleColor"].value("b", 1.f),
+                              c["uiSlider"]["handleColor"].value("a", 1.f)};
+        }
+        world.addComponent(entity, sl);
+    }
+
+    if (c.contains("cameraComponent")) {
+        Components::CameraComponent cam;
+        cam.isMain = c["cameraComponent"].value("isMain", true);
+        cam.zoom = c["cameraComponent"].value("zoom", 1.0f);
+        if (c["cameraComponent"].contains("offset")) {
+            cam.offset.x = c["cameraComponent"]["offset"].value("x", 0.0f);
+            cam.offset.y = c["cameraComponent"]["offset"].value("y", 0.0f);
+        }
+        world.addComponent(entity, cam);
+    }
+
+    return entity;
+}
 
 static vec2 snapToGrid(const vec2& pos, float gridSize) {
     float half = gridSize * 0.5f;
@@ -447,6 +982,7 @@ void EditorState::onEnter() {
     m_currentAudioDir = "assets/audio";
 
     loadAvailablePrefabs();
+    loadAvailableEntityGroups();
     scanBSAAssets();
     loadBSASelection();
     m_layerVisible.assign(m_numLayers, true);
@@ -1653,6 +2189,36 @@ void EditorState::renderHierarchy() {
         }
     };
 
+    auto spawnEntityGroupIntoHierarchyGroup = [&](const std::string& assetGroupName, int parentGroupIdx) {
+        std::vector<ECS::Entity> spawnedEntities = spawnEntityGroup(assetGroupName, {0.f, 0.f});
+        if (spawnedEntities.empty()) return;
+
+        markHierarchyChanged("Spawn Entity Group");
+
+        HierarchyGroup newGroup;
+        newGroup.name = assetGroupName;
+        newGroup.parentGroupIdx = parentGroupIdx;
+
+        std::unordered_set<uint32_t> spawnedIds;
+        for (const auto& entity : spawnedEntities) {
+            if (!world.isValid(entity)) continue;
+            if (!spawnedIds.insert(entity.id).second) continue;
+
+            newGroup.entityIds.push_back(entity.id);
+            m_hierarchyOrder.erase(
+                std::remove(m_hierarchyOrder.begin(), m_hierarchyOrder.end(), entity.id),
+                m_hierarchyOrder.end());
+            groupedIds.insert(entity.id);
+        }
+
+        if (newGroup.entityIds.empty()) return;
+
+        m_hierarchyGroups.push_back(std::move(newGroup));
+        m_selectedGroupIdx = static_cast<int>(m_hierarchyGroups.size()) - 1;
+        m_selectedEntities = std::move(spawnedEntities);
+        m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0} : m_selectedEntities.front();
+    };
+
     // Reorder: if the dragged entity is selected, move ALL selected entities
     // together (maintaining relative order) to the drop position.
     // If dragging an unselected entity, move only that one.
@@ -2203,6 +2769,11 @@ void EditorState::renderHierarchy() {
                 uint32_t srcId = *(const uint32_t*)p->Data;
                 moveEntitiesIntoGroup(getDraggedEntityIds(srcId), grp);
             }
+            if (auto* p = ImGui::AcceptDragDropPayload("ENTITY_GROUP_NAME")) {
+                const char* groupName = static_cast<const char*>(p->Data);
+                if (groupName && groupName[0] != '\0')
+                    spawnEntityGroupIntoHierarchyGroup(groupName, gi);
+            }
             if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
                 int draggedGroupIdx = *(const int*)p->Data;
                 if (draggedGroupIdx != gi &&
@@ -2514,6 +3085,11 @@ void EditorState::renderHierarchy() {
 
     ImGui::InvisibleButton("##grouprootdrop", ImVec2(-1.0f, 8.0f));
     if (ImGui::BeginDragDropTarget()) {
+        if (auto* p = ImGui::AcceptDragDropPayload("ENTITY_GROUP_NAME")) {
+            const char* groupName = static_cast<const char*>(p->Data);
+            if (groupName && groupName[0] != '\0')
+                spawnEntityGroupIntoHierarchyGroup(groupName, -1);
+        }
         if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
             int draggedGroupIdx = *(const int*)p->Data;
             if (draggedGroupIdx >= 0 && draggedGroupIdx < (int)m_hierarchyGroups.size()) {
@@ -5116,6 +5692,19 @@ void EditorState::renderViewport() {
                 m_selectedEntities.push_back(e);
             }
         }
+        if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("ENTITY_GROUP_NAME")) {
+            const char* groupName = static_cast<const char*>(pl->Data);
+            ImVec2 mp = ImGui::GetMousePos();
+            vec2 wPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+            if (m_snapToGrid) wPos = snapToGrid(wPos, m_gridSize);
+            std::vector<ECS::Entity> spawnedEntities = spawnEntityGroup(groupName, wPos);
+            m_selectedEntities.clear();
+            for (const auto& entity : spawnedEntities) {
+                if (m_scene.GetWorld().isValid(entity))
+                    m_selectedEntities.push_back(entity);
+            }
+            m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0} : m_selectedEntities.front();
+        }
         ImGui::EndDragDropTarget();
     }
 
@@ -7338,6 +7927,14 @@ void EditorState::renderAudioBrowser() {
             cfg.filterPeak = std::clamp(m_editAudioFilterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
             cfg.filterReleaseEnd = std::clamp(m_editAudioFilterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
             if (Assets::SoundManager::UpdateConfig(originalAudioName, cfg, kSoundConfig)) {
+                const auto& soundOverrides = m_scene.soundVolumeOverrides();
+                const auto overrideIt = soundOverrides.find(originalAudioName);
+                if (overrideIt != soundOverrides.end()) {
+                    if (cfg.name != originalAudioName) {
+                        m_scene.removeSoundVolumeOverride(originalAudioName);
+                    }
+                    m_scene.setSoundVolumeOverride(cfg.name, cfg.volume);
+                }
                 for (auto& selectedAudio : m_selectedAudioAssets) {
                     if (selectedAudio == originalAudioName) {
                         selectedAudio = cfg.name;
@@ -7502,6 +8099,10 @@ void EditorState::renderAudioBrowser() {
                 cfg.filterPeak = std::clamp(cfg.filterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
                 cfg.filterReleaseEnd = std::clamp(cfg.filterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
                 if (Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig)) {
+                    const auto& soundOverrides = m_scene.soundVolumeOverrides();
+                    if (soundOverrides.find(soundName) != soundOverrides.end()) {
+                        m_scene.setSoundVolumeOverride(soundName, cfg.volume);
+                    }
                     ++updatedCount;
                 }
             }
@@ -8303,178 +8904,97 @@ void EditorState::loadAvailablePrefabs() {
     }
 }
 
+void EditorState::loadAvailableEntityGroups() {
+    namespace fs = std::filesystem;
+    const std::vector<std::string> previousCategoryOrder = m_availableEntityGroupCategories;
+    m_availableEntityGroupEntries.clear();
+    m_availableEntityGroupCategories.clear();
+
+    const std::string dir = "assets/entity_groups/";
+    if (fs::exists(dir) && fs::is_directory(dir)) {
+        for (const auto& entry : fs::directory_iterator(dir)) {
+            if (!entry.is_regular_file() || entry.path().extension() != ".json")
+                continue;
+
+            std::string category = "Uncategorized";
+            std::string textureId;
+            int entityCount = 0;
+            std::ifstream groupFile(entry.path());
+            if (groupFile.is_open()) {
+                try {
+                    json groupJson;
+                    groupFile >> groupJson;
+                    if (groupJson.contains("category") && groupJson["category"].is_string()) {
+                        category = groupJson["category"].get<std::string>();
+                        if (category.empty())
+                            category = "Uncategorized";
+                    }
+                    if (groupJson.contains("objects") && groupJson["objects"].is_array()) {
+                        entityCount = static_cast<int>(groupJson["objects"].size());
+                        if (groupJson.contains("previewTextureId") && groupJson["previewTextureId"].is_string())
+                            textureId = groupJson["previewTextureId"].get<std::string>();
+                        if (textureId.empty()) {
+                            for (const auto& object : groupJson["objects"]) {
+                                if (object.contains("components") &&
+                                    object["components"].contains("spriteRenderer") &&
+                                    object["components"]["spriteRenderer"].contains("textureId") &&
+                                    object["components"]["spriteRenderer"]["textureId"].is_string()) {
+                                    textureId = object["components"]["spriteRenderer"]["textureId"].get<std::string>();
+                                    if (!textureId.empty())
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                } catch (...) {}
+            }
+
+            m_availableEntityGroupEntries.push_back({
+                entry.path().stem().string(),
+                category,
+                textureId,
+                entityCount
+            });
+        }
+    }
+
+    std::sort(m_availableEntityGroupEntries.begin(), m_availableEntityGroupEntries.end(),
+        [](const EntityGroupBrowserEntry& a, const EntityGroupBrowserEntry& b) {
+            if (a.category != b.category)
+                return a.category < b.category;
+            return a.name < b.name;
+        });
+
+    std::vector<std::string> discoveredCategories;
+    for (const auto& group : m_availableEntityGroupEntries) {
+        if (std::find(discoveredCategories.begin(), discoveredCategories.end(),
+                      group.category) == discoveredCategories.end()) {
+            discoveredCategories.push_back(group.category);
+        }
+    }
+
+    for (const auto& category : previousCategoryOrder) {
+        if (std::find(discoveredCategories.begin(), discoveredCategories.end(), category) !=
+            discoveredCategories.end()) {
+            m_availableEntityGroupCategories.push_back(category);
+        }
+    }
+
+    for (const auto& category : discoveredCategories) {
+        if (std::find(m_availableEntityGroupCategories.begin(), m_availableEntityGroupCategories.end(),
+                      category) == m_availableEntityGroupCategories.end()) {
+            m_availableEntityGroupCategories.push_back(category);
+        }
+    }
+}
+
 void EditorState::savePrefabFromEntity(ECS::Entity entity,
                                         const std::string& name,
                                         const std::string& category) {
-    using json = nlohmann::json;
     auto& world = m_scene.GetWorld();
-
-    json prefabJson;
-    prefabJson["name"]       = name;
-    prefabJson["category"]   = category;
-    prefabJson["components"] = json::object();
-    auto& comps = prefabJson["components"];
-
-    if (auto* t = world.getComponent<Components::Transform>(entity))
-        comps["transform"] = {
-            {"position", {{"x", t->position.x}, {"y", t->position.y}}},
-            {"rotation", t->rotation},
-            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}},
-            {"pivot",    {{"x", t->pivot.x},    {"y", t->pivot.y}}},
-            {"snapToGrid", t->snapToGrid}};
-
-    if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity))
-        comps["spriteRenderer"] = {
-            {"textureId", sr->textureId},
-            {"uv",    {sr->uv.x, sr->uv.y, sr->uv.z, sr->uv.w}},
-            {"size",  {{"x", sr->size.x},  {"y", sr->size.y}}},
-            {"color", {{"r", sr->color.r}, {"g", sr->color.g},
-                       {"b", sr->color.b}, {"a", sr->color.a}}},
-            {"visible", sr->visible},
-            {"unlit", sr->unlit},
-            {"sortOrder", sr->sortOrder}};
-
-    if (auto* c = world.getComponent<Components::Collider>(entity))
-        comps["collider"] = {
-            {"shape",    static_cast<int>(c->shape)},
-            {"width",    c->size.x}, {"height",  c->size.y},
-            {"offset",   {{"x", c->offset.x}, {"y", c->offset.y}}},
-            {"radius",   c->radius},
-            {"isSolid",  c->isSolid},  {"isTrigger",   c->isTrigger},
-            {"blocksLight", c->blocksLight}, {"isHazard", c->isHazard},
-            {"moveable", c->moveable},
-            {"mass",     c->mass},
-            {"collisionCategory", c->collisionCategory},
-            {"collisionMask",     c->collisionMask}};
-
-    if (auto* tag = world.getComponent<Components::Tag>(entity))
-        comps["tag"] = {{"tag", tag->tag}};
-
-    if (auto* vel = world.getComponent<Components::Velocity>(entity))
-        comps["velocity"] = {{"x", vel->velocity.x}, {"y", vel->velocity.y},
-                              {"moveSpeed", vel->moveSpeed}};
-
-    if (auto* au = world.getComponent<Components::AudioSource>(entity))
-        comps["audioSource"] = {{"soundId", au->soundId}, {"volume", au->volume},
-                                 {"loop", au->loop}, {"playOnStart", au->playOnStart}};
-
-    if (auto* ls = world.getComponent<Components::LuaScript>(entity)) {
-        json arr = json::array();
-        for (auto& entry : ls->scripts) {
-            json lsj;
-            lsj["scriptPath"] = entry.scriptPath;
-            lsj["enabled"]    = entry.enabled;
-            if (!entry.properties.empty()) {
-                json propsJ = json::object();
-                for (auto& [key, val] : entry.properties)
-                    std::visit([&](auto&& v) { propsJ[key] = v; }, val);
-                lsj["properties"] = propsJ;
-            }
-            arr.push_back(lsj);
-        }
-        comps["luaScript"] = arr;
-    }
-
-    if (auto* sa = world.getComponent<Components::SpriteAnimator>(entity))
-        comps["spriteAnimator"] = {{"filename", sa->filename},
-                                    {"currentClip", sa->currentClip}};
-
-    if (auto* sm = world.getComponent<Components::StateMachine>(entity))
-        comps["stateMachine"] = {{"currentState", sm->currentState}};
-
-    if (auto* textComp = world.getComponent<Components::TextRenderer>(entity))
-        comps["textRenderer"] = {{"text", textComp->text}, {"fontId", textComp->fontId},
-                                  {"fontSize", textComp->fontSize},
-                                  {"color", {{"r", textComp->color.r}, {"g", textComp->color.g}, {"b", textComp->color.b}}},
-                                  {"visible", textComp->visible},
-                                  {"boxSize", {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
-                                  {"alignment", static_cast<int>(textComp->alignment)},
-                                  {"verticalAlignment", static_cast<int>(textComp->verticalAlign)},
-                                  {"wordWrap", textComp->wordWrap},
-                                  {"lineSpacing", textComp->lineSpacing},
-                                  {"padding", {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
-
-    if (auto* lt = world.getComponent<Components::Light>(entity))
-        comps["light"] = {
-            {"active", lt->active},
-            {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
-            {"color", {{"r", lt->color.r}, {"g", lt->color.g}, {"b", lt->color.b}}},
-            {"radius", lt->radius},
-            {"angle", lt->angle},
-            {"intensity", lt->intensity}};
-
-    if (auto* fa = world.getComponent<Components::FootstepAudio>(entity))
-        comps["footstepAudio"] = {
-            {"interval", fa->interval},
-            {"sprintIntervalScale", fa->sprintIntervalScale},
-            {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
-            {"minSpeed", fa->minSpeed},
-            {"resetDelay", fa->resetDelay},
-            {"volume", fa->volume},
-            {"variationCount", fa->variationCount},
-            {"useSurfaceSounds", fa->useSurfaceSounds},
-            {"soundPrefix", fa->soundPrefix},
-            {"concretePrefix", fa->concretePrefix},
-            {"tilePrefix", fa->tilePrefix},
-            {"woodPrefix", fa->woodPrefix}};
-
-    if (auto* pe = world.getComponent<Components::ParticleEmitter>(entity)) {
-        auto& sys = pe->system();
-        comps["particleEmitter"] = {
-            {"active", pe->active()},
-            {"rate", sys.rate},
-            {"lifeMin", sys.lifeMin},
-            {"lifeMax", sys.lifeMax},
-            {"speedMin", sys.speedMin},
-            {"speedMax", sys.speedMax},
-            {"sizeStart", sys.sizeStart},
-            {"sizeEnd", sys.sizeEnd},
-            {"spreadDeg", sys.spreadDeg},
-            {"spawnRadius", sys.spawnRadius},
-            {"looping", sys.looping},
-            {"worldSpace", sys.worldSpace},
-            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
-            {"acceleration", {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
-            {"localOffset", {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}},
-            {"colorStart", {{"r", sys.colorStart.r}, {"g", sys.colorStart.g},
-                            {"b", sys.colorStart.b}, {"a", sys.colorStart.a}}},
-            {"colorEnd", {{"r", sys.colorEnd.r}, {"g", sys.colorEnd.g},
-                          {"b", sys.colorEnd.b}, {"a", sys.colorEnd.a}}}
-        };
-    }
-
-    if (auto* btn = world.getComponent<Components::UIButton>(entity))
-        comps["uiButton"] = {
-            {"action", btn->action},
-            {"uiScript", btn->uiScript},
-            {"interactable", btn->interactable},
-            {"showBackground", btn->showBackground},
-            {"size", {{"x", btn->size.x}, {"y", btn->size.y}}},
-            {"offset", {{"x", btn->offset.x}, {"y", btn->offset.y}}},
-            {"normalColor", {{"r", btn->normalColor.r}, {"g", btn->normalColor.g}, {"b", btn->normalColor.b}}},
-            {"hoverColor", {{"r", btn->hoverColor.r}, {"g", btn->hoverColor.g}, {"b", btn->hoverColor.b}}}};
-
-    if (auto* sl = world.getComponent<Components::UISlider>(entity))
-        comps["uiSlider"] = {
-            {"settingKey", sl->settingKey},
-            {"minValue", sl->minValue},
-            {"maxValue", sl->maxValue},
-            {"value", sl->value},
-            {"trackWidth", sl->trackWidth},
-            {"trackHeight", sl->trackHeight},
-            {"handleSize", sl->handleSize},
-            {"trackColor", {{"r", sl->trackColor.r}, {"g", sl->trackColor.g},
-                            {"b", sl->trackColor.b}, {"a", sl->trackColor.a}}},
-            {"fillColor", {{"r", sl->fillColor.r}, {"g", sl->fillColor.g},
-                           {"b", sl->fillColor.b}, {"a", sl->fillColor.a}}},
-            {"handleColor", {{"r", sl->handleColor.r}, {"g", sl->handleColor.g},
-                             {"b", sl->handleColor.b}, {"a", sl->handleColor.a}}}};
-
-    if (auto* cam = world.getComponent<Components::CameraComponent>(entity))
-        comps["cameraComponent"] = {
-            {"isMain", cam->isMain},
-            {"zoom", cam->zoom},
-            {"offset", {{"x", cam->offset.x}, {"y", cam->offset.y}}}};
+    json prefabJson = serializeEditorAssetEntity(world, entity);
+    prefabJson["name"] = name;
+    prefabJson["category"] = category;
 
     namespace fs = std::filesystem;
     std::string filepath = "assets/prefabs/" + name + ".json";
@@ -8487,6 +9007,87 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
         loadAvailablePrefabs();
     } else {
         std::cerr << "[Editor] Failed to save prefab: " << filepath << "\n";
+    }
+}
+
+void EditorState::saveEntityGroupFromSelection(const std::string& name,
+                                               const std::string& category) {
+    auto& world = m_scene.GetWorld();
+    std::vector<ECS::Entity> entitiesToSave;
+    entitiesToSave.reserve(m_selectedEntities.size());
+    std::unordered_set<uint32_t> seenIds;
+    for (const auto& entity : m_selectedEntities) {
+        if (world.isValid(entity) &&
+            world.hasComponent<Components::Transform>(entity) &&
+            seenIds.insert(entity.id).second) {
+            entitiesToSave.push_back(entity);
+        }
+    }
+
+    if (entitiesToSave.empty())
+        return;
+
+    ECS::Entity anchorEntity = entitiesToSave.front();
+    if (world.isValid(m_selectedEntity) && world.hasComponent<Components::Transform>(m_selectedEntity)) {
+        auto it = std::find_if(entitiesToSave.begin(), entitiesToSave.end(),
+            [&](ECS::Entity entity) {
+                return entity.id == m_selectedEntity.id && entity.generation == m_selectedEntity.generation;
+            });
+        if (it != entitiesToSave.end())
+            anchorEntity = *it;
+    }
+
+    const auto* anchorTransform = world.getComponent<Components::Transform>(anchorEntity);
+    if (anchorTransform == nullptr)
+        return;
+
+    json groupJson;
+    groupJson["name"] = name;
+    groupJson["category"] = category;
+    if (auto* tag = world.getComponent<Components::Tag>(anchorEntity))
+        groupJson["anchorTag"] = tag->tag;
+    groupJson["objects"] = json::array();
+
+    std::string previewTextureId;
+    for (const auto& entity : entitiesToSave) {
+        try {
+            if (auto* transform = world.getComponent<Components::Transform>(entity)) {
+                const vec2 relativePosition = transform->position - anchorTransform->position;
+                groupJson["objects"].push_back(serializeEditorAssetEntity(world, entity, &relativePosition));
+            }
+            if (previewTextureId.empty()) {
+                if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity))
+                    previewTextureId = sr->textureId;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[Editor] Skipped entity while saving group '" << name
+                      << "': " << e.what() << "\n";
+        } catch (...) {
+            std::cerr << "[Editor] Skipped entity while saving group '" << name
+                      << "' due to an unknown serialization error.\n";
+        }
+    }
+
+    if (!groupJson["objects"].is_array() || groupJson["objects"].empty()) {
+        std::cerr << "[Editor] Failed to save entity group '" << name
+                  << "': no serializable entities were selected.\n";
+        return;
+    }
+
+    if (!previewTextureId.empty())
+        groupJson["previewTextureId"] = previewTextureId;
+
+    namespace fs = std::filesystem;
+    const std::string filepath = "assets/entity_groups/" + name + ".json";
+    fs::create_directories(fs::path(filepath).parent_path());
+    std::ofstream out(filepath);
+    if (out) {
+        out << groupJson.dump(4);
+        out.close();
+        std::cout << "[Editor] Saved entity group: " << filepath << "\n";
+        loadAvailableEntityGroups();
+    } else {
+        std::cerr << "[Editor] Failed to save entity group: " << filepath << "\n";
     }
 }
 
@@ -8536,6 +9137,9 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     file >> pj;
     file.close();
 
+    return spawnEditorAssetEntity(m_scene.GetWorld(), pj, position, false);
+
+#if 0
     auto& world  = m_scene.GetWorld();
     auto  entity = world.createEntity();
 
@@ -8852,6 +9456,33 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     }
 
     return entity;
+#endif
+}
+
+std::vector<ECS::Entity> EditorState::spawnEntityGroup(const std::string& groupName, vec2 position) {
+    std::vector<ECS::Entity> spawnedEntities;
+    std::string filepath = "assets/entity_groups/" + groupName + ".json";
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[Editor] Failed to open entity group: " << filepath << "\n";
+        return spawnedEntities;
+    }
+
+    json groupJson;
+    file >> groupJson;
+    file.close();
+
+    if (!groupJson.contains("objects") || !groupJson["objects"].is_array())
+        return spawnedEntities;
+
+    auto& world = m_scene.GetWorld();
+    spawnedEntities.reserve(groupJson["objects"].size());
+    for (const auto& object : groupJson["objects"]) {
+        ECS::Entity entity = spawnEditorAssetEntity(world, object, position, true);
+        if (world.isValid(entity))
+            spawnedEntities.push_back(entity);
+    }
+    return spawnedEntities;
 }
 
 void EditorState::deletePrefab(const std::string& prefabName) {
@@ -9254,6 +9885,76 @@ void EditorState::renderPrefabBrowser() {
         if (!canSave) ImGui::EndDisabled();
     }
 
+    if (ImGui::CollapsingHeader("Save Selection as Group", ImGuiTreeNodeFlags_DefaultOpen)) {
+        int validSelectionCount = 0;
+        for (const auto& entity : m_selectedEntities) {
+            if (world.isValid(entity) && world.hasComponent<Components::Transform>(entity))
+                ++validSelectionCount;
+        }
+        ImGui::TextDisabled("%d selected entities", validSelectionCount);
+        ImGui::SetNextItemWidth(-1.f);
+        ImGui::InputText("Name##entitygroupname", m_saveEntityGroupNameBuf,
+                         sizeof(m_saveEntityGroupNameBuf));
+
+        int categoryComboIndex = static_cast<int>(m_availableEntityGroupCategories.size());
+        if (!m_saveEntityGroupUseCustomCategory) {
+            for (int i = 0; i < static_cast<int>(m_availableEntityGroupCategories.size()); ++i) {
+                if (m_availableEntityGroupCategories[i] == m_saveEntityGroupCategoryBuf) {
+                    categoryComboIndex = i;
+                    break;
+                }
+            }
+            if (categoryComboIndex == static_cast<int>(m_availableEntityGroupCategories.size()))
+                m_saveEntityGroupUseCustomCategory = true;
+        }
+
+        const char* categoryPreview =
+            (categoryComboIndex < static_cast<int>(m_availableEntityGroupCategories.size()))
+            ? m_availableEntityGroupCategories[categoryComboIndex].c_str()
+            : "Custom...";
+
+        if (ImGui::BeginCombo("Category##entitygroupcatcombo", categoryPreview)) {
+            for (int i = 0; i < static_cast<int>(m_availableEntityGroupCategories.size()); ++i) {
+                const bool isSelectedCategory = (categoryComboIndex == i);
+                if (ImGui::Selectable(m_availableEntityGroupCategories[i].c_str(), isSelectedCategory)) {
+                    categoryComboIndex = i;
+                    m_saveEntityGroupUseCustomCategory = false;
+                    strncpy_s(m_saveEntityGroupCategoryBuf, m_availableEntityGroupCategories[i].c_str(),
+                              sizeof(m_saveEntityGroupCategoryBuf) - 1);
+                }
+                if (isSelectedCategory) ImGui::SetItemDefaultFocus();
+            }
+
+            const bool customSelected =
+                (categoryComboIndex == static_cast<int>(m_availableEntityGroupCategories.size()));
+            if (ImGui::Selectable("Custom...", customSelected)) {
+                categoryComboIndex = static_cast<int>(m_availableEntityGroupCategories.size());
+                m_saveEntityGroupUseCustomCategory = true;
+                if (m_saveEntityGroupCategoryBuf[0] == '\0')
+                    strncpy_s(m_saveEntityGroupCategoryBuf, "Custom",
+                              sizeof(m_saveEntityGroupCategoryBuf) - 1);
+            }
+            if (customSelected) ImGui::SetItemDefaultFocus();
+            ImGui::EndCombo();
+        }
+
+        if (m_saveEntityGroupUseCustomCategory) {
+            ImGui::SetNextItemWidth(-1.f);
+            ImGui::InputText("Custom Category##entitygroupcat", m_saveEntityGroupCategoryBuf,
+                             sizeof(m_saveEntityGroupCategoryBuf));
+        } else {
+            ImGui::TextDisabled("Using existing category: %s", m_saveEntityGroupCategoryBuf);
+        }
+
+        const bool canSaveGroup = validSelectionCount > 0 &&
+                                  m_saveEntityGroupNameBuf[0] != '\0' &&
+                                  m_saveEntityGroupCategoryBuf[0] != '\0';
+        if (!canSaveGroup) ImGui::BeginDisabled();
+        if (ImGui::Button("Save Group##saveentitygroup", ImVec2(-1, 0)))
+            saveEntityGroupFromSelection(m_saveEntityGroupNameBuf, m_saveEntityGroupCategoryBuf);
+        if (!canSaveGroup) ImGui::EndDisabled();
+    }
+
     ImGui::Separator();
 
     if (!m_renamingPrefabPath.empty())
@@ -9570,6 +10271,88 @@ void EditorState::renderPrefabBrowser() {
                         continue;
                     ImGui::TableNextColumn();
                     renderPrefabTile(m_availablePrefabEntries[i], i);
+                }
+                ImGui::EndTable();
+            }
+        }
+        ImGui::EndChild();
+    }
+
+    if (ImGui::CollapsingHeader("Entity Group Library", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Refresh##entitygrouprefresh"))
+            loadAvailableEntityGroups();
+        ImGui::SameLine();
+        ImGui::TextDisabled("%zu groups across %zu categories",
+                            m_availableEntityGroupEntries.size(),
+                            m_availableEntityGroupCategories.size());
+
+        const float thumbSize = 64.f;
+        const float padding = 8.f;
+        const float cellSize = thumbSize + padding;
+        const float panelWidth = ImGui::GetContentRegionAvail().x;
+        const int cols = std::max(1, static_cast<int>(panelWidth / cellSize));
+        auto categoryCount = [&](const std::string& category) {
+            return static_cast<int>(std::count_if(
+                m_availableEntityGroupEntries.begin(), m_availableEntityGroupEntries.end(),
+                [&](const EntityGroupBrowserEntry& group) { return group.category == category; }));
+        };
+
+        const float groupListHeight = std::max(180.0f, ImGui::GetContentRegionAvail().y);
+        ImGui::BeginChild("##entitygrouplist", ImVec2(0, groupListHeight), true);
+        for (const auto& category : m_availableEntityGroupCategories) {
+            const int currentCategoryCount = categoryCount(category);
+            std::string headerLabel = category + " (" + std::to_string(currentCategoryCount) +
+                                      ")##entitygroupcat_" + category;
+            if (!ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                continue;
+
+            std::string tableId = "##entitygroupgrid_" + category;
+            if (ImGui::BeginTable(tableId.c_str(), cols)) {
+                for (int i = 0; i < static_cast<int>(m_availableEntityGroupEntries.size()); ++i) {
+                    const auto& group = m_availableEntityGroupEntries[i];
+                    if (group.category != category)
+                        continue;
+
+                    ImGui::TableNextColumn();
+                    ImGui::PushID(("entitygroup_" + group.name).c_str());
+                    auto tex = group.textureId.empty() ? nullptr : Assets::TextureManager::Get(group.textureId);
+                    bool clicked = false;
+                    if (tex && tex->id() != 0) {
+                        clicked = ImGui::ImageButton("##groupthumb",
+                                                     (ImTextureID)(intptr_t)tex->id(),
+                                                     ImVec2(thumbSize, thumbSize),
+                                                     ImVec2(0, 1), ImVec2(1, 0));
+                    } else {
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.f));
+                        clicked = ImGui::Button("##groupfallback", ImVec2(thumbSize, thumbSize));
+                        ImGui::PopStyleColor();
+                    }
+
+                    if (clicked) {
+                        m_selectedEntities = spawnEntityGroup(group.name, {0.f, 0.f});
+                        m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0}
+                                                                      : m_selectedEntities.front();
+                    }
+
+                    if (ImGui::BeginDragDropSource()) {
+                        ImGui::SetDragDropPayload("ENTITY_GROUP_NAME", group.name.c_str(),
+                                                  group.name.size() + 1);
+                        ImGui::Text("Drag group: %s", group.name.c_str());
+                        ImGui::EndDragDropSource();
+                    }
+
+                    if (ImGui::BeginPopupContextItem("##entitygroupcontext")) {
+                        if (ImGui::MenuItem("Spawn at Origin")) {
+                            m_selectedEntities = spawnEntityGroup(group.name, {0.f, 0.f});
+                            m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0}
+                                                                          : m_selectedEntities.front();
+                        }
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::TextWrapped("%s", group.name.c_str());
+                    ImGui::TextDisabled("%d entities", group.entityCount);
+                    ImGui::PopID();
                 }
                 ImGui::EndTable();
             }

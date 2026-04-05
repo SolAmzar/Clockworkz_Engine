@@ -146,7 +146,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_1.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.069000005722046
+            "volume": 1.7100000381469727
         },
         {
             "falloffAmount": 0.25,
@@ -163,7 +163,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_2.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.3980000019073486
+            "volume": 1.7100000381469727
         },
         {
             "falloffAmount": 0.25,
@@ -180,7 +180,7 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_3.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 1.25
+            "volume": 1.7100000381469727
         },
         {
             "falloffAmount": 0.25,
@@ -197,43 +197,75 @@
             "path": "assets/audio/fs/Concrete/fs_concrete_4.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 0.9869999885559082
+            "volume": 1.7100000381469727
         },
         {
+            "falloffAmount": 0.25,
+            "falloffStart": 120.0,
+            "filterInStart": 180.0,
+            "filterPeak": 320.0,
+            "filterReleaseEnd": 480.0,
             "group": "SFX",
-            "is3D": true,
+            "is3D": false,
             "loop": false,
+            "maxDistance": 520.0,
+            "minDistance": 80.0,
             "name": "fs_tile_1",
             "path": "assets/audio/fs/Tile/fs_tile_1.ogg",
+            "pitch": 1.0,
             "stream": false,
-            "volume": 0.029999999329447746
+            "volume": 0.13099999725818634
         },
         {
+            "falloffAmount": 0.25,
+            "falloffStart": 120.0,
+            "filterInStart": 180.0,
+            "filterPeak": 320.0,
+            "filterReleaseEnd": 480.0,
             "group": "SFX",
-            "is3D": true,
+            "is3D": false,
             "loop": false,
+            "maxDistance": 520.0,
+            "minDistance": 80.0,
             "name": "fs_tile_2",
             "path": "assets/audio/fs/Tile/fs_tile_2.ogg",
+            "pitch": 1.0,
             "stream": false,
-            "volume": 0.05299999937415123
+            "volume": 0.13099999725818634
         },
         {
+            "falloffAmount": 0.25,
+            "falloffStart": 120.0,
+            "filterInStart": 180.0,
+            "filterPeak": 320.0,
+            "filterReleaseEnd": 480.0,
             "group": "SFX",
-            "is3D": true,
+            "is3D": false,
             "loop": false,
+            "maxDistance": 520.0,
+            "minDistance": 80.0,
             "name": "fs_tile_3",
             "path": "assets/audio/fs/Tile/fs_tile_3.ogg",
+            "pitch": 1.0,
             "stream": false,
-            "volume": 0.04899999871850014
+            "volume": 0.13099999725818634
         },
         {
+            "falloffAmount": 0.25,
+            "falloffStart": 120.0,
+            "filterInStart": 180.0,
+            "filterPeak": 320.0,
+            "filterReleaseEnd": 480.0,
             "group": "SFX",
-            "is3D": true,
+            "is3D": false,
             "loop": false,
+            "maxDistance": 520.0,
+            "minDistance": 80.0,
             "name": "fs_tile_4",
             "path": "assets/audio/fs/Tile/fs_tile_4.ogg",
+            "pitch": 1.0,
             "stream": false,
-            "volume": 0.10000000149011612
+            "volume": 0.13099999725818634
         },
         {
             "group": "SFX",
@@ -320,9 +352,16 @@
             "volume": 1.0
         },
         {
+            "falloffAmount": 0.25,
+            "falloffStart": 120.0,
+            "filterInStart": 180.0,
+            "filterPeak": 320.0,
+            "filterReleaseEnd": 480.0,
             "group": "SFX",
             "is3D": false,
             "loop": false,
+            "maxDistance": 520.0,
+            "minDistance": 80.0,
             "name": "player_push_1",
             "path": "assets/audio/player_push_1.mp3",
             "pitch": 1.0,
@@ -330,9 +369,16 @@
             "volume": 1.0
         },
         {
+            "falloffAmount": 0.25,
+            "falloffStart": 120.0,
+            "filterInStart": 180.0,
+            "filterPeak": 320.0,
+            "filterReleaseEnd": 480.0,
             "group": "SFX",
             "is3D": false,
             "loop": false,
+            "maxDistance": 520.0,
+            "minDistance": 80.0,
             "name": "player_push_2",
             "path": "assets/audio/player_push_2.mp3",
             "pitch": 1.0,
@@ -364,7 +410,7 @@
             "path": "assets/audio/fs/wood/fs_wood_1.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 3.2730000019073486
+            "volume": 1.7929999828338623
         },
         {
             "falloffAmount": 0.25,
@@ -381,7 +427,7 @@
             "path": "assets/audio/fs/wood/fs_wood_2.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 3.2730000019073486
+            "volume": 1.7929999828338623
         },
         {
             "falloffAmount": 0.25,
@@ -398,7 +444,7 @@
             "path": "assets/audio/fs/wood/fs_wood_3.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 3.2730000019073486
+            "volume": 1.7929999828338623
         },
         {
             "falloffAmount": 0.25,
@@ -415,7 +461,7 @@
             "path": "assets/audio/fs/wood/fs_wood_4.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 3.2730000019073486
+            "volume": 1.7929999828338623
         },
         {
             "falloffAmount": 0.25,
@@ -432,7 +478,7 @@
             "path": "assets/audio/fs/wood/fs_wood_5.mp3",
             "pitch": 1.0,
             "stream": false,
-            "volume": 3.2730000019073486
+            "volume": 1.7929999828338623
         },
         {
             "group": "SFX",

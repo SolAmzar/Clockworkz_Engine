@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.cpp
 \project        Lights Out
- \author(s)      [Yusuf] 91% [Amzar] 9%
+\author(s)      [Yusuf] 89% [Amzar] 11%
 \brief          Implementation of TextureManager for data-driven texture loading
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights
@@ -127,6 +127,16 @@ TextureManager::LoadTexture(const std::string &name, const std::string &path) {
   auto texture = ResourceManager<Graphics::Texture2D>::Load(key, path);
 
   if (!texture) {
+    const std::string fallbackPath = findTexturePathOnDisk(name);
+    if (!fallbackPath.empty() && fallbackPath != path) {
+      texture = ResourceManager<Graphics::Texture2D>::Load(key, fallbackPath);
+      if (texture) {
+        s_resolvedTexturePaths[key] = fallbackPath;
+      }
+    }
+  }
+
+  if (!texture) {
     std::cerr << "[TextureManager] Failed to load texture file: " << path
               << std::endl;
     return nullptr;
@@ -163,12 +173,25 @@ TextureManager::Get(const std::string &name) {
   }
 
   std::string path = GetFilePath(name);
-  if (path.empty())
+  if (path.empty()) {
     path = findTexturePathOnDisk(name);
+  }
 
   if (!path.empty()) {
-    s_resolvedTexturePaths[key] = path;
     t = LoadTexture(name, path);
+    if (t) {
+      if (s_resolvedTexturePaths.find(key) == s_resolvedTexturePaths.end()) {
+        s_resolvedTexturePaths[key] = path;
+      }
+      s_missingTextureKeys.erase(key);
+      return t;
+    }
+  }
+
+  const std::string fallbackPath = findTexturePathOnDisk(name);
+  if (!fallbackPath.empty()) {
+    s_resolvedTexturePaths[key] = fallbackPath;
+    t = LoadTexture(name, fallbackPath);
     if (t) {
       s_missingTextureKeys.erase(key);
       return t;
