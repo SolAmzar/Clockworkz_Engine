@@ -45,6 +45,11 @@ void LuaManager::Initialize() {
                             sol::lib::math, sol::lib::table, sol::lib::debug,
                             sol::lib::bit32, sol::lib::io, sol::lib::utf8);
 
+  // Prepend the game scripts directory so require("cheat_manager") resolves to
+  // assets/scripts/cheat_manager.lua (same root ScriptSystem uses).
+  std::string existingPath = m_LuaState["package"]["path"];
+  m_LuaState["package"]["path"] = "assets/scripts/?.lua;assets/scripts/?/init.lua;" + existingPath;
+
   // Register engine-specific bindings
   RegisterEngineFunctions();
 

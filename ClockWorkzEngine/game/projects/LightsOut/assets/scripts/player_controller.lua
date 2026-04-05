@@ -19,6 +19,7 @@ Properties = {
     { name = "pushSpriteSheet",   type = "texture",   default = "",     label = "Push Sprite Sheet"   },
     { name = "pushAnimFile",      type = "animation", default = "",     label = "Push Anim File"       },
     { name = "pushClipName",      type = "string",    default = "push", label = "Push Clip Name"       },
+    { name = "_invincible",       type = "bool",      default = false,  label = "Invincible"           },
 }
 
 local PlayerController = {}
@@ -51,6 +52,7 @@ PlayerController._batteryDying   = false
 PlayerController._flickerTimer   = 0.0
 PlayerController._flickerStep    = 0.0
 PlayerController._isDead         = false
+PlayerController._invincible     = false
 PlayerController._deathTimer     = 0.0
 PlayerController._usingGamepad   = false
 PlayerController._prevMouseX     = nil   -- nil until first frame so no false delta
@@ -340,7 +342,7 @@ end
 
 function PlayerController:onCollisionEnter(entity, other)
 if other:getTagValue() == "Enemy" then
-        if not self._isDead then
+        if not self._isDead and not self._invincible then
             self._isDead = true
             if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
                 entity:playAnimation("death")

@@ -90,6 +90,7 @@ public:
   bool hasTextRenderer() const;
   std::string getText() const;
   void setText(const std::string &t);
+  void setTextColor(float r, float g, float b);
 
   // --- SpriteRenderer ---
   bool hasSpriteRenderer() const;
