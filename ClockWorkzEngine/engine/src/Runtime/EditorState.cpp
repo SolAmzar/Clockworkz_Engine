@@ -1648,6 +1648,9 @@ void EditorState::renderToolbar() {
         }
 
         ImGui::Separator(); ImGui::SameLine();
+        ImGui::Checkbox("Pick Box", &m_showPickBounds);
+
+        ImGui::Separator(); ImGui::SameLine();
 
         ImGui::Checkbox("Merged", &m_showMergedColliders);
         ImGui::SameLine();
@@ -1764,135 +1767,6 @@ void EditorState::renderToolbar() {
 
     ImGui::Separator();
 
-    // Quick buttons
-    if (ImGui::Button(" Hub "))  m_pendingReturnToHub = true;
-    if (ImGui::IsItemHovered())  ImGui::SetTooltip("Return to Editor Hub");
-    ImGui::SameLine();
-    if (ImGui::Button(" Save ")) m_pendingSave = true;
-    if (ImGui::IsItemHovered())  ImGui::SetTooltip("Save scene (Ctrl+S)");
-
-    ImGui::Separator(); ImGui::SameLine();
-
-    // Play button
-    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.15f, 0.60f, 0.15f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.80f, 0.20f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.45f, 0.10f, 1.0f));
-    if (ImGui::Button(" Play "))  m_pendingPlay = true;
-    ImGui::PopStyleColor(3);
-    if (ImGui::IsItemHovered())  ImGui::SetTooltip("Save & play the scene");
-
-    ImGui::Separator(); ImGui::SameLine();
-
-    // Gizmo mode
-    ImGui::Text("Gizmo:");
-    ImGui::SameLine();
-    if (ImGui::RadioButton("None",  m_gizmoMode == GizmoMode::None))
-        m_gizmoMode = GizmoMode::None;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Move",  m_gizmoMode == GizmoMode::Translation))
-        m_gizmoMode = GizmoMode::Translation;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotation))
-        m_gizmoMode = GizmoMode::Rotation;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Scale",  m_gizmoMode == GizmoMode::Scale))
-        m_gizmoMode = GizmoMode::Scale;
-
-    ImGui::Separator(); ImGui::SameLine();
-
-    // Grid controls
-    ImGui::Checkbox("Grid", &m_showGrid);
-    if (m_showGrid) {
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(80.0f);
-        ImGui::DragFloat("##GridSize", &m_gridSize, 1.0f, 10.0f, 500.0f, "%.0f");
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid size");
-        ImGui::SameLine();
-        ImGui::Checkbox("Snap", &m_snapToGrid);
-    }
-
-    ImGui::Separator(); ImGui::SameLine();
-    ImGui::Checkbox("Pick Box", &m_showPickBounds);
-
-    ImGui::Separator(); ImGui::SameLine();
-
-    ImGui::Checkbox("Merged", &m_showMergedColliders);
-    ImGui::SameLine();
-    ImGui::Separator(); ImGui::SameLine();
-
-    // Tilemap mode
-    if (ImGui::Checkbox("Tilemap", &m_tileMapMode)) {
-        if (m_tileMapMode) {
-            m_selectedEntities.clear();
-            m_selectedEntity = {0, 0};
-            m_showTilePalette = true;
-        } else {
-            m_showTilePalette = false;
-        }
-    }
-    if (m_tileMapMode) {
-        ImGui::SameLine();
-        ImGui::Separator(); ImGui::SameLine();
-        if (ImGui::RadioButton("Paint",  m_paintMode == PaintMode::Paint))
-            m_paintMode = PaintMode::Paint;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Erase",  m_paintMode == PaintMode::Erase))
-            m_paintMode = PaintMode::Erase;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Select", m_paintMode == PaintMode::Select))
-            m_paintMode = PaintMode::Select;
-
-        ImGui::SameLine();
-        ImGui::Separator(); ImGui::SameLine();
-        ImGui::Text("Layer:");
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(60.0f);
-        ImGui::SliderInt("##Layer", &m_currentLayer, 0, m_numLayers - 1);
-        ImGui::SameLine();
-        if (ImGui::SmallButton("+")) {
-            ++m_numLayers;
-            m_layerVisible.push_back(true);
-            m_scene.setLayerEnabled(m_numLayers - 1, true);
-        }
-        ImGui::SameLine();
-        if (ImGui::SmallButton("-") && m_numLayers > 1) {
-            --m_numLayers;
-            m_layerVisible.resize(m_numLayers, true);
-            if (m_currentLayer >= m_numLayers) m_currentLayer = m_numLayers - 1;
-        }
-        ImGui::SameLine();
-        ImGui::Separator(); ImGui::SameLine();
-        for (int i = 0; i < m_numLayers; ++i) {
-            char lbl[16];
-            std::snprintf(lbl, sizeof(lbl), "L%d", i);
-            bool vis = (i < (int)m_layerVisible.size()) ? m_layerVisible[i] : true;
-            if (ImGui::Checkbox(lbl, &vis)) {
-                if (i < (int)m_layerVisible.size()) m_layerVisible[i] = vis;
-                m_scene.setLayerEnabled(i, vis);
-            }
-            if (i + 1 < m_numLayers) ImGui::SameLine();
-        }
-    }
-
-    ImGui::Separator(); ImGui::SameLine();
-
-    // Undo/redo buttons
-    if (!m_undoStack.empty()) {
-        const std::string undoLabel = m_undoStack.back()->label();
-        if (ImGui::Button("Undo")) undo();
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Undo: %s", undoLabel.c_str());
-    }
-    if (!m_redoStack.empty()) {
-        ImGui::SameLine();
-        const std::string redoLabel = m_redoStack.back()->label();
-        if (ImGui::Button("Redo")) redo();
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Redo: %s", redoLabel.c_str());
-    }
-
-    ImGui::SameLine(0.0f, 20.0f);
-    ImGui::TextDisabled("%s", m_sceneFilePath.c_str());
     drawPrimaryToolbarControls();
     if (!compactToolbar)
         drawSecondaryToolbarControls(false);

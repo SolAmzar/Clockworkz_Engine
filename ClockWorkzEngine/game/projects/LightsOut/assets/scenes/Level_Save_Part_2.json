@@ -51843,7 +51843,7 @@
                             "moveOffsetX": -3000.0,
                             "moveOffsetY": 0.0,
                             "oneShot": true,
-                            "requiredFragments": 2,
+                            "requiredFragments": 10,
                             "targetTag": "blockage",
                             "triggered": false,
                             "useAllGroupsWhenNoLevelId": true
