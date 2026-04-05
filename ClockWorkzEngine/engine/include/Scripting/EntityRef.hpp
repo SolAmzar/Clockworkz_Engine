@@ -2,7 +2,7 @@
 /*!
 \file           EntityRef.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 75% [Amzar] 10% [Lebon] 15%
 \brief          EntityRef — Lua-safe proxy for ECS entity component access.
 
                 Provides nil-safe getters / setters for Transform, Velocity,
@@ -90,6 +90,16 @@ public:
   bool hasTextRenderer() const;
   std::string getText() const;
   void setText(const std::string &t);
+  bool isTextVisible() const;
+  void setTextVisible(bool visible);
+  float getTextFontSize() const;
+  void setTextFontSize(float size);
+
+  // --- ParticleEmitter ---
+  bool hasParticleEmitter() const;
+  bool isParticleEmitterActive() const;
+  void setParticleEmitterActive(bool active);
+  void setTextColor(float r, float g, float b);
 
   // --- SpriteRenderer ---
   bool hasSpriteRenderer() const;

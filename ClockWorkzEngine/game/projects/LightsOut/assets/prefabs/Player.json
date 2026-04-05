@@ -38,8 +38,8 @@
             "tilePrefix": "fs_tile_",
             "useSurfaceSounds": true,
             "variationCount": 4,
-            "volume": 1.0,
-            "woodPrefix": "fs_concrete_"
+            "volume": 0.22100000083446503,
+            "woodPrefix": "fs_wood_"
         },
         "light": {
             "active": false,

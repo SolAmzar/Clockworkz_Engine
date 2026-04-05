@@ -28,7 +28,7 @@ void GamepadManager::init(float deadzone, float sprintThreshold) {
     m_deadzone     = deadzone;
     m_sprintThresh = sprintThreshold;
 
-    if (SDL_Init(SDL_INIT_GAMEPAD) < 0) {
+    if (!SDL_Init(SDL_INIT_GAMEPAD)) {
         std::cerr << "[GamepadManager] SDL_Init(SDL_INIT_GAMEPAD) failed: "
                   << SDL_GetError() << "\n";
         return;
@@ -327,6 +327,44 @@ void GamepadManager::computeActions(int slot) {
     ActionState& escapeAction = m_actions["escape"];
     escapeAction.curr  = startBtn;
     escapeAction.value = startBtn ? 1.0f : 0.0f;
+
+    // --- Cheat-input buttons (D-pad, face, shoulders, back/start) ---
+    auto btn = [&](SDL_GamepadButton b) -> bool {
+        return SDL_GetGamepadButton(m_pads[slot].handle, b);
+    };
+    auto setBtn = [&](const char* name, bool down) {
+        ActionState& a = m_actions[name];
+        a.curr  = down;
+        a.value = down ? 1.0f : 0.0f;
+    };
+    setBtn("dpad_up",    btn(SDL_GAMEPAD_BUTTON_DPAD_UP));
+    setBtn("dpad_down",  btn(SDL_GAMEPAD_BUTTON_DPAD_DOWN));
+    setBtn("dpad_left",  btn(SDL_GAMEPAD_BUTTON_DPAD_LEFT));
+    setBtn("dpad_right", btn(SDL_GAMEPAD_BUTTON_DPAD_RIGHT));
+    setBtn("btn_a",      btn(SDL_GAMEPAD_BUTTON_SOUTH));
+    setBtn("btn_b",      btn(SDL_GAMEPAD_BUTTON_EAST));
+    setBtn("btn_x",      btn(SDL_GAMEPAD_BUTTON_WEST));
+    setBtn("btn_y",      btn(SDL_GAMEPAD_BUTTON_NORTH));
+    setBtn("lb",         btn(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER));
+    setBtn("rb",         btn(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER));
+    setBtn("select",     btn(SDL_GAMEPAD_BUTTON_BACK));
+    setBtn("start",      btn(SDL_GAMEPAD_BUTTON_START));
+
+    // Left trigger → lt (analog, threshold 0.5)
+    float lt = m_pads[slot].axes[SDL_GAMEPAD_AXIS_LEFT_TRIGGER];
+    ActionState& ltAction = m_actions["lt"];
+    ltAction.curr  = (lt > 0.5f);
+    ltAction.value = lt < 0.0f ? 0.0f : lt;
+
+    // Right trigger → rt (analog, threshold 0.5)
+    float rt = m_pads[slot].axes[SDL_GAMEPAD_AXIS_RIGHT_TRIGGER];
+    ActionState& rtAction = m_actions["rt"];
+    rtAction.curr  = (rt > 0.5f);
+    rtAction.value = rt < 0.0f ? 0.0f : rt;
+
+    // L3 / R3 (stick clicks)
+    setBtn("l3", btn(SDL_GAMEPAD_BUTTON_LEFT_STICK));
+    setBtn("r3", btn(SDL_GAMEPAD_BUTTON_RIGHT_STICK));
 }
 
 bool GamepadManager::isActionDown(const std::string& name) const {

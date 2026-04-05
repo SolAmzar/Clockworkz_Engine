@@ -2,7 +2,7 @@
 /*!
 \file           Scene.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon] 84% [Sol-Amzar] 16%
+\author(s)      [Lebon] 84% [Amzar] 16%
 \brief          Implements the runtime scene container and engine-owned system
                 orchestration.
 

@@ -19,6 +19,11 @@ Properties = {
     { name = "pushSpriteSheet",   type = "texture",   default = "",     label = "Push Sprite Sheet"   },
     { name = "pushAnimFile",      type = "animation", default = "",     label = "Push Anim File"       },
     { name = "pushClipName",      type = "string",    default = "push", label = "Push Clip Name"       },
+    { name = "pushSfxPrefix",     type = "string",    default = "player_push_", label = "Push SFX Prefix"      },
+    { name = "pushSfxVariations", type = "int",       default = 3,      label = "Push SFX Variations"  },
+    { name = "pushSfxInterval",   type = "float",     default = 0.35,   label = "Push SFX Interval s"  },
+    { name = "pushSfxVolume",     type = "float",     default = 1.0,    label = "Push SFX Volume"      },
+    { name = "_invincible",       type = "bool",      default = false,  label = "Invincible"           },
 }
 
 local PlayerController = {}
@@ -35,6 +40,10 @@ PlayerController.footstepInterval = 0.6
 PlayerController.pushSpriteSheet    = ""
 PlayerController.pushAnimFile       = ""
 PlayerController.pushClipName       = "push"
+PlayerController.pushSfxPrefix      = "player_push_"
+PlayerController.pushSfxVariations  = 3
+PlayerController.pushSfxInterval    = 0.35
+PlayerController.pushSfxVolume      = 1.0
 PlayerController._isPushing         = false
 PlayerController._pushTarget        = nil
 PlayerController._origAnimFile      = ""
@@ -43,6 +52,7 @@ PlayerController._origTexture       = ""
 -- Internal
 PlayerController._bobTimer       = 0.0
 PlayerController._footstepTimer  = 0.0
+PlayerController._pushSfxTimer   = 0.0
 PlayerController._baseTorchOffX  = nil   -- captured once on first torch use
 PlayerController._baseTorchOffY  = nil
 PlayerController._torchActive    = false
@@ -51,6 +61,7 @@ PlayerController._batteryDying   = false
 PlayerController._flickerTimer   = 0.0
 PlayerController._flickerStep    = 0.0
 PlayerController._isDead         = false
+PlayerController._invincible     = false
 PlayerController._deathTimer     = 0.0
 PlayerController._usingGamepad   = false
 PlayerController._prevMouseX     = nil   -- nil until first frame so no false delta
@@ -59,6 +70,16 @@ local DEATH_RESPAWN_DELAY        = 2.8   -- seconds before level reloads
 local BATTERY_DEATH_FLICKER_TIME = 0.9
 local BATTERY_DEATH_FLICKER_MIN_STEP = 0.015
 local BATTERY_DEATH_FLICKER_MAX_STEP = 0.08
+
+local function playPushSfx(self, entity)
+    if self.pushSfxPrefix == "" or self.pushSfxVariations <= 0 then
+        return
+    end
+
+    local variation = math.random(1, self.pushSfxVariations)
+    local soundId = self.pushSfxPrefix .. tostring(variation)
+    Audio.playOneShotAt(soundId, entity.position.x, entity.position.y, self.pushSfxVolume)
+end
 
 function PlayerController:onStart(entity)
     entity.moveSpeed = self.walkSpeed
@@ -225,6 +246,24 @@ function PlayerController:onUpdate(entity, dt)
         end
     end
 
+    if self._isPushing then
+        local vx = entity.velocity.x
+        local vy = entity.velocity.y
+        local movingWhilePushing = (vx * vx + vy * vy) > 0.01
+
+        if movingWhilePushing then
+            self._pushSfxTimer = self._pushSfxTimer - dt
+            if self._pushSfxTimer <= 0.0 then
+                playPushSfx(self, entity)
+                self._pushSfxTimer = math.max(self.pushSfxInterval, 0.01)
+            end
+        else
+            self._pushSfxTimer = 0.0
+        end
+    else
+        self._pushSfxTimer = 0.0
+    end
+
     -- ----------------------------------------------------------------
     -- Torch toggle (F key)
     -- ----------------------------------------------------------------
@@ -340,7 +379,7 @@ end
 
 function PlayerController:onCollisionEnter(entity, other)
 if other:getTagValue() == "Enemy" then
-        if not self._isDead then
+        if not self._isDead and not self._invincible then
             self._isDead = true
             if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then
                 entity:playAnimation("death")
@@ -353,6 +392,7 @@ if other:getTagValue() == "Enemy" then
         if not self._isPushing then
             self._isPushing  = true
             self._pushTarget = other
+            self._pushSfxTimer = 0.0
             print("[PC] Push start: pushAnimFile='" .. self.pushAnimFile .. "' pushClipName='" .. self.pushClipName .. "' pushSpriteSheet='" .. self.pushSpriteSheet .. "'")
             if self.pushSpriteSheet ~= "" then
                 entity:setSpriteTextureId(self.pushSpriteSheet)
@@ -373,6 +413,7 @@ function PlayerController:onCollisionExit(entity, other)
     if other:isColliderMoveable() and self._isPushing then
         self._isPushing  = false
         self._pushTarget = nil
+        self._pushSfxTimer = 0.0
         if self._origTexture ~= "" then
             entity:setSpriteTextureId(self._origTexture)
         end

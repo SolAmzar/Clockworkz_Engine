@@ -2,7 +2,7 @@
 /*!
 \file           SceneSerializer.cpp
 \project        ClockWorkz Engine
-\author(s)      [Lebon] 47% [Syafiq] 24% [Sol-Amzar] 26% [Yusuf] 3%
+\author(s)      [Lebon] 46% [Syafiq] 24% [Amzar] 27% [Yusuf] 3%
 \brief          Implements helpers for serializing and deserializing scenes.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights
@@ -142,6 +142,8 @@ static json SerializeWorld(ECS::World &world,
           {"isHazard", cc->isHazard},
           {"isTrigger", cc->isTrigger},
           {"moveable", cc->moveable},
+          {"isCombined", cc->isCombined},
+          {"combinedGroupId", cc->combinedGroupId},
           {"collisionCategory", cc->collisionCategory},
           {"collisionMask", cc->collisionMask},
           {"mass", cc->mass}};
@@ -454,6 +456,8 @@ bool SceneSerializer::Deserialize(ECS::World &world,
         collider.isHazard = cc.value("isHazard", false);
         collider.isTrigger = cc.value("isTrigger", false);
         collider.moveable = cc.value("moveable", false);
+        collider.isCombined = cc.value("isCombined", false);
+        collider.combinedGroupId = cc.value("combinedGroupId", 0u);
         collider.collisionCategory = cc.value("collisionCategory", 1);
         collider.collisionMask = cc.value("collisionMask", 0xFFFFFFFF);
         collider.mass = cc.value("mass", 1.0f);

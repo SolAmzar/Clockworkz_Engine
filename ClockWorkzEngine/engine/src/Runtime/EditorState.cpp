@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 78% [Sol-Amzar] 21% [Lebon] 1%
+\author(s)      [Syafiq] 49% [Amzar] 50% [Lebon] 1%
 \brief          Generic engine-level editor
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -191,7 +191,13 @@ private:
 class DeleteTilemapTileCmd final : public IEditorCommand {
 public:
     DeleteTilemapTileCmd(EditorState& editor, ECS::World& world, ECS::Entity entity, EditorState::TileData tileData)
-        : m_editor(editor), m_entityCmd(world, entity), m_tileData(std::move(tileData)) {}
+        : m_editor(editor), m_entityCmd(world, entity), m_tileData(std::move(tileData)) {
+        for (size_t i = 0; i < m_editor.m_hierarchyGroups.size(); ++i) {
+            const auto& ids = m_editor.m_hierarchyGroups[i].entityIds;
+            if (std::find(ids.begin(), ids.end(), entity.id) != ids.end())
+                m_hierarchyGroupIndices.push_back(static_cast<int>(i));
+        }
+    }
 
     void execute() override {
         auto it = std::find_if(m_editor.m_tilemap.begin(), m_editor.m_tilemap.end(),
@@ -210,6 +216,14 @@ public:
         m_entityCmd.undo();
         m_tileData.entity = m_entityCmd.m_current;
         m_editor.m_tilemap.push_back(m_tileData);
+        m_editor.getOrCreateLayerGroup(m_tileData.layer)->entities.push_back(m_tileData.entity);
+        for (int groupIndex : m_hierarchyGroupIndices) {
+            if (groupIndex < 0 || groupIndex >= static_cast<int>(m_editor.m_hierarchyGroups.size()))
+                continue;
+            auto& ids = m_editor.m_hierarchyGroups[static_cast<size_t>(groupIndex)].entityIds;
+            if (std::find(ids.begin(), ids.end(), m_tileData.entity.id) == ids.end())
+                ids.push_back(m_tileData.entity.id);
+        }
         m_editor.m_tilemapDirty = true;
     }
 
@@ -219,11 +233,612 @@ private:
     EditorState& m_editor;
     DeleteEntityCmd m_entityCmd;
     EditorState::TileData m_tileData;
+    std::vector<int> m_hierarchyGroupIndices;
+};
+
+class CreateTilemapTileCmd final : public IEditorCommand {
+public:
+    CreateTilemapTileCmd(EditorState& editor,
+                         ECS::World& world,
+                         std::string prefabName,
+                         vec2 position,
+                         int layer,
+                         int hierarchyGroupIndex)
+        : m_editor(editor),
+          m_world(world),
+          m_prefabName(std::move(prefabName)),
+          m_position(position),
+          m_layer(layer),
+          m_hierarchyGroupIndex(hierarchyGroupIndex) {}
+
+    void execute() override {
+        m_entity = m_editor.spawnPrefab(m_prefabName, m_position);
+        if (!m_world.isValid(m_entity))
+            return;
+
+        if (auto* spr = m_world.getComponent<Components::SpriteRenderer>(m_entity))
+            spr->sortOrder = m_layer;
+
+        m_editor.m_tilemap.push_back({m_prefabName, m_position, m_layer, m_entity});
+        m_editor.getOrCreateLayerGroup(m_layer)->entities.push_back(m_entity);
+
+        if (m_hierarchyGroupIndex >= 0 &&
+            m_hierarchyGroupIndex < static_cast<int>(m_editor.m_hierarchyGroups.size())) {
+            auto& ids = m_editor.m_hierarchyGroups[static_cast<size_t>(m_hierarchyGroupIndex)].entityIds;
+            if (std::find(ids.begin(), ids.end(), m_entity.id) == ids.end())
+                ids.push_back(m_entity.id);
+        }
+
+        m_editor.m_tilemapDirty = true;
+    }
+
+    void undo() override {
+        if (!m_world.isValid(m_entity))
+            return;
+
+        auto it = std::find_if(m_editor.m_tilemap.begin(), m_editor.m_tilemap.end(),
+            [&](const EditorState::TileData& tile) {
+                return tile.entity.id == m_entity.id && tile.entity.generation == m_entity.generation;
+            });
+        if (it != m_editor.m_tilemap.end())
+            m_editor.m_tilemap.erase(it);
+
+        m_editor.removeEntityFromGroups(m_entity);
+        m_world.destroyEntity(m_entity);
+        m_entity = {0, 0};
+        m_editor.m_tilemapDirty = true;
+    }
+
+    const char* label() const override { return "Paint Tile"; }
+
+private:
+    EditorState& m_editor;
+    ECS::World&  m_world;
+    std::string  m_prefabName;
+    vec2         m_position{};
+    int          m_layer{0};
+    int          m_hierarchyGroupIndex{-1};
+    ECS::Entity  m_entity{0, 0};
 };
 
 // ---------------------------------------------------------------------------
 // Static helpers
 // ---------------------------------------------------------------------------
+
+using json = nlohmann::json;
+
+static json serializeEditorAssetEntity(ECS::World& world, ECS::Entity entity,
+                                       const vec2* positionOverride = nullptr) {
+    json obj;
+    std::string name = "Entity_" + std::to_string(entity.id);
+    if (auto* tag = world.getComponent<Components::Tag>(entity))
+        name = tag->tag;
+
+    obj["name"] = name;
+    obj["components"] = json::object();
+    auto& comps = obj["components"];
+
+    if (auto* t = world.getComponent<Components::Transform>(entity)) {
+        const vec2 position = positionOverride ? *positionOverride : t->position;
+        comps["transform"] = {
+            {"position", {{"x", position.x}, {"y", position.y}}},
+            {"rotation", t->rotation},
+            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}},
+            {"pivot",    {{"x", t->pivot.x},    {"y", t->pivot.y}}},
+            {"snapToGrid", t->snapToGrid}};
+    }
+
+    if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity)) {
+        comps["spriteRenderer"] = {
+            {"textureId", sr->textureId},
+            {"uv",    {sr->uv.x, sr->uv.y, sr->uv.z, sr->uv.w}},
+            {"size",  {{"x", sr->size.x},  {"y", sr->size.y}}},
+            {"color", {{"r", sr->color.r}, {"g", sr->color.g},
+                       {"b", sr->color.b}, {"a", sr->color.a}}},
+            {"visible", sr->visible},
+            {"unlit", sr->unlit},
+            {"sortOrder", sr->sortOrder}};
+    }
+
+    if (auto* c = world.getComponent<Components::Collider>(entity)) {
+        comps["collider"] = {
+            {"shape",    static_cast<int>(c->shape)},
+            {"width",    c->size.x},
+            {"height",   c->size.y},
+            {"offset",   {{"x", c->offset.x}, {"y", c->offset.y}}},
+            {"radius",   c->radius},
+            {"isSolid",  c->isSolid},
+            {"isTrigger", c->isTrigger},
+            {"blocksLight", c->blocksLight},
+            {"isHazard", c->isHazard},
+            {"moveable", c->moveable},
+            {"isCombined", c->isCombined},
+            {"combinedGroupId", c->combinedGroupId},
+            {"mass",     c->mass},
+            {"collisionCategory", c->collisionCategory},
+            {"collisionMask",     c->collisionMask}};
+    }
+
+    if (auto* tag = world.getComponent<Components::Tag>(entity))
+        comps["tag"] = {{"tag", tag->tag}};
+
+    if (auto* vel = world.getComponent<Components::Velocity>(entity)) {
+        comps["velocity"] = {
+            {"x", vel->velocity.x},
+            {"y", vel->velocity.y},
+            {"moveSpeed", vel->moveSpeed}};
+    }
+
+    if (auto* au = world.getComponent<Components::AudioSource>(entity)) {
+        comps["audioSource"] = {
+            {"soundId", au->soundId},
+            {"volume", au->volume},
+            {"loop", au->loop},
+            {"playOnStart", au->playOnStart}};
+    }
+
+    if (auto* ls = world.getComponent<Components::LuaScript>(entity)) {
+        json arr = json::array();
+        for (auto& entry : ls->scripts) {
+            json lsj;
+            lsj["scriptPath"] = entry.scriptPath;
+            lsj["enabled"] = entry.enabled;
+            if (!entry.properties.empty()) {
+                json propsJ = json::object();
+                for (auto& [key, val] : entry.properties)
+                    std::visit([&](auto&& v) { propsJ[key] = v; }, val);
+                lsj["properties"] = propsJ;
+            }
+            arr.push_back(lsj);
+        }
+        comps["luaScript"] = arr;
+    }
+
+    if (auto* sa = world.getComponent<Components::SpriteAnimator>(entity)) {
+        comps["spriteAnimator"] = {
+            {"filename", sa->filename},
+            {"currentClip", sa->currentClip}};
+    }
+
+    if (auto* sm = world.getComponent<Components::StateMachine>(entity))
+        comps["stateMachine"] = {{"currentState", sm->currentState}};
+
+    if (auto* textComp = world.getComponent<Components::TextRenderer>(entity)) {
+        comps["textRenderer"] = {
+            {"text", textComp->text},
+            {"fontId", textComp->fontId},
+            {"fontSize", textComp->fontSize},
+            {"color", {{"r", textComp->color.r}, {"g", textComp->color.g},
+                       {"b", textComp->color.b}}},
+            {"visible", textComp->visible},
+            {"boxSize", {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
+            {"alignment", static_cast<int>(textComp->alignment)},
+            {"verticalAlignment", static_cast<int>(textComp->verticalAlign)},
+            {"wordWrap", textComp->wordWrap},
+            {"lineSpacing", textComp->lineSpacing},
+            {"padding", {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
+    }
+
+    if (auto* lt = world.getComponent<Components::Light>(entity)) {
+        comps["light"] = {
+            {"active", lt->active},
+            {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
+            {"color", {{"r", lt->color.r}, {"g", lt->color.g}, {"b", lt->color.b}}},
+            {"radius", lt->radius},
+            {"angle", lt->angle},
+            {"intensity", lt->intensity}};
+    }
+
+    if (auto* fa = world.getComponent<Components::FootstepAudio>(entity)) {
+        comps["footstepAudio"] = {
+            {"interval", fa->interval},
+            {"sprintIntervalScale", fa->sprintIntervalScale},
+            {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
+            {"minSpeed", fa->minSpeed},
+            {"resetDelay", fa->resetDelay},
+            {"volume", fa->volume},
+            {"variationCount", fa->variationCount},
+            {"useSurfaceSounds", fa->useSurfaceSounds},
+            {"soundPrefix", fa->soundPrefix},
+            {"concretePrefix", fa->concretePrefix},
+            {"tilePrefix", fa->tilePrefix},
+            {"woodPrefix", fa->woodPrefix}};
+    }
+
+    if (auto* pe = world.getComponent<Components::ParticleEmitter>(entity)) {
+        auto& sys = pe->system();
+        comps["particleEmitter"] = {
+            {"active", pe->active()},
+            {"rate", sys.rate},
+            {"lifeMin", sys.lifeMin},
+            {"lifeMax", sys.lifeMax},
+            {"speedMin", sys.speedMin},
+            {"speedMax", sys.speedMax},
+            {"sizeStart", sys.sizeStart},
+            {"sizeEnd", sys.sizeEnd},
+            {"spreadDeg", sys.spreadDeg},
+            {"spawnRadius", sys.spawnRadius},
+            {"looping", sys.looping},
+            {"worldSpace", sys.worldSpace},
+            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
+            {"acceleration", {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
+            {"localOffset", {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}},
+            {"colorStart", {{"r", sys.colorStart.r}, {"g", sys.colorStart.g},
+                            {"b", sys.colorStart.b}, {"a", sys.colorStart.a}}},
+            {"colorEnd", {{"r", sys.colorEnd.r}, {"g", sys.colorEnd.g},
+                          {"b", sys.colorEnd.b}, {"a", sys.colorEnd.a}}}
+        };
+    }
+
+    if (auto* btn = world.getComponent<Components::UIButton>(entity)) {
+        comps["uiButton"] = {
+            {"action", btn->action},
+            {"uiScript", btn->uiScript},
+            {"interactable", btn->interactable},
+            {"showBackground", btn->showBackground},
+            {"size", {{"x", btn->size.x}, {"y", btn->size.y}}},
+            {"offset", {{"x", btn->offset.x}, {"y", btn->offset.y}}},
+            {"normalColor", {{"r", btn->normalColor.r}, {"g", btn->normalColor.g},
+                             {"b", btn->normalColor.b}}},
+            {"hoverColor", {{"r", btn->hoverColor.r}, {"g", btn->hoverColor.g},
+                            {"b", btn->hoverColor.b}}}
+        };
+    }
+
+    if (auto* sl = world.getComponent<Components::UISlider>(entity)) {
+        comps["uiSlider"] = {
+            {"settingKey", sl->settingKey},
+            {"minValue", sl->minValue},
+            {"maxValue", sl->maxValue},
+            {"value", sl->value},
+            {"trackWidth", sl->trackWidth},
+            {"trackHeight", sl->trackHeight},
+            {"handleSize", sl->handleSize},
+            {"trackColor", {{"r", sl->trackColor.r}, {"g", sl->trackColor.g},
+                            {"b", sl->trackColor.b}, {"a", sl->trackColor.a}}},
+            {"fillColor", {{"r", sl->fillColor.r}, {"g", sl->fillColor.g},
+                           {"b", sl->fillColor.b}, {"a", sl->fillColor.a}}},
+            {"handleColor", {{"r", sl->handleColor.r}, {"g", sl->handleColor.g},
+                             {"b", sl->handleColor.b}, {"a", sl->handleColor.a}}}
+        };
+    }
+
+    if (auto* cam = world.getComponent<Components::CameraComponent>(entity)) {
+        comps["cameraComponent"] = {
+            {"isMain", cam->isMain},
+            {"zoom", cam->zoom},
+            {"offset", {{"x", cam->offset.x}, {"y", cam->offset.y}}}};
+    }
+
+    return obj;
+}
+
+static ECS::Entity spawnEditorAssetEntity(ECS::World& world, const json& objectData,
+                                          vec2 position, bool applyStoredPositionAsOffset) {
+    auto entity = world.createEntity();
+    if (!objectData.contains("components"))
+        return entity;
+
+    const auto& c = objectData["components"];
+    std::string entityTag = objectData.value("name", "Entity");
+    if (c.contains("tag"))
+        entityTag = c["tag"].value("tag", entityTag);
+    world.addComponent(entity, Components::Tag{entityTag});
+
+    if (c.contains("transform")) {
+        Components::Transform t;
+        vec2 finalPosition = position;
+        if (c["transform"].contains("position")) {
+            const vec2 storedPosition{
+                c["transform"]["position"].value("x", 0.f),
+                c["transform"]["position"].value("y", 0.f)
+            };
+            finalPosition = applyStoredPositionAsOffset ? position + storedPosition : storedPosition;
+        }
+        t.position = finalPosition;
+        t.rotation = c["transform"].value("rotation", 0.f);
+        if (c["transform"].contains("scale")) {
+            t.scale.x = c["transform"]["scale"].value("x", 1.f);
+            t.scale.y = c["transform"]["scale"].value("y", 1.f);
+        }
+        if (c["transform"].contains("pivot")) {
+            t.pivot.x = c["transform"]["pivot"].value("x", 0.f);
+            t.pivot.y = c["transform"]["pivot"].value("y", 0.f);
+        }
+        t.snapToGrid = c["transform"].value("snapToGrid", false);
+        world.addComponent(entity, t);
+    } else {
+        Components::Transform t;
+        t.position = position;
+        world.addComponent(entity, t);
+    }
+
+    if (c.contains("spriteRenderer")) {
+        Components::SpriteRenderer sr;
+        sr.textureId = c["spriteRenderer"].value("textureId", "");
+        if (c["spriteRenderer"].contains("uv") &&
+            c["spriteRenderer"]["uv"].is_array() &&
+            c["spriteRenderer"]["uv"].size() == 4) {
+            sr.uv = {
+                c["spriteRenderer"]["uv"][0],
+                c["spriteRenderer"]["uv"][1],
+                c["spriteRenderer"]["uv"][2],
+                c["spriteRenderer"]["uv"][3]
+            };
+        }
+        if (c["spriteRenderer"].contains("size")) {
+            sr.size.x = c["spriteRenderer"]["size"].value("x", 50.f);
+            sr.size.y = c["spriteRenderer"]["size"].value("y", 50.f);
+        }
+        if (c["spriteRenderer"].contains("color")) {
+            sr.color.r = c["spriteRenderer"]["color"].value("r", 1.f);
+            sr.color.g = c["spriteRenderer"]["color"].value("g", 1.f);
+            sr.color.b = c["spriteRenderer"]["color"].value("b", 1.f);
+            sr.color.a = c["spriteRenderer"]["color"].value("a", 1.f);
+        }
+        sr.visible = c["spriteRenderer"].value("visible", true);
+        sr.unlit = c["spriteRenderer"].value("unlit", false);
+        sr.sortOrder = c["spriteRenderer"].value("sortOrder", 0);
+        world.addComponent(entity, sr);
+    }
+
+    if (c.contains("collider")) {
+        Components::Collider col;
+        col.shape   = static_cast<Components::Collider::Shape>(c["collider"].value("shape", 0));
+        col.size.x  = c["collider"].value("width", 50.f);
+        col.size.y  = c["collider"].value("height", 50.f);
+        if (c["collider"].contains("offset")) {
+            col.offset.x = c["collider"]["offset"].value("x", 0.f);
+            col.offset.y = c["collider"]["offset"].value("y", 0.f);
+        }
+        col.radius = c["collider"].value("radius", 25.f);
+        col.isSolid = c["collider"].value("isSolid", true);
+        col.isTrigger = c["collider"].value("isTrigger", false);
+        col.blocksLight = c["collider"].value("blocksLight", false);
+        col.isHazard = c["collider"].value("isHazard", false);
+        col.moveable = c["collider"].value("moveable", false);
+        col.isCombined = c["collider"].value("isCombined", false);
+        col.combinedGroupId = c["collider"].value("combinedGroupId", 0u);
+        col.mass = c["collider"].value("mass", 1.f);
+        col.collisionCategory = c["collider"].value("collisionCategory", 1);
+        col.collisionMask = c["collider"].value("collisionMask", 0xFFFFFFFF);
+        world.addComponent(entity, col);
+    }
+
+    if (c.contains("velocity")) {
+        Components::Velocity vel;
+        vel.velocity.x = c["velocity"].value("x", 0.f);
+        vel.velocity.y = c["velocity"].value("y", 0.f);
+        vel.moveSpeed = c["velocity"].value("moveSpeed", 100.f);
+        world.addComponent(entity, vel);
+    }
+
+    if (c.contains("audioSource")) {
+        Components::AudioSource au;
+        au.soundId = c["audioSource"].value("soundId", "");
+        au.volume = c["audioSource"].value("volume", 1.f);
+        au.loop = c["audioSource"].value("loop", false);
+        au.playOnStart = c["audioSource"].value("playOnStart", false);
+        world.addComponent(entity, au);
+    }
+
+    if (c.contains("luaScript")) {
+        Components::LuaScript ls;
+        auto& lsData = c["luaScript"];
+        auto deserializeEntry = [](const json& lsj) {
+            Components::LuaScriptEntry entry;
+            entry.scriptPath = lsj.value("scriptPath", "");
+            entry.enabled = lsj.value("enabled", true);
+            if (lsj.contains("properties") && !entry.scriptPath.empty()) {
+                auto& propDefs = Scripting::ScriptPropertyReader::read(entry.scriptPath);
+                for (auto& def : propDefs) {
+                    if (!lsj["properties"].contains(def.name))
+                        continue;
+                    auto& jv = lsj["properties"][def.name];
+                    if      (def.type == "float") entry.properties[def.name] = jv.get<float>();
+                    else if (def.type == "int") entry.properties[def.name] = jv.get<int>();
+                    else if (def.type == "bool") entry.properties[def.name] = jv.get<bool>();
+                    else if (def.type == "string" || def.type == "texture" || def.type == "animation")
+                        entry.properties[def.name] = jv.get<std::string>();
+                }
+            }
+            return entry;
+        };
+        if (lsData.is_array()) {
+            for (auto& item : lsData)
+                ls.scripts.push_back(deserializeEntry(item));
+        } else {
+            ls.scripts.push_back(deserializeEntry(lsData));
+        }
+        world.addComponent(entity, ls);
+    }
+
+    if (c.contains("spriteAnimator")) {
+        Components::SpriteAnimator sa;
+        sa.filename = c["spriteAnimator"].value("filename", "");
+        sa.currentClip = c["spriteAnimator"].value("currentClip", "");
+        if (!sa.filename.empty())
+            sa.loadFromPath("assets/animations/" + sa.filename);
+        world.addComponent(entity, sa);
+    }
+
+    if (c.contains("stateMachine")) {
+        Components::StateMachine sm;
+        sm.currentState = c["stateMachine"].value("currentState", "idle");
+        world.addComponent(entity, sm);
+    }
+
+    if (c.contains("textRenderer")) {
+        const auto& textRendererJson = c["textRenderer"];
+        Components::TextRenderer textComp;
+        textComp.text = textRendererJson.value("text", "");
+        textComp.fontId = textRendererJson.value("fontId", "Debug");
+        textComp.fontSize = textRendererJson.value("fontSize", 1.f);
+        textComp.visible = textRendererJson.value("visible", true);
+        textComp.alignment = static_cast<Components::TextAlignment>(textRendererJson.value("alignment", 0));
+        textComp.verticalAlign = static_cast<Components::VerticalAlignment>(textRendererJson.value("verticalAlignment", 0));
+        textComp.wordWrap = textRendererJson.value("wordWrap", true);
+        textComp.lineSpacing = textRendererJson.value("lineSpacing", 1.f);
+        if (textRendererJson.contains("color")) {
+            textComp.color.r = textRendererJson["color"].value("r", 1.f);
+            textComp.color.g = textRendererJson["color"].value("g", 1.f);
+            textComp.color.b = textRendererJson["color"].value("b", 1.f);
+        }
+        if (textRendererJson.contains("boxSize")) {
+            textComp.boxSize.x = textRendererJson["boxSize"].value("x", 200.f);
+            textComp.boxSize.y = textRendererJson["boxSize"].value("y", 100.f);
+        }
+        if (textRendererJson.contains("padding")) {
+            textComp.padding.x = textRendererJson["padding"].value("x", 0.f);
+            textComp.padding.y = textRendererJson["padding"].value("y", 0.f);
+        }
+        world.addComponent(entity, textComp);
+    }
+
+    if (c.contains("light")) {
+        Components::Light lt;
+        lt.active = c["light"].value("active", true);
+        if (c["light"].contains("offset")) {
+            lt.offset.x = c["light"]["offset"].value("x", 35.f);
+            lt.offset.y = c["light"]["offset"].value("y", -20.f);
+        }
+        if (c["light"].contains("color")) {
+            lt.color.r = c["light"]["color"].value("r", 1.f);
+            lt.color.g = c["light"]["color"].value("g", 0.9f);
+            lt.color.b = c["light"]["color"].value("b", 0.6f);
+        }
+        lt.radius = c["light"].value("radius", 300.f);
+        lt.angle = c["light"].value("angle", 60.f);
+        lt.intensity = c["light"].value("intensity", 1.f);
+        world.addComponent(entity, lt);
+    }
+
+    if (c.contains("footstepAudio")) {
+        Components::FootstepAudio fa;
+        fa.interval = c["footstepAudio"].value("interval", fa.interval);
+        fa.sprintIntervalScale = c["footstepAudio"].value("sprintIntervalScale", fa.sprintIntervalScale);
+        fa.sprintSpeedThreshold = c["footstepAudio"].value("sprintSpeedThreshold", fa.sprintSpeedThreshold);
+        fa.minSpeed = c["footstepAudio"].value("minSpeed", fa.minSpeed);
+        fa.resetDelay = c["footstepAudio"].value("resetDelay", fa.resetDelay);
+        fa.volume = c["footstepAudio"].value("volume", fa.volume);
+        fa.variationCount = c["footstepAudio"].value("variationCount", fa.variationCount);
+        fa.useSurfaceSounds = c["footstepAudio"].value("useSurfaceSounds", fa.useSurfaceSounds);
+        fa.soundPrefix = c["footstepAudio"].value("soundPrefix", fa.soundPrefix);
+        fa.concretePrefix = c["footstepAudio"].value("concretePrefix", fa.concretePrefix);
+        fa.tilePrefix = c["footstepAudio"].value("tilePrefix", fa.tilePrefix);
+        fa.woodPrefix = c["footstepAudio"].value("woodPrefix", fa.woodPrefix);
+        world.addComponent(entity, fa);
+    }
+
+    if (c.contains("particleEmitter")) {
+        const auto& pec = c["particleEmitter"];
+        Components::ParticleEmitter pe;
+        pe.setActive(pec.value("active", true));
+        pe.localOffset.x = pec.contains("localOffset") ? pec["localOffset"].value("x", 0.f) : 0.f;
+        pe.localOffset.y = pec.contains("localOffset") ? pec["localOffset"].value("y", 0.f) : 0.f;
+        auto& sys = pe.system();
+        sys.rate = pec.value("rate", sys.rate);
+        sys.lifeMin = pec.value("lifeMin", sys.lifeMin);
+        sys.lifeMax = pec.value("lifeMax", sys.lifeMax);
+        sys.speedMin = pec.value("speedMin", sys.speedMin);
+        sys.speedMax = pec.value("speedMax", sys.speedMax);
+        sys.sizeStart = pec.value("sizeStart", sys.sizeStart);
+        sys.sizeEnd = pec.value("sizeEnd", sys.sizeEnd);
+        sys.spreadDeg = pec.value("spreadDeg", sys.spreadDeg);
+        sys.spawnRadius = pec.value("spawnRadius", sys.spawnRadius);
+        sys.looping = pec.value("looping", sys.looping);
+        sys.worldSpace = pec.value("worldSpace", sys.worldSpace);
+        if (pec.contains("direction")) {
+            sys.dir.x = pec["direction"].value("x", sys.dir.x);
+            sys.dir.y = pec["direction"].value("y", sys.dir.y);
+        }
+        if (pec.contains("acceleration")) {
+            sys.acceleration.x = pec["acceleration"].value("x", sys.acceleration.x);
+            sys.acceleration.y = pec["acceleration"].value("y", sys.acceleration.y);
+        }
+        if (pec.contains("colorStart")) {
+            sys.colorStart.r = pec["colorStart"].value("r", sys.colorStart.r);
+            sys.colorStart.g = pec["colorStart"].value("g", sys.colorStart.g);
+            sys.colorStart.b = pec["colorStart"].value("b", sys.colorStart.b);
+            sys.colorStart.a = pec["colorStart"].value("a", sys.colorStart.a);
+        }
+        if (pec.contains("colorEnd")) {
+            sys.colorEnd.r = pec["colorEnd"].value("r", sys.colorEnd.r);
+            sys.colorEnd.g = pec["colorEnd"].value("g", sys.colorEnd.g);
+            sys.colorEnd.b = pec["colorEnd"].value("b", sys.colorEnd.b);
+            sys.colorEnd.a = pec["colorEnd"].value("a", sys.colorEnd.a);
+        }
+        world.addComponent(entity, pe);
+    }
+
+    if (c.contains("uiButton")) {
+        Components::UIButton btn;
+        btn.action = c["uiButton"].value("action", "");
+        btn.uiScript = c["uiButton"].value("uiScript", "");
+        btn.interactable = c["uiButton"].value("interactable", true);
+        btn.showBackground = c["uiButton"].value("showBackground", true);
+        if (c["uiButton"].contains("size")) {
+            btn.size = {c["uiButton"]["size"].value("x", 0.f), c["uiButton"]["size"].value("y", 0.f)};
+        }
+        if (c["uiButton"].contains("offset")) {
+            btn.offset = {c["uiButton"]["offset"].value("x", 0.f), c["uiButton"]["offset"].value("y", 0.f)};
+        }
+        if (c["uiButton"].contains("normalColor")) {
+            btn.normalColor = {c["uiButton"]["normalColor"].value("r", 1.f),
+                               c["uiButton"]["normalColor"].value("g", 1.f),
+                               c["uiButton"]["normalColor"].value("b", 1.f)};
+        }
+        if (c["uiButton"].contains("hoverColor")) {
+            btn.hoverColor = {c["uiButton"]["hoverColor"].value("r", 1.f),
+                              c["uiButton"]["hoverColor"].value("g", 0.8f),
+                              c["uiButton"]["hoverColor"].value("b", 0.f)};
+        }
+        world.addComponent(entity, btn);
+    }
+
+    if (c.contains("uiSlider")) {
+        Components::UISlider sl;
+        sl.settingKey = c["uiSlider"].value("settingKey", "");
+        sl.minValue = c["uiSlider"].value("minValue", 0.f);
+        sl.maxValue = c["uiSlider"].value("maxValue", 1.f);
+        sl.value = c["uiSlider"].value("value", 1.f);
+        sl.trackWidth = c["uiSlider"].value("trackWidth", 400.f);
+        sl.trackHeight = c["uiSlider"].value("trackHeight", 18.f);
+        sl.handleSize = c["uiSlider"].value("handleSize", 22.f);
+        if (c["uiSlider"].contains("trackColor")) {
+            sl.trackColor = {c["uiSlider"]["trackColor"].value("r", 0.25f),
+                             c["uiSlider"]["trackColor"].value("g", 0.25f),
+                             c["uiSlider"]["trackColor"].value("b", 0.25f),
+                             c["uiSlider"]["trackColor"].value("a", 1.f)};
+        }
+        if (c["uiSlider"].contains("fillColor")) {
+            sl.fillColor = {c["uiSlider"]["fillColor"].value("r", 0.85f),
+                            c["uiSlider"]["fillColor"].value("g", 0.55f),
+                            c["uiSlider"]["fillColor"].value("b", 0.10f),
+                            c["uiSlider"]["fillColor"].value("a", 1.f)};
+        }
+        if (c["uiSlider"].contains("handleColor")) {
+            sl.handleColor = {c["uiSlider"]["handleColor"].value("r", 1.f),
+                              c["uiSlider"]["handleColor"].value("g", 1.f),
+                              c["uiSlider"]["handleColor"].value("b", 1.f),
+                              c["uiSlider"]["handleColor"].value("a", 1.f)};
+        }
+        world.addComponent(entity, sl);
+    }
+
+    if (c.contains("cameraComponent")) {
+        Components::CameraComponent cam;
+        cam.isMain = c["cameraComponent"].value("isMain", true);
+        cam.zoom = c["cameraComponent"].value("zoom", 1.0f);
+        if (c["cameraComponent"].contains("offset")) {
+            cam.offset.x = c["cameraComponent"]["offset"].value("x", 0.0f);
+            cam.offset.y = c["cameraComponent"]["offset"].value("y", 0.0f);
+        }
+        world.addComponent(entity, cam);
+    }
+
+    return entity;
+}
 
 static vec2 snapToGrid(const vec2& pos, float gridSize) {
     float half = gridSize * 0.5f;
@@ -447,6 +1062,7 @@ void EditorState::onEnter() {
     m_currentAudioDir = "assets/audio";
 
     loadAvailablePrefabs();
+    loadAvailableEntityGroups();
     scanBSAAssets();
     loadBSASelection();
     m_layerVisible.assign(m_numLayers, true);
@@ -727,8 +1343,8 @@ void EditorState::render(Core::Time* timer) {
         Systems::renderLightPass(m_scene.GetWorld(), renderer);
         m_lastViewportRenderTime = now;
 
-        // Grid + collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
-        if (m_showGrid || m_showColliders || m_showUIButtons || m_showTextBoxes) {
+        // Grid + collider + merged collider + UIButton + TextBox outlines (debug pass, drawn on top of scene)
+        if (m_showGrid || m_showColliders || m_showMergedColliders || m_showUIButtons || m_showTextBoxes) {
             renderer.beginDebugPass(camera.viewProj());
 
         if (m_showGrid)
@@ -770,18 +1386,52 @@ void EditorState::render(Core::Time* timer) {
                     if (!c.isSolid && !c.isTrigger && !c.isHazard) return;
                     auto* tag = world.getComponent<Components::Tag>(entity);
                     if (tag && tag->tag == "TilemapMergedCollider") return; // drawn in pass 2
-                    glm::vec3 col = c.isTrigger
-                        ? glm::vec3(1.f, 1.f, 0.f)   // yellow
-                        : glm::vec3(0.f, 1.f, 0.f);  // green
+                    glm::vec3 col = c.isCombined
+                        ? glm::vec3(0.f, 1.f, 1.f)   // cyan
+                        : (c.isTrigger
+                            ? glm::vec3(1.f, 1.f, 0.f)   // yellow
+                            : glm::vec3(0.f, 1.f, 0.f)); // green
                     drawCollider(t, c, col);
                 });
 
-            // Pass 2: cyan — greedy-merged wall colliders, drawn on top
+        }
+
+        if (m_showMergedColliders) {
+            auto& world = m_scene.GetWorld();
+
+            auto drawCollider = [&](Components::Transform& t,
+                                    Components::Collider& c, glm::vec3 col) {
+                auto rotVec = [](glm::vec2 v, float a) {
+                    return glm::vec2(v.x * std::cos(a) - v.y * std::sin(a),
+                                    v.x * std::sin(a) + v.y * std::cos(a));
+                };
+                glm::vec2 offset = rotVec(
+                    glm::vec2(c.offset.x - t.pivot.x, c.offset.y - t.pivot.y),
+                    t.rotation);
+                glm::vec2 pos(t.position.x + offset.x, t.position.y + offset.y);
+                if (c.shape == Components::Collider::Shape::Box) {
+                    glm::vec2 half(c.size.x * t.scale.x * 0.5f,
+                                   c.size.y * t.scale.y * 0.5f);
+                    glm::vec2 p1 = rotVec({-half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p2 = rotVec({ half.x, -half.y}, t.rotation) + pos;
+                    glm::vec2 p3 = rotVec({ half.x,  half.y}, t.rotation) + pos;
+                    glm::vec2 p4 = rotVec({-half.x,  half.y}, t.rotation) + pos;
+                    renderer.drawLine(p1.x, p1.y, p2.x, p2.y, col.r, col.g, col.b);
+                    renderer.drawLine(p2.x, p2.y, p3.x, p3.y, col.r, col.g, col.b);
+                    renderer.drawLine(p3.x, p3.y, p4.x, p4.y, col.r, col.g, col.b);
+                    renderer.drawLine(p4.x, p4.y, p1.x, p1.y, col.r, col.g, col.b);
+                } else {
+                    float r = c.radius * std::max(t.scale.x, t.scale.y);
+                    renderer.drawCircle(pos.x, pos.y, r, col.r, col.g, col.b);
+                }
+            };
+
+            // Cyan: greedy-merged wall colliders, drawn on top
             world.each<Components::Transform, Components::Collider>(
                 [&](ECS::Entity entity, Components::Transform& t, Components::Collider& c) {
                     auto* tag = world.getComponent<Components::Tag>(entity);
                     if (!tag || tag->tag != "TilemapMergedCollider") return;
-                    drawCollider(t, c, glm::vec3(0.f, 1.f, 1.f)); // cyan
+                    drawCollider(t, c, glm::vec3(0.f, 1.f, 1.f));
                 });
         }
 
@@ -948,7 +1598,142 @@ void EditorState::renderImGui(Core::Time* timer) {
 // ---------------------------------------------------------------------------
 
 void EditorState::renderToolbar() {
+    constexpr float kTwoRowToolbarThreshold = 1450.0f;
+    constexpr float kTwoRowToolbarThresholdTilemap = 2050.0f;
+    auto& imguiManager = Core::Engine::Get().imguiManager();
+    imguiManager.setDockspaceTopInset(0.0f);
+
+    auto drawPrimaryToolbarControls = [this]() {
+        if (ImGui::Button(" Hub "))  m_pendingReturnToHub = true;
+        if (ImGui::IsItemHovered())  ImGui::SetTooltip("Return to Editor Hub");
+        ImGui::SameLine();
+        if (ImGui::Button(" Save ")) m_pendingSave = true;
+        if (ImGui::IsItemHovered())  ImGui::SetTooltip("Save scene (Ctrl+S)");
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.15f, 0.60f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.80f, 0.20f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.45f, 0.10f, 1.0f));
+        if (ImGui::Button(" Play "))  m_pendingPlay = true;
+        ImGui::PopStyleColor(3);
+        if (ImGui::IsItemHovered())  ImGui::SetTooltip("Save & play the scene");
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::Text("Gizmo:");
+        ImGui::SameLine();
+        if (ImGui::RadioButton("None",  m_gizmoMode == GizmoMode::None))
+            m_gizmoMode = GizmoMode::None;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Move",  m_gizmoMode == GizmoMode::Translation))
+            m_gizmoMode = GizmoMode::Translation;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotation))
+            m_gizmoMode = GizmoMode::Rotation;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Scale",  m_gizmoMode == GizmoMode::Scale))
+            m_gizmoMode = GizmoMode::Scale;
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::Checkbox("Grid", &m_showGrid);
+        if (m_showGrid) {
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(80.0f);
+            ImGui::DragFloat("##GridSize", &m_gridSize, 1.0f, 10.0f, 500.0f, "%.0f");
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid size");
+            ImGui::SameLine();
+            ImGui::Checkbox("Snap", &m_snapToGrid);
+        }
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::Checkbox("Merged", &m_showMergedColliders);
+        ImGui::SameLine();
+        ImGui::Separator(); ImGui::SameLine();
+    };
+
+    auto drawSecondaryToolbarControls = [this](bool compactMode) {
+        if (ImGui::Checkbox("Tilemap", &m_tileMapMode)) {
+            if (m_tileMapMode) {
+                m_selectedEntities.clear();
+                m_selectedEntity = {0, 0};
+                m_showTilePalette = true;
+            } else {
+                m_showTilePalette = false;
+            }
+        }
+        if (m_tileMapMode) {
+            ImGui::SameLine();
+            ImGui::Separator(); ImGui::SameLine();
+            if (ImGui::RadioButton("Paint",  m_paintMode == PaintMode::Paint))
+                m_paintMode = PaintMode::Paint;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Erase",  m_paintMode == PaintMode::Erase))
+                m_paintMode = PaintMode::Erase;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Select", m_paintMode == PaintMode::Select))
+                m_paintMode = PaintMode::Select;
+
+            ImGui::SameLine();
+            ImGui::Separator(); ImGui::SameLine();
+            ImGui::Text("Layer:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(60.0f);
+            ImGui::SliderInt("##Layer", &m_currentLayer, 0, m_numLayers - 1);
+            ImGui::SameLine();
+            if (ImGui::SmallButton("+")) {
+                ++m_numLayers;
+                m_layerVisible.push_back(true);
+                m_scene.setLayerEnabled(m_numLayers - 1, true);
+            }
+            ImGui::SameLine();
+            if (ImGui::SmallButton("-") && m_numLayers > 1) {
+                --m_numLayers;
+                m_layerVisible.resize(m_numLayers, true);
+                if (m_currentLayer >= m_numLayers) m_currentLayer = m_numLayers - 1;
+            }
+            ImGui::SameLine();
+            ImGui::Separator(); ImGui::SameLine();
+            for (int i = 0; i < m_numLayers; ++i) {
+                char lbl[16];
+                std::snprintf(lbl, sizeof(lbl), "L%d", i);
+                bool vis = (i < (int)m_layerVisible.size()) ? m_layerVisible[i] : true;
+                if (ImGui::Checkbox(lbl, &vis)) {
+                    if (i < (int)m_layerVisible.size()) m_layerVisible[i] = vis;
+                    m_scene.setLayerEnabled(i, vis);
+                }
+                if (i + 1 < m_numLayers) ImGui::SameLine();
+            }
+        }
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        if (!m_undoStack.empty()) {
+            const std::string undoLabel = m_undoStack.back()->label();
+            if (ImGui::Button("Undo")) undo();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Undo: %s", undoLabel.c_str());
+        }
+        if (!m_redoStack.empty()) {
+            ImGui::SameLine();
+            const std::string redoLabel = m_redoStack.back()->label();
+            if (ImGui::Button("Redo")) redo();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Redo: %s", redoLabel.c_str());
+        }
+
+        if (!compactMode) {
+            ImGui::SameLine(0.0f, 20.0f);
+            ImGui::TextDisabled("%s", m_sceneFilePath.c_str());
+        }
+    };
+
     if (!ImGui::BeginMainMenuBar()) return;
+    const float compactThreshold =
+        m_tileMapMode ? kTwoRowToolbarThresholdTilemap : kTwoRowToolbarThreshold;
+    const bool compactToolbar = ImGui::GetWindowWidth() < compactThreshold;
 
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) m_pendingSave = true;
@@ -1027,6 +1812,13 @@ void EditorState::renderToolbar() {
     }
 
     ImGui::Separator(); ImGui::SameLine();
+    ImGui::Checkbox("Pick Box", &m_showPickBounds);
+
+    ImGui::Separator(); ImGui::SameLine();
+
+    ImGui::Checkbox("Merged", &m_showMergedColliders);
+    ImGui::SameLine();
+    ImGui::Separator(); ImGui::SameLine();
 
     // Tilemap mode
     if (ImGui::Checkbox("Tilemap", &m_tileMapMode)) {
@@ -1101,8 +1893,33 @@ void EditorState::renderToolbar() {
 
     ImGui::SameLine(0.0f, 20.0f);
     ImGui::TextDisabled("%s", m_sceneFilePath.c_str());
+    drawPrimaryToolbarControls();
+    if (!compactToolbar)
+        drawSecondaryToolbarControls(false);
 
     ImGui::EndMainMenuBar();
+
+    if (!compactToolbar)
+        return;
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, 0.0f));
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGuiWindowFlags toolbarFlags = ImGuiWindowFlags_NoTitleBar |
+                                    ImGuiWindowFlags_NoResize |
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoDocking |
+                                    ImGuiWindowFlags_NoSavedSettings |
+                                    ImGuiWindowFlags_NoScrollbar;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    if (ImGui::Begin("##EditorToolbarRow2", nullptr, toolbarFlags)) {
+        drawSecondaryToolbarControls(true);
+        imguiManager.setDockspaceTopInset(ImGui::GetWindowHeight());
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 // ---------------------------------------------------------------------------
@@ -1646,6 +2463,36 @@ void EditorState::renderHierarchy() {
             }
             groupedIds.insert(id);
         }
+    };
+
+    auto spawnEntityGroupIntoHierarchyGroup = [&](const std::string& assetGroupName, int parentGroupIdx) {
+        std::vector<ECS::Entity> spawnedEntities = spawnEntityGroup(assetGroupName, {0.f, 0.f});
+        if (spawnedEntities.empty()) return;
+
+        markHierarchyChanged("Spawn Entity Group");
+
+        HierarchyGroup newGroup;
+        newGroup.name = assetGroupName;
+        newGroup.parentGroupIdx = parentGroupIdx;
+
+        std::unordered_set<uint32_t> spawnedIds;
+        for (const auto& entity : spawnedEntities) {
+            if (!world.isValid(entity)) continue;
+            if (!spawnedIds.insert(entity.id).second) continue;
+
+            newGroup.entityIds.push_back(entity.id);
+            m_hierarchyOrder.erase(
+                std::remove(m_hierarchyOrder.begin(), m_hierarchyOrder.end(), entity.id),
+                m_hierarchyOrder.end());
+            groupedIds.insert(entity.id);
+        }
+
+        if (newGroup.entityIds.empty()) return;
+
+        m_hierarchyGroups.push_back(std::move(newGroup));
+        m_selectedGroupIdx = static_cast<int>(m_hierarchyGroups.size()) - 1;
+        m_selectedEntities = std::move(spawnedEntities);
+        m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0} : m_selectedEntities.front();
     };
 
     // Reorder: if the dragged entity is selected, move ALL selected entities
@@ -2198,6 +3045,11 @@ void EditorState::renderHierarchy() {
                 uint32_t srcId = *(const uint32_t*)p->Data;
                 moveEntitiesIntoGroup(getDraggedEntityIds(srcId), grp);
             }
+            if (auto* p = ImGui::AcceptDragDropPayload("ENTITY_GROUP_NAME")) {
+                const char* groupName = static_cast<const char*>(p->Data);
+                if (groupName && groupName[0] != '\0')
+                    spawnEntityGroupIntoHierarchyGroup(groupName, gi);
+            }
             if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
                 int draggedGroupIdx = *(const int*)p->Data;
                 if (draggedGroupIdx != gi &&
@@ -2212,6 +3064,7 @@ void EditorState::renderHierarchy() {
         }
 
         // --- Group right-click menu ---
+        bool breakAfterGroupPopupAction = false;
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Rename Group")) {
                 m_renamingGroupIdx = gi;
@@ -2275,10 +3128,7 @@ void EditorState::renderHierarchy() {
                 m_selectedGroupIdx = (int)m_hierarchyGroups.size() - 1;
                 m_selectedEntities.clear();
                 m_selectedEntity = {0, 0};
-                ImGui::EndPopup();
-                if (open) ImGui::TreePop();
-                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
-                break;
+                breakAfterGroupPopupAction = true;
             }
             if (grp.parentGroupIdx != -1 && ImGui::MenuItem("Move To Root")) {
                 markHierarchyChanged("Move Group To Root");
@@ -2293,10 +3143,7 @@ void EditorState::renderHierarchy() {
                 }
                 m_hierarchyGroups.erase(m_hierarchyGroups.begin() + gi);
                 reindexGroupsAfterErase(gi);
-                if (open) ImGui::TreePop();
-                ImGui::EndPopup();
-                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
-                break;
+                breakAfterGroupPopupAction = true;
             }
             if (ImGui::MenuItem("Delete Group + Entities")) {
                 markHierarchyChanged("Delete Group");
@@ -2324,12 +3171,14 @@ void EditorState::renderHierarchy() {
                 executeCommand(std::move(deleteGroupCmd));
                 hierarchyChanged = false;
                 hierarchyChangeLabel.clear();
-                if (open) ImGui::TreePop();
-                ImGui::EndPopup();
-                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
-                break;
+                breakAfterGroupPopupAction = true;
             }
             ImGui::EndPopup();
+        }
+        if (breakAfterGroupPopupAction) {
+            if (open) ImGui::TreePop();
+            if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+            break;
         }
 
         if (open) {
@@ -2509,6 +3358,11 @@ void EditorState::renderHierarchy() {
 
     ImGui::InvisibleButton("##grouprootdrop", ImVec2(-1.0f, 8.0f));
     if (ImGui::BeginDragDropTarget()) {
+        if (auto* p = ImGui::AcceptDragDropPayload("ENTITY_GROUP_NAME")) {
+            const char* groupName = static_cast<const char*>(p->Data);
+            if (groupName && groupName[0] != '\0')
+                spawnEntityGroupIntoHierarchyGroup(groupName, -1);
+        }
         if (auto* p = ImGui::AcceptDragDropPayload(k_groupDragTag)) {
             int draggedGroupIdx = *(const int*)p->Data;
             if (draggedGroupIdx >= 0 && draggedGroupIdx < (int)m_hierarchyGroups.size()) {
@@ -2520,19 +3374,39 @@ void EditorState::renderHierarchy() {
     }
 
     // -----------------------------------------------------------------------
-    // 8. Merged Colliders section (read-only, collapsed by default)
+    // 8. Merged Colliders section
     // -----------------------------------------------------------------------
     {
-        std::vector<ECS::Entity> mergedEntities;
-        world.each<Components::Tag>([&](ECS::Entity e, Components::Tag& tag) {
-            if (tag.tag == "TilemapMergedCollider") mergedEntities.push_back(e);
+        std::vector<ECS::Entity> generatedMergedEntities;
+        std::unordered_map<uint32_t, std::vector<ECS::Entity>> compositeGroups;
+        std::vector<ECS::Entity> authoredCombinedEntities;
+        world.each<Components::Collider>([&](ECS::Entity e, Components::Collider& collider) {
+            bool isGeneratedMerged = false;
+            if (auto* tag = world.getComponent<Components::Tag>(e))
+                isGeneratedMerged = tag->tag == "TilemapMergedCollider";
+
+            if (isGeneratedMerged) {
+                generatedMergedEntities.push_back(e);
+                return;
+            }
+            if (!collider.isCombined) return;
+
+            if (collider.combinedGroupId != 0)
+                compositeGroups[collider.combinedGroupId].push_back(e);
+            else
+                authoredCombinedEntities.push_back(e);
         });
 
-        if (!mergedEntities.empty()) {
+        int mergedSectionCount =
+            static_cast<int>(generatedMergedEntities.size() + authoredCombinedEntities.size());
+        for (const auto& [groupId, entities] : compositeGroups)
+            mergedSectionCount += static_cast<int>(entities.size());
+
+        if (mergedSectionCount > 0) {
             ImGui::Separator();
             char sectionLabel[64];
             snprintf(sectionLabel, sizeof(sectionLabel),
-                     "Merged Colliders  [%d]##mergedsec", (int)mergedEntities.size());
+                     "Merged Colliders  [%d]##mergedsec", mergedSectionCount);
             ImGuiTreeNodeFlags sectionFlags = ImGuiTreeNodeFlags_SpanAvailWidth;
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 1.0f, 1.0f)); // cyan label
             bool sectionOpen = ImGui::TreeNodeEx(sectionLabel, sectionFlags);
@@ -2541,13 +3415,21 @@ void EditorState::renderHierarchy() {
             if (sectionOpen) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.9f, 0.9f, 1.0f));
                 std::vector<ECS::Entity> mergedToDelete;
-                for (auto& me : mergedEntities) {
-                    char rowLabel[128];
-                    if (auto* c = world.getComponent<Components::Collider>(me))
-                        snprintf(rowLabel, sizeof(rowLabel),
-                                 "  [%.0fx%.0f] (ID:%u)", c->size.x, c->size.y, me.id);
-                    else
-                        snprintf(rowLabel, sizeof(rowLabel), "  (ID:%u)", me.id);
+                auto renderMergedRow = [&](ECS::Entity me, const char* prefix) {
+                    char rowLabel[160];
+                    if (auto* c = world.getComponent<Components::Collider>(me)) {
+                        if (c->combinedGroupId != 0) {
+                            snprintf(rowLabel, sizeof(rowLabel),
+                                     "%s[%.0fx%.0f] Group %u (ID:%u)",
+                                     prefix, c->size.x, c->size.y, c->combinedGroupId, me.id);
+                        } else {
+                            snprintf(rowLabel, sizeof(rowLabel),
+                                     "%s[%.0fx%.0f] (ID:%u)",
+                                     prefix, c->size.x, c->size.y, me.id);
+                        }
+                    } else {
+                        snprintf(rowLabel, sizeof(rowLabel), "%s(ID:%u)", prefix, me.id);
+                    }
 
                     ImGui::PushID((int)me.id);
                     bool selected = isEntitySelected(me);
@@ -2555,13 +3437,35 @@ void EditorState::renderHierarchy() {
                         selectNew(me);
 
                     if (ImGui::BeginPopupContextItem()) {
-                        if (ImGui::MenuItem("Delete")) {
+                        if (ImGui::MenuItem("Delete"))
                             mergedToDelete.push_back(me);
+                        if (auto* collider = world.getComponent<Components::Collider>(me)) {
+                            if (collider->combinedGroupId != 0 && ImGui::MenuItem("Clear Composite Group")) {
+                                collider->combinedGroupId = 0;
+                                collider->isCombined = false;
+                            }
                         }
                         ImGui::EndPopup();
                     }
                     ImGui::PopID();
+                };
+
+                for (auto& [groupId, entities] : compositeGroups) {
+                    char groupLabel[96];
+                    snprintf(groupLabel, sizeof(groupLabel),
+                             "Composite Group %u  [%d]##compgrp%u",
+                             groupId, (int)entities.size(), groupId);
+                    if (ImGui::TreeNodeEx(groupLabel, ImGuiTreeNodeFlags_SpanAvailWidth)) {
+                        for (auto& entity : entities)
+                            renderMergedRow(entity, "  ");
+                        ImGui::TreePop();
+                    }
                 }
+                for (auto& me : authoredCombinedEntities)
+                    renderMergedRow(me, "* ");
+                for (auto& me : generatedMergedEntities)
+                    renderMergedRow(me, "~ ");
+
                 for (auto& me : mergedToDelete) {
                     m_selectedEntities.erase(
                         std::remove_if(m_selectedEntities.begin(), m_selectedEntities.end(),
@@ -3344,14 +4248,23 @@ void EditorState::renderInspector() {
             auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
             char texBuf[256];
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
-            if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
-                sr->textureId = texBuf;
+            if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf))) {
+                std::string newTexId = texBuf;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->textureId = newTexId;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
                     captureInspectorBefore();
-                    sr->textureId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
+                    std::string newTexId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
+                    applyToSelected([&](ECS::Entity e) {
+                        if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                            s->textureId = newTexId;
+                    });
                     pushInspectorChange();
                 }
                 ImGui::EndDragDropTarget();
@@ -3365,20 +4278,43 @@ void EditorState::renderInspector() {
             }
 
             float sz[2] = {sr->size.x, sr->size.y};
-            if (ImGui::DragFloat2("Size", sz, 1.0f))
-                sr->size = {sz[0], sz[1]};
+            if (ImGui::DragFloat2("Size", sz, 1.0f)) {
+                vec2 newSize = {sz[0], sz[1]};
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->size = newSize;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::ColorEdit4("Color", glm::value_ptr(sr->color));
+            if (ImGui::ColorEdit4("Color", glm::value_ptr(sr->color))) {
+                glm::vec4 newColor = sr->color;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->color = newColor;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::Checkbox("Visible", &sr->visible);
+            if (ImGui::Checkbox("Visible", &sr->visible)) {
+                bool newVisible = sr->visible;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->visible = newVisible;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::DragInt("Sort Order", &sr->sortOrder);
+            if (ImGui::DragInt("Sort Order", &sr->sortOrder)) {
+                int newOrder = sr->sortOrder;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->sortOrder = newOrder;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
@@ -3406,6 +4342,13 @@ void EditorState::renderInspector() {
 
         if (selectedCount > 1) {
             ImGui::TextDisabled("%d selected, %d with colliders", selectedCount, colliderCount);
+            auto nextCombinedGroupId = [&]() -> uint32_t {
+                uint32_t maxGroupId = 0;
+                world.each<Components::Collider>([&](ECS::Entity, Components::Collider& collider) {
+                    maxGroupId = std::max(maxGroupId, collider.combinedGroupId);
+                });
+                return maxGroupId + 1;
+            };
             if (colliderCount < selectedCount) {
                 if (ImGui::Button("Add Collider To Selected##colbulk", ImVec2(-1, 0))) {
                     applyToSelected([&](ECS::Entity e) {
@@ -3418,6 +4361,151 @@ void EditorState::renderInspector() {
                 }
             }
             if (colliderCount > 0) {
+                if (colliderCount > 1) {
+                    bool canMarkCombined = true;
+                    bool canCombineColliders = true;
+                    for (const auto& e : selected) {
+                        auto* col = world.getComponent<Components::Collider>(e);
+                        if (!col) continue;
+                        if (col->shape != Components::Collider::Shape::Box) {
+                            canMarkCombined = false;
+                            canCombineColliders = false;
+                            break;
+                        }
+                    }
+
+                    bool mergeWithNeighbors = c ? c->isCombined : false;
+                    if (!canMarkCombined) {
+                        ImGui::BeginDisabled();
+                    }
+                    if (ImGui::Checkbox("Merge With Neighbors On Save##colbulk", &mergeWithNeighbors)) {
+                        const uint32_t newGroupId = mergeWithNeighbors ? nextCombinedGroupId() : 0;
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                if (col->shape == Components::Collider::Shape::Box) {
+                                    col->isCombined = mergeWithNeighbors;
+                                    col->combinedGroupId = mergeWithNeighbors ? newGroupId : 0;
+                                }
+                            }
+                        });
+                    }
+                    if (ImGui::Button("Create Composite Collider Group##colbulk", ImVec2(-1, 0))) {
+                        const uint32_t newGroupId = nextCombinedGroupId();
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                if (col->shape == Components::Collider::Shape::Box) {
+                                    col->isCombined = true;
+                                    col->combinedGroupId = newGroupId;
+                                }
+                            }
+                        });
+                    }
+                    if (ImGui::Button("Clear Composite Group##colbulk", ImVec2(-1, 0))) {
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                col->combinedGroupId = 0;
+                                if (col->shape == Components::Collider::Shape::Box)
+                                    col->isCombined = false;
+                            }
+                        });
+                    }
+                    if (!canMarkCombined) {
+                        ImGui::EndDisabled();
+                        ImGui::TextDisabled("Auto-merge applies to box colliders only.");
+                    }
+                    if (c && c->combinedGroupId != 0)
+                        ImGui::TextDisabled("Composite Group: %u", c->combinedGroupId);
+
+                    float bulkSizeDelta[2] = {m_bulkColliderSizeDelta.x, m_bulkColliderSizeDelta.y};
+                    if (ImGui::DragFloat2("Bulk Size Delta##colbulk", bulkSizeDelta, 1.0f)) {
+                        m_bulkColliderSizeDelta = {bulkSizeDelta[0], bulkSizeDelta[1]};
+                    }
+                    if (ImGui::Button("Apply Size Delta##colbulk", ImVec2(-1, 0))) {
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e)) {
+                                if (col->shape != Components::Collider::Shape::Box) return;
+                                col->size.x = std::max(1.0f, col->size.x + m_bulkColliderSizeDelta.x);
+                                col->size.y = std::max(1.0f, col->size.y + m_bulkColliderSizeDelta.y);
+                            }
+                        });
+                    }
+
+                    float bulkOffsetDelta[2] = {m_bulkColliderOffsetDelta.x, m_bulkColliderOffsetDelta.y};
+                    if (ImGui::DragFloat2("Bulk Offset Delta##colbulk", bulkOffsetDelta, 1.0f)) {
+                        m_bulkColliderOffsetDelta = {bulkOffsetDelta[0], bulkOffsetDelta[1]};
+                    }
+                    if (ImGui::Button("Apply Offset Delta##colbulk", ImVec2(-1, 0))) {
+                        applyToSelected([&](ECS::Entity e) {
+                            if (auto* col = world.getComponent<Components::Collider>(e))
+                                col->offset = {
+                                    col->offset.x + m_bulkColliderOffsetDelta.x,
+                                    col->offset.y + m_bulkColliderOffsetDelta.y
+                                };
+                        });
+                    }
+
+                    if (!canCombineColliders) {
+                        ImGui::BeginDisabled();
+                    }
+                    if (ImGui::Button("Combine Colliders##colbulk", ImVec2(-1, 0))) {
+                        ECS::Entity targetEntity = world.isValid(m_selectedEntity) ? m_selectedEntity : representative;
+                        auto* targetTransform = world.getComponent<Components::Transform>(targetEntity);
+                        auto* targetCollider = world.getComponent<Components::Collider>(targetEntity);
+                        if (targetTransform && targetCollider) {
+                            float minX = std::numeric_limits<float>::max();
+                            float minY = std::numeric_limits<float>::max();
+                            float maxX = std::numeric_limits<float>::lowest();
+                            float maxY = std::numeric_limits<float>::lowest();
+
+                            for (const auto& e : selected) {
+                                auto* t = world.getComponent<Components::Transform>(e);
+                                auto* col = world.getComponent<Components::Collider>(e);
+                                if (!t || !col || col->shape != Components::Collider::Shape::Box) continue;
+
+                                const vec2 center{
+                                    t->position.x + col->offset.x,
+                                    t->position.y + col->offset.y
+                                };
+                                const vec2 halfExtents{
+                                    std::abs(col->size.x * t->scale.x) * 0.5f,
+                                    std::abs(col->size.y * t->scale.y) * 0.5f
+                                };
+                                minX = std::min(minX, center.x - halfExtents.x);
+                                minY = std::min(minY, center.y - halfExtents.y);
+                                maxX = std::max(maxX, center.x + halfExtents.x);
+                                maxY = std::max(maxY, center.y + halfExtents.y);
+                            }
+
+                            if (minX <= maxX && minY <= maxY) {
+                                const vec2 mergedCenter{(minX + maxX) * 0.5f, (minY + maxY) * 0.5f};
+                                const vec2 mergedSize{maxX - minX, maxY - minY};
+                                const float invScaleX = std::abs(targetTransform->scale.x) > 0.0001f ? 1.0f / std::abs(targetTransform->scale.x) : 1.0f;
+                                const float invScaleY = std::abs(targetTransform->scale.y) > 0.0001f ? 1.0f / std::abs(targetTransform->scale.y) : 1.0f;
+
+                                targetCollider->shape = Components::Collider::Shape::Box;
+                                targetCollider->size = {mergedSize.x * invScaleX, mergedSize.y * invScaleY};
+                                targetCollider->offset = {mergedCenter.x - targetTransform->position.x,
+                                                          mergedCenter.y - targetTransform->position.y};
+                                targetCollider->isCombined = true;
+                                targetCollider->combinedGroupId = 0;
+
+                                for (const auto& e : selected) {
+                                    if (e.id == targetEntity.id && e.generation == targetEntity.generation) continue;
+                                    if (world.hasComponent<Components::Collider>(e))
+                                        world.removeComponent<Components::Collider>(e);
+                                }
+
+                                colliderCount = 1;
+                                representative = targetEntity;
+                                c = targetCollider;
+                            }
+                        }
+                    }
+                    if (!canCombineColliders) {
+                        ImGui::EndDisabled();
+                        ImGui::TextDisabled("Combine requires box colliders.");
+                    }
+                }
                 if (ImGui::Button("Remove Colliders From Selected##colbulk", ImVec2(-1, 0))) {
                     applyToSelected([&](ECS::Entity e) {
                         if (world.hasComponent<Components::Collider>(e))
@@ -3499,6 +4587,22 @@ void EditorState::renderInspector() {
                         col->moveable = moveable;
                 });
             }
+            if (c->shape == Components::Collider::Shape::Box) {
+                bool mergeWithNeighbors = c->isCombined;
+                if (ImGui::Checkbox("Merge With Neighbors On Save##col", &mergeWithNeighbors)) {
+                    applyToSelected([&](ECS::Entity e) {
+                        if (auto* col = world.getComponent<Components::Collider>(e)) {
+                            if (col->shape == Components::Collider::Shape::Box) {
+                                col->isCombined = mergeWithNeighbors;
+                                if (!mergeWithNeighbors)
+                                    col->combinedGroupId = 0;
+                            }
+                        }
+                    });
+                }
+                if (c->combinedGroupId != 0)
+                    ImGui::TextDisabled("Composite Group: %u", c->combinedGroupId);
+            }
             if (c->moveable) {
                 float mass = c->mass;
                 if (ImGui::DragFloat("Mass##col", &mass, 0.1f)) {
@@ -3519,15 +4623,15 @@ void EditorState::renderInspector() {
                 ImGui::SetNextItemWidth(-1.f);
                 if (ImGui::BeginCombo("Category##col", categoryNames[currentIdx])) {
                     for (int i = 0; i < 4; ++i) {
-                        bool selected = (currentIdx == i);
-                        if (ImGui::Selectable(categoryNames[i], selected)) {
+                        const bool isCurrentSelection = (currentIdx == i);
+                        if (ImGui::Selectable(categoryNames[i], isCurrentSelection)) {
                             const uint32_t newCategory = categoryValues[i];
                             applyToSelected([&](ECS::Entity e) {
                                 if (auto* col = world.getComponent<Components::Collider>(e))
                                     col->collisionCategory = newCategory;
                             });
                         }
-                        if (selected) ImGui::SetItemDefaultFocus();
+                        if (isCurrentSelection) ImGui::SetItemDefaultFocus();
                     }
                     ImGui::EndCombo();
                 }
@@ -3676,7 +4780,7 @@ void EditorState::renderInspector() {
             ImGui::DragFloat("Target Speed##fa", &fa->sprintSpeedThreshold, 0.1f, 0.0f, 1000.0f);
             ImGui::DragFloat("Min Speed##fa", &fa->minSpeed, 0.01f, 0.0f, 1000.0f);
             ImGui::DragFloat("Reset Delay##fa", &fa->resetDelay, 0.01f, 0.0f, 1.0f);
-            ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 1.0f);
+            ImGui::SliderFloat("Volume##fa", &fa->volume, 0.0f, 5.0f);
             ImGui::DragInt("Variations##fa", &fa->variationCount, 1.0f, 1, 16);
             const float previewSpeed = std::max(fa->minSpeed, fa->sprintSpeedThreshold);
             float previewInterval = fa->interval;
@@ -3913,10 +5017,51 @@ void EditorState::renderInspector() {
                     if (!propDefs.empty()) {
                         ImGui::Separator();
                         ImGui::TextDisabled("Script Properties");
+                        std::string activationZoneActionType;
+                        const bool isActivationZoneScript =
+                            entry.scriptPath == "components/activation_zone.lua";
+                        if (isActivationZoneScript) {
+                            auto actionIt = entry.properties.find("actionType");
+                            if (actionIt != entry.properties.end() &&
+                                std::holds_alternative<std::string>(actionIt->second)) {
+                                activationZoneActionType = std::get<std::string>(actionIt->second);
+                            }
+                        }
                         for (auto& def : propDefs) {
                             if (def.label.empty()) continue;
                             if (!entry.properties.count(def.name))
                                 entry.properties[def.name] = def.defaultValue;
+
+                            if (isActivationZoneScript) {
+                                bool activationSetVisible = false;
+                                auto visibleIt = entry.properties.find("setVisible");
+                                if (visibleIt != entry.properties.end() &&
+                                    std::holds_alternative<bool>(visibleIt->second)) {
+                                    activationSetVisible = std::get<bool>(visibleIt->second);
+                                }
+                                const bool isTextRendererOnlyField =
+                                    def.name == "targetTag" ||
+                                    def.name == "setText" ||
+                                    def.name == "textValue" ||
+                                    def.name == "setVisible" ||
+                                    def.name == "visibleValue" ||
+                                    def.name == "restoreVisibilityAfterDelay" ||
+                                    def.name == "visibilityRestoreDelay" ||
+                                    def.name == "setFontSize" ||
+                                    def.name == "fontSizeValue";
+                                if (isTextRendererOnlyField &&
+                                    activationZoneActionType != "ChangeTextRenderer") {
+                                    continue;
+                                }
+                                const bool isVisibilityOnlyField =
+                                    def.name == "visibleValue" ||
+                                    def.name == "restoreVisibilityAfterDelay" ||
+                                    def.name == "visibilityRestoreDelay";
+                                if (isVisibilityOnlyField && !activationSetVisible) {
+                                    continue;
+                                }
+                            }
+
                             auto& val = entry.properties[def.name];
                             if (def.type == "float") {
                                 float v = std::get<float>(val);
@@ -3942,7 +5087,9 @@ void EditorState::renderInspector() {
                                     static const char* actionTypes[] = {
                                         "None",
                                         "PlayAudio",
-                                        "ChangeScene"
+                                        "ChangeScene",
+                                        "ResetFragments",
+                                        "ChangeTextRenderer"
                                     };
                                     int currentIndex = 0;
                                     for (int idx = 0; idx < IM_ARRAYSIZE(actionTypes); ++idx) {
@@ -4347,6 +5494,125 @@ void EditorState::renderViewport() {
     vec2  camP  = {cam.position().x, cam.position().y};
     auto& ecs   = m_scene.GetWorld();
 
+    ECS::Entity hoveredPickEntity{0, 0};
+    if (m_viewportHovered && !m_tileMapMode) {
+        ImVec2 hoverMouse = ImGui::GetMousePos();
+        vec2 hoverWorldPos = screenToWorld({hoverMouse.x, hoverMouse.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+
+        auto containsHoverPickPoint = [&](ECS::Entity e) {
+            if (!ecs.isValid(e) || m_hiddenEntities.count(e.id)) return false;
+
+            auto* t = ecs.getComponent<Components::Transform>(e);
+            if (!t) return false;
+
+            vec2 center{t->position.x, t->position.y};
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return false;
+                float hw = (sr->size.x * std::abs(t->scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t->scale.y)) * 0.5f;
+                return (hoverWorldPos.x >= center.x - hw && hoverWorldPos.x <= center.x + hw &&
+                        hoverWorldPos.y >= center.y - hh && hoverWorldPos.y <= center.y + hh);
+            }
+
+            float d = glm::length(glm::vec2(hoverWorldPos.x - center.x, hoverWorldPos.y - center.y));
+            return d < 60.0f;
+        };
+
+        struct HoverPickCandidate {
+            ECS::Entity entity{0, 0};
+            bool hasSprite{false};
+            int sortOrder{std::numeric_limits<int>::min()};
+            float distance{std::numeric_limits<float>::max()};
+        };
+
+        std::vector<HoverPickCandidate> hoveredPickCandidates;
+        ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+            if (m_hiddenEntities.count(e.id)) return;
+
+            vec2 center{t.position.x, t.position.y};
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return;
+                float hw = (sr->size.x * std::abs(t.scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t.scale.y)) * 0.5f;
+                bool inside = (hoverWorldPos.x >= center.x - hw && hoverWorldPos.x <= center.x + hw &&
+                               hoverWorldPos.y >= center.y - hh && hoverWorldPos.y <= center.y + hh);
+                if (inside)
+                    hoveredPickCandidates.push_back({e, true, sr->sortOrder, 0.0f});
+            } else {
+                float d = glm::length(glm::vec2(hoverWorldPos.x - center.x, hoverWorldPos.y - center.y));
+                if (d < 60.0f)
+                    hoveredPickCandidates.push_back({e, false, std::numeric_limits<int>::min(), d});
+            }
+        });
+
+        std::stable_sort(hoveredPickCandidates.begin(), hoveredPickCandidates.end(),
+            [](const HoverPickCandidate& a, const HoverPickCandidate& b) {
+                if (a.hasSprite != b.hasSprite) return a.hasSprite > b.hasSprite;
+                if (a.hasSprite && b.hasSprite) {
+                    if (a.sortOrder != b.sortOrder) return a.sortOrder > b.sortOrder;
+                    return a.entity.id > b.entity.id;
+                }
+                if (a.distance != b.distance) return a.distance < b.distance;
+                return a.entity.id > b.entity.id;
+            });
+
+        if (!hoveredPickCandidates.empty()) {
+            hoveredPickEntity = hoveredPickCandidates.front().entity;
+
+            const float pickCycleThreshold = 8.0f;
+            const double pickCycleCooldownSeconds = 3.0;
+            bool repeatedPickArea = false;
+            if (m_hasLastPickScreenPos) {
+                float dx = hoverMouse.x - m_lastPickScreenPos.x;
+                float dy = hoverMouse.y - m_lastPickScreenPos.y;
+                repeatedPickArea = std::sqrt(dx * dx + dy * dy) <= pickCycleThreshold;
+            }
+
+            double secondsSinceLastPick = ImGui::GetTime() - m_lastPickTimeSeconds;
+            bool canCyclePick = repeatedPickArea && secondsSinceLastPick <= pickCycleCooldownSeconds;
+
+            if (canCyclePick && containsHoverPickPoint(m_selectedEntity)) {
+                for (size_t i = 0; i < hoveredPickCandidates.size(); ++i) {
+                    const ECS::Entity candidate = hoveredPickCandidates[i].entity;
+                    if (candidate.id == m_selectedEntity.id &&
+                        candidate.generation == m_selectedEntity.generation) {
+                        hoveredPickEntity = hoveredPickCandidates[(i + 1) % hoveredPickCandidates.size()].entity;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (m_showPickBounds && ecs.isValid(hoveredPickEntity)) {
+        if (auto* t = ecs.getComponent<Components::Transform>(hoveredPickEntity)) {
+            vec2 center{t->position.x, t->position.y};
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            ImU32 fillCol = IM_COL32(255, 180, 70, 40);
+            ImU32 lineCol = IM_COL32(255, 180, 70, 220);
+
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(hoveredPickEntity)) {
+                float hw = (sr->size.x * std::abs(t->scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t->scale.y)) * 0.5f;
+
+                vec2 a = worldToScreen({center.x - hw, center.y + hh}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                vec2 b = worldToScreen({center.x + hw, center.y - hh}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                ImVec2 minPt{std::min(a.x, b.x), std::min(a.y, b.y)};
+                ImVec2 maxPt{std::max(a.x, b.x), std::max(a.y, b.y)};
+                dl->AddRectFilled(minPt, maxPt, fillCol);
+                dl->AddRect(minPt, maxPt, lineCol, 0.f, 0, 2.0f);
+            } else {
+                constexpr float pickRadius = 60.0f;
+                vec2 a = worldToScreen({center.x - pickRadius, center.y + pickRadius}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                vec2 b = worldToScreen({center.x + pickRadius, center.y - pickRadius}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+                ImVec2 minPt{std::min(a.x, b.x), std::min(a.y, b.y)};
+                ImVec2 maxPt{std::max(a.x, b.x), std::max(a.y, b.y)};
+                dl->AddRectFilled(minPt, maxPt, fillCol);
+                dl->AddRect(minPt, maxPt, lineCol, 0.f, 0, 2.0f);
+            }
+        }
+    }
+
     // ----- Tilemap input (when in tilemap mode) -----
     if (m_tileMapMode)
         handleTileMapInput(vpMin);
@@ -4364,45 +5630,104 @@ void EditorState::renderViewport() {
         ImVec2 mp       = ImGui::GetMousePos();
         vec2   worldPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
 
-        // Pick the topmost entity under the cursor.
-        // Among entities whose bounds contain worldPos, prefer highest sortOrder
-        // (higher sortOrder = rendered last = visually on top).
-        // Fall back to closest-center distance for entities without a SpriteRenderer.
-        ECS::Entity bestEnt{0, 0};
-        int   bestSort  = std::numeric_limits<int>::min();
-        float bestDist  = 60.0f;   // max pick radius for fallback
-        bool  foundBounds = false;
+        auto containsPickPoint = [&](ECS::Entity e) {
+            if (!ecs.isValid(e) || m_hiddenEntities.count(e.id)) return false;
 
+            auto* t = ecs.getComponent<Components::Transform>(e);
+            if (!t) return false;
+
+            vec2 center{t->position.x, t->position.y};
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return false;
+                // Axis-aligned bounds test (ignores rotation, good enough for picking)
+                float hw = (sr->size.x * std::abs(t->scale.x)) * 0.5f;
+                float hh = (sr->size.y * std::abs(t->scale.y)) * 0.5f;
+                return (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
+                        worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
+            }
+
+            float d = glm::length(glm::vec2(worldPos.x - center.x, worldPos.y - center.y));
+            return d < 60.0f;
+        };
+
+        struct PickCandidate {
+            ECS::Entity entity{0, 0};
+            bool hasSprite{false};
+            int sortOrder{std::numeric_limits<int>::min()};
+            float distance{std::numeric_limits<float>::max()};
+        };
+
+        std::vector<PickCandidate> pickCandidates;
         ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
             if (m_hiddenEntities.count(e.id)) return; // skip hidden entities
+
             vec2 center{t.position.x, t.position.y};
-            auto* sr = ecs.getComponent<Components::SpriteRenderer>(e);
-            if (sr) {
-                // Axis-aligned bounds test (ignores rotation, good enough for picking)
+            if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                if (!sr->visible) return;
                 float hw = (sr->size.x * std::abs(t.scale.x)) * 0.5f;
                 float hh = (sr->size.y * std::abs(t.scale.y)) * 0.5f;
                 bool inside = (worldPos.x >= center.x - hw && worldPos.x <= center.x + hw &&
                                worldPos.y >= center.y - hh && worldPos.y <= center.y + hh);
                 if (inside) {
-                    // Higher sortOrder = rendered last = visually on top 
-                    if (!foundBounds || sr->sortOrder > bestSort) {
-                        bestSort    = sr->sortOrder;
-                        bestEnt     = e;
-                        foundBounds = true;
-                    }
+                    pickCandidates.push_back({e, true, sr->sortOrder, 0.0f});
                 }
-            } else if (!foundBounds) {
-                // No sprite
+            } else {
                 float d = glm::length(glm::vec2(worldPos.x - center.x, worldPos.y - center.y));
-                if (d < bestDist) { bestDist = d; bestEnt = e; }
+                if (d < 60.0f) {
+                    pickCandidates.push_back({e, false, std::numeric_limits<int>::min(), d});
+                }
             }
         });
 
+        std::stable_sort(pickCandidates.begin(), pickCandidates.end(),
+            [](const PickCandidate& a, const PickCandidate& b) {
+                if (a.hasSprite != b.hasSprite) return a.hasSprite > b.hasSprite;
+                if (a.hasSprite && b.hasSprite) {
+                    if (a.sortOrder != b.sortOrder) return a.sortOrder > b.sortOrder;
+                    return a.entity.id > b.entity.id;
+                }
+                if (a.distance != b.distance) return a.distance < b.distance;
+                return a.entity.id > b.entity.id;
+            });
+
+        ECS::Entity bestEnt{0, 0};
+        if (!pickCandidates.empty()) {
+            bestEnt = pickCandidates.front().entity;
+
+            const float pickCycleThreshold = 8.0f;
+            const double pickCycleCooldownSeconds = 3.0;
+            bool repeatedPickArea = false;
+            if (m_hasLastPickScreenPos) {
+                float dx = mp.x - m_lastPickScreenPos.x;
+                float dy = mp.y - m_lastPickScreenPos.y;
+                repeatedPickArea = std::sqrt(dx * dx + dy * dy) <= pickCycleThreshold;
+            }
+
+            double secondsSinceLastPick = ImGui::GetTime() - m_lastPickTimeSeconds;
+            bool canCyclePick = repeatedPickArea && secondsSinceLastPick <= pickCycleCooldownSeconds;
+
+            if (canCyclePick && containsPickPoint(m_selectedEntity)) {
+                for (size_t i = 0; i < pickCandidates.size(); ++i) {
+                    const ECS::Entity candidate = pickCandidates[i].entity;
+                    if (candidate.id == m_selectedEntity.id &&
+                        candidate.generation == m_selectedEntity.generation) {
+                        bestEnt = pickCandidates[(i + 1) % pickCandidates.size()].entity;
+                        break;
+                    }
+                }
+            }
+        }
+
         bool shift = ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
                      ImGui::IsKeyDown(ImGuiKey_RightShift);
+        bool alt = ImGui::IsKeyDown(ImGuiKey_LeftAlt) ||
+                   ImGui::IsKeyDown(ImGuiKey_RightAlt);
 
         if (shift) {
             if (ecs.isValid(bestEnt)) {
+                m_lastPickScreenPos = {mp.x, mp.y};
+                m_hasLastPickScreenPos = true;
+                m_lastPickTimeSeconds = ImGui::GetTime();
                 // Shift+click entity: toggle in multi-selection
                 auto it = std::find_if(m_selectedEntities.begin(), m_selectedEntities.end(),
                     [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
@@ -4415,16 +5740,83 @@ void EditorState::renderViewport() {
                     if (!ecs.isValid(m_selectedEntity)) m_selectedEntity = bestEnt;
                 }
             } else {
+                m_lastPickScreenPos = {mp.x, mp.y};
+                m_hasLastPickScreenPos = true;
                 // Shift+click empty space: start additive box selection
                 m_isBoxSelecting = true;
                 m_boxSelectStart = {mp.x, mp.y};
                 m_boxSelectEnd   = {mp.x, mp.y};
             }
         } else {
+            bool handledPlainClick = false;
+            if (alt &&
+                ecs.isValid(bestEnt) &&
+                std::any_of(m_selectedEntities.begin(), m_selectedEntities.end(),
+                    [&](ECS::Entity e) {
+                        return e.id == bestEnt.id && e.generation == bestEnt.generation;
+                    })) {
+                std::vector<ECS::Entity> sourceSelection;
+                sourceSelection.reserve(m_selectedEntities.size());
+                for (const auto& selectedEntity : m_selectedEntities) {
+                    if (ecs.isValid(selectedEntity))
+                        sourceSelection.push_back(selectedEntity);
+                }
+                if (sourceSelection.empty())
+                    sourceSelection.push_back(bestEnt);
+
+                std::vector<ECS::Entity> clonedEntities;
+                clonedEntities.reserve(sourceSelection.size());
+                ECS::Entity clonedPrimary{0, 0};
+
+                for (const auto& sourceEntity : sourceSelection) {
+                    if (!ecs.isValid(sourceEntity)) continue;
+                    EntitySnapshot snap = EntitySnapshot::capture(ecs, sourceEntity);
+                    auto cmd = std::make_unique<CreateEntityCmd>(ecs, snap);
+                    auto* rawCmd = cmd.get();
+                    executeCommand(std::move(cmd));
+
+                    ECS::Entity clonedEntity = rawCmd->createdEntity();
+                    if (!ecs.isValid(clonedEntity)) continue;
+                    clonedEntities.push_back(clonedEntity);
+
+                    if (sourceEntity.id == bestEnt.id &&
+                        sourceEntity.generation == bestEnt.generation) {
+                        clonedPrimary = clonedEntity;
+                    }
+                }
+
+                m_selectedEntities = clonedEntities;
+                m_selectedEntity = ecs.isValid(clonedPrimary)
+                    ? clonedPrimary
+                    : (clonedEntities.empty() ? ECS::Entity{0, 0} : clonedEntities.front());
+
+                m_lastPickScreenPos = {mp.x, mp.y};
+                m_hasLastPickScreenPos = true;
+                m_lastPickTimeSeconds = ImGui::GetTime();
+
+                if (!clonedEntities.empty()) {
+                    m_pendingEntityDrag = true;
+                    m_isDraggingEntity  = false;
+                    m_dragStartMousePos = {mp.x, mp.y};
+                    m_dragClickWorldPos = worldPos;
+                    m_gizmoGroupOriginalPos.clear();
+                    for (const auto& clonedEntity : clonedEntities) {
+                        if (auto* t = ecs.getComponent<Components::Transform>(clonedEntity))
+                            m_gizmoGroupOriginalPos.push_back({clonedEntity, {t->position.x, t->position.y}});
+                    }
+                }
+                handledPlainClick = true;
+            }
+
+            if (!handledPlainClick) {
             // Check if clicking an already-selected entity
             bool alreadySelected = ecs.isValid(bestEnt) &&
                 std::any_of(m_selectedEntities.begin(), m_selectedEntities.end(),
                     [&](ECS::Entity e){ return e.id == bestEnt.id && e.generation == bestEnt.generation; });
+
+            m_lastPickScreenPos = {mp.x, mp.y};
+            m_hasLastPickScreenPos = true;
+            m_lastPickTimeSeconds = ImGui::GetTime();
 
             if (!alreadySelected) {
                 // New entity ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â clear selection and select this one
@@ -4456,6 +5848,7 @@ void EditorState::renderViewport() {
                     m_selectedEntities.clear();
                     m_selectedEntity = {0, 0};
                 }
+            }
             }
         }
     }
@@ -4503,8 +5896,8 @@ void EditorState::renderViewport() {
         m_isDraggingEntity  = false;
     }
 
-    // ----- Box selection update / draw / finalize -----
-    if (m_isBoxSelecting) {
+    // ----- Box selection update / draw / finalize (scene mode only) -----
+    if (m_isBoxSelecting && !m_tileMapMode) {
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
             ImVec2 mp   = ImGui::GetMousePos();
             m_boxSelectEnd = {mp.x, mp.y};
@@ -4538,6 +5931,12 @@ void EditorState::renderViewport() {
                 }
 
                 ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                    // Filter by layer: if entity has a SpriteRenderer, its sortOrder
+                    // represents the layer it was placed on. Skip if it doesn't match.
+                    if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                        if (sr->sortOrder != m_currentLayer)
+                            return;
+                    }
                     vec2 sc = worldToScreen({t.position.x, t.position.y},
                                            camP, m_editorCamZoom, vpMin, m_viewportSize);
                     if (sc.x >= minSX && sc.x <= maxSX &&
@@ -4580,13 +5979,17 @@ void EditorState::renderViewport() {
             snap.hasSpriteRenderer  = true;
             snap.spriteRenderer.textureId = texName;
             snap.spriteRenderer.size      = {100.0f, 100.0f};
+            snap.spriteRenderer.sortOrder = m_currentLayer;
 
             auto cmd = std::make_unique<CreateEntityCmd>(m_scene.GetWorld(), snap);
             auto* raw = cmd.get();
             executeCommand(std::move(cmd));
+            ECS::Entity e = raw->createdEntity();
+            m_tilemap.push_back({texName, wPos, m_currentLayer, e});
+            getOrCreateLayerGroup(m_currentLayer)->entities.push_back(e);
             m_selectedEntities.clear();
-            m_selectedEntity = raw->createdEntity();
-            m_selectedEntities.push_back(m_selectedEntity);
+            m_selectedEntity = e;
+            m_selectedEntities.push_back(e);
         }
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
             const char* prefabName = static_cast<const char*>(pl->Data);
@@ -4604,6 +6007,19 @@ void EditorState::renderViewport() {
                 m_selectedEntity = e;
                 m_selectedEntities.push_back(e);
             }
+        }
+        if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("ENTITY_GROUP_NAME")) {
+            const char* groupName = static_cast<const char*>(pl->Data);
+            ImVec2 mp = ImGui::GetMousePos();
+            vec2 wPos = screenToWorld({mp.x, mp.y}, camP, m_editorCamZoom, vpMin, m_viewportSize);
+            if (m_snapToGrid) wPos = snapToGrid(wPos, m_gridSize);
+            std::vector<ECS::Entity> spawnedEntities = spawnEntityGroup(groupName, wPos);
+            m_selectedEntities.clear();
+            for (const auto& entity : spawnedEntities) {
+                if (m_scene.GetWorld().isValid(entity))
+                    m_selectedEntities.push_back(entity);
+            }
+            m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0} : m_selectedEntities.front();
         }
         ImGui::EndDragDropTarget();
     }
@@ -4834,6 +6250,13 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             float currentAngle = std::atan2(mousePos.y - origin.y,
                                              mousePos.x - origin.x);
             float delta = currentAngle - m_gizmoClickOffset.x;
+
+            // Snap rotation to nearest 90 degrees when snap is enabled
+            if (m_snapToGrid) {
+                constexpr float kSnap = 1.5707963268f; // pi/2
+                delta = std::round(delta / kSnap) * kSnap;
+            }
+
             vec2 pivot{0.f, 0.f};
             if (!m_gizmoGroupOriginalPos.empty()) {
                 for (const auto& [_, pos] : m_gizmoGroupOriginalPos)
@@ -4976,6 +6399,34 @@ void EditorState::renderAssetBrowser() {
     namespace fs = std::filesystem;
     std::error_code ec;
     const fs::path assetsRoot("assets/textures");
+    auto moveTextureAsset = [&](const fs::path& src, const fs::path& destDir) {
+        fs::path normalizedSrc = src.lexically_normal();
+        fs::path normalizedDestDir = destDir.lexically_normal();
+        fs::path destPath = (normalizedDestDir / normalizedSrc.filename()).lexically_normal();
+
+        if (normalizedSrc == destPath || fs::exists(destPath))
+            return false;
+
+        ec.clear();
+        fs::create_directories(normalizedDestDir, ec);
+        if (ec)
+            return false;
+
+        ec.clear();
+        fs::rename(normalizedSrc, destPath, ec);
+        if (ec)
+            return false;
+
+        Assets::TextureManager::UpdateConfigPath(normalizedSrc.stem().string(),
+                                                 destPath.generic_string());
+
+        for (auto& selectedPath : m_selectedAssetPaths) {
+            if (selectedPath == normalizedSrc.generic_string())
+                selectedPath = destPath.generic_string();
+        }
+
+        return true;
+    };
 
     // Ensure directory exists
     if (!fs::exists(assetsRoot)) {
@@ -4994,11 +6445,10 @@ void EditorState::renderAssetBrowser() {
                 if (ext == e) {
                     std::string stem = fs::path(filePath).stem().string();
                     // Import into CURRENT directory
-                    fs::path dest = fs::path(m_currentAssetDir) / fs::path(filePath).filename();
-                    Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str());
+                    Assets::TextureManager::ImportTexture(filePath.c_str(), stem.c_str(),
+                                                         "assets/configs/Textures.json",
+                                                         m_currentAssetDir);
                     invalidateBrowserCaches();
-                    // If imported to a different location than the manager's default,
-                    // we might need to handle the move, but ImportTexture handles the copy to assets/textures.
                     handled = true;
                     break;
                 }
@@ -5032,6 +6482,11 @@ void EditorState::renderAssetBrowser() {
         ImGui::SameLine();
     }
     ImGui::Text("Location: %s", fs::relative(m_currentAssetDir, assetsRoot, ec).generic_string().c_str());
+    ImGui::TextDisabled("Path:");
+    ImGui::SameLine();
+    ImGui::PushTextWrapPos(0.0f);
+    ImGui::TextDisabled("%s", fs::absolute(m_currentAssetDir, ec).generic_string().c_str());
+    ImGui::PopTextWrapPos();
     ImGui::Separator();
 
     if (ImGui::Button("Add Texture")) {
@@ -5106,7 +6561,9 @@ void EditorState::renderAssetBrowser() {
         }
         ImGui::InputText("Asset ID", m_newAssetNameBuf, sizeof(m_newAssetNameBuf));
         if (ImGui::Button("Import", ImVec2(100, 0))) {
-            Assets::TextureManager::ImportTexture(m_newAssetPathBuf, m_newAssetNameBuf);
+            Assets::TextureManager::ImportTexture(m_newAssetPathBuf, m_newAssetNameBuf,
+                                                 "assets/configs/Textures.json",
+                                                 m_currentAssetDir);
             invalidateBrowserCaches();
             ImGui::CloseCurrentPopup();
         }
@@ -5241,10 +6698,7 @@ void EditorState::renderAssetBrowser() {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? assetsRoot : (assetsRoot / folder);
                 for (const auto& movingAssetPath : m_movingAssetPaths) {
-                    fs::path destFile = destDir / fs::path(movingAssetPath).filename();
-                    if (!fs::exists(destFile)) {
-                        fs::rename(fs::path(movingAssetPath), destFile, ec);
-                    }
+                    moveTextureAsset(fs::path(movingAssetPath), destDir);
                 }
                 m_movingAssetPaths.clear();
                 invalidateBrowserCaches();
@@ -5393,9 +6847,7 @@ void EditorState::renderAssetBrowser() {
             }
 
             for (const auto& src : sources) {
-                fs::path destPath = destFolder / src.filename();
-                if (!fs::exists(destPath))
-                    fs::rename(src, destPath, ec);
+                moveTextureAsset(src, destFolder);
             }
             invalidateBrowserCaches();
         };
@@ -5455,7 +6907,9 @@ void EditorState::renderAssetBrowser() {
                     if (!tex || tex->id() == 0) {
                         // Automatically import if it's not in config but exists on disk in assets/textures
                         if (Assets::TextureManager::GetFilePath(stem).empty()) {
-                            Assets::TextureManager::ImportTexture(path.generic_string(), stem);
+                            Assets::TextureManager::ImportTexture(path.generic_string(), stem,
+                                                                 "assets/configs/Textures.json",
+                                                                 path.parent_path().generic_string());
                         } else {
                             Assets::TextureManager::LoadTexture(stem, path.generic_string());
                         }
@@ -6412,6 +7866,11 @@ void EditorState::renderAudioBrowser() {
     namespace fs = std::filesystem;
     std::error_code ec;
     const fs::path audioRoot("assets/audio");
+    auto setAudioBrowserStatus = [&](std::string message, bool isError) {
+        m_audioBrowserStatusMessage = std::move(message);
+        m_audioBrowserStatusIsError = isError;
+        m_audioBrowserStatusUntil = ImGui::GetTime() + 4.0;
+    };
 
     if (!fs::exists(audioRoot)) fs::create_directories(audioRoot, ec);
     const std::string kSoundConfig = "assets/configs/sounds.json";
@@ -6448,6 +7907,7 @@ void EditorState::renderAudioBrowser() {
             cfg.group = "SFX";
 
             if (!Assets::SoundManager::ImportSound(filePath, uniqueName, cfg, kSoundConfig)) {
+                setAudioBrowserStatus("Failed to import '" + uniqueName + "'.", true);
                 continue;
             }
 
@@ -6472,6 +7932,11 @@ void EditorState::renderAudioBrowser() {
         if (!importedSounds.empty()) {
             m_selectedAudioAssets = importedSounds;
             invalidateBrowserCaches();
+            if (importedSounds.size() == 1) {
+                setAudioBrowserStatus("Imported '" + importedSounds.front() + "'.", false);
+            } else {
+                setAudioBrowserStatus("Imported " + std::to_string(importedSounds.size()) + " audio files.", false);
+            }
         }
 
         auto& remainingDrops = Core::Engine::Get().window().droppedFilesMutable();
@@ -6479,6 +7944,12 @@ void EditorState::renderAudioBrowser() {
     }
 
     ImGui::Text("Location: %s", fs::relative(m_currentAudioDir, audioRoot, ec).generic_string().c_str());
+    if (!m_audioBrowserStatusMessage.empty() && ImGui::GetTime() <= m_audioBrowserStatusUntil) {
+        const ImVec4 statusColor = m_audioBrowserStatusIsError
+            ? ImVec4(0.95f, 0.45f, 0.45f, 1.0f)
+            : ImVec4(0.45f, 0.95f, 0.55f, 1.0f);
+        ImGui::TextColored(statusColor, "%s", m_audioBrowserStatusMessage.c_str());
+    }
     ImGui::Separator();
 
     struct MusicContextEditorEntry {
@@ -6546,6 +8017,15 @@ void EditorState::renderAudioBrowser() {
         m_batchAudioFilterInStart = cfg.filterInStart;
         m_batchAudioFilterPeak = cfg.filterPeak;
         m_batchAudioFilterReleaseEnd = cfg.filterReleaseEnd;
+    };
+    auto applyDefault3DAudioTuning = [&]() {
+        m_editAudioMinDistance = 80.0f;
+        m_editAudioMaxDistance = 520.0f;
+        m_editAudioFalloffStart = 120.0f;
+        m_editAudioFalloffAmount = 0.25f;
+        m_editAudioFilterInStart = 180.0f;
+        m_editAudioFilterPeak = 320.0f;
+        m_editAudioFilterReleaseEnd = 480.0f;
     };
     if (ImGui::CollapsingHeader("Music Contexts", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Reload Contexts##musicctx")) {
@@ -6653,16 +8133,30 @@ void EditorState::renderAudioBrowser() {
 #endif
         ImGui::Checkbox("Loop", &m_newAudioLoop); ImGui::SameLine();
         ImGui::Checkbox("Stream", &m_newAudioStream); ImGui::SameLine();
+        const bool wasNewAudio3D = m_newAudioIs3D;
         ImGui::Checkbox("3D", &m_newAudioIs3D);
+        if (!wasNewAudio3D && m_newAudioIs3D) {
+            m_batchAudioMinDistance = 80.0f;
+            m_batchAudioMaxDistance = 520.0f;
+            m_batchAudioFalloffStart = 120.0f;
+            m_batchAudioFalloffAmount = 0.25f;
+            m_batchAudioFilterInStart = 180.0f;
+            m_batchAudioFilterPeak = 320.0f;
+            m_batchAudioFilterReleaseEnd = 480.0f;
+        }
         ImGui::Checkbox("BGM", &m_newAudioIsBGM);
-        ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Volume", &m_newAudioVolume, 0.0f, 5.0f);
         if (ImGui::Button("Import", ImVec2(100, 0))) {
             Assets::SoundConfig cfg; cfg.name = m_newAudioNameBuf; cfg.path = m_newAudioPathBuf;
             cfg.loop = m_newAudioLoop; cfg.stream = m_newAudioStream; cfg.is3D = m_newAudioIs3D;
             cfg.volume = m_newAudioVolume; cfg.group = m_newAudioIsBGM ? "BGM" : "SFX";
-            Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg);
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (Assets::SoundManager::ImportSound(m_newAudioPathBuf, cfg.name, cfg)) {
+                invalidateBrowserCaches();
+                setAudioBrowserStatus("Imported '" + cfg.name + "'.", false);
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to import '" + cfg.name + "'.", true);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
@@ -6673,9 +8167,16 @@ void EditorState::renderAudioBrowser() {
         ImGui::Text("Create Folder in: %s", m_currentAudioDir.c_str());
         ImGui::InputText("Folder name##nf", m_newScriptFolderBuf, sizeof(m_newScriptFolderBuf));
         if (ImGui::Button("Create", ImVec2(100, 0))) {
-            if (m_newScriptFolderBuf[0]) fs::create_directories(fs::path(m_currentAudioDir) / m_newScriptFolderBuf, ec);
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (m_newScriptFolderBuf[0]) {
+                fs::create_directories(fs::path(m_currentAudioDir) / m_newScriptFolderBuf, ec);
+                if (ec) {
+                    setAudioBrowserStatus("Failed to create audio folder.", true);
+                } else {
+                    invalidateBrowserCaches();
+                    setAudioBrowserStatus("Created folder '" + std::string(m_newScriptFolderBuf) + "'.", false);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
@@ -6686,10 +8187,17 @@ void EditorState::renderAudioBrowser() {
     if (ImGui::BeginPopupModal("##DeleteAudio", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete '%s'?", m_deletingAudio.c_str());
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
-            Assets::SoundManager::DeleteFromDisk(m_deletingAudio);
-            m_deletingAudio.clear();
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (Assets::SoundManager::DeleteFromDisk(m_deletingAudio)) {
+                m_selectedAudioAssets.erase(
+                    std::remove(m_selectedAudioAssets.begin(), m_selectedAudioAssets.end(), m_deletingAudio),
+                    m_selectedAudioAssets.end());
+                setAudioBrowserStatus("Deleted '" + m_deletingAudio + "'.", false);
+                m_deletingAudio.clear();
+                invalidateBrowserCaches();
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to delete '" + m_deletingAudio + "'.", true);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(100, 0))) { m_deletingAudio.clear(); ImGui::CloseCurrentPopup(); }
@@ -6704,9 +8212,13 @@ void EditorState::renderAudioBrowser() {
         ImGui::InputText("Path##editaudio", m_editAudioPathBuf, sizeof(m_editAudioPathBuf));
         ImGui::Checkbox("Loop##editaudio", &m_editAudioLoop); ImGui::SameLine();
         ImGui::Checkbox("Stream##editaudio", &m_editAudioStream); ImGui::SameLine();
+        const bool wasEditAudio3D = m_editAudioIs3D;
         ImGui::Checkbox("3D##editaudio", &m_editAudioIs3D);
+        if (!wasEditAudio3D && m_editAudioIs3D) {
+            applyDefault3DAudioTuning();
+        }
         ImGui::Checkbox("BGM##editaudio", &m_editAudioIsBGM);
-        ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Volume##editaudio", &m_editAudioVolume, 0.0f, 5.0f);
         ImGui::SliderFloat("Pitch##editaudio", &m_editAudioPitch, 0.1f, 3.0f);
         if (m_editAudioIs3D) {
             ImGui::SeparatorText("3D Tuning");
@@ -6720,6 +8232,7 @@ void EditorState::renderAudioBrowser() {
         }
 
         if (ImGui::Button("Save", ImVec2(100, 0))) {
+            const std::string originalAudioName = m_editingAudio;
             Assets::SoundConfig cfg;
             cfg.name = m_editAudioNameBuf;
             cfg.path = m_editAudioPathBuf;
@@ -6736,10 +8249,26 @@ void EditorState::renderAudioBrowser() {
             cfg.filterInStart = std::clamp(m_editAudioFilterInStart, 0.0f, cfg.maxDistance - 1.0f);
             cfg.filterPeak = std::clamp(m_editAudioFilterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
             cfg.filterReleaseEnd = std::clamp(m_editAudioFilterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
-            if (Assets::SoundManager::UpdateConfig(m_editingAudio, cfg, kSoundConfig)) {
+            if (Assets::SoundManager::UpdateConfig(originalAudioName, cfg, kSoundConfig)) {
+                const auto& soundOverrides = m_scene.soundVolumeOverrides();
+                const auto overrideIt = soundOverrides.find(originalAudioName);
+                if (overrideIt != soundOverrides.end()) {
+                    if (cfg.name != originalAudioName) {
+                        m_scene.removeSoundVolumeOverride(originalAudioName);
+                    }
+                    m_scene.setSoundVolumeOverride(cfg.name, cfg.volume);
+                }
+                for (auto& selectedAudio : m_selectedAudioAssets) {
+                    if (selectedAudio == originalAudioName) {
+                        selectedAudio = cfg.name;
+                    }
+                }
+                setAudioBrowserStatus("Saved audio settings for '" + cfg.name + "'.", false);
                 m_editingAudio.clear();
                 invalidateBrowserCaches();
                 ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to save audio settings for '" + originalAudioName + "'.", true);
             }
         }
         ImGui::SameLine();
@@ -6786,7 +8315,7 @@ void EditorState::renderAudioBrowser() {
         ImGui::Checkbox("Apply Volume##batch", &m_batchApplyVolume);
         ImGui::SameLine();
         ImGui::BeginDisabled(!m_batchApplyVolume);
-        ImGui::SliderFloat("Volume##batchvalue", &m_batchAudioVolume, 0.0f, 1.0f);
+        ImGui::SliderFloat("Volume##batchvalue", &m_batchAudioVolume, 0.0f, 5.0f);
         ImGui::EndDisabled();
 
         ImGui::Checkbox("Apply Pitch##batch", &m_batchApplyPitch);
@@ -6846,6 +8375,7 @@ void EditorState::renderAudioBrowser() {
         }
 
         if (ImGui::Button("Apply To Selected", ImVec2(140, 0))) {
+            size_t updatedCount = 0;
             for (const auto& soundName : m_selectedAudioAssets) {
                 Assets::SoundConfig cfg;
                 if (!Assets::SoundManager::GetConfig(soundName, cfg, kSoundConfig)) {
@@ -6854,7 +8384,26 @@ void EditorState::renderAudioBrowser() {
 
                 if (m_batchApplyLoop) cfg.loop = m_batchAudioLoop;
                 if (m_batchApplyStream) cfg.stream = m_batchAudioStream;
-                if (m_batchApplyIs3D) cfg.is3D = m_batchAudioIs3D;
+                if (m_batchApplyIs3D) {
+                    const bool enabling3D = !cfg.is3D && m_batchAudioIs3D;
+                    cfg.is3D = m_batchAudioIs3D;
+                    if (enabling3D &&
+                        !m_batchApplyMinDistance &&
+                        !m_batchApplyMaxDistance &&
+                        !m_batchApplyFalloffStart &&
+                        !m_batchApplyFalloffAmount &&
+                        !m_batchApplyFilterInStart &&
+                        !m_batchApplyFilterPeak &&
+                        !m_batchApplyFilterReleaseEnd) {
+                        cfg.minDistance = 80.0f;
+                        cfg.maxDistance = 520.0f;
+                        cfg.falloffStart = 120.0f;
+                        cfg.falloffAmount = 0.25f;
+                        cfg.filterInStart = 180.0f;
+                        cfg.filterPeak = 320.0f;
+                        cfg.filterReleaseEnd = 480.0f;
+                    }
+                }
                 if (m_batchApplyGroup) cfg.group = m_batchAudioIsBGM ? "BGM" : "SFX";
                 if (m_batchApplyVolume) cfg.volume = m_batchAudioVolume;
                 if (m_batchApplyPitch) cfg.pitch = m_batchAudioPitch;
@@ -6872,10 +8421,21 @@ void EditorState::renderAudioBrowser() {
                 cfg.filterInStart = std::clamp(cfg.filterInStart, 0.0f, cfg.maxDistance - 1.0f);
                 cfg.filterPeak = std::clamp(cfg.filterPeak, cfg.filterInStart + 1.0f, cfg.maxDistance - 0.5f);
                 cfg.filterReleaseEnd = std::clamp(cfg.filterReleaseEnd, cfg.filterPeak + 1.0f, cfg.maxDistance);
-                Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig);
+                if (Assets::SoundManager::UpdateConfig(soundName, cfg, kSoundConfig)) {
+                    const auto& soundOverrides = m_scene.soundVolumeOverrides();
+                    if (soundOverrides.find(soundName) != soundOverrides.end()) {
+                        m_scene.setSoundVolumeOverride(soundName, cfg.volume);
+                    }
+                    ++updatedCount;
+                }
             }
             invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (updatedCount > 0) {
+                setAudioBrowserStatus("Updated " + std::to_string(updatedCount) + " audio file(s).", false);
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to update the selected audio files.", true);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel##batchaudio", ImVec2(100, 0))) {
@@ -6898,8 +8458,17 @@ void EditorState::renderAudioBrowser() {
                     ? std::string{}
                     : Assets::SoundManager::GetNameForPath(renamePath.generic_string(), kSoundConfig);
                 fs::rename(renamePath, dst, ec);
-                if (!isAudioDir && ec.value() == 0 && !soundName.empty())
-                    Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
+                if (ec.value() == 0) {
+                    if (!isAudioDir && !soundName.empty()) {
+                        Assets::SoundManager::UpdatePathInConfig(soundName, dst.generic_string(), kSoundConfig);
+                    }
+                    setAudioBrowserStatus(
+                        std::string(isAudioDir ? "Renamed folder to '" : "Renamed audio to '") +
+                        dst.filename().string() + "'.",
+                        false);
+                } else {
+                    setAudioBrowserStatus("Failed to rename '" + renamePath.filename().string() + "'.", true);
+                }
             }
             m_renamingAudioPath.clear();
             invalidateBrowserCaches();
@@ -6918,11 +8487,16 @@ void EditorState::renderAudioBrowser() {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
         if (ImGui::Button("Delete", ImVec2(100, 0))) {
             fs::remove_all(fs::path(m_deletingAudioPath), ec);
-            if (m_currentAudioDir.find(m_deletingAudioPath) == 0)
-                m_currentAudioDir = audioRoot.generic_string();
-            m_deletingAudioPath.clear();
-            invalidateBrowserCaches();
-            ImGui::CloseCurrentPopup();
+            if (!ec) {
+                if (m_currentAudioDir.find(m_deletingAudioPath) == 0)
+                    m_currentAudioDir = audioRoot.generic_string();
+                setAudioBrowserStatus("Deleted folder '" + fs::path(m_deletingAudioPath).filename().string() + "'.", false);
+                m_deletingAudioPath.clear();
+                invalidateBrowserCaches();
+                ImGui::CloseCurrentPopup();
+            } else {
+                setAudioBrowserStatus("Failed to delete folder '" + fs::path(m_deletingAudioPath).filename().string() + "'.", true);
+            }
         }
         ImGui::PopStyleColor();
         ImGui::SameLine();
@@ -6932,19 +8506,19 @@ void EditorState::renderAudioBrowser() {
 
     auto moveAudioFileToFolder = [&](const std::string& soundName, const fs::path& srcPath, const fs::path& destDir) {
         if (soundName.empty() || srcPath.empty() || destDir.empty()) {
-            return;
+            return false;
         }
 
         std::error_code moveEc;
         fs::create_directories(destDir, moveEc);
         if (moveEc) {
-            return;
+            return false;
         }
 
         const fs::path normalizedSrc = srcPath.lexically_normal();
         const fs::path normalizedDestDir = destDir.lexically_normal();
         if (normalizedSrc.parent_path() == normalizedDestDir) {
-            return;
+            return true;
         }
 
         fs::path destFile = normalizedDestDir / normalizedSrc.filename();
@@ -6958,7 +8532,9 @@ void EditorState::renderAudioBrowser() {
         if (!moveEc) {
             Assets::SoundManager::UpdatePathInConfig(soundName, destFile.generic_string(), kSoundConfig);
             invalidateBrowserCaches();
+            return true;
         }
+        return false;
     };
 
     if (!m_movingAudioPath.empty()) ImGui::OpenPopup("##MoveAudio");
@@ -6975,7 +8551,11 @@ void EditorState::renderAudioBrowser() {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
                 const std::string soundName =
                     Assets::SoundManager::GetNameForPath(fs::path(m_movingAudioPath).generic_string(), kSoundConfig);
-                moveAudioFileToFolder(soundName, fs::path(m_movingAudioPath), destDir);
+                if (moveAudioFileToFolder(soundName, fs::path(m_movingAudioPath), destDir)) {
+                    setAudioBrowserStatus("Moved '" + soundName + "'.", false);
+                } else {
+                    setAudioBrowserStatus("Failed to move '" + soundName + "'.", true);
+                }
                 m_movingAudioPath.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -7000,10 +8580,18 @@ void EditorState::renderAudioBrowser() {
         for (const auto& folder : audioFolders) {
             if (ImGui::Selectable(folder.c_str())) {
                 fs::path destDir = (folder == "(root)") ? audioRoot : audioRoot / folder;
+                size_t movedCount = 0;
                 for (const auto& soundName : m_selectedAudioAssets) {
                     std::string srcPath = Assets::SoundManager::GetFilePath(soundName, kSoundConfig);
                     if (srcPath.empty()) continue;
-                    moveAudioFileToFolder(soundName, fs::path(srcPath), destDir);
+                    if (moveAudioFileToFolder(soundName, fs::path(srcPath), destDir)) {
+                        ++movedCount;
+                    }
+                }
+                if (movedCount > 0) {
+                    setAudioBrowserStatus("Moved " + std::to_string(movedCount) + " audio file(s).", false);
+                } else {
+                    setAudioBrowserStatus("Failed to move the selected audio files.", true);
                 }
                 ImGui::CloseCurrentPopup();
             }
@@ -7081,8 +8669,12 @@ void EditorState::renderAudioBrowser() {
                         const std::string movedName = Assets::SoundManager::GetNameForPath(src.generic_string(), kSoundConfig);
                         fs::path dest = path / src.filename();
                         fs::rename(src, dest, ec);
-                        if (ec.value() == 0 && !movedName.empty())
+                        if (ec.value() == 0 && !movedName.empty()) {
                             Assets::SoundManager::UpdatePathInConfig(movedName, dest.generic_string(), kSoundConfig);
+                            setAudioBrowserStatus("Moved '" + movedName + "'.", false);
+                        } else {
+                            setAudioBrowserStatus("Failed to move audio into '" + fname + "'.", true);
+                        }
                         invalidateBrowserCaches();
                     } else if (const ImGuiPayload* payloadAsset = ImGui::AcceptDragDropPayload("AUDIO_ASSET")) {
                         std::string srcPath = Assets::SoundManager::GetFilePath((const char*)payloadAsset->Data, kSoundConfig);
@@ -7090,8 +8682,12 @@ void EditorState::renderAudioBrowser() {
                             fs::path src(srcPath);
                             fs::path dest = path / src.filename();
                             fs::rename(src, dest, ec);
-                            if (ec.value() == 0)
+                            if (ec.value() == 0) {
                                 Assets::SoundManager::UpdatePathInConfig((const char*)payloadAsset->Data, dest.generic_string(), kSoundConfig);
+                                setAudioBrowserStatus("Moved '" + std::string((const char*)payloadAsset->Data) + "'.", false);
+                            } else {
+                                setAudioBrowserStatus("Failed to move audio into '" + fname + "'.", true);
+                            }
                             invalidateBrowserCaches();
                         }
                     }
@@ -7187,6 +8783,12 @@ void EditorState::renderAudioBrowser() {
                         while (fs::exists(dst))
                             dst = src.parent_path() / (src.stem().string() + "_copy" + std::to_string(n++) + src.extension().string());
                         fs::copy_file(src, dst, ec);
+                        if (!ec) {
+                            setAudioBrowserStatus("Duplicated '" + soundKey + "'.", false);
+                            invalidateBrowserCaches();
+                        } else {
+                            setAudioBrowserStatus("Failed to duplicate '" + soundKey + "'.", true);
+                        }
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Delete")) m_deletingAudio = soundKey;
@@ -7324,9 +8926,8 @@ void EditorState::loadScene(const std::string& path) {
         }
     }
 
-    // Auto-build greedy merged colliders from all solid static wall entities.
-    // Individual tile colliders get isSolid=false (hidden from debug view);
-    // merged boxes are drawn in cyan so you can see which walls were greedy-merged.
+    // Auto-build merged wall colliders only when the scene does not already
+    // contain saved merged colliders.
     {
         auto& world = m_scene.GetWorld();
         std::vector<Systems::TilemapTileEntry> entries;
@@ -7335,21 +8936,24 @@ void EditorState::loadScene(const std::string& path) {
         world.each<Components::Transform, Components::Collider>(
             [&](ECS::Entity e, Components::Transform& t, Components::Collider& c) {
                 if (!c.isSolid || c.isTrigger || c.moveable) return;
-                // Only merge axis-aligned, single-tile-sized box colliders (wall tiles).
-                // Circle colliders, rotated, or differently-sized entities are scene objects.
                 if (c.shape == Components::Collider::Shape::Circle) return;
                 if (std::abs(t.rotation) > rotationTolerance) return;
-                if (std::abs(c.size.x - m_gridSize) > tileSizeTolerance
-                    || std::abs(c.size.y - m_gridSize) > tileSizeTolerance) return;
+                const bool gridSized =
+                    std::abs(c.size.x - m_gridSize) <= tileSizeTolerance &&
+                    std::abs(c.size.y - m_gridSize) <= tileSizeTolerance;
+                if (!gridSized && !c.isCombined) return;
                 // Exclude dynamic entities (player, enemies) by tag
                 auto* tag = world.getComponent<Components::Tag>(e);
                 if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
                             || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
                     return;
+                constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
                 int layerIdx = 0;
                 if (auto* layer = world.getComponent<Components::Layer>(e))
                     layerIdx = layer->index;
-                entries.push_back({t.position, e, layerIdx});
+                const uint32_t mergeBucketId =
+                    c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
+                entries.push_back({t.position, e, layerIdx, mergeBucketId});
             });
         if (!entries.empty())
             Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
@@ -7364,13 +8968,9 @@ void EditorState::saveScene() {
     namespace fs = std::filesystem;
     std::error_code ec;
     fs::create_directories(fs::path(m_sceneFilePath).parent_path(), ec);
-    // Clear merged colliders before saving so tiles are serialized with isSolid=true.
-    // Rebuild them after so the editor continues to work correctly.
-    auto& saveWorld = m_scene.GetWorld();
-    Systems::TilemapCollisionBuilder::clear(saveWorld);
-    SceneSerializer::Serialize(m_scene, m_sceneFilePath);
-    // Rebuild merged colliders so editor state is restored after save.
+
     {
+        auto& saveWorld = m_scene.GetWorld();
         std::vector<Systems::TilemapTileEntry> saveEntries;
         const float saveTileSizeTol = 1.0f;
         saveWorld.each<Components::Transform, Components::Collider>(
@@ -7378,20 +8978,27 @@ void EditorState::saveScene() {
                 if (!c.isSolid || c.isTrigger || c.moveable) return;
                 if (c.shape != Components::Collider::Shape::Box) return;
                 if (std::abs(t.rotation) > 0.01f) return;
-                if (std::abs(c.size.x - m_gridSize) > saveTileSizeTol
-                    || std::abs(c.size.y - m_gridSize) > saveTileSizeTol) return;
+                const bool gridSized =
+                    std::abs(c.size.x - m_gridSize) <= saveTileSizeTol &&
+                    std::abs(c.size.y - m_gridSize) <= saveTileSizeTol;
+                if (!gridSized && !c.isCombined) return;
                 auto* tag = saveWorld.getComponent<Components::Tag>(e);
                 if (tag && (tag->tag == "Player" || tag->tag == "Enemy"
                             || tag->tag == "Enemy (Clone)" || tag->tag == "TilemapMergedCollider"))
                     return;
+                constexpr uint32_t kUniqueCombinedMergeBucket = 0xFFFFFFFFu;
                 int layerIdx = 0;
                 if (auto* layer = saveWorld.getComponent<Components::Layer>(e))
                     layerIdx = layer->index;
-                saveEntries.push_back({t.position, e, layerIdx});
+                const uint32_t mergeBucketId =
+                    c.isCombined ? (c.combinedGroupId != 0 ? c.combinedGroupId : kUniqueCombinedMergeBucket) : 0u;
+                saveEntries.push_back({t.position, e, layerIdx, mergeBucketId});
             });
         if (!saveEntries.empty())
             Systems::TilemapCollisionBuilder::build(saveWorld, saveEntries, m_gridSize, m_gridSize);
     }
+
+    SceneSerializer::Serialize(m_scene, m_sceneFilePath);
 
     // Append hierarchy groups metadata (entity names used as stable keys)
     {
@@ -7469,12 +9076,17 @@ void EditorState::saveScene() {
 // Undo / Redo
 // ---------------------------------------------------------------------------
 
-void EditorState::executeCommand(std::unique_ptr<IEditorCommand> cmd) {
-    cmd->execute();
+void EditorState::executeRecordedCommand(std::unique_ptr<IEditorCommand> cmd) {
+    if (!cmd) return;
     m_undoStack.push_back(std::move(cmd));
     m_redoStack.clear();
     if (m_undoStack.size() > MAX_UNDO)
         m_undoStack.erase(m_undoStack.begin());
+}
+
+void EditorState::executeCommand(std::unique_ptr<IEditorCommand> cmd) {
+    cmd->execute();
+    executeRecordedCommand(std::move(cmd));
 }
 
 void EditorState::undo() {
@@ -7483,6 +9095,7 @@ void EditorState::undo() {
     m_undoStack.pop_back();
     cmd->undo();
     m_redoStack.push_back(std::move(cmd));
+    flushTilemapCollisionRebuild();
 }
 
 void EditorState::redo() {
@@ -7491,6 +9104,7 @@ void EditorState::redo() {
     m_redoStack.pop_back();
     cmd->execute();
     m_undoStack.push_back(std::move(cmd));
+    flushTilemapCollisionRebuild();
 }
 
 void EditorState::captureInspectorBefore() {
@@ -7617,178 +9231,97 @@ void EditorState::loadAvailablePrefabs() {
     }
 }
 
+void EditorState::loadAvailableEntityGroups() {
+    namespace fs = std::filesystem;
+    const std::vector<std::string> previousCategoryOrder = m_availableEntityGroupCategories;
+    m_availableEntityGroupEntries.clear();
+    m_availableEntityGroupCategories.clear();
+
+    const std::string dir = "assets/entity_groups/";
+    if (fs::exists(dir) && fs::is_directory(dir)) {
+        for (const auto& entry : fs::directory_iterator(dir)) {
+            if (!entry.is_regular_file() || entry.path().extension() != ".json")
+                continue;
+
+            std::string category = "Uncategorized";
+            std::string textureId;
+            int entityCount = 0;
+            std::ifstream groupFile(entry.path());
+            if (groupFile.is_open()) {
+                try {
+                    json groupJson;
+                    groupFile >> groupJson;
+                    if (groupJson.contains("category") && groupJson["category"].is_string()) {
+                        category = groupJson["category"].get<std::string>();
+                        if (category.empty())
+                            category = "Uncategorized";
+                    }
+                    if (groupJson.contains("objects") && groupJson["objects"].is_array()) {
+                        entityCount = static_cast<int>(groupJson["objects"].size());
+                        if (groupJson.contains("previewTextureId") && groupJson["previewTextureId"].is_string())
+                            textureId = groupJson["previewTextureId"].get<std::string>();
+                        if (textureId.empty()) {
+                            for (const auto& object : groupJson["objects"]) {
+                                if (object.contains("components") &&
+                                    object["components"].contains("spriteRenderer") &&
+                                    object["components"]["spriteRenderer"].contains("textureId") &&
+                                    object["components"]["spriteRenderer"]["textureId"].is_string()) {
+                                    textureId = object["components"]["spriteRenderer"]["textureId"].get<std::string>();
+                                    if (!textureId.empty())
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                } catch (...) {}
+            }
+
+            m_availableEntityGroupEntries.push_back({
+                entry.path().stem().string(),
+                category,
+                textureId,
+                entityCount
+            });
+        }
+    }
+
+    std::sort(m_availableEntityGroupEntries.begin(), m_availableEntityGroupEntries.end(),
+        [](const EntityGroupBrowserEntry& a, const EntityGroupBrowserEntry& b) {
+            if (a.category != b.category)
+                return a.category < b.category;
+            return a.name < b.name;
+        });
+
+    std::vector<std::string> discoveredCategories;
+    for (const auto& group : m_availableEntityGroupEntries) {
+        if (std::find(discoveredCategories.begin(), discoveredCategories.end(),
+                      group.category) == discoveredCategories.end()) {
+            discoveredCategories.push_back(group.category);
+        }
+    }
+
+    for (const auto& category : previousCategoryOrder) {
+        if (std::find(discoveredCategories.begin(), discoveredCategories.end(), category) !=
+            discoveredCategories.end()) {
+            m_availableEntityGroupCategories.push_back(category);
+        }
+    }
+
+    for (const auto& category : discoveredCategories) {
+        if (std::find(m_availableEntityGroupCategories.begin(), m_availableEntityGroupCategories.end(),
+                      category) == m_availableEntityGroupCategories.end()) {
+            m_availableEntityGroupCategories.push_back(category);
+        }
+    }
+}
+
 void EditorState::savePrefabFromEntity(ECS::Entity entity,
                                         const std::string& name,
                                         const std::string& category) {
-    using json = nlohmann::json;
     auto& world = m_scene.GetWorld();
-
-    json prefabJson;
-    prefabJson["name"]       = name;
-    prefabJson["category"]   = category;
-    prefabJson["components"] = json::object();
-    auto& comps = prefabJson["components"];
-
-    if (auto* t = world.getComponent<Components::Transform>(entity))
-        comps["transform"] = {
-            {"position", {{"x", t->position.x}, {"y", t->position.y}}},
-            {"rotation", t->rotation},
-            {"scale",    {{"x", t->scale.x},    {"y", t->scale.y}}},
-            {"pivot",    {{"x", t->pivot.x},    {"y", t->pivot.y}}},
-            {"snapToGrid", t->snapToGrid}};
-
-    if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity))
-        comps["spriteRenderer"] = {
-            {"textureId", sr->textureId},
-            {"uv",    {sr->uv.x, sr->uv.y, sr->uv.z, sr->uv.w}},
-            {"size",  {{"x", sr->size.x},  {"y", sr->size.y}}},
-            {"color", {{"r", sr->color.r}, {"g", sr->color.g},
-                       {"b", sr->color.b}, {"a", sr->color.a}}},
-            {"visible", sr->visible},
-            {"unlit", sr->unlit},
-            {"sortOrder", sr->sortOrder}};
-
-    if (auto* c = world.getComponent<Components::Collider>(entity))
-        comps["collider"] = {
-            {"shape",    static_cast<int>(c->shape)},
-            {"width",    c->size.x}, {"height",  c->size.y},
-            {"offset",   {{"x", c->offset.x}, {"y", c->offset.y}}},
-            {"radius",   c->radius},
-            {"isSolid",  c->isSolid},  {"isTrigger",   c->isTrigger},
-            {"blocksLight", c->blocksLight}, {"isHazard", c->isHazard},
-            {"moveable", c->moveable},
-            {"mass",     c->mass},
-            {"collisionCategory", c->collisionCategory},
-            {"collisionMask",     c->collisionMask}};
-
-    if (auto* tag = world.getComponent<Components::Tag>(entity))
-        comps["tag"] = {{"tag", tag->tag}};
-
-    if (auto* vel = world.getComponent<Components::Velocity>(entity))
-        comps["velocity"] = {{"x", vel->velocity.x}, {"y", vel->velocity.y},
-                              {"moveSpeed", vel->moveSpeed}};
-
-    if (auto* au = world.getComponent<Components::AudioSource>(entity))
-        comps["audioSource"] = {{"soundId", au->soundId}, {"volume", au->volume},
-                                 {"loop", au->loop}, {"playOnStart", au->playOnStart}};
-
-    if (auto* ls = world.getComponent<Components::LuaScript>(entity)) {
-        json arr = json::array();
-        for (auto& entry : ls->scripts) {
-            json lsj;
-            lsj["scriptPath"] = entry.scriptPath;
-            lsj["enabled"]    = entry.enabled;
-            if (!entry.properties.empty()) {
-                json propsJ = json::object();
-                for (auto& [key, val] : entry.properties)
-                    std::visit([&](auto&& v) { propsJ[key] = v; }, val);
-                lsj["properties"] = propsJ;
-            }
-            arr.push_back(lsj);
-        }
-        comps["luaScript"] = arr;
-    }
-
-    if (auto* sa = world.getComponent<Components::SpriteAnimator>(entity))
-        comps["spriteAnimator"] = {{"filename", sa->filename},
-                                    {"currentClip", sa->currentClip}};
-
-    if (auto* sm = world.getComponent<Components::StateMachine>(entity))
-        comps["stateMachine"] = {{"currentState", sm->currentState}};
-
-    if (auto* textComp = world.getComponent<Components::TextRenderer>(entity))
-        comps["textRenderer"] = {{"text", textComp->text}, {"fontId", textComp->fontId},
-                                  {"fontSize", textComp->fontSize},
-                                  {"color", {{"r", textComp->color.r}, {"g", textComp->color.g}, {"b", textComp->color.b}}},
-                                  {"visible", textComp->visible},
-                                  {"boxSize", {{"x", textComp->boxSize.x}, {"y", textComp->boxSize.y}}},
-                                  {"alignment", static_cast<int>(textComp->alignment)},
-                                  {"verticalAlignment", static_cast<int>(textComp->verticalAlign)},
-                                  {"wordWrap", textComp->wordWrap},
-                                  {"lineSpacing", textComp->lineSpacing},
-                                  {"padding", {{"x", textComp->padding.x}, {"y", textComp->padding.y}}}};
-
-    if (auto* lt = world.getComponent<Components::Light>(entity))
-        comps["light"] = {
-            {"active", lt->active},
-            {"offset", {{"x", lt->offset.x}, {"y", lt->offset.y}}},
-            {"color", {{"r", lt->color.r}, {"g", lt->color.g}, {"b", lt->color.b}}},
-            {"radius", lt->radius},
-            {"angle", lt->angle},
-            {"intensity", lt->intensity}};
-
-    if (auto* fa = world.getComponent<Components::FootstepAudio>(entity))
-        comps["footstepAudio"] = {
-            {"interval", fa->interval},
-            {"sprintIntervalScale", fa->sprintIntervalScale},
-            {"sprintSpeedThreshold", fa->sprintSpeedThreshold},
-            {"minSpeed", fa->minSpeed},
-            {"resetDelay", fa->resetDelay},
-            {"volume", fa->volume},
-            {"variationCount", fa->variationCount},
-            {"useSurfaceSounds", fa->useSurfaceSounds},
-            {"soundPrefix", fa->soundPrefix},
-            {"concretePrefix", fa->concretePrefix},
-            {"tilePrefix", fa->tilePrefix},
-            {"woodPrefix", fa->woodPrefix}};
-
-    if (auto* pe = world.getComponent<Components::ParticleEmitter>(entity)) {
-        auto& sys = pe->system();
-        comps["particleEmitter"] = {
-            {"active", pe->active()},
-            {"rate", sys.rate},
-            {"lifeMin", sys.lifeMin},
-            {"lifeMax", sys.lifeMax},
-            {"speedMin", sys.speedMin},
-            {"speedMax", sys.speedMax},
-            {"sizeStart", sys.sizeStart},
-            {"sizeEnd", sys.sizeEnd},
-            {"spreadDeg", sys.spreadDeg},
-            {"spawnRadius", sys.spawnRadius},
-            {"looping", sys.looping},
-            {"worldSpace", sys.worldSpace},
-            {"direction", {{"x", sys.dir.x}, {"y", sys.dir.y}}},
-            {"acceleration", {{"x", sys.acceleration.x}, {"y", sys.acceleration.y}}},
-            {"localOffset", {{"x", pe->localOffset.x}, {"y", pe->localOffset.y}}},
-            {"colorStart", {{"r", sys.colorStart.r}, {"g", sys.colorStart.g},
-                            {"b", sys.colorStart.b}, {"a", sys.colorStart.a}}},
-            {"colorEnd", {{"r", sys.colorEnd.r}, {"g", sys.colorEnd.g},
-                          {"b", sys.colorEnd.b}, {"a", sys.colorEnd.a}}}
-        };
-    }
-
-    if (auto* btn = world.getComponent<Components::UIButton>(entity))
-        comps["uiButton"] = {
-            {"action", btn->action},
-            {"uiScript", btn->uiScript},
-            {"interactable", btn->interactable},
-            {"showBackground", btn->showBackground},
-            {"size", {{"x", btn->size.x}, {"y", btn->size.y}}},
-            {"offset", {{"x", btn->offset.x}, {"y", btn->offset.y}}},
-            {"normalColor", {{"r", btn->normalColor.r}, {"g", btn->normalColor.g}, {"b", btn->normalColor.b}}},
-            {"hoverColor", {{"r", btn->hoverColor.r}, {"g", btn->hoverColor.g}, {"b", btn->hoverColor.b}}}};
-
-    if (auto* sl = world.getComponent<Components::UISlider>(entity))
-        comps["uiSlider"] = {
-            {"settingKey", sl->settingKey},
-            {"minValue", sl->minValue},
-            {"maxValue", sl->maxValue},
-            {"value", sl->value},
-            {"trackWidth", sl->trackWidth},
-            {"trackHeight", sl->trackHeight},
-            {"handleSize", sl->handleSize},
-            {"trackColor", {{"r", sl->trackColor.r}, {"g", sl->trackColor.g},
-                            {"b", sl->trackColor.b}, {"a", sl->trackColor.a}}},
-            {"fillColor", {{"r", sl->fillColor.r}, {"g", sl->fillColor.g},
-                           {"b", sl->fillColor.b}, {"a", sl->fillColor.a}}},
-            {"handleColor", {{"r", sl->handleColor.r}, {"g", sl->handleColor.g},
-                             {"b", sl->handleColor.b}, {"a", sl->handleColor.a}}}};
-
-    if (auto* cam = world.getComponent<Components::CameraComponent>(entity))
-        comps["cameraComponent"] = {
-            {"isMain", cam->isMain},
-            {"zoom", cam->zoom},
-            {"offset", {{"x", cam->offset.x}, {"y", cam->offset.y}}}};
+    json prefabJson = serializeEditorAssetEntity(world, entity);
+    prefabJson["name"] = name;
+    prefabJson["category"] = category;
 
     namespace fs = std::filesystem;
     std::string filepath = "assets/prefabs/" + name + ".json";
@@ -7801,6 +9334,87 @@ void EditorState::savePrefabFromEntity(ECS::Entity entity,
         loadAvailablePrefabs();
     } else {
         std::cerr << "[Editor] Failed to save prefab: " << filepath << "\n";
+    }
+}
+
+void EditorState::saveEntityGroupFromSelection(const std::string& name,
+                                               const std::string& category) {
+    auto& world = m_scene.GetWorld();
+    std::vector<ECS::Entity> entitiesToSave;
+    entitiesToSave.reserve(m_selectedEntities.size());
+    std::unordered_set<uint32_t> seenIds;
+    for (const auto& entity : m_selectedEntities) {
+        if (world.isValid(entity) &&
+            world.hasComponent<Components::Transform>(entity) &&
+            seenIds.insert(entity.id).second) {
+            entitiesToSave.push_back(entity);
+        }
+    }
+
+    if (entitiesToSave.empty())
+        return;
+
+    ECS::Entity anchorEntity = entitiesToSave.front();
+    if (world.isValid(m_selectedEntity) && world.hasComponent<Components::Transform>(m_selectedEntity)) {
+        auto it = std::find_if(entitiesToSave.begin(), entitiesToSave.end(),
+            [&](ECS::Entity entity) {
+                return entity.id == m_selectedEntity.id && entity.generation == m_selectedEntity.generation;
+            });
+        if (it != entitiesToSave.end())
+            anchorEntity = *it;
+    }
+
+    const auto* anchorTransform = world.getComponent<Components::Transform>(anchorEntity);
+    if (anchorTransform == nullptr)
+        return;
+
+    json groupJson;
+    groupJson["name"] = name;
+    groupJson["category"] = category;
+    if (auto* tag = world.getComponent<Components::Tag>(anchorEntity))
+        groupJson["anchorTag"] = tag->tag;
+    groupJson["objects"] = json::array();
+
+    std::string previewTextureId;
+    for (const auto& entity : entitiesToSave) {
+        try {
+            if (auto* transform = world.getComponent<Components::Transform>(entity)) {
+                const vec2 relativePosition = transform->position - anchorTransform->position;
+                groupJson["objects"].push_back(serializeEditorAssetEntity(world, entity, &relativePosition));
+            }
+            if (previewTextureId.empty()) {
+                if (auto* sr = world.getComponent<Components::SpriteRenderer>(entity))
+                    previewTextureId = sr->textureId;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[Editor] Skipped entity while saving group '" << name
+                      << "': " << e.what() << "\n";
+        } catch (...) {
+            std::cerr << "[Editor] Skipped entity while saving group '" << name
+                      << "' due to an unknown serialization error.\n";
+        }
+    }
+
+    if (!groupJson["objects"].is_array() || groupJson["objects"].empty()) {
+        std::cerr << "[Editor] Failed to save entity group '" << name
+                  << "': no serializable entities were selected.\n";
+        return;
+    }
+
+    if (!previewTextureId.empty())
+        groupJson["previewTextureId"] = previewTextureId;
+
+    namespace fs = std::filesystem;
+    const std::string filepath = "assets/entity_groups/" + name + ".json";
+    fs::create_directories(fs::path(filepath).parent_path());
+    std::ofstream out(filepath);
+    if (out) {
+        out << groupJson.dump(4);
+        out.close();
+        std::cout << "[Editor] Saved entity group: " << filepath << "\n";
+        loadAvailableEntityGroups();
+    } else {
+        std::cerr << "[Editor] Failed to save entity group: " << filepath << "\n";
     }
 }
 
@@ -7850,6 +9464,9 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     file >> pj;
     file.close();
 
+    return spawnEditorAssetEntity(m_scene.GetWorld(), pj, position, false);
+
+#if 0
     auto& world  = m_scene.GetWorld();
     auto  entity = world.createEntity();
 
@@ -8166,6 +9783,33 @@ ECS::Entity EditorState::spawnPrefab(const std::string& prefabName, vec2 positio
     }
 
     return entity;
+#endif
+}
+
+std::vector<ECS::Entity> EditorState::spawnEntityGroup(const std::string& groupName, vec2 position) {
+    std::vector<ECS::Entity> spawnedEntities;
+    std::string filepath = "assets/entity_groups/" + groupName + ".json";
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[Editor] Failed to open entity group: " << filepath << "\n";
+        return spawnedEntities;
+    }
+
+    json groupJson;
+    file >> groupJson;
+    file.close();
+
+    if (!groupJson.contains("objects") || !groupJson["objects"].is_array())
+        return spawnedEntities;
+
+    auto& world = m_scene.GetWorld();
+    spawnedEntities.reserve(groupJson["objects"].size());
+    for (const auto& object : groupJson["objects"]) {
+        ECS::Entity entity = spawnEditorAssetEntity(world, object, position, true);
+        if (world.isValid(entity))
+            spawnedEntities.push_back(entity);
+    }
+    return spawnedEntities;
 }
 
 void EditorState::deletePrefab(const std::string& prefabName) {
@@ -8249,6 +9893,22 @@ void EditorState::clearTilemap() {
     m_isDraggingEntity   = false;
 }
 
+void EditorState::flushTilemapCollisionRebuild() {
+    if (!m_tilemapDirty)
+        return;
+
+    auto& world = m_scene.GetWorld();
+    m_tilemapDirty = false;
+    Systems::TilemapCollisionBuilder::clear(world);
+
+    std::vector<Systems::TilemapTileEntry> entries;
+    entries.reserve(m_tilemap.size());
+    for (const auto& td : m_tilemap)
+        entries.push_back({td.position, td.entity, td.layer});
+
+    Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+}
+
 void EditorState::saveTilemap(const std::string& filepath) {
     using json = nlohmann::json;
     json j;
@@ -8326,20 +9986,19 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
     m_paintedThisFrame = false;
 
     if (m_paintMode != PaintMode::Select) {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered)
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered) {
             m_tileStrokeActive = true;
+            m_activeTileStrokeCommand = std::make_unique<CompositeEditorCmd>(
+                m_paintMode == PaintMode::Erase ? "Erase Tiles" : "Paint Tiles");
+        }
 
         if (m_tileStrokeActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
             m_tileStrokeActive = false;
-            if (m_tilemapDirty) {
-                m_tilemapDirty = false;
-                Systems::TilemapCollisionBuilder::clear(world);
-                std::vector<Systems::TilemapTileEntry> entries;
-                entries.reserve(m_tilemap.size());
-                for (const auto& td : m_tilemap)
-                    entries.push_back({td.position, td.entity, td.layer});
-                Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
-            }
+            flushTilemapCollisionRebuild();
+            if (m_activeTileStrokeCommand && !m_activeTileStrokeCommand->commands.empty())
+                executeRecordedCommand(std::move(m_activeTileStrokeCommand));
+            else
+                m_activeTileStrokeCommand.reset();
         }
 
         if (!m_tileStrokeActive || !ImGui::IsMouseDown(ImGuiMouseButton_Left) || !m_viewportHovered)
@@ -8365,20 +10024,15 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
         }
         // Paint on held mouse (allows drag-painting)
         if (!isCellOccupied(worldPos, m_currentLayer)) {
-            ECS::Entity entity = spawnPrefab(m_selectedTilePrefab, worldPos);
-            if (world.isValid(entity)) {
-                if (auto* spr = world.getComponent<Components::SpriteRenderer>(entity))
-                    spr->sortOrder = m_currentLayer;
-                m_tilemap.push_back({m_selectedTilePrefab, worldPos, m_currentLayer, entity});
-                getOrCreateLayerGroup(m_currentLayer)->entities.push_back(entity);
-
-                if (m_selectedGroupIdx >= 0 && m_selectedGroupIdx < (int)m_hierarchyGroups.size()) {
-                    auto& entityIds = m_hierarchyGroups[m_selectedGroupIdx].entityIds;
-                    if (std::find(entityIds.begin(), entityIds.end(), entity.id) == entityIds.end())
-                        entityIds.push_back(entity.id);
-                }
+            auto cmd = std::make_unique<CreateTilemapTileCmd>(
+                *this, world, m_selectedTilePrefab, worldPos, m_currentLayer, m_selectedGroupIdx);
+            cmd->execute();
+            if (m_activeTileStrokeCommand)
+                m_activeTileStrokeCommand->add(std::move(cmd));
+            else
+                executeRecordedCommand(std::move(cmd));
+            if (m_tilemapDirty) {
                 m_paintedThisFrame = true;
-                m_tilemapDirty = true;
             }
         }
     } else if (m_paintMode == PaintMode::Erase) {
@@ -8386,11 +10040,13 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
             if (it->layer == m_currentLayer &&
                 world.isValid(it->entity) &&
                 magnitude(it->position - worldPos) < m_gridSize * 0.5f) {
-                removeEntityFromGroups(it->entity);
-                world.destroyEntity(it->entity);
-                m_tilemap.erase(it);
+                auto cmd = std::make_unique<DeleteTilemapTileCmd>(*this, world, it->entity, *it);
+                cmd->execute();
+                if (m_activeTileStrokeCommand)
+                    m_activeTileStrokeCommand->add(std::move(cmd));
+                else
+                    executeRecordedCommand(std::move(cmd));
                 m_paintedThisFrame = true;
-                m_tilemapDirty = true;
                 break;
             }
         }
@@ -8469,6 +10125,7 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                     }
                     for (auto& tile : m_tilemap) {
                         if (!world.isValid(tile.entity)) continue;
+                        if (tile.layer != m_currentLayer) continue;
                         vec2 sc = worldToScreen(tile.position, camP, m_editorCamZoom,
                                                viewportMin, m_viewportSize);
                         if (sc.x >= minSX && sc.x <= maxSX &&
@@ -8566,6 +10223,76 @@ void EditorState::renderPrefabBrowser() {
         if (ImGui::Button("Save Prefab##save", ImVec2(-1, 0)))
             savePrefabFromEntity(m_selectedEntity, m_savePrefabNameBuf, m_savePrefabCategoryBuf);
         if (!canSave) ImGui::EndDisabled();
+    }
+
+    if (ImGui::CollapsingHeader("Save Selection as Group", ImGuiTreeNodeFlags_DefaultOpen)) {
+        int validSelectionCount = 0;
+        for (const auto& entity : m_selectedEntities) {
+            if (world.isValid(entity) && world.hasComponent<Components::Transform>(entity))
+                ++validSelectionCount;
+        }
+        ImGui::TextDisabled("%d selected entities", validSelectionCount);
+        ImGui::SetNextItemWidth(-1.f);
+        ImGui::InputText("Name##entitygroupname", m_saveEntityGroupNameBuf,
+                         sizeof(m_saveEntityGroupNameBuf));
+
+        int categoryComboIndex = static_cast<int>(m_availableEntityGroupCategories.size());
+        if (!m_saveEntityGroupUseCustomCategory) {
+            for (int i = 0; i < static_cast<int>(m_availableEntityGroupCategories.size()); ++i) {
+                if (m_availableEntityGroupCategories[i] == m_saveEntityGroupCategoryBuf) {
+                    categoryComboIndex = i;
+                    break;
+                }
+            }
+            if (categoryComboIndex == static_cast<int>(m_availableEntityGroupCategories.size()))
+                m_saveEntityGroupUseCustomCategory = true;
+        }
+
+        const char* categoryPreview =
+            (categoryComboIndex < static_cast<int>(m_availableEntityGroupCategories.size()))
+            ? m_availableEntityGroupCategories[categoryComboIndex].c_str()
+            : "Custom...";
+
+        if (ImGui::BeginCombo("Category##entitygroupcatcombo", categoryPreview)) {
+            for (int i = 0; i < static_cast<int>(m_availableEntityGroupCategories.size()); ++i) {
+                const bool isSelectedCategory = (categoryComboIndex == i);
+                if (ImGui::Selectable(m_availableEntityGroupCategories[i].c_str(), isSelectedCategory)) {
+                    categoryComboIndex = i;
+                    m_saveEntityGroupUseCustomCategory = false;
+                    strncpy_s(m_saveEntityGroupCategoryBuf, m_availableEntityGroupCategories[i].c_str(),
+                              sizeof(m_saveEntityGroupCategoryBuf) - 1);
+                }
+                if (isSelectedCategory) ImGui::SetItemDefaultFocus();
+            }
+
+            const bool customSelected =
+                (categoryComboIndex == static_cast<int>(m_availableEntityGroupCategories.size()));
+            if (ImGui::Selectable("Custom...", customSelected)) {
+                categoryComboIndex = static_cast<int>(m_availableEntityGroupCategories.size());
+                m_saveEntityGroupUseCustomCategory = true;
+                if (m_saveEntityGroupCategoryBuf[0] == '\0')
+                    strncpy_s(m_saveEntityGroupCategoryBuf, "Custom",
+                              sizeof(m_saveEntityGroupCategoryBuf) - 1);
+            }
+            if (customSelected) ImGui::SetItemDefaultFocus();
+            ImGui::EndCombo();
+        }
+
+        if (m_saveEntityGroupUseCustomCategory) {
+            ImGui::SetNextItemWidth(-1.f);
+            ImGui::InputText("Custom Category##entitygroupcat", m_saveEntityGroupCategoryBuf,
+                             sizeof(m_saveEntityGroupCategoryBuf));
+        } else {
+            ImGui::TextDisabled("Using existing category: %s", m_saveEntityGroupCategoryBuf);
+        }
+
+        const bool canSaveGroup = validSelectionCount > 0 &&
+                                  m_saveEntityGroupNameBuf[0] != '\0' &&
+                                  m_saveEntityGroupCategoryBuf[0] != '\0';
+        if (!canSaveGroup) ImGui::BeginDisabled();
+        if (ImGui::Button("Save Group##saveentitygroup", ImVec2(-1, 0)))
+            saveEntityGroupFromSelection(m_saveEntityGroupNameBuf, m_saveEntityGroupCategoryBuf);
+        if (!canSaveGroup) ImGui::EndDisabled();
     }
 
     ImGui::Separator();
@@ -8884,6 +10611,88 @@ void EditorState::renderPrefabBrowser() {
                         continue;
                     ImGui::TableNextColumn();
                     renderPrefabTile(m_availablePrefabEntries[i], i);
+                }
+                ImGui::EndTable();
+            }
+        }
+        ImGui::EndChild();
+    }
+
+    if (ImGui::CollapsingHeader("Entity Group Library", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Refresh##entitygrouprefresh"))
+            loadAvailableEntityGroups();
+        ImGui::SameLine();
+        ImGui::TextDisabled("%zu groups across %zu categories",
+                            m_availableEntityGroupEntries.size(),
+                            m_availableEntityGroupCategories.size());
+
+        const float thumbSize = 64.f;
+        const float padding = 8.f;
+        const float cellSize = thumbSize + padding;
+        const float panelWidth = ImGui::GetContentRegionAvail().x;
+        const int cols = std::max(1, static_cast<int>(panelWidth / cellSize));
+        auto categoryCount = [&](const std::string& category) {
+            return static_cast<int>(std::count_if(
+                m_availableEntityGroupEntries.begin(), m_availableEntityGroupEntries.end(),
+                [&](const EntityGroupBrowserEntry& group) { return group.category == category; }));
+        };
+
+        const float groupListHeight = std::max(180.0f, ImGui::GetContentRegionAvail().y);
+        ImGui::BeginChild("##entitygrouplist", ImVec2(0, groupListHeight), true);
+        for (const auto& category : m_availableEntityGroupCategories) {
+            const int currentCategoryCount = categoryCount(category);
+            std::string headerLabel = category + " (" + std::to_string(currentCategoryCount) +
+                                      ")##entitygroupcat_" + category;
+            if (!ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                continue;
+
+            std::string tableId = "##entitygroupgrid_" + category;
+            if (ImGui::BeginTable(tableId.c_str(), cols)) {
+                for (int i = 0; i < static_cast<int>(m_availableEntityGroupEntries.size()); ++i) {
+                    const auto& group = m_availableEntityGroupEntries[i];
+                    if (group.category != category)
+                        continue;
+
+                    ImGui::TableNextColumn();
+                    ImGui::PushID(("entitygroup_" + group.name).c_str());
+                    auto tex = group.textureId.empty() ? nullptr : Assets::TextureManager::Get(group.textureId);
+                    bool clicked = false;
+                    if (tex && tex->id() != 0) {
+                        clicked = ImGui::ImageButton("##groupthumb",
+                                                     (ImTextureID)(intptr_t)tex->id(),
+                                                     ImVec2(thumbSize, thumbSize),
+                                                     ImVec2(0, 1), ImVec2(1, 0));
+                    } else {
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.f));
+                        clicked = ImGui::Button("##groupfallback", ImVec2(thumbSize, thumbSize));
+                        ImGui::PopStyleColor();
+                    }
+
+                    if (clicked) {
+                        m_selectedEntities = spawnEntityGroup(group.name, {0.f, 0.f});
+                        m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0}
+                                                                      : m_selectedEntities.front();
+                    }
+
+                    if (ImGui::BeginDragDropSource()) {
+                        ImGui::SetDragDropPayload("ENTITY_GROUP_NAME", group.name.c_str(),
+                                                  group.name.size() + 1);
+                        ImGui::Text("Drag group: %s", group.name.c_str());
+                        ImGui::EndDragDropSource();
+                    }
+
+                    if (ImGui::BeginPopupContextItem("##entitygroupcontext")) {
+                        if (ImGui::MenuItem("Spawn at Origin")) {
+                            m_selectedEntities = spawnEntityGroup(group.name, {0.f, 0.f});
+                            m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0}
+                                                                          : m_selectedEntities.front();
+                        }
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::TextWrapped("%s", group.name.c_str());
+                    ImGui::TextDisabled("%d entities", group.entityCount);
+                    ImGui::PopID();
                 }
                 ImGui::EndTable();
             }

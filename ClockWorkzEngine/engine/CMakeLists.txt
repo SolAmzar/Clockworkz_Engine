@@ -95,6 +95,9 @@ endif()
 
 # SDL3 (static) — cross-platform, linked after the platform block
 target_link_libraries(CWZEngine PUBLIC SDL3::SDL3-static)
+target_include_directories(CWZEngine SYSTEM PUBLIC
+  "${CMAKE_BINARY_DIR}/_deps/sdl3-src/include"
+)
 
 # --- Source groups for Visual Studio IDE ---
 # Split file lists by their root so each source_group gets only files under its TREE root.

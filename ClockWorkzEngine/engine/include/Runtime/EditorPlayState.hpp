@@ -2,7 +2,7 @@
 /*!
 \file           EditorPlayState.hpp
 \project        ClockWorkz Engine
-\author         [Syafiq]
+\author(s)      [Syafiq] 90% [Lebon] 10%
 \brief          Editor play-mode state.
                 Loaded by EditorState when the Play button is pressed.
                 Runs the scene with all engine systems active (no editor UI).
@@ -38,6 +38,8 @@ public:
     void renderImGui(Core::Time* timer) override;
 
 private:
+    void resetFragmentPlaytestState();
+
     Platform::InputManager& m_input;
     GameStateManager&       m_gsm;
     std::string             m_sceneFilePath;

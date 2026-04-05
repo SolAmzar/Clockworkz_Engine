@@ -104,6 +104,7 @@ private:
   bool m_haveLastFootPos = false;
   vec2 m_spawnPoint;
   void resetScene();
+  void resetFragmentProgress();
   Gameplay::GameObject *m_player;
   std::vector<std::unique_ptr<Gameplay::GameObject>> gameObjects;
 
@@ -136,9 +137,6 @@ private:
   // Fragment system
   void updateFragmentCollection(double dt);
   void renderFragmentUI();
-  void renderControllerNotification();
-  void showControllerNotification(const std::string &message);
-
   // ECS Rendering
   void renderTorchPass(Graphics::RenderingManager &renderer);
 
@@ -152,10 +150,6 @@ private:
   bool m_showFragmentNotification = false;
   float m_fragmentNotificationTimer = 0.0f;
   std::string m_lastCollectedFragmentId;
-  bool m_showControllerNotification = false;
-  float m_controllerNotificationTimer = 0.0f;
-  std::string m_controllerNotificationText;
-
   bool m_showImGui{false};
   // ECS Integration
   std::map<uint32_t, ECS::Entity> m_enemyMap;

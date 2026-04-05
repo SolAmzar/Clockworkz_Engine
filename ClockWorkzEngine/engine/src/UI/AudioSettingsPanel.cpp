@@ -2,7 +2,7 @@
 /*!
 \file           AudioSettingsPanel.cpp
 \project        ClockWorkz Engine
-\author         [Sol-Amzar]
+\author         [Amzar]
 \brief          ImGui panel implementation for audio volume controls.
                 Reads/writes Audio::AudioSettings and applies changes to
                 Audio::AudioManager group volumes immediately.

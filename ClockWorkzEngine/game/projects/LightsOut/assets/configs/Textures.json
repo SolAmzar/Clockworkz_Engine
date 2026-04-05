@@ -1066,13 +1066,13 @@
             "alphaOnlyIsRed": false,
             "flipY": true,
             "name": "cupboard2_texture",
-            "path": "assets/textures/cupboard2.png"
+            "path": "assets/textures/Corridor Props/cupboard2.png"
         },
         {
             "alphaOnlyIsRed": false,
             "flipY": true,
             "name": "cupboard3_texture",
-            "path": "assets/textures/cupboard3.png"
+            "path": "assets/textures/Corridor Props/cupboard3.png"
         },
         {
             "alphaOnlyIsRed": false,
@@ -1319,6 +1319,294 @@
             "flipY": true,
             "name": "exit_texture",
             "path": "assets/textures/Corridor/exit.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "T shape wood_texture",
+            "path": "assets/textures/Wood/T shape wood.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "metal cabinet_texture",
+            "path": "assets/textures/metal cabinet.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "T shape concrete_texture",
+            "path": "assets/textures/Corridor/T shape concrete.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "metal cabinet2_texture",
+            "path": "assets/textures/metal cabinet2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "lvl 1 ending_texture",
+            "path": "assets/textures/Corridor/lvl 1 ending.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "paperbox_texture",
+            "path": "assets/textures/paperbox.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "danger barrier_texture",
+            "path": "assets/textures/Corridor Props/danger barrier.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "paperboxdisplay_texture",
+            "path": "assets/textures/paperboxdisplay.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign1_texture",
+            "path": "assets/textures/Corridor Props/dangersign1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "pillar_texture",
+            "path": "assets/textures/pillar.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign2_texture",
+            "path": "assets/textures/Corridor Props/dangersign2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "printer_texture",
+            "path": "assets/textures/printer.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "dangersign3_texture",
+            "path": "assets/textures/Corridor Props/dangersign3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfinaldoorL_texture",
+            "path": "assets/textures/schfinaldoorL.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orangetaperolledup1_texture",
+            "path": "assets/textures/Corridor Props/orangetaperolledup1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfinaldoorR_texture",
+            "path": "assets/textures/schfinaldoorR.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange cone_texture",
+            "path": "assets/textures/Corridor Props/orange cone.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfloor1_texture",
+            "path": "assets/textures/schfloor1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange tape2_texture",
+            "path": "assets/textures/Corridor Props/orange tape2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfloor2_texture",
+            "path": "assets/textures/schfloor2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orangetaperolledup_texture",
+            "path": "assets/textures/Corridor Props/orangetaperolledup.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfloor3_texture",
+            "path": "assets/textures/schfloor3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "orange tape1_texture",
+            "path": "assets/textures/Corridor Props/orange tape1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfloor4_texture",
+            "path": "assets/textures/schfloor4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "clothes hanger_texture",
+            "path": "assets/textures/Corridor Props/clothes hanger.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "schfloor5_texture",
+            "path": "assets/textures/schfloor5.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "table_texture",
+            "path": "assets/textures/table.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "teachers table_texture",
+            "path": "assets/textures/teachers table.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "whiteboard 2_texture",
+            "path": "assets/textures/whiteboard 2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "whiteboard_texture",
+            "path": "assets/textures/whiteboard.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bookcart_texture",
+            "path": "assets/textures/bookcart.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bookshelf1_texture",
+            "path": "assets/textures/bookshelf1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bookshelf2_texture",
+            "path": "assets/textures/bookshelf2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bookshelftall1_texture",
+            "path": "assets/textures/bookshelftall1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "bookshelftall2_texture",
+            "path": "assets/textures/bookshelftall2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenfloor_texture",
+            "path": "assets/textures/canteenfloor.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenfloor1_texture",
+            "path": "assets/textures/canteenfloor1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenfloor2_texture",
+            "path": "assets/textures/canteenfloor2.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenfloor3_texture",
+            "path": "assets/textures/canteenfloor3.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenfloor4_texture",
+            "path": "assets/textures/canteenfloor4.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenstall_texture",
+            "path": "assets/textures/canteenstall.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenstallend_texture",
+            "path": "assets/textures/canteenstallend.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteenstallmiddle_texture",
+            "path": "assets/textures/canteenstallmiddle.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "canteentable_texture",
+            "path": "assets/textures/canteentable.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroomdoor_texture",
+            "path": "assets/textures/classroomdoor.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "classroomv1_texture",
+            "path": "assets/textures/classroomv1.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "computertable_texture",
+            "path": "assets/textures/computertable.png"
+        },
+        {
+            "alphaOnlyIsRed": false,
+            "flipY": true,
+            "name": "doubleshelf_texture",
+            "path": "assets/textures/doubleshelf.png"
         }
     ]
 }

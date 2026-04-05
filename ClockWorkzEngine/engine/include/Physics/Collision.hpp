@@ -2,7 +2,7 @@
 /*!
 \file           Collision.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Establishes basic 2D AABB collision detection functions.
                 Responsibilities include:
                 - Defining an AABB struct with min and max points

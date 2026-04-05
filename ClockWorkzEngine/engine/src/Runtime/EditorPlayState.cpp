@@ -2,7 +2,7 @@
 /*!
 \file           EditorPlayState.cpp
 \project        ClockWorkz Engine
-\author         [Syafiq]
+\author(s)      [Syafiq] 90% [Lebon] 10%
 \brief          Editor play-mode state implementation.
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -26,6 +26,7 @@ reserved.
 #include "Components/Tag.hpp"
 #include "Components/SpriteRenderer.hpp"
 #include "Components/TextRenderer.hpp"
+#include "Components/LuaScript.hpp"
 #include "IMGUI/imgui.h"
 
 #include <GL/glew.h>
@@ -33,8 +34,18 @@ reserved.
 #include <glm/glm.hpp>
 #include <filesystem>
 #include <iostream>
+#include <variant>
 
 namespace Runtime {
+namespace {
+template <typename T>
+bool setScriptProp(Components::LuaScriptEntry& entry, const std::string& key, T value) {
+    auto it = entry.properties.find(key);
+    if (it == entry.properties.end()) return false;
+    it->second = value;
+    return true;
+}
+}
 
 EditorPlayState::EditorPlayState(Platform::InputManager& input,
                                  GameStateManager& gsm,
@@ -66,6 +77,7 @@ void EditorPlayState::onEnter() {
         if (!m_scene.LoadFromFile(m_sceneFilePath))
             std::cerr << "[EditorPlayState] Failed to load: " << m_sceneFilePath << "\n";
     }
+    resetFragmentPlaytestState();
 
     // Set camera to full-screen viewport for play mode
     glViewport(0, 0, window.width(), window.height());
@@ -76,6 +88,7 @@ void EditorPlayState::onEnter() {
 
 void EditorPlayState::onExit() {
     Runtime::LevelMusicManager::Stop(Core::Engine::Get().audio(), 0.0f);
+    resetFragmentPlaytestState();
     m_scene.Clear();
 
     // Restore the editor camera to how it was before play
@@ -90,6 +103,29 @@ void EditorPlayState::onExit() {
 
     // Assets and CWD are owned by EditorState (still on the stack) — do not
     // clear or restore them here.
+}
+
+void EditorPlayState::resetFragmentPlaytestState() {
+    auto& lua = Core::Engine::Get().lua().GetState();
+    lua["FragmentProgress"] = sol::nil;
+
+    auto& world = m_scene.GetWorld();
+    world.each<Components::LuaScript>(
+        [&](ECS::Entity, Components::LuaScript& luaScript) {
+            for (auto& entry : luaScript.scripts) {
+                if (entry.scriptPath == "components/fragment_collector.lua") {
+                    setScriptProp(entry, "collectedCount", 0);
+                    continue;
+                }
+
+                if (entry.scriptPath == "components/fragment.lua") {
+                    setScriptProp(entry, "collected", false);
+                    setScriptProp(entry, "_alpha", 1.0f);
+                    setScriptProp(entry, "_timer", 0.0f);
+                    setScriptProp(entry, "_initialized", false);
+                }
+            }
+        });
 }
 
 // ---------------------------------------------------------------------------

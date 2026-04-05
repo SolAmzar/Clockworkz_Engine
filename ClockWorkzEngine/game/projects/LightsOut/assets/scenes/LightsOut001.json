@@ -24,7 +24,9 @@
         "Entity",
         "Fragment",
         "Fragment",
-        "TilemapMergedCollider"
+        "TilemapMergedCollider",
+        "CheatManager",
+        "CheatNotification"
     ],
     "hierarchyOrderIndices": [
         0,
@@ -51,19 +53,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 100,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "mass": 3.0,
+                    "mass": 3,
                     "moveable": true,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "radius": 50.0,
+                    "radius": 50,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 100
                 },
                 "luaScript": [
                     {
@@ -79,39 +81,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 2,
                     "textureId": "door_open",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
                         "x": 141.32647705078125,
-                        "y": -96.61587524414063
+                        "y": -96.61587524414062
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -125,56 +127,56 @@
                     "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 100,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 1,
                     "moveable": true,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "radius": 20.0,
+                    "radius": 20,
                     "shape": 1,
-                    "width": 100.0
+                    "width": 100
                 },
                 "light": {
                     "active": false,
-                    "angle": 60.0,
+                    "angle": 60,
                     "color": {
                         "b": 0.6000000238418579,
                         "g": 0.8999999761581421,
-                        "r": 1.0
+                        "r": 1
                     },
-                    "intensity": 1.0,
+                    "intensity": 1,
                     "offset": {
-                        "x": 35.0,
-                        "y": -20.0
+                        "x": 35,
+                        "y": -20
                     },
-                    "radius": 300.0
+                    "radius": 300
                 },
                 "luaScript": [
                     {
                         "enabled": true,
                         "properties": {
-                            "baseWalkSpeed": 10.0,
-                            "bobAmount": 4.0,
-                            "bobSpeed": 6.0,
+                            "baseWalkSpeed": 10,
+                            "bobAmount": 4,
+                            "bobSpeed": 6,
                             "footstepInterval": 0.6000000238418579,
-                            "sprintMultiplier": 2.0,
-                            "walkSpeed": 10.0
+                            "sprintMultiplier": 2,
+                            "walkSpeed": 10
                         },
                         "scriptPath": "player_controller.lua"
                     },
                     {
                         "enabled": true,
                         "properties": {
-                            "charge": 100.0,
-                            "chargeRate": 20.0,
-                            "drainRate": 5.0,
+                            "charge": 100,
+                            "chargeRate": 20,
+                            "drainRate": 5,
                             "isCharging": true,
-                            "maxCharge": 100.0
+                            "maxCharge": 100
                         },
                         "scriptPath": "components/battery.lua"
                     },
@@ -182,7 +184,7 @@
                         "enabled": true,
                         "properties": {
                             "collectedCount": 0,
-                            "pickupRadius": 50.0,
+                            "pickupRadius": 50,
                             "requiredFragments": 10
                         },
                         "scriptPath": "components/fragment_collector.lua"
@@ -193,14 +195,14 @@
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 50.0,
-                        "y": 50.0
+                        "x": 50,
+                        "y": 50
                     },
                     "sortOrder": 2,
                     "textureId": "player_texture",
@@ -215,12 +217,12 @@
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "rotation": 2.5007717609405518,
                     "scale": {
@@ -230,9 +232,9 @@
                     "snapToGrid": false
                 },
                 "velocity": {
-                    "moveSpeed": 12.0,
-                    "x": 0.0,
-                    "y": 0.0
+                    "moveSpeed": 12,
+                    "x": 0,
+                    "y": 0
                 }
             },
             "name": "Player"
@@ -244,19 +246,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 100,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 1,
                     "moveable": false,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "radius": 50.0,
+                    "radius": 50,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 100
                 },
                 "luaScript": [
                     {
@@ -264,48 +266,48 @@
                         "properties": {
                             "_initialized": true,
                             "clockwise": true,
-                            "initialRotation": 0.0,
+                            "initialRotation": 0,
                             "isOpen": false,
-                            "speed": 90.0,
-                            "swingAngle": 90.0
+                            "speed": 90,
+                            "swingAngle": 90
                         },
                         "scriptPath": "components/door_swing.lua"
                     }
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 2,
                     "textureId": "wall_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": -100.0,
-                        "y": 0.0
+                        "x": -100,
+                        "y": 0
                     },
                     "position": {
                         "x": -708.3333740234375,
-                        "y": 0.0
+                        "y": 0
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 2.0,
+                        "x": 2,
                         "y": 0.30000001192092896
                     },
                     "snapToGrid": false
@@ -320,14 +322,14 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "_alpha": 1.0,
-                            "_baseY": 0.0,
+                            "_alpha": 1,
+                            "_baseY": 0,
                             "_initialized": false,
-                            "_timer": 0.0,
-                            "bobAmount": 10.0,
-                            "bobSpeed": 2.0,
+                            "_timer": 0,
+                            "bobAmount": 10,
+                            "bobSpeed": 2,
                             "collected": false,
-                            "fadeSpeed": 5.0,
+                            "fadeSpeed": 5,
                             "fragmentId": 0,
                             "requiresLight": true
                         },
@@ -336,39 +338,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 0,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 0,
                     "textureId": "fragment_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": -48.0,
+                        "x": -48,
                         "y": -5.605249881744385
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -382,19 +384,19 @@
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 100,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 1,
                     "moveable": true,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "radius": 50.0,
+                    "radius": 50,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 100
                 },
                 "luaScript": [
                     {
@@ -410,39 +412,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 2,
                     "textureId": "door_open",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
                         "x": 147.8385772705078,
                         "y": -257.8871765136719
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -456,94 +458,94 @@
                     "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 100,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
-                    "mass": 1.0,
+                    "mass": 1,
                     "moveable": false,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "radius": 36.0,
+                    "radius": 36,
                     "shape": 1,
-                    "width": 100.0
+                    "width": 100
                 },
                 "luaScript": [
                     {
                         "enabled": true,
                         "properties": {
-                            "hp": 50.0,
+                            "hp": 50,
                             "invulnerable": false,
                             "isDead": false,
-                            "maxHp": 50.0,
-                            "regenRate": 0.0
+                            "maxHp": 50,
+                            "regenRate": 0
                         },
                         "scriptPath": "components/health.lua"
                     },
                     {
                         "enabled": true,
                         "properties": {
-                            "_stateTimer": 0.0,
-                            "_wanderTimer": 0.0,
-                            "alertDuration": 3.0,
-                            "chaseSpeed": 150.0,
-                            "detectionRadius": 300.0,
+                            "_stateTimer": 0,
+                            "_wanderTimer": 0,
+                            "alertDuration": 3,
+                            "chaseSpeed": 150,
+                            "detectionRadius": 300,
                             "lightSensitivity": 0.30000001192092896,
-                            "patrolSpeed": 50.0,
+                            "patrolSpeed": 50,
                             "state": "Patrol",
-                            "wanderInterval": 2.0
+                            "wanderInterval": 2
                         },
                         "scriptPath": "components/enemy_ai.lua"
                     },
                     {
                         "enabled": true,
                         "properties": {
-                            "exposureTime": 0.0,
+                            "exposureTime": 0,
                             "inLight": false,
                             "isDangerous": false,
-                            "maxExposureTime": 10.0
+                            "maxExposureTime": 10
                         },
                         "scriptPath": "components/light_exposure.lua"
                     }
                 ],
                 "particleEmitter": {
                     "acceleration": {
-                        "x": 0.0,
-                        "y": -200.0
+                        "x": 0,
+                        "y": -200
                     },
                     "active": false,
                     "colorEnd": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 0,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "colorStart": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "direction": {
-                        "x": 1.0,
-                        "y": 0.0
+                        "x": 1,
+                        "y": 0
                     },
                     "lifeMax": 1.2000000476837158,
                     "lifeMin": 0.5,
                     "localOffset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "looping": true,
-                    "rate": 200.0,
-                    "sizeEnd": 0.0,
+                    "rate": 200,
+                    "sizeEnd": 0,
                     "sizeStart": 2.25,
-                    "spawnRadius": 0.0,
-                    "speedMax": 120.0,
-                    "speedMin": 20.0,
-                    "spreadDeg": 45.0,
+                    "spawnRadius": 0,
+                    "speedMax": 120,
+                    "speedMin": 20,
+                    "spreadDeg": 45,
                     "worldSpace": true
                 },
                 "spriteAnimator": {
@@ -551,14 +553,14 @@
                 },
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 2,
                     "textureId": "monster_texture",
@@ -573,22 +575,22 @@
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
                         "x": -1159.066650390625,
                         "y": -2.764181137084961
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 },
                 "velocity": {
-                    "moveSpeed": 50.0,
+                    "moveSpeed": 50,
                     "x": 0.6908736824989319,
                     "y": -0.722975492477417
                 }
@@ -602,14 +604,14 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "_alpha": 1.0,
-                            "_baseY": 0.0,
+                            "_alpha": 1,
+                            "_baseY": 0,
                             "_initialized": false,
-                            "_timer": 0.0,
-                            "bobAmount": 10.0,
-                            "bobSpeed": 2.0,
+                            "_timer": 0,
+                            "bobAmount": 10,
+                            "bobSpeed": 2,
                             "collected": false,
-                            "fadeSpeed": 5.0,
+                            "fadeSpeed": 5,
                             "fragmentId": 0,
                             "requiresLight": true
                         },
@@ -618,39 +620,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 0,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 2,
                     "textureId": "fragment_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": 101.0,
+                        "x": 101,
                         "y": 358.9187927246094
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -664,14 +666,14 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "_alpha": 1.0,
-                            "_baseY": 0.0,
+                            "_alpha": 1,
+                            "_baseY": 0,
                             "_initialized": false,
-                            "_timer": 0.0,
-                            "bobAmount": 10.0,
-                            "bobSpeed": 2.0,
+                            "_timer": 0,
+                            "bobAmount": 10,
+                            "bobSpeed": 2,
                             "collected": false,
-                            "fadeSpeed": 5.0,
+                            "fadeSpeed": 5,
                             "fragmentId": 0,
                             "requiresLight": true
                         },
@@ -680,39 +682,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 0.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 0,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 0,
                     "textureId": "fragment_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": -193.0,
+                        "x": -193,
                         "y": -5.605249881744385
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -726,19 +728,19 @@
                     "blocksLight": false,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
+                    "height": 100,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": true,
-                    "mass": 1.0,
+                    "mass": 1,
                     "moveable": false,
                     "offset": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "radius": 50.0,
+                    "radius": 50,
                     "shape": 0,
-                    "width": 100.0
+                    "width": 100
                 },
                 "luaScript": [
                     {
@@ -751,39 +753,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 0,
                     "textureId": "pot_texture",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
                         "x": -424.010498046875,
                         "y": 524.549072265625
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -801,17 +803,17 @@
                 ],
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -825,10 +827,10 @@
                     {
                         "enabled": true,
                         "properties": {
-                            "threshold1": 0.0,
-                            "threshold2": 25.0,
-                            "threshold3": 50.0,
-                            "threshold4": 75.0,
+                            "threshold1": 0,
+                            "threshold2": 25,
+                            "threshold3": 50,
+                            "threshold4": 75,
                             "updateRate": 0.05000000074505806
                         },
                         "scriptPath": "ui/hud_battery.lua"
@@ -836,39 +838,39 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 200.0,
-                        "y": 150.0
+                        "x": 200,
+                        "y": 150
                     },
                     "sortOrder": 10,
                     "textureId": "battery_full",
                     "unlit": true,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -887,20 +889,20 @@
                 "textRenderer": {
                     "alignment": 0,
                     "boxSize": {
-                        "x": 300.0,
-                        "y": 60.0
+                        "x": 300,
+                        "y": 60
                     },
                     "color": {
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "fontId": "Debug",
                     "fontSize": 1.5,
-                    "lineSpacing": 1.0,
+                    "lineSpacing": 1,
                     "padding": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "text": "0 / 0 fragments collected",
                     "verticalAlignment": 0,
@@ -909,17 +911,17 @@
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
@@ -937,49 +939,138 @@
                 ],
                 "spriteRenderer": {
                     "color": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 1.0,
-                        "r": 1.0
+                        "a": 1,
+                        "b": 1,
+                        "g": 1,
+                        "r": 1
                     },
                     "size": {
-                        "x": 100.0,
-                        "y": 100.0
+                        "x": 100,
+                        "y": 100
                     },
                     "sortOrder": 0,
                     "textureId": "broom",
                     "unlit": false,
                     "uv": [
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0
+                        0,
+                        0,
+                        1,
+                        1
                     ],
                     "visible": true
                 },
                 "transform": {
                     "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
+                        "x": 0,
+                        "y": 0
                     },
                     "position": {
-                        "x": -210.0,
-                        "y": -173.0
+                        "x": -210,
+                        "y": -173
                     },
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "scale": {
-                        "x": 1.0,
-                        "y": 1.0
+                        "x": 1,
+                        "y": 1
                     },
                     "snapToGrid": false
                 }
             },
             "name": "Entity"
+        },
+        {
+            "active": true,
+            "components": {
+                "luaScript": [
+                    {
+                        "enabled": true,
+                        "properties": {},
+                        "scriptPath": "konami_invincibility.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {},
+                        "scriptPath": "unlimited_flashlight.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {},
+                        "scriptPath": "speed_hack.lua"
+                    },
+                    {
+                        "enabled": true,
+                        "properties": {},
+                        "scriptPath": "fragment_reveal.lua"
+                    }
+                ],
+                "transform": {
+                    "pivot": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rotation": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "CheatManager"
+        },
+        {
+            "active": true,
+            "components": {
+                "textRenderer": {
+                    "alignment": 0,
+                    "boxSize": {
+                        "x": 500,
+                        "y": 60
+                    },
+                    "color": {
+                        "r": 0.2,
+                        "g": 1,
+                        "b": 0.2
+                    },
+                    "fontId": "Debug",
+                    "fontSize": 1,
+                    "lineSpacing": 1,
+                    "padding": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "text": "",
+                    "verticalAlignment": 0,
+                    "visible": true,
+                    "wordWrap": false
+                },
+                "transform": {
+                    "pivot": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "rotation": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "snapToGrid": false
+                }
+            },
+            "name": "CheatNotification"
         }
     ],
-    "sfxVolume": 1.0,
+    "sfxVolume": 1,
     "spawnPoint": {
-        "x": 0.0,
-        "y": 0.0
+        "x": 0,
+        "y": 0
     }
 }

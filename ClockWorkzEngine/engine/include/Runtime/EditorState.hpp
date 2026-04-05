@@ -2,7 +2,7 @@
 /*!
 \file           EditorState.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 81% [Sol-Amzar] 19%
+\author(s)      [Syafiq] 73% [Amzar] 23% [Lebon] 4%
 \brief          Generic engine-level editor state
 
 All content (C) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -54,6 +54,7 @@ public:
     void renderImGui(Core::Time* timer) override;
 
 private:
+    friend class CreateTilemapTileCmd;
     friend class HierarchyChangeCmd;
     friend class GroupCloneCmd;
     friend class DeleteTilemapTileCmd;
@@ -88,6 +89,9 @@ private:
     ECS::Entity spawnPrefab(const std::string& prefabName, vec2 position);
     void        deletePrefab(const std::string& prefabName);
     bool        updatePrefabCategory(const std::string& prefabName, const std::string& category);
+    void        loadAvailableEntityGroups();
+    void        saveEntityGroupFromSelection(const std::string& name, const std::string& category);
+    std::vector<ECS::Entity> spawnEntityGroup(const std::string& groupName, vec2 position);
 
     // ----- Tilemap types (declared here so method signatures can use them) -----
     struct TileData {
@@ -139,11 +143,13 @@ private:
     void         saveTilemap(const std::string& filepath);
     void         loadTilemap(const std::string& filepath);
     void         clearTilemap();
+    void         flushTilemapCollisionRebuild();
     bool         isCellOccupied(vec2 worldPos, int layer) const;
     EntityGroup* getOrCreateLayerGroup(int layer);
     void         removeEntityFromGroups(ECS::Entity entity);
 
     // ----- Undo/redo -----
+    void executeRecordedCommand(std::unique_ptr<IEditorCommand> cmd);
     void executeCommand(std::unique_ptr<IEditorCommand> cmd);
     void undo();
     void redo();
@@ -199,6 +205,8 @@ private:
 
     // ----- Collider debug -----
     bool                    m_showColliders{false};
+    bool                    m_showPickBounds{false};
+    bool                    m_showMergedColliders{false};
 
     // ----- UIButton hit-area debug -----
     bool                    m_showUIButtons{false};
@@ -341,19 +349,19 @@ private:
     bool                    m_batchApplyPitch{false};
     float                   m_batchAudioPitch{1.0f};
     bool                    m_batchApplyMinDistance{false};
-    float                   m_batchAudioMinDistance{24.0f};
+    float                   m_batchAudioMinDistance{80.0f};
     bool                    m_batchApplyMaxDistance{false};
-    float                   m_batchAudioMaxDistance{320.0f};
+    float                   m_batchAudioMaxDistance{520.0f};
     bool                    m_batchApplyFalloffStart{false};
-    float                   m_batchAudioFalloffStart{40.0f};
+    float                   m_batchAudioFalloffStart{120.0f};
     bool                    m_batchApplyFalloffAmount{false};
-    float                   m_batchAudioFalloffAmount{0.62f};
+    float                   m_batchAudioFalloffAmount{0.25f};
     bool                    m_batchApplyFilterInStart{false};
-    float                   m_batchAudioFilterInStart{48.0f};
+    float                   m_batchAudioFilterInStart{180.0f};
     bool                    m_batchApplyFilterPeak{false};
-    float                   m_batchAudioFilterPeak{140.0f};
+    float                   m_batchAudioFilterPeak{320.0f};
     bool                    m_batchApplyFilterReleaseEnd{false};
-    float                   m_batchAudioFilterReleaseEnd{260.0f};
+    float                   m_batchAudioFilterReleaseEnd{480.0f};
     char                    m_editAudioNameBuf[128]{};
     char                    m_editAudioPathBuf[256]{};
     bool                    m_editAudioLoop{false};
@@ -362,17 +370,20 @@ private:
     float                   m_editAudioVolume{1.0f};
     float                   m_editAudioPitch{1.0f};
     bool                    m_editAudioIsBGM{false};
-    float                   m_editAudioMinDistance{24.0f};
-    float                   m_editAudioMaxDistance{320.0f};
-    float                   m_editAudioFalloffStart{40.0f};
-    float                   m_editAudioFalloffAmount{0.62f};
-    float                   m_editAudioFilterInStart{48.0f};
-    float                   m_editAudioFilterPeak{140.0f};
-    float                   m_editAudioFilterReleaseEnd{260.0f};
+    float                   m_editAudioMinDistance{80.0f};
+    float                   m_editAudioMaxDistance{520.0f};
+    float                   m_editAudioFalloffStart{120.0f};
+    float                   m_editAudioFalloffAmount{0.25f};
+    float                   m_editAudioFilterInStart{180.0f};
+    float                   m_editAudioFilterPeak{320.0f};
+    float                   m_editAudioFilterReleaseEnd{480.0f};
     std::string             m_deletingAudio;
     std::string             m_deletingAudioPath;
     std::string             m_movingAudioPath;
     bool                    m_openMoveSelectedAudioPopup{false};
+    std::string             m_audioBrowserStatusMessage;
+    bool                    m_audioBrowserStatusIsError{false};
+    double                  m_audioBrowserStatusUntil{0.0};
 
     // ----- Font browser -----
     char                     m_newFontNameBuf[128]{};
@@ -386,6 +397,12 @@ private:
         std::string name;
         std::string category;
         std::string textureId;
+    };
+    struct EntityGroupBrowserEntry {
+        std::string name;
+        std::string category;
+        std::string textureId;
+        int         entityCount{0};
     };
     std::vector<std::string>     m_availablePrefabs;
     std::vector<PrefabBrowserEntry> m_availablePrefabEntries;
@@ -401,6 +418,11 @@ private:
     char                         m_renamePrefabBuf[128]{};
     std::string                  m_cloningPrefabPath;
     char                         m_clonePrefabBuf[128]{};
+    std::vector<EntityGroupBrowserEntry> m_availableEntityGroupEntries;
+    std::vector<std::string>             m_availableEntityGroupCategories;
+    char                                 m_saveEntityGroupNameBuf[128]{};
+    char                                 m_saveEntityGroupCategoryBuf[64]{"Custom"};
+    bool                                 m_saveEntityGroupUseCustomCategory{true};
 
     // ----- BSA -----
     void renderBSATab();
@@ -421,6 +443,7 @@ private:
     bool                     m_paintedThisFrame{false};
     bool                     m_tilemapDirty{false}; ///< Set when tiles are added/removed; triggers merged-collider rebuild on mouse release
     bool                     m_tileStrokeActive{false};
+    std::unique_ptr<CompositeEditorCmd> m_activeTileStrokeCommand;
     std::string              m_selectedTilePrefab;
     PaintMode                m_paintMode{PaintMode::Paint};
     int                      m_currentLayer{0};
@@ -448,6 +471,11 @@ private:
     bool                    m_isDraggingEntity{false};
     vec2                    m_dragStartMousePos{0.f, 0.f};  // screen-space click pos
     vec2                    m_dragClickWorldPos{0.f, 0.f};  // world-space click pos
+    vec2                    m_bulkColliderSizeDelta{0.f, 0.f};
+    vec2                    m_bulkColliderOffsetDelta{0.f, 0.f};
+    vec2                    m_lastPickScreenPos{0.f, 0.f};
+    bool                    m_hasLastPickScreenPos{false};
+    double                  m_lastPickTimeSeconds{-1000.0};
     static constexpr float  kDragThreshold = 5.0f;         // pixels before drag starts
 
     // ----- Box selection -----

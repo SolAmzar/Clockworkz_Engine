@@ -2,7 +2,7 @@
 /*!
 \file           config.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar]
+\author(s)      [Amzar]
 \brief          Places math constants and functions to a separate header.
 				Responsibilities include:
 				- Defining mathematical constants like PI, Tau, and Epsilon

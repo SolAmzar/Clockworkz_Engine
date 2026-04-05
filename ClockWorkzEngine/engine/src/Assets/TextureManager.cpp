@@ -2,7 +2,7 @@
 /*!
 \file           TextureManager.cpp
 \project        Lights Out
-\author(s)      [Yusuf] 99% [Sol-Amzar] 1%
+\author(s)      [Yusuf] 89% [Amzar] 11%
 \brief          Implementation of TextureManager for data-driven texture loading
 
 All content � 2025 DigiPen Institute of Technology Singapore. All rights
@@ -32,6 +32,10 @@ namespace Assets {
 static std::vector<std::string> loadedTextures;
 static std::unordered_map<std::string, std::string> s_resolvedTexturePaths;
 static std::unordered_set<std::string> s_missingTextureKeys;
+static std::unordered_map<std::string, std::shared_ptr<Graphics::Texture2D>>
+    s_textureAliases;
+static std::unordered_map<std::string, std::shared_ptr<Graphics::Texture2D>>
+    s_texturesByResolvedPath;
 
 static std::string normalizeTextureKey(const std::string& name) {
   static const std::string suffix = "_texture";
@@ -42,12 +46,22 @@ static std::string normalizeTextureKey(const std::string& name) {
   return name + suffix;
 }
 
+static std::string denormalizeTextureKey(const std::string& name) {
+  static const std::string suffix = "_texture";
+  if (name.size() >= suffix.size() &&
+      name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+    return name.substr(0, name.size() - suffix.size());
+  }
+  return name;
+}
+
 static std::string findTexturePathOnDisk(const std::string& name) {
   const fs::path textureRoot("assets/textures");
   if (!fs::exists(textureRoot))
     return "";
 
   const std::string normalizedName = normalizeTextureKey(name);
+  const std::string baseName = denormalizeTextureKey(name);
   std::error_code ec;
   for (const auto& entry : fs::recursive_directory_iterator(textureRoot, ec)) {
     if (ec)
@@ -56,11 +70,19 @@ static std::string findTexturePathOnDisk(const std::string& name) {
       continue;
 
     const std::string stem = entry.path().stem().string();
-    if (stem == name || stem == normalizedName)
+    if (stem == name || stem == normalizedName || stem == baseName)
       return entry.path().generic_string();
   }
 
   return "";
+}
+
+static std::string canonicalizeTexturePath(const std::string& path) {
+  std::error_code ec;
+  const fs::path canonical = fs::weakly_canonical(fs::path(path), ec);
+  if (!ec)
+    return canonical.generic_string();
+  return fs::path(path).generic_string();
 }
 
 bool TextureManager::LoadFromConfig(const std::string &configPath) {
@@ -83,13 +105,25 @@ bool TextureManager::LoadFromConfig(const std::string &configPath) {
       std::cout << "[TextureManager] Loading: " << config.name << " from "
                 << config.path << std::endl;
 
-      auto texture = LoadTexture(config.name, config.path);
+      std::string resolvedPath = config.path;
+      auto texture = LoadTexture(config.name, resolvedPath);
+
+      if (!texture) {
+        const std::string discoveredPath = findTexturePathOnDisk(config.name);
+        if (!discoveredPath.empty() && discoveredPath != config.path) {
+          std::cout << "[TextureManager] Retrying with discovered path: "
+                    << discoveredPath << std::endl;
+          resolvedPath = discoveredPath;
+          texture = LoadTexture(config.name, resolvedPath);
+        }
+      }
 
       if (!texture) {
         std::cerr << "[TextureManager] Failed to load: " << config.name
                   << std::endl;
         allSuccess = false;
       } else {
+        s_resolvedTexturePaths[normalize(config.name)] = resolvedPath;
         std::cout << "[TextureManager] Successfully loaded: " << config.name
                   << " (" << texture->width() << "x" << texture->height() << ")"
                   << std::endl;
@@ -124,7 +158,37 @@ TextureManager::LoadTexture(const std::string &name, const std::string &path) {
     return existing;
   }
 
+  auto aliasIt = s_textureAliases.find(key);
+  if (aliasIt != s_textureAliases.end()) {
+    std::cout << "[TextureManager] Texture alias already loaded: " << key
+              << std::endl;
+    return aliasIt->second;
+  }
+
+  const std::string canonicalPath = canonicalizeTexturePath(path);
+  auto byPathIt = s_texturesByResolvedPath.find(canonicalPath);
+  if (byPathIt != s_texturesByResolvedPath.end()) {
+    s_textureAliases[key] = byPathIt->second;
+    if (std::find(loadedTextures.begin(), loadedTextures.end(), key) ==
+        loadedTextures.end()) {
+      loadedTextures.push_back(key);
+    }
+    std::cout << "[TextureManager] Aliased texture: " << key << " -> " << path
+              << std::endl;
+    return byPathIt->second;
+  }
+
   auto texture = ResourceManager<Graphics::Texture2D>::Load(key, path);
+
+  if (!texture) {
+    const std::string fallbackPath = findTexturePathOnDisk(name);
+    if (!fallbackPath.empty() && fallbackPath != path) {
+      texture = ResourceManager<Graphics::Texture2D>::Load(key, fallbackPath);
+      if (texture) {
+        s_resolvedTexturePaths[key] = fallbackPath;
+      }
+    }
+  }
 
   if (!texture) {
     std::cerr << "[TextureManager] Failed to load texture file: " << path
@@ -137,6 +201,7 @@ TextureManager::LoadTexture(const std::string &name, const std::string &path) {
       loadedTextures.end()) {
     loadedTextures.push_back(key);
   }
+  s_texturesByResolvedPath[canonicalPath] = texture;
 
   return texture;
 }
@@ -149,6 +214,16 @@ TextureManager::Get(const std::string &name) {
   // omit the "_texture" suffix still resolve correctly.
   auto t = ResourceManager<Graphics::Texture2D>::Get(name);
   if (!t) t = ResourceManager<Graphics::Texture2D>::Get(key);
+  if (!t) {
+    auto aliasIt = s_textureAliases.find(name);
+    if (aliasIt != s_textureAliases.end())
+      t = aliasIt->second;
+  }
+  if (!t) {
+    auto aliasIt = s_textureAliases.find(key);
+    if (aliasIt != s_textureAliases.end())
+      t = aliasIt->second;
+  }
   if (t)
     return t;
 
@@ -163,12 +238,25 @@ TextureManager::Get(const std::string &name) {
   }
 
   std::string path = GetFilePath(name);
-  if (path.empty())
+  if (path.empty()) {
     path = findTexturePathOnDisk(name);
+  }
 
   if (!path.empty()) {
-    s_resolvedTexturePaths[key] = path;
     t = LoadTexture(name, path);
+    if (t) {
+      if (s_resolvedTexturePaths.find(key) == s_resolvedTexturePaths.end()) {
+        s_resolvedTexturePaths[key] = path;
+      }
+      s_missingTextureKeys.erase(key);
+      return t;
+    }
+  }
+
+  const std::string fallbackPath = findTexturePathOnDisk(name);
+  if (!fallbackPath.empty()) {
+    s_resolvedTexturePaths[key] = fallbackPath;
+    t = LoadTexture(name, fallbackPath);
     if (t) {
       s_missingTextureKeys.erase(key);
       return t;
@@ -181,8 +269,38 @@ TextureManager::Get(const std::string &name) {
 
 void TextureManager::Unload(const std::string &name) {
   const std::string key = normalize(name);
+  auto aliasIt = s_textureAliases.find(key);
+  if (aliasIt != s_textureAliases.end()) {
+    s_textureAliases.erase(aliasIt);
+    auto loadedIt = std::find(loadedTextures.begin(), loadedTextures.end(), key);
+    if (loadedIt != loadedTextures.end())
+      loadedTextures.erase(loadedIt);
+    std::cout << "[TextureManager] Unloaded texture alias: " << key
+              << std::endl;
+    return;
+  }
+
   auto texture = ResourceManager<Graphics::Texture2D>::Get(key);
   if (texture) {
+    for (auto it = s_texturesByResolvedPath.begin();
+         it != s_texturesByResolvedPath.end();) {
+      if (it->second == texture) {
+        it = s_texturesByResolvedPath.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    for (auto it = s_textureAliases.begin(); it != s_textureAliases.end();) {
+      if (it->second == texture) {
+        auto loadedIt = std::find(loadedTextures.begin(), loadedTextures.end(),
+                                  it->first);
+        if (loadedIt != loadedTextures.end())
+          loadedTextures.erase(loadedIt);
+        it = s_textureAliases.erase(it);
+      } else {
+        ++it;
+      }
+    }
     ResourceManager<Graphics::Texture2D>::Unload(key);
 
     auto it = std::find(loadedTextures.begin(), loadedTextures.end(), key);
@@ -199,6 +317,8 @@ void TextureManager::Clear() {
   loadedTextures.clear();
   s_resolvedTexturePaths.clear();
   s_missingTextureKeys.clear();
+  s_textureAliases.clear();
+  s_texturesByResolvedPath.clear();
 }
 
 std::vector<std::string> TextureManager::GetLoadedTextureNames() {
@@ -268,7 +388,8 @@ TextureManager::ParseConfig(const std::string &configPath) {
 
 bool TextureManager::ImportTexture(const std::string &sourcePath,
                                    const std::string &name,
-                                   const std::string &configPath) {
+                                   const std::string &configPath,
+                                   const std::string &destinationDir) {
   const std::string key = normalize(name);
   // 1. Validate source file exists
   if (!fs::exists(sourcePath)) {
@@ -280,10 +401,12 @@ bool TextureManager::ImportTexture(const std::string &sourcePath,
   // 2. Determine destination path
   fs::path source(sourcePath);
   std::string filename = source.filename().string();
-  std::string destPath = "assets/textures/" + filename;
+  fs::path destDir = destinationDir.empty() ? fs::path("assets/textures")
+                                            : fs::path(destinationDir);
+  std::string destPath = (destDir / filename).generic_string();
 
   // 3. Create destination directory if needed
-  fs::create_directories("assets/textures");
+  fs::create_directories(destDir);
 
   // 4. Copy file to assets folder
   if (fs::absolute(sourcePath) != fs::absolute(destPath)) {
@@ -381,6 +504,7 @@ std::string TextureManager::GetFilePath(const std::string &name,
 
 bool TextureManager::RemoveFromConfig(const std::string &name,
                                       const std::string &configPath) {
+  const std::string normalizedName = normalize(name);
   std::ifstream file(configPath);
   if (!file.is_open())
     return false;
@@ -399,7 +523,8 @@ bool TextureManager::RemoveFromConfig(const std::string &name,
   auto &arr = j["textures"];
   bool removed = false;
   for (auto it = arr.begin(); it != arr.end();) {
-    if (it->value("name", "") == name) {
+    const std::string entryName = it->value("name", "");
+    if (entryName == name || entryName == normalizedName) {
       it = arr.erase(it);
       removed = true;
     } else {
@@ -456,6 +581,54 @@ bool TextureManager::DeleteFromDisk(const std::string &name,
   }
 
   std::cout << "[TextureManager] Successfully deleted: " << name << std::endl;
+  return true;
+}
+
+bool TextureManager::UpdateConfigPath(const std::string &name,
+                                      const std::string &newPath,
+                                      const std::string &configPath) {
+  const std::string normalizedName = normalize(name);
+  std::ifstream file(configPath);
+  if (!file.is_open())
+    return false;
+
+  json j;
+  try {
+    file >> j;
+  } catch (...) {
+    return false;
+  }
+  file.close();
+
+  if (!j.contains("textures") || !j["textures"].is_array())
+    return false;
+
+  bool updated = false;
+  for (auto &entry : j["textures"]) {
+    const std::string entryName = entry.value("name", "");
+    if (entryName == name || entryName == normalizedName) {
+      entry["path"] = newPath;
+      updated = true;
+      break;
+    }
+  }
+
+  if (!updated)
+    return false;
+
+  std::ofstream outFile(configPath);
+  if (!outFile.is_open())
+    return false;
+
+  outFile << std::setw(4) << j << std::endl;
+  outFile.close();
+
+  const std::string key = normalize(name);
+  s_resolvedTexturePaths[key] = newPath;
+  s_missingTextureKeys.erase(key);
+
+  std::cout << "[TextureManager] Updated config path for " << normalizedName
+            << " -> " << newPath << std::endl;
   return true;
 }
 

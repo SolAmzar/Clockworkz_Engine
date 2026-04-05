@@ -2,7 +2,7 @@
 /*!
 \file           Collider.hpp
 \project        Lights Out
-\author(s)      [Lebon], 50% [Sol-Amzar], 50%
+\author(s)      [Lebon], 50% [Amzar], 50%
 \brief          Declares collider shapes for 2D physics and lighting systems.
 
                 Responsibilities:

@@ -1,0 +1,47 @@
+{
+    "category": "Props",
+    "components": {
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 126.0,
+                "y": 72.0
+            },
+            "sortOrder": 1,
+            "textureId": "orangetaperolledup",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "orangetaperolledup"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -1447.74267578125,
+                "y": 107.9727783203125
+            },
+            "rotation": 1.6549749374389648,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "orangetaperolledup"
+}

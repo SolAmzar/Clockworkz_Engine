@@ -2,7 +2,7 @@
 /*!
 \file           WindowManager.cpp
 \project        Lights Out
-\author(s)      [Lebon], 95% [Sol-Amzar] 5%
+\author(s)      [Lebon], 95% [Amzar] 5%
 \brief          Declares WindowManager, a wrapper around GLFW for creating
                                 and managing the game window and OpenGL context.
                                 Responsibilities include:

@@ -1,0 +1,47 @@
+{
+    "category": "Custom",
+    "components": {
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 0,
+            "textureId": "canteenfloor",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "concrete floor"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -2890.408203125,
+                "y": 541.8548583984375
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "Floorcanteen"
+}

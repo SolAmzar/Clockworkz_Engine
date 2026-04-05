@@ -2,7 +2,7 @@
 /*!
 \file           Vec4.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar]
+\author(s)      [Amzar]
 \brief          Establishes 4D vector structure with common vector operations.
 				Responsibilities include:
 				- Defining a vec4 struct with x, y, z, and w components

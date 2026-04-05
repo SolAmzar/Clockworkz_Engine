@@ -2,7 +2,7 @@
 /*!
 \file           Patrol.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Declares PatrolComponent, a component of a GameObject that makes it
                 patrol between two points A and B at a specified speed.
                 Responsibilities include:

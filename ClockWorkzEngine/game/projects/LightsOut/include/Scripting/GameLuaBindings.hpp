@@ -2,7 +2,7 @@
 /*!
 \file           GameLuaBindings.hpp
 \project        Lights Out
-\author(s)      [Syafiq]
+\author(s)      [Lebon] 86% [Syafiq] 14%
 \brief          Game-specific Lua bindings extension.
                 Registers LightsOut component accessors on EntityRef without
                 touching engine code.

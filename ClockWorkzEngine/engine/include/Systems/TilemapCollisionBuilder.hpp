@@ -2,6 +2,7 @@
 /*!
 \file           TilemapCollisionBuilder.hpp
 \project        ClockWorkz Engine
+\author(s)      [Syafiq] 94% [Amzar] 6%
 \brief          Greedy-rectangle tilemap collision merging.
 
                 Merges adjacent solid tiles into minimal rectangular colliders,
@@ -25,9 +26,10 @@ namespace Systems {
  * @brief Entry describing one tile for the collision builder.
  */
 struct TilemapTileEntry {
-    vec2        position; ///< World-space center of the tile (= Transform.position)
-    ECS::Entity entity;   ///< The ECS entity for this tile
-    int         layer;    ///< Tilemap layer index
+    vec2        position;        ///< World-space center of the tile (= Transform.position)
+    ECS::Entity entity;          ///< The ECS entity for this tile
+    int         layer;           ///< Tilemap layer index
+    uint32_t    combinedGroupId; ///< Merge bucket: 0 normal, non-zero authored/composite isolation
 };
 
 /**
@@ -45,6 +47,27 @@ struct TilemapTileEntry {
  */
 class TilemapCollisionBuilder {
 public:
+    static bool shouldMergeEntity(ECS::World& world,
+                                  ECS::Entity entity,
+                                  float tileW,
+                                  float tileH,
+                                  float positionTolerance = 0.05f,
+                                  float rotationTolerance = 0.01f);
+
+    /**
+     * @brief Rebuild persisted merged-collider scenes into a stable editor/runtime state.
+     *
+     * Older saved scenes may already contain TilemapMergedCollider entities and have
+     * their source wall tiles serialized with Collider.isSolid = false. This helper
+     * restores solid wall sources, removes the persisted merged colliders, and rebuilds
+     * fresh merged colliders so subsequent saves keep the collision data intact.
+     */
+    static void normalizePersistedMergedScene(ECS::World& world,
+                                              float tileW,
+                                              float tileH,
+                                              float positionTolerance = 0.05f,
+                                              float rotationTolerance = 0.01f);
+
     /**
      * @brief Build merged solid colliders from tilemap tile entries.
      *

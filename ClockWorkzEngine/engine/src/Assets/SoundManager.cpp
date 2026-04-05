@@ -2,7 +2,7 @@
 /*!
 \file           SoundManager.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar] 100%
 \brief          Implementation of Sound Manager for data-driven sound loading
 and management. Does not manage playback, only loading and unloading sound
 assets.
@@ -255,13 +255,13 @@ SoundManager::ParseConfig(const std::string &configPath) {
     cfg.volume = entry.value("volume", 1.0f);
     cfg.pitch = entry.value("pitch", 1.0f);
     cfg.group = entry.value("group", "SFX");
-    cfg.minDistance = entry.value("minDistance", 24.0f);
-    cfg.maxDistance = entry.value("maxDistance", 320.0f);
-    cfg.falloffStart = entry.value("falloffStart", 40.0f);
-    cfg.falloffAmount = entry.value("falloffAmount", 0.62f);
-    cfg.filterInStart = entry.value("filterInStart", 48.0f);
-    cfg.filterPeak = entry.value("filterPeak", 140.0f);
-    cfg.filterReleaseEnd = entry.value("filterReleaseEnd", 260.0f);
+    cfg.minDistance = entry.value("minDistance", 80.0f);
+    cfg.maxDistance = entry.value("maxDistance", 520.0f);
+    cfg.falloffStart = entry.value("falloffStart", 120.0f);
+    cfg.falloffAmount = entry.value("falloffAmount", 0.25f);
+    cfg.filterInStart = entry.value("filterInStart", 180.0f);
+    cfg.filterPeak = entry.value("filterPeak", 320.0f);
+    cfg.filterReleaseEnd = entry.value("filterReleaseEnd", 480.0f);
 
     if (!cfg.name.empty() && !cfg.path.empty())
       result.push_back(cfg);
@@ -349,13 +349,13 @@ bool SoundManager::GetConfig(const std::string &name, SoundConfig &outConfig,
     outConfig.volume = entry.value("volume", 1.0f);
     outConfig.pitch = entry.value("pitch", 1.0f);
     outConfig.group = entry.value("group", "SFX");
-    outConfig.minDistance = entry.value("minDistance", 24.0f);
-    outConfig.maxDistance = entry.value("maxDistance", 320.0f);
-    outConfig.falloffStart = entry.value("falloffStart", 40.0f);
-    outConfig.falloffAmount = entry.value("falloffAmount", 0.62f);
-    outConfig.filterInStart = entry.value("filterInStart", 48.0f);
-    outConfig.filterPeak = entry.value("filterPeak", 140.0f);
-    outConfig.filterReleaseEnd = entry.value("filterReleaseEnd", 260.0f);
+    outConfig.minDistance = entry.value("minDistance", 80.0f);
+    outConfig.maxDistance = entry.value("maxDistance", 520.0f);
+    outConfig.falloffStart = entry.value("falloffStart", 120.0f);
+    outConfig.falloffAmount = entry.value("falloffAmount", 0.25f);
+    outConfig.filterInStart = entry.value("filterInStart", 180.0f);
+    outConfig.filterPeak = entry.value("filterPeak", 320.0f);
+    outConfig.filterReleaseEnd = entry.value("filterReleaseEnd", 480.0f);
     return true;
   }
 
@@ -380,6 +380,17 @@ bool SoundManager::UpdateConfig(const std::string &name,
     return false;
 
   bool changed = false;
+  const bool renamingSound = config.name != name && !config.name.empty();
+
+  if (renamingSound) {
+    for (const auto &entry : j["sounds"]) {
+      const std::string entryName = entry.value("name", "");
+      if (entryName == config.name) {
+        return false;
+      }
+    }
+  }
+
   for (auto &entry : j["sounds"]) {
     if (entry.value("name", "") != name)
       continue;
@@ -412,7 +423,20 @@ bool SoundManager::UpdateConfig(const std::string &name,
   out << std::setw(4) << j << "\n";
   out.close();
 
-  s_configs[name] = config;
+  const std::string finalName = renamingSound ? config.name : name;
+
+  if (renamingSound) {
+    s_configs.erase(name);
+    s_loadedNames.erase(name);
+    if (s_audio) {
+      s_audio->stop(name);
+      s_audio->unload(name);
+      s_audio->unregisterSoundProfile(name);
+    }
+    ResourceManager<Audio::AudioClip>::Unload(name);
+  } else {
+    s_configs.erase(name);
+  }
 
   if (s_audio) {
     Audio::AudioManager::SoundProfile profile;
@@ -426,12 +450,18 @@ bool SoundManager::UpdateConfig(const std::string &name,
     profile.filterInStart = config.filterInStart;
     profile.filterPeak = config.filterPeak;
     profile.filterReleaseEnd = config.filterReleaseEnd;
-    s_audio->registerSoundProfile(name, profile);
+    s_audio->registerSoundProfile(finalName, profile);
   }
 
-  if (IsLoaded(name)) {
-    Unload(name);
-    auto clip = LoadSound(name, config.path, config.loop, config.stream, config.is3D);
+  const bool shouldReload =
+      renamingSound || IsLoaded(name) || IsLoaded(finalName);
+  if (shouldReload) {
+    if (!renamingSound) {
+      Unload(name);
+    }
+
+    auto clip = LoadSound(finalName, config.path, config.loop, config.stream,
+                          config.is3D);
     if (!clip)
       return false;
     if (s_audio) {
@@ -446,10 +476,11 @@ bool SoundManager::UpdateConfig(const std::string &name,
       profile.filterInStart = config.filterInStart;
       profile.filterPeak = config.filterPeak;
       profile.filterReleaseEnd = config.filterReleaseEnd;
-      s_audio->registerSoundProfile(name, profile);
+      s_audio->registerSoundProfile(finalName, profile);
     }
-    s_configs[name] = config;
   }
+
+  s_configs[finalName] = config;
 
   return true;
 }
@@ -492,6 +523,35 @@ bool SoundManager::UpdatePathInConfig(const std::string &name,
   auto it = s_configs.find(name);
   if (it != s_configs.end())
     it->second.path = newPath;
+
+  if (IsLoaded(name)) {
+    SoundConfig reloadConfig;
+    if (GetConfig(name, reloadConfig, configPath)) {
+      Unload(name);
+      auto clip =
+          LoadSound(name, reloadConfig.path, reloadConfig.loop,
+                    reloadConfig.stream, reloadConfig.is3D);
+      if (!clip)
+        return false;
+
+      if (s_audio) {
+        Audio::AudioManager::SoundProfile profile;
+        profile.volume = reloadConfig.volume;
+        profile.pitch = reloadConfig.pitch;
+        profile.group = (reloadConfig.group == "BGM") ? Audio::Group::BGM
+                                                      : Audio::Group::SFX;
+        profile.minDistance = reloadConfig.minDistance;
+        profile.maxDistance = reloadConfig.maxDistance;
+        profile.falloffStart = reloadConfig.falloffStart;
+        profile.falloffAmount = reloadConfig.falloffAmount;
+        profile.filterInStart = reloadConfig.filterInStart;
+        profile.filterPeak = reloadConfig.filterPeak;
+        profile.filterReleaseEnd = reloadConfig.filterReleaseEnd;
+        s_audio->registerSoundProfile(name, profile);
+      }
+      s_configs[name] = reloadConfig;
+    }
+  }
 
   return true;
 }

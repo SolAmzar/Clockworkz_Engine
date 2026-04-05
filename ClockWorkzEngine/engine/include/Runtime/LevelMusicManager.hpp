@@ -2,7 +2,7 @@
 /*!
 \file           LevelMusicManager.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares level music context and layered music management
                 helpers for Lights Out.
 

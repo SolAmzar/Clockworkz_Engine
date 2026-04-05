@@ -2,7 +2,7 @@
 /*!
 \file           FootstepAudio.hpp
 \project        ClockWorkz Engine
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares configurable footstep audio settings for entities.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights
@@ -27,7 +27,7 @@ struct FootstepAudio {
   std::string soundPrefix{"fs_concrete_"};
   std::string concretePrefix{"fs_concrete_"};
   std::string tilePrefix{"fs_tile_"};
-  std::string woodPrefix{"fs_concrete_"};
+  std::string woodPrefix{"fs_wood_"};
   float timerRemaining{0.0f};
 };
 

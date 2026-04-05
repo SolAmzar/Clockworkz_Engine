@@ -2,7 +2,7 @@
 /*!
 \file			AudioSource.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Declares the AudioSourceComponent for attaching audio playback
                 capabilities to GameObjects.
                 Responsibilities include:

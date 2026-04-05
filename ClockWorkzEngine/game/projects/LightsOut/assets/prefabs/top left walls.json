@@ -2,12 +2,12 @@
     "category": "Custom",
     "components": {
         "collider": {
-            "blocksLight": false,
+            "blocksLight": true,
             "collisionCategory": 1,
             "collisionMask": 4294967295,
             "height": 100.0,
             "isHazard": false,
-            "isSolid": false,
+            "isSolid": true,
             "isTrigger": false,
             "mass": 1.0,
             "moveable": false,
@@ -50,8 +50,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": -50.0,
-                "y": -3351.90625
+                "x": 950.0,
+                "y": 250.0
             },
             "rotation": 0.0,
             "scale": {

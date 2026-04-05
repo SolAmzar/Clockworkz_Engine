@@ -2,7 +2,7 @@
 /*!
 \file           AudioManager.cpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar] 100%
 \brief          Handles Audio using FMOD API.
                 Responsibilities include:
                 - Initializing and shutting down the FMOD system
@@ -48,6 +48,8 @@ static bool isChannelAlive(FMOD::Channel *ch) {
     return false;
   return playing;
 }
+
+static constexpr float k3DVolumeBoost = 5.0f;
 
 int AudioManager::findChannel(const std::string &id) {
   // Walk all tracked channels.
@@ -260,8 +262,18 @@ int AudioManager::play(const std::string &id, Group g, float volume,
     return 0;
   }
 
+  float finalVolume = volume;
+  float finalPitch = 1.0f;
+  auto profileIt = m_soundProfiles.find(id);
+  if (profileIt != m_soundProfiles.end()) {
+    finalVolume *= profileIt->second.volume;
+    finalPitch = profileIt->second.pitch;
+  }
+
   if (ch) {
-    ch->setVolume(volume);
+    ch->setVolume(finalVolume);
+    if (finalPitch != 1.0f)
+      ch->setPitch(finalPitch);
     ch->setChannelGroup(groupHandle(g));
     ch->setPaused(paused);
 
@@ -326,8 +338,12 @@ int AudioManager::playAt(const std::string &id, const vec3 &pos, Group g,
     }
 
     const float shapedDistanceT = std::pow(distanceT, 0.6f);
-    const float shapedVolume = volume * (1.0f - (falloffAmount * shapedDistanceT));
-    it->second.ch->setVolume(std::max(0.0f, shapedVolume));
+    const float profileVolume = std::max(0.0f, profile.volume);
+    const float shapedVolume =
+        (volume * profileVolume) * (1.0f - (falloffAmount * shapedDistanceT));
+    const float boosted3DVolume =
+        std::clamp(shapedVolume * k3DVolumeBoost, 0.0f, 5.0f);
+    it->second.ch->setVolume(boosted3DVolume);
 
     float filterT = 0.0f;
     if (distance > filterInStart && distance < filterReleaseEnd) {
@@ -401,12 +417,9 @@ int AudioManager::play(const std::string &name) {
   auto it = m_soundProfiles.find(name);
   if (it != m_soundProfiles.end()) {
     const auto &p = it->second;
-    // Defaults: pitch is not supported in the main play() yet?
-    // Wait, main play() takes (id, group, volume, paused).
-    // It does NOT take pitch.
-    // If I need pitch, I must add pitch support to the main play() or handle it
-    // here.
-    int h = play(name, p.group, p.volume, false);
+    // Base volume stays at 1.0 here because play(id, group, volume, paused)
+    // already multiplies by the saved sound-profile volume.
+    int h = play(name, p.group, 1.0f, false);
 
     // Apply pitch if handle is valid
     if (h > 0 && p.pitch != 1.0f) {

@@ -2,7 +2,7 @@
 /*!
 \file           FootstepAudio.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar] 100%
+\author(s)      [Amzar] 100%
 \brief          Declares the footstep audio component used for runtime surface-
                 aware movement sounds.
 
@@ -29,7 +29,7 @@ struct FootstepAudio {
   std::string soundPrefix{"fs_concrete_"};
   std::string concretePrefix{"fs_concrete_"};
   std::string tilePrefix{"fs_tile_"};
-  std::string woodPrefix{"fs_concrete_"};
+  std::string woodPrefix{"fs_wood_"};
   float timerRemaining{0.0f};
 };
 

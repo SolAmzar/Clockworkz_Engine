@@ -2,7 +2,7 @@
 /*!
 \file           UISliderSystem.hpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq]
+\author(s)      [Syafiq] 93% [Lebon] 7%
 \brief          UISliderSystem — handles mouse input and rendering for
                 entities with Transform + UISlider components.
 

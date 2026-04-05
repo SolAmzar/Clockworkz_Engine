@@ -92,8 +92,12 @@ void ImGuiManager::endFrame() {
 void ImGuiManager::beginDockspace() {
   // Create a fullscreen dockspace
   ImGuiViewport *viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->WorkPos);
-  ImGui::SetNextWindowSize(viewport->WorkSize);
+  ImVec2 dockPos = viewport->WorkPos;
+  ImVec2 dockSize = viewport->WorkSize;
+  dockPos.y += m_dockspaceTopInset;
+  dockSize.y = (dockSize.y > m_dockspaceTopInset) ? (dockSize.y - m_dockspaceTopInset) : 0.0f;
+  ImGui::SetNextWindowPos(dockPos);
+  ImGui::SetNextWindowSize(dockSize);
   ImGui::SetNextWindowViewport(viewport->ID);
 
   ImGuiWindowFlags window_flags =

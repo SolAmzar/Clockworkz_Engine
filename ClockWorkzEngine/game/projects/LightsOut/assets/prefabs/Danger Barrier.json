@@ -1,0 +1,65 @@
+{
+    "category": "Props",
+    "components": {
+        "collider": {
+            "blocksLight": true,
+            "collisionCategory": 1,
+            "collisionMask": 4294967295,
+            "height": 74.0,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": false,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 60.0
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 100.0,
+                "y": 100.0
+            },
+            "sortOrder": 0,
+            "textureId": "danger barrier",
+            "unlit": false,
+            "uv": [
+                0.0,
+                0.0,
+                1.0,
+                1.0
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "danger barrier"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": -1375.44580078125,
+                "y": 48.336219787597656
+            },
+            "rotation": 1.358454942703247,
+            "scale": {
+                "x": 1.1299999952316284,
+                "y": 0.7300000190734863
+            },
+            "snapToGrid": false
+        }
+    },
+    "name": "Danger Barrier"
+}

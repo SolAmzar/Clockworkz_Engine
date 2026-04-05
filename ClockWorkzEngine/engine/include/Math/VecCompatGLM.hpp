@@ -2,7 +2,7 @@
 /*!
 \file			VecCompatGLM.hpp
 \project        Lights Out
-\author(s)      [Sol-Amzar], 100%
+\author(s)      [Amzar], 100%
 \brief          Declares conversion functions between your custom vector/matrix types
                 and GLM types for interoperability.
                 Responsibilities include:
