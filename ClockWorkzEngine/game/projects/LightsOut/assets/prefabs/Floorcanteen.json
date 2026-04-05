@@ -1,24 +1,6 @@
 {
     "category": "Custom",
     "components": {
-        "collider": {
-            "blocksLight": false,
-            "collisionCategory": 1,
-            "collisionMask": 4294967295,
-            "height": 100.0,
-            "isHazard": false,
-            "isSolid": false,
-            "isTrigger": false,
-            "mass": 1.0,
-            "moveable": false,
-            "offset": {
-                "x": 0.0,
-                "y": 0.0
-            },
-            "radius": 50.0,
-            "shape": 0,
-            "width": 100.0
-        },
         "spriteRenderer": {
             "color": {
                 "a": 1.0,
@@ -30,8 +12,8 @@
                 "x": 100.0,
                 "y": 100.0
             },
-            "sortOrder": 1,
-            "textureId": "classroom wall9",
+            "sortOrder": 0,
+            "textureId": "canteenfloor",
             "unlit": false,
             "uv": [
                 0.0,
@@ -42,7 +24,7 @@
             "visible": true
         },
         "tag": {
-            "tag": "classroom wall2"
+            "tag": "concrete floor"
         },
         "transform": {
             "pivot": {
@@ -50,8 +32,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": -50.0,
-                "y": -3351.90625
+                "x": -2890.408203125,
+                "y": 541.8548583984375
             },
             "rotation": 0.0,
             "scale": {
@@ -61,5 +43,5 @@
             "snapToGrid": false
         }
     },
-    "name": "bot right walls"
+    "name": "Floorcanteen"
 }

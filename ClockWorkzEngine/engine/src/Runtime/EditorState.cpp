@@ -3380,14 +3380,23 @@ void EditorState::renderInspector() {
             auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
             char texBuf[256];
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
-            if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
-                sr->textureId = texBuf;
+            if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf))) {
+                std::string newTexId = texBuf;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->textureId = newTexId;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
                     captureInspectorBefore();
-                    sr->textureId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
+                    std::string newTexId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
+                    applyToSelected([&](ECS::Entity e) {
+                        if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                            s->textureId = newTexId;
+                    });
                     pushInspectorChange();
                 }
                 ImGui::EndDragDropTarget();
@@ -3401,20 +3410,43 @@ void EditorState::renderInspector() {
             }
 
             float sz[2] = {sr->size.x, sr->size.y};
-            if (ImGui::DragFloat2("Size", sz, 1.0f))
-                sr->size = {sz[0], sz[1]};
+            if (ImGui::DragFloat2("Size", sz, 1.0f)) {
+                vec2 newSize = {sz[0], sz[1]};
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->size = newSize;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::ColorEdit4("Color", glm::value_ptr(sr->color));
+            if (ImGui::ColorEdit4("Color", glm::value_ptr(sr->color))) {
+                glm::vec4 newColor = sr->color;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->color = newColor;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::Checkbox("Visible", &sr->visible);
+            if (ImGui::Checkbox("Visible", &sr->visible)) {
+                bool newVisible = sr->visible;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->visible = newVisible;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::DragInt("Sort Order", &sr->sortOrder);
+            if (ImGui::DragInt("Sort Order", &sr->sortOrder)) {
+                int newOrder = sr->sortOrder;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->sortOrder = newOrder;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
@@ -4539,8 +4571,8 @@ void EditorState::renderViewport() {
         m_isDraggingEntity  = false;
     }
 
-    // ----- Box selection update / draw / finalize -----
-    if (m_isBoxSelecting) {
+    // ----- Box selection update / draw / finalize (scene mode only) -----
+    if (m_isBoxSelecting && !m_tileMapMode) {
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
             ImVec2 mp   = ImGui::GetMousePos();
             m_boxSelectEnd = {mp.x, mp.y};
@@ -4574,6 +4606,12 @@ void EditorState::renderViewport() {
                 }
 
                 ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                    // Filter by layer: if entity has a SpriteRenderer, its sortOrder
+                    // represents the layer it was placed on. Skip if it doesn't match.
+                    if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                        if (sr->sortOrder != m_currentLayer)
+                            return;
+                    }
                     vec2 sc = worldToScreen({t.position.x, t.position.y},
                                            camP, m_editorCamZoom, vpMin, m_viewportSize);
                     if (sc.x >= minSX && sc.x <= maxSX &&
@@ -4616,13 +4654,17 @@ void EditorState::renderViewport() {
             snap.hasSpriteRenderer  = true;
             snap.spriteRenderer.textureId = texName;
             snap.spriteRenderer.size      = {100.0f, 100.0f};
+            snap.spriteRenderer.sortOrder = m_currentLayer;
 
             auto cmd = std::make_unique<CreateEntityCmd>(m_scene.GetWorld(), snap);
             auto* raw = cmd.get();
             executeCommand(std::move(cmd));
+            ECS::Entity e = raw->createdEntity();
+            m_tilemap.push_back({texName, wPos, m_currentLayer, e});
+            getOrCreateLayerGroup(m_currentLayer)->entities.push_back(e);
             m_selectedEntities.clear();
-            m_selectedEntity = raw->createdEntity();
-            m_selectedEntities.push_back(m_selectedEntity);
+            m_selectedEntity = e;
+            m_selectedEntities.push_back(e);
         }
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
             const char* prefabName = static_cast<const char*>(pl->Data);
@@ -4870,6 +4912,13 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             float currentAngle = std::atan2(mousePos.y - origin.y,
                                              mousePos.x - origin.x);
             float delta = currentAngle - m_gizmoClickOffset.x;
+
+            // Snap rotation to nearest 90 degrees when snap is enabled
+            if (m_snapToGrid) {
+                constexpr float kSnap = 1.5707963268f; // pi/2
+                delta = std::round(delta / kSnap) * kSnap;
+            }
+
             vec2 pivot{0.f, 0.f};
             if (!m_gizmoGroupOriginalPos.empty()) {
                 for (const auto& [_, pos] : m_gizmoGroupOriginalPos)
@@ -8494,6 +8543,7 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                     }
                     for (auto& tile : m_tilemap) {
                         if (!world.isValid(tile.entity)) continue;
+                        if (tile.layer != m_currentLayer) continue;
                         vec2 sc = worldToScreen(tile.position, camP, m_editorCamZoom,
                                                viewportMin, m_viewportSize);
                         if (sc.x >= minSX && sc.x <= maxSX &&

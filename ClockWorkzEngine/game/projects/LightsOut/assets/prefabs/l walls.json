@@ -2,7 +2,7 @@
     "category": "Custom",
     "components": {
         "collider": {
-            "blocksLight": false,
+            "blocksLight": true,
             "collisionCategory": 1,
             "collisionMask": 4294967295,
             "height": 100.0,
@@ -15,7 +15,7 @@
                 "x": 0.0,
                 "y": 0.0
             },
-            "radius": 50.0,
+            "radius": 25.0,
             "shape": 0,
             "width": 100.0
         },
@@ -30,8 +30,8 @@
                 "x": 100.0,
                 "y": 100.0
             },
-            "sortOrder": 0,
-            "textureId": "classroom wall2",
+            "sortOrder": 1,
+            "textureId": "corridor wall4",
             "unlit": false,
             "uv": [
                 0.0,
@@ -42,7 +42,7 @@
             "visible": true
         },
         "tag": {
-            "tag": "classroom wall2"
+            "tag": "l wall"
         },
         "transform": {
             "pivot": {
@@ -50,8 +50,8 @@
                 "y": 0.0
             },
             "position": {
-                "x": -950.0,
-                "y": -3050.0
+                "x": 950.0,
+                "y": 50.0
             },
             "rotation": 0.0,
             "scale": {
@@ -61,5 +61,5 @@
             "snapToGrid": false
         }
     },
-    "name": "school - wall"
+    "name": "l walls"
 }
