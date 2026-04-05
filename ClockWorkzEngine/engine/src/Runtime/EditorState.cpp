@@ -191,7 +191,13 @@ private:
 class DeleteTilemapTileCmd final : public IEditorCommand {
 public:
     DeleteTilemapTileCmd(EditorState& editor, ECS::World& world, ECS::Entity entity, EditorState::TileData tileData)
-        : m_editor(editor), m_entityCmd(world, entity), m_tileData(std::move(tileData)) {}
+        : m_editor(editor), m_entityCmd(world, entity), m_tileData(std::move(tileData)) {
+        for (size_t i = 0; i < m_editor.m_hierarchyGroups.size(); ++i) {
+            const auto& ids = m_editor.m_hierarchyGroups[i].entityIds;
+            if (std::find(ids.begin(), ids.end(), entity.id) != ids.end())
+                m_hierarchyGroupIndices.push_back(static_cast<int>(i));
+        }
+    }
 
     void execute() override {
         auto it = std::find_if(m_editor.m_tilemap.begin(), m_editor.m_tilemap.end(),
@@ -210,6 +216,14 @@ public:
         m_entityCmd.undo();
         m_tileData.entity = m_entityCmd.m_current;
         m_editor.m_tilemap.push_back(m_tileData);
+        m_editor.getOrCreateLayerGroup(m_tileData.layer)->entities.push_back(m_tileData.entity);
+        for (int groupIndex : m_hierarchyGroupIndices) {
+            if (groupIndex < 0 || groupIndex >= static_cast<int>(m_editor.m_hierarchyGroups.size()))
+                continue;
+            auto& ids = m_editor.m_hierarchyGroups[static_cast<size_t>(groupIndex)].entityIds;
+            if (std::find(ids.begin(), ids.end(), m_tileData.entity.id) == ids.end())
+                ids.push_back(m_tileData.entity.id);
+        }
         m_editor.m_tilemapDirty = true;
     }
 
@@ -219,6 +233,72 @@ private:
     EditorState& m_editor;
     DeleteEntityCmd m_entityCmd;
     EditorState::TileData m_tileData;
+    std::vector<int> m_hierarchyGroupIndices;
+};
+
+class CreateTilemapTileCmd final : public IEditorCommand {
+public:
+    CreateTilemapTileCmd(EditorState& editor,
+                         ECS::World& world,
+                         std::string prefabName,
+                         vec2 position,
+                         int layer,
+                         int hierarchyGroupIndex)
+        : m_editor(editor),
+          m_world(world),
+          m_prefabName(std::move(prefabName)),
+          m_position(position),
+          m_layer(layer),
+          m_hierarchyGroupIndex(hierarchyGroupIndex) {}
+
+    void execute() override {
+        m_entity = m_editor.spawnPrefab(m_prefabName, m_position);
+        if (!m_world.isValid(m_entity))
+            return;
+
+        if (auto* spr = m_world.getComponent<Components::SpriteRenderer>(m_entity))
+            spr->sortOrder = m_layer;
+
+        m_editor.m_tilemap.push_back({m_prefabName, m_position, m_layer, m_entity});
+        m_editor.getOrCreateLayerGroup(m_layer)->entities.push_back(m_entity);
+
+        if (m_hierarchyGroupIndex >= 0 &&
+            m_hierarchyGroupIndex < static_cast<int>(m_editor.m_hierarchyGroups.size())) {
+            auto& ids = m_editor.m_hierarchyGroups[static_cast<size_t>(m_hierarchyGroupIndex)].entityIds;
+            if (std::find(ids.begin(), ids.end(), m_entity.id) == ids.end())
+                ids.push_back(m_entity.id);
+        }
+
+        m_editor.m_tilemapDirty = true;
+    }
+
+    void undo() override {
+        if (!m_world.isValid(m_entity))
+            return;
+
+        auto it = std::find_if(m_editor.m_tilemap.begin(), m_editor.m_tilemap.end(),
+            [&](const EditorState::TileData& tile) {
+                return tile.entity.id == m_entity.id && tile.entity.generation == m_entity.generation;
+            });
+        if (it != m_editor.m_tilemap.end())
+            m_editor.m_tilemap.erase(it);
+
+        m_editor.removeEntityFromGroups(m_entity);
+        m_world.destroyEntity(m_entity);
+        m_entity = {0, 0};
+        m_editor.m_tilemapDirty = true;
+    }
+
+    const char* label() const override { return "Paint Tile"; }
+
+private:
+    EditorState& m_editor;
+    ECS::World&  m_world;
+    std::string  m_prefabName;
+    vec2         m_position{};
+    int          m_layer{0};
+    int          m_hierarchyGroupIndex{-1};
+    ECS::Entity  m_entity{0, 0};
 };
 
 // ---------------------------------------------------------------------------
@@ -2248,6 +2328,7 @@ void EditorState::renderHierarchy() {
         }
 
         // --- Group right-click menu ---
+        bool breakAfterGroupPopupAction = false;
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Rename Group")) {
                 m_renamingGroupIdx = gi;
@@ -2311,10 +2392,7 @@ void EditorState::renderHierarchy() {
                 m_selectedGroupIdx = (int)m_hierarchyGroups.size() - 1;
                 m_selectedEntities.clear();
                 m_selectedEntity = {0, 0};
-                ImGui::EndPopup();
-                if (open) ImGui::TreePop();
-                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
-                break;
+                breakAfterGroupPopupAction = true;
             }
             if (grp.parentGroupIdx != -1 && ImGui::MenuItem("Move To Root")) {
                 markHierarchyChanged("Move Group To Root");
@@ -2329,10 +2407,7 @@ void EditorState::renderHierarchy() {
                 }
                 m_hierarchyGroups.erase(m_hierarchyGroups.begin() + gi);
                 reindexGroupsAfterErase(gi);
-                if (open) ImGui::TreePop();
-                ImGui::EndPopup();
-                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
-                break;
+                breakAfterGroupPopupAction = true;
             }
             if (ImGui::MenuItem("Delete Group + Entities")) {
                 markHierarchyChanged("Delete Group");
@@ -2360,12 +2435,14 @@ void EditorState::renderHierarchy() {
                 executeCommand(std::move(deleteGroupCmd));
                 hierarchyChanged = false;
                 hierarchyChangeLabel.clear();
-                if (open) ImGui::TreePop();
-                ImGui::EndPopup();
-                if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
-                break;
+                breakAfterGroupPopupAction = true;
             }
             ImGui::EndPopup();
+        }
+        if (breakAfterGroupPopupAction) {
+            if (open) ImGui::TreePop();
+            if (groupIndent > 0.0f) ImGui::Unindent(groupIndent);
+            break;
         }
 
         if (open) {
@@ -7494,12 +7571,17 @@ void EditorState::saveScene() {
 // Undo / Redo
 // ---------------------------------------------------------------------------
 
-void EditorState::executeCommand(std::unique_ptr<IEditorCommand> cmd) {
-    cmd->execute();
+void EditorState::executeRecordedCommand(std::unique_ptr<IEditorCommand> cmd) {
+    if (!cmd) return;
     m_undoStack.push_back(std::move(cmd));
     m_redoStack.clear();
     if (m_undoStack.size() > MAX_UNDO)
         m_undoStack.erase(m_undoStack.begin());
+}
+
+void EditorState::executeCommand(std::unique_ptr<IEditorCommand> cmd) {
+    cmd->execute();
+    executeRecordedCommand(std::move(cmd));
 }
 
 void EditorState::undo() {
@@ -7508,6 +7590,7 @@ void EditorState::undo() {
     m_undoStack.pop_back();
     cmd->undo();
     m_redoStack.push_back(std::move(cmd));
+    flushTilemapCollisionRebuild();
 }
 
 void EditorState::redo() {
@@ -7516,6 +7599,7 @@ void EditorState::redo() {
     m_redoStack.pop_back();
     cmd->execute();
     m_undoStack.push_back(std::move(cmd));
+    flushTilemapCollisionRebuild();
 }
 
 void EditorState::captureInspectorBefore() {
@@ -8274,6 +8358,22 @@ void EditorState::clearTilemap() {
     m_isDraggingEntity   = false;
 }
 
+void EditorState::flushTilemapCollisionRebuild() {
+    if (!m_tilemapDirty)
+        return;
+
+    auto& world = m_scene.GetWorld();
+    m_tilemapDirty = false;
+    Systems::TilemapCollisionBuilder::clear(world);
+
+    std::vector<Systems::TilemapTileEntry> entries;
+    entries.reserve(m_tilemap.size());
+    for (const auto& td : m_tilemap)
+        entries.push_back({td.position, td.entity, td.layer});
+
+    Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
+}
+
 void EditorState::saveTilemap(const std::string& filepath) {
     using json = nlohmann::json;
     json j;
@@ -8351,20 +8451,19 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
     m_paintedThisFrame = false;
 
     if (m_paintMode != PaintMode::Select) {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered)
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && m_viewportHovered) {
             m_tileStrokeActive = true;
+            m_activeTileStrokeCommand = std::make_unique<CompositeEditorCmd>(
+                m_paintMode == PaintMode::Erase ? "Erase Tiles" : "Paint Tiles");
+        }
 
         if (m_tileStrokeActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
             m_tileStrokeActive = false;
-            if (m_tilemapDirty) {
-                m_tilemapDirty = false;
-                Systems::TilemapCollisionBuilder::clear(world);
-                std::vector<Systems::TilemapTileEntry> entries;
-                entries.reserve(m_tilemap.size());
-                for (const auto& td : m_tilemap)
-                    entries.push_back({td.position, td.entity, td.layer});
-                Systems::TilemapCollisionBuilder::build(world, entries, m_gridSize, m_gridSize);
-            }
+            flushTilemapCollisionRebuild();
+            if (m_activeTileStrokeCommand && !m_activeTileStrokeCommand->commands.empty())
+                executeRecordedCommand(std::move(m_activeTileStrokeCommand));
+            else
+                m_activeTileStrokeCommand.reset();
         }
 
         if (!m_tileStrokeActive || !ImGui::IsMouseDown(ImGuiMouseButton_Left) || !m_viewportHovered)
@@ -8390,20 +8489,15 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
         }
         // Paint on held mouse (allows drag-painting)
         if (!isCellOccupied(worldPos, m_currentLayer)) {
-            ECS::Entity entity = spawnPrefab(m_selectedTilePrefab, worldPos);
-            if (world.isValid(entity)) {
-                if (auto* spr = world.getComponent<Components::SpriteRenderer>(entity))
-                    spr->sortOrder = m_currentLayer;
-                m_tilemap.push_back({m_selectedTilePrefab, worldPos, m_currentLayer, entity});
-                getOrCreateLayerGroup(m_currentLayer)->entities.push_back(entity);
-
-                if (m_selectedGroupIdx >= 0 && m_selectedGroupIdx < (int)m_hierarchyGroups.size()) {
-                    auto& entityIds = m_hierarchyGroups[m_selectedGroupIdx].entityIds;
-                    if (std::find(entityIds.begin(), entityIds.end(), entity.id) == entityIds.end())
-                        entityIds.push_back(entity.id);
-                }
+            auto cmd = std::make_unique<CreateTilemapTileCmd>(
+                *this, world, m_selectedTilePrefab, worldPos, m_currentLayer, m_selectedGroupIdx);
+            cmd->execute();
+            if (m_activeTileStrokeCommand)
+                m_activeTileStrokeCommand->add(std::move(cmd));
+            else
+                executeRecordedCommand(std::move(cmd));
+            if (m_tilemapDirty) {
                 m_paintedThisFrame = true;
-                m_tilemapDirty = true;
             }
         }
     } else if (m_paintMode == PaintMode::Erase) {
@@ -8411,11 +8505,13 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
             if (it->layer == m_currentLayer &&
                 world.isValid(it->entity) &&
                 magnitude(it->position - worldPos) < m_gridSize * 0.5f) {
-                removeEntityFromGroups(it->entity);
-                world.destroyEntity(it->entity);
-                m_tilemap.erase(it);
+                auto cmd = std::make_unique<DeleteTilemapTileCmd>(*this, world, it->entity, *it);
+                cmd->execute();
+                if (m_activeTileStrokeCommand)
+                    m_activeTileStrokeCommand->add(std::move(cmd));
+                else
+                    executeRecordedCommand(std::move(cmd));
                 m_paintedThisFrame = true;
-                m_tilemapDirty = true;
                 break;
             }
         }
