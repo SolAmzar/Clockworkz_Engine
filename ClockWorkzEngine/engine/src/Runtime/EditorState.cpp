@@ -1598,7 +1598,142 @@ void EditorState::renderImGui(Core::Time* timer) {
 // ---------------------------------------------------------------------------
 
 void EditorState::renderToolbar() {
+    constexpr float kTwoRowToolbarThreshold = 1450.0f;
+    constexpr float kTwoRowToolbarThresholdTilemap = 2050.0f;
+    auto& imguiManager = Core::Engine::Get().imguiManager();
+    imguiManager.setDockspaceTopInset(0.0f);
+
+    auto drawPrimaryToolbarControls = [this]() {
+        if (ImGui::Button(" Hub "))  m_pendingReturnToHub = true;
+        if (ImGui::IsItemHovered())  ImGui::SetTooltip("Return to Editor Hub");
+        ImGui::SameLine();
+        if (ImGui::Button(" Save ")) m_pendingSave = true;
+        if (ImGui::IsItemHovered())  ImGui::SetTooltip("Save scene (Ctrl+S)");
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.15f, 0.60f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.80f, 0.20f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.45f, 0.10f, 1.0f));
+        if (ImGui::Button(" Play "))  m_pendingPlay = true;
+        ImGui::PopStyleColor(3);
+        if (ImGui::IsItemHovered())  ImGui::SetTooltip("Save & play the scene");
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::Text("Gizmo:");
+        ImGui::SameLine();
+        if (ImGui::RadioButton("None",  m_gizmoMode == GizmoMode::None))
+            m_gizmoMode = GizmoMode::None;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Move",  m_gizmoMode == GizmoMode::Translation))
+            m_gizmoMode = GizmoMode::Translation;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Rotate", m_gizmoMode == GizmoMode::Rotation))
+            m_gizmoMode = GizmoMode::Rotation;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Scale",  m_gizmoMode == GizmoMode::Scale))
+            m_gizmoMode = GizmoMode::Scale;
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::Checkbox("Grid", &m_showGrid);
+        if (m_showGrid) {
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(80.0f);
+            ImGui::DragFloat("##GridSize", &m_gridSize, 1.0f, 10.0f, 500.0f, "%.0f");
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid size");
+            ImGui::SameLine();
+            ImGui::Checkbox("Snap", &m_snapToGrid);
+        }
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        ImGui::Checkbox("Merged", &m_showMergedColliders);
+        ImGui::SameLine();
+        ImGui::Separator(); ImGui::SameLine();
+    };
+
+    auto drawSecondaryToolbarControls = [this](bool compactMode) {
+        if (ImGui::Checkbox("Tilemap", &m_tileMapMode)) {
+            if (m_tileMapMode) {
+                m_selectedEntities.clear();
+                m_selectedEntity = {0, 0};
+                m_showTilePalette = true;
+            } else {
+                m_showTilePalette = false;
+            }
+        }
+        if (m_tileMapMode) {
+            ImGui::SameLine();
+            ImGui::Separator(); ImGui::SameLine();
+            if (ImGui::RadioButton("Paint",  m_paintMode == PaintMode::Paint))
+                m_paintMode = PaintMode::Paint;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Erase",  m_paintMode == PaintMode::Erase))
+                m_paintMode = PaintMode::Erase;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Select", m_paintMode == PaintMode::Select))
+                m_paintMode = PaintMode::Select;
+
+            ImGui::SameLine();
+            ImGui::Separator(); ImGui::SameLine();
+            ImGui::Text("Layer:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(60.0f);
+            ImGui::SliderInt("##Layer", &m_currentLayer, 0, m_numLayers - 1);
+            ImGui::SameLine();
+            if (ImGui::SmallButton("+")) {
+                ++m_numLayers;
+                m_layerVisible.push_back(true);
+                m_scene.setLayerEnabled(m_numLayers - 1, true);
+            }
+            ImGui::SameLine();
+            if (ImGui::SmallButton("-") && m_numLayers > 1) {
+                --m_numLayers;
+                m_layerVisible.resize(m_numLayers, true);
+                if (m_currentLayer >= m_numLayers) m_currentLayer = m_numLayers - 1;
+            }
+            ImGui::SameLine();
+            ImGui::Separator(); ImGui::SameLine();
+            for (int i = 0; i < m_numLayers; ++i) {
+                char lbl[16];
+                std::snprintf(lbl, sizeof(lbl), "L%d", i);
+                bool vis = (i < (int)m_layerVisible.size()) ? m_layerVisible[i] : true;
+                if (ImGui::Checkbox(lbl, &vis)) {
+                    if (i < (int)m_layerVisible.size()) m_layerVisible[i] = vis;
+                    m_scene.setLayerEnabled(i, vis);
+                }
+                if (i + 1 < m_numLayers) ImGui::SameLine();
+            }
+        }
+
+        ImGui::Separator(); ImGui::SameLine();
+
+        if (!m_undoStack.empty()) {
+            const std::string undoLabel = m_undoStack.back()->label();
+            if (ImGui::Button("Undo")) undo();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Undo: %s", undoLabel.c_str());
+        }
+        if (!m_redoStack.empty()) {
+            ImGui::SameLine();
+            const std::string redoLabel = m_redoStack.back()->label();
+            if (ImGui::Button("Redo")) redo();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Redo: %s", redoLabel.c_str());
+        }
+
+        if (!compactMode) {
+            ImGui::SameLine(0.0f, 20.0f);
+            ImGui::TextDisabled("%s", m_sceneFilePath.c_str());
+        }
+    };
+
     if (!ImGui::BeginMainMenuBar()) return;
+    const float compactThreshold =
+        m_tileMapMode ? kTwoRowToolbarThresholdTilemap : kTwoRowToolbarThreshold;
+    const bool compactToolbar = ImGui::GetWindowWidth() < compactThreshold;
 
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) m_pendingSave = true;
@@ -1758,8 +1893,33 @@ void EditorState::renderToolbar() {
 
     ImGui::SameLine(0.0f, 20.0f);
     ImGui::TextDisabled("%s", m_sceneFilePath.c_str());
+    drawPrimaryToolbarControls();
+    if (!compactToolbar)
+        drawSecondaryToolbarControls(false);
 
     ImGui::EndMainMenuBar();
+
+    if (!compactToolbar)
+        return;
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, 0.0f));
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGuiWindowFlags toolbarFlags = ImGuiWindowFlags_NoTitleBar |
+                                    ImGuiWindowFlags_NoResize |
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoDocking |
+                                    ImGuiWindowFlags_NoSavedSettings |
+                                    ImGuiWindowFlags_NoScrollbar;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    if (ImGui::Begin("##EditorToolbarRow2", nullptr, toolbarFlags)) {
+        drawSecondaryToolbarControls(true);
+        imguiManager.setDockspaceTopInset(ImGui::GetWindowHeight());
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 // ---------------------------------------------------------------------------
@@ -4088,14 +4248,23 @@ void EditorState::renderInspector() {
             auto* sr = world.getComponent<Components::SpriteRenderer>(m_selectedEntity);
             char texBuf[256];
             strncpy_s(texBuf, sr->textureId.c_str(), sizeof(texBuf) - 1);
-            if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf)))
-                sr->textureId = texBuf;
+            if (ImGui::InputText("Texture ID", texBuf, sizeof(texBuf))) {
+                std::string newTexId = texBuf;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->textureId = newTexId;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
                     captureInspectorBefore();
-                    sr->textureId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
+                    std::string newTexId = std::filesystem::path(static_cast<const char*>(pl->Data)).stem().string();
+                    applyToSelected([&](ECS::Entity e) {
+                        if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                            s->textureId = newTexId;
+                    });
                     pushInspectorChange();
                 }
                 ImGui::EndDragDropTarget();
@@ -4109,20 +4278,43 @@ void EditorState::renderInspector() {
             }
 
             float sz[2] = {sr->size.x, sr->size.y};
-            if (ImGui::DragFloat2("Size", sz, 1.0f))
-                sr->size = {sz[0], sz[1]};
+            if (ImGui::DragFloat2("Size", sz, 1.0f)) {
+                vec2 newSize = {sz[0], sz[1]};
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->size = newSize;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::ColorEdit4("Color", glm::value_ptr(sr->color));
+            if (ImGui::ColorEdit4("Color", glm::value_ptr(sr->color))) {
+                glm::vec4 newColor = sr->color;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->color = newColor;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::Checkbox("Visible", &sr->visible);
+            if (ImGui::Checkbox("Visible", &sr->visible)) {
+                bool newVisible = sr->visible;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->visible = newVisible;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
 
-            ImGui::DragInt("Sort Order", &sr->sortOrder);
+            if (ImGui::DragInt("Sort Order", &sr->sortOrder)) {
+                int newOrder = sr->sortOrder;
+                applyToSelected([&](ECS::Entity e) {
+                    if (auto* s = world.getComponent<Components::SpriteRenderer>(e))
+                        s->sortOrder = newOrder;
+                });
+            }
             if (ImGui::IsItemActivated()) captureInspectorBefore();
             if (ImGui::IsItemDeactivatedAfterEdit()) pushInspectorChange();
         }
@@ -5704,8 +5896,8 @@ void EditorState::renderViewport() {
         m_isDraggingEntity  = false;
     }
 
-    // ----- Box selection update / draw / finalize -----
-    if (m_isBoxSelecting) {
+    // ----- Box selection update / draw / finalize (scene mode only) -----
+    if (m_isBoxSelecting && !m_tileMapMode) {
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
             ImVec2 mp   = ImGui::GetMousePos();
             m_boxSelectEnd = {mp.x, mp.y};
@@ -5739,6 +5931,12 @@ void EditorState::renderViewport() {
                 }
 
                 ecs.each<Components::Transform>([&](ECS::Entity e, Components::Transform& t) {
+                    // Filter by layer: if entity has a SpriteRenderer, its sortOrder
+                    // represents the layer it was placed on. Skip if it doesn't match.
+                    if (auto* sr = ecs.getComponent<Components::SpriteRenderer>(e)) {
+                        if (sr->sortOrder != m_currentLayer)
+                            return;
+                    }
                     vec2 sc = worldToScreen({t.position.x, t.position.y},
                                            camP, m_editorCamZoom, vpMin, m_viewportSize);
                     if (sc.x >= minSX && sc.x <= maxSX &&
@@ -5781,13 +5979,17 @@ void EditorState::renderViewport() {
             snap.hasSpriteRenderer  = true;
             snap.spriteRenderer.textureId = texName;
             snap.spriteRenderer.size      = {100.0f, 100.0f};
+            snap.spriteRenderer.sortOrder = m_currentLayer;
 
             auto cmd = std::make_unique<CreateEntityCmd>(m_scene.GetWorld(), snap);
             auto* raw = cmd.get();
             executeCommand(std::move(cmd));
+            ECS::Entity e = raw->createdEntity();
+            m_tilemap.push_back({texName, wPos, m_currentLayer, e});
+            getOrCreateLayerGroup(m_currentLayer)->entities.push_back(e);
             m_selectedEntities.clear();
-            m_selectedEntity = raw->createdEntity();
-            m_selectedEntities.push_back(m_selectedEntity);
+            m_selectedEntity = e;
+            m_selectedEntities.push_back(e);
         }
         if (const ImGuiPayload* pl = ImGui::AcceptDragDropPayload("PREFAB_NAME")) {
             const char* prefabName = static_cast<const char*>(pl->Data);
@@ -6048,6 +6250,13 @@ void EditorState::renderGizmos(const vec2& viewportMin) {
             float currentAngle = std::atan2(mousePos.y - origin.y,
                                              mousePos.x - origin.x);
             float delta = currentAngle - m_gizmoClickOffset.x;
+
+            // Snap rotation to nearest 90 degrees when snap is enabled
+            if (m_snapToGrid) {
+                constexpr float kSnap = 1.5707963268f; // pi/2
+                delta = std::round(delta / kSnap) * kSnap;
+            }
+
             vec2 pivot{0.f, 0.f};
             if (!m_gizmoGroupOriginalPos.empty()) {
                 for (const auto& [_, pos] : m_gizmoGroupOriginalPos)
@@ -9916,6 +10125,7 @@ void EditorState::handleTileMapInput(const vec2& viewportMin) {
                     }
                     for (auto& tile : m_tilemap) {
                         if (!world.isValid(tile.entity)) continue;
+                        if (tile.layer != m_currentLayer) continue;
                         vec2 sc = worldToScreen(tile.position, camP, m_editorCamZoom,
                                                viewportMin, m_viewportSize);
                         if (sc.x >= minSX && sc.x <= maxSX &&

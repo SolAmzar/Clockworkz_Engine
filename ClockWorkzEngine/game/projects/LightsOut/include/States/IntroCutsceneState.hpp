@@ -72,9 +72,6 @@ private:
   Systems::VideoPlaybackSystem m_videoSystem;
   ECS::Entity m_videoEntity{};
   std::string m_videoPath{"assets/videos/IntroCutscene.mov"};
-  std::string m_audioSoundId{"intro_cutscene"};
-  std::string m_audioPath{"assets/audio/IntroCutscene.wav"};
-  int m_audioChannel{0};
 
   bool m_transitioning{false};
   bool m_videoReady{false};

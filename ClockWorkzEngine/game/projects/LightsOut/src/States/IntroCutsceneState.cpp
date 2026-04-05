@@ -17,7 +17,7 @@ reserved.
 
 #include "Audio/AudioManager.hpp"
 #include "Assets/ResourceManager.hpp"
-#include "Assets/SoundManager.hpp"
+
 #include "Components/SpriteRenderer.hpp"
 #include "Components/Transform.hpp"
 #include "Components/VideoPlayer.hpp"
@@ -96,29 +96,14 @@ void IntroCutsceneState::onEnter() {
     return;
   }
 
-  if (std::filesystem::exists(m_audioPath)) {
-    if (!Assets::SoundManager::IsLoaded(m_audioSoundId)) {
-      Assets::SoundManager::LoadSound(m_audioSoundId, m_audioPath, false, true,
-                                      false);
-      Audio::AudioManager::SoundProfile profile;
-      profile.group = Audio::Group::BGM;
-      profile.volume = 1.0f;
-      m_audio.registerSoundProfile(m_audioSoundId, profile);
-    }
-    m_audioChannel = Assets::SoundManager::Play(m_audioSoundId);
-  }
+
 
   m_videoReady = true;
 }
 
 void IntroCutsceneState::onExit() {
   Core::Engine::Get().events().unsubscribeOwner(this);
-  if (m_audioChannel > 0) {
-    m_audio.stop(m_audioChannel);
-    m_audioChannel = 0;
-  } else {
-    m_audio.stop(m_audioSoundId);
-  }
+
   m_videoSystem.cleanup(m_world);
   m_world.destroyAll();
 }

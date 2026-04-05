@@ -11,7 +11,7 @@
     "hiddenEntityIndices": [],
     "hierarchyGroups": [
         {
-            "collapsed": true,
+            "collapsed": false,
             "entities": [
                 "schoolfloor2",
                 "schoolfloor2",
@@ -275,11 +275,7 @@
                 "schoolfloor2",
                 "schoolfloor2",
                 "schoolfloor2",
-                "schoolfloor2",
-                "l wall",
-                "l wall",
-                "l wall",
-                "l wall"
+                "schoolfloor2"
             ],
             "entityIndices": [
                 75,
@@ -544,11 +540,7 @@
                 371,
                 373,
                 362,
-                426,
-                515,
-                514,
-                513,
-                111
+                426
             ],
             "name": "floor",
             "parentGroupIdx": -1,
@@ -783,6 +775,10 @@
                 "concrete l wall",
                 "concrete l wall",
                 "l wall",
+                "l wall",
+                "l wall",
+                "l wall",
+                "l wall",
                 "l wall"
             ],
             "entityIndices": [
@@ -1012,7 +1008,11 @@
                 451,
                 450,
                 445,
-                65
+                65,
+                515,
+                514,
+                513,
+                111
             ],
             "name": "walls",
             "parentGroupIdx": -1,
@@ -1587,12 +1587,12 @@
         "Enemy",
         "Player",
         "l wall",
-        "l wall",
-        "l wall",
-        "l wall",
-        "l wall",
         "CheatManager",
-        "CheatNotification"
+        "CheatNotification",
+        "l wall",
+        "l wall",
+        "l wall",
+        "l wall"
     ],
     "hierarchyOrderIndices": [
         0,
@@ -2107,13 +2107,13 @@
         511,
         512,
         444,
-        515,
-        514,
-        513,
-        111,
         516,
         517,
-        518
+        518,
+        111,
+        513,
+        514,
+        515
     ],
     "musicContext": "",
     "objects": [
@@ -2126,7 +2126,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -2188,7 +2188,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -2256,7 +2256,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 0,
-                    "textureId": "schoolfloor2",
+                    "textureId": "schfloor1",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -2332,6 +2332,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -2369,14 +2387,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -2387,13 +2411,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -2431,24 +2449,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -5058,7 +5058,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -5654,7 +5654,7 @@
                     },
                     "position": {
                         "x": -989.5321044921875,
-                        "y": -542.6196899414062
+                        "y": -542.6196899414063
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -6555,7 +6555,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6617,7 +6617,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6679,7 +6679,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6741,7 +6741,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6803,7 +6803,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6865,7 +6865,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6927,7 +6927,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -6989,7 +6989,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7051,7 +7051,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7113,7 +7113,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7175,7 +7175,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7237,7 +7237,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7299,7 +7299,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7361,7 +7361,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7423,7 +7423,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7485,7 +7485,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7547,7 +7547,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7721,7 +7721,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -7915,7 +7915,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8021,7 +8021,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8083,7 +8083,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8107,7 +8107,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -8129,7 +8129,7 @@
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
-                        "y": 1.0
+                        "y": 1.7999999523162842
                     },
                     "snapToGrid": true
                 }
@@ -8145,7 +8145,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8207,7 +8207,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8269,7 +8269,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8331,7 +8331,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8393,7 +8393,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8455,7 +8455,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8517,7 +8517,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8579,7 +8579,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8641,7 +8641,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8703,7 +8703,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8765,7 +8765,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8827,7 +8827,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8889,7 +8889,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -8951,7 +8951,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9013,7 +9013,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9075,7 +9075,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9137,7 +9137,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9199,7 +9199,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9261,7 +9261,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9323,7 +9323,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9385,7 +9385,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9447,7 +9447,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9509,7 +9509,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9571,7 +9571,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9633,7 +9633,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9695,7 +9695,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9757,7 +9757,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9819,7 +9819,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9881,7 +9881,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -9943,7 +9943,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10005,7 +10005,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10129,7 +10129,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10191,7 +10191,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10253,7 +10253,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10315,7 +10315,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10377,7 +10377,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10439,7 +10439,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10501,7 +10501,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10563,7 +10563,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10619,6 +10619,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -10656,14 +10674,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10674,13 +10698,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -10718,14 +10736,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10736,13 +10760,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -10780,24 +10798,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -10811,7 +10811,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10873,7 +10873,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -10935,7 +10935,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11191,7 +11191,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11253,7 +11253,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11315,7 +11315,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11377,7 +11377,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11439,7 +11439,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11501,7 +11501,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11563,7 +11563,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11625,7 +11625,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11687,7 +11687,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11749,7 +11749,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11811,7 +11811,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11935,7 +11935,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -11997,7 +11997,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12059,7 +12059,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12121,7 +12121,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12183,7 +12183,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12245,7 +12245,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12307,7 +12307,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12369,7 +12369,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12431,7 +12431,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12493,7 +12493,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12555,7 +12555,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -12705,7 +12705,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16683,7 +16683,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16745,7 +16745,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -16851,7 +16851,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17919,6 +17919,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -17956,14 +17974,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -17974,13 +17998,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18018,14 +18036,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18036,13 +18060,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18080,14 +18098,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18098,13 +18122,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18142,14 +18160,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18160,13 +18184,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18204,14 +18222,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18222,13 +18246,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18266,14 +18284,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18284,13 +18308,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18328,14 +18346,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18346,13 +18370,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18390,14 +18408,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18408,13 +18432,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18452,14 +18470,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18470,13 +18494,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18514,14 +18532,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18532,13 +18556,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18576,14 +18594,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18594,13 +18618,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18638,14 +18656,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18656,13 +18680,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18700,14 +18718,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18718,13 +18742,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18762,14 +18780,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18780,13 +18804,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18824,14 +18842,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18842,13 +18866,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18886,14 +18904,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18904,13 +18928,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -18948,14 +18966,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -18966,13 +18990,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19010,14 +19028,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19028,13 +19052,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19072,14 +19090,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19090,13 +19114,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19134,14 +19152,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19152,13 +19176,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19196,14 +19214,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19214,13 +19238,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19258,14 +19276,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19276,13 +19300,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19320,14 +19338,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19338,13 +19362,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19382,24 +19400,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -19553,6 +19553,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19590,14 +19608,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19608,13 +19632,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19652,14 +19670,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19670,13 +19694,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19714,14 +19732,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19732,13 +19756,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19776,14 +19794,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19794,13 +19818,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19838,14 +19856,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19856,13 +19880,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19900,14 +19918,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19918,13 +19942,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -19962,14 +19980,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -19980,13 +20004,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20024,14 +20042,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20042,13 +20066,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20086,14 +20104,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20104,13 +20128,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20148,14 +20166,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20166,13 +20190,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20210,14 +20228,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20228,13 +20252,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20272,14 +20290,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20290,13 +20314,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20334,14 +20352,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20352,13 +20376,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20396,14 +20414,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20414,13 +20438,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20458,14 +20476,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20476,13 +20500,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20520,24 +20538,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -20551,7 +20551,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20607,6 +20607,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20644,14 +20662,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20662,13 +20686,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20706,14 +20724,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20724,13 +20748,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20768,14 +20786,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -20786,13 +20810,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -20830,24 +20848,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -20949,7 +20949,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -21225,6 +21225,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21262,7 +21280,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "schoolfloor2"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -21280,13 +21304,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "schoolfloor2"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21324,7 +21342,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "schoolfloor2"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -21342,13 +21366,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "schoolfloor2"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21386,24 +21404,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "schoolfloor2"
@@ -21499,6 +21499,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21536,7 +21554,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "schoolfloor2"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -21554,13 +21578,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "schoolfloor2"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21598,7 +21616,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "schoolfloor2"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -21616,13 +21640,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "schoolfloor2"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -21660,24 +21678,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "schoolfloor2"
@@ -24331,7 +24331,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24393,7 +24393,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24455,7 +24455,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24517,7 +24517,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24579,7 +24579,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24641,7 +24641,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24703,7 +24703,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24765,7 +24765,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24827,7 +24827,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24889,7 +24889,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -24951,7 +24951,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25013,7 +25013,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25075,7 +25075,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25137,7 +25137,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25199,7 +25199,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25261,7 +25261,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25323,7 +25323,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25540,7 +25540,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25596,6 +25596,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -25633,14 +25651,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25651,13 +25675,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -25695,14 +25713,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25713,13 +25737,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -25757,14 +25775,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25775,13 +25799,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -25819,14 +25837,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25837,13 +25861,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -25881,14 +25899,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25899,13 +25923,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -25943,14 +25961,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -25961,13 +25985,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26005,14 +26023,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26023,13 +26047,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26067,14 +26085,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26085,13 +26109,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26129,14 +26147,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26147,13 +26171,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26191,14 +26209,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26209,13 +26233,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26253,14 +26271,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26271,13 +26295,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26315,14 +26333,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26333,13 +26357,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26377,14 +26395,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26395,13 +26419,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26439,14 +26457,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26457,13 +26481,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26501,14 +26519,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26519,13 +26543,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26563,14 +26581,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26581,13 +26605,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26625,24 +26643,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -26656,7 +26656,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26712,6 +26712,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": false,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26749,14 +26767,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26767,13 +26791,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26811,14 +26829,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26829,13 +26853,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26873,14 +26891,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26891,13 +26915,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26935,14 +26953,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -26953,13 +26977,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -26997,14 +27015,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27015,13 +27039,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -27059,14 +27077,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27077,13 +27101,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -27121,14 +27139,20 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27139,13 +27163,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -27183,24 +27201,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -27214,7 +27214,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27276,7 +27276,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27338,7 +27338,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27400,7 +27400,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27462,7 +27462,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27518,6 +27518,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -27555,24 +27573,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -27586,7 +27586,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27648,7 +27648,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27710,7 +27710,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27772,7 +27772,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -27828,6 +27828,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -27865,24 +27883,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -28200,6 +28200,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28237,24 +28255,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -28324,6 +28324,24 @@
         {
             "active": true,
             "components": {
+                "collider": {
+                    "blocksLight": true,
+                    "collisionCategory": 1,
+                    "collisionMask": 4294967295,
+                    "height": 100.0,
+                    "isHazard": false,
+                    "isSolid": true,
+                    "isTrigger": false,
+                    "mass": 1.0,
+                    "moveable": false,
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "radius": 50.0,
+                    "shape": 0,
+                    "width": 100.0
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28361,7 +28379,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28379,13 +28403,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28423,7 +28441,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28441,13 +28465,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28485,7 +28503,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28503,13 +28527,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28547,7 +28565,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28565,13 +28589,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28609,7 +28627,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28627,13 +28651,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28671,7 +28689,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28689,13 +28713,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28733,7 +28751,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28751,13 +28775,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28795,7 +28813,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28813,13 +28837,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28857,7 +28875,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28875,13 +28899,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28919,7 +28937,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28937,13 +28961,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -28981,7 +28999,13 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
+                }
+            },
+            "name": "concrete l wall"
+        },
+        {
+            "active": true,
+            "components": {
                 "collider": {
                     "blocksLight": true,
                     "collisionCategory": 1,
@@ -28999,13 +29023,7 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                }
-            },
-            "name": "concrete l wall"
-        },
-        {
-            "active": true,
-            "components": {
+                },
                 "spriteRenderer": {
                     "color": {
                         "a": 1.0,
@@ -29043,24 +29061,6 @@
                         "y": 1.0
                     },
                     "snapToGrid": true
-                },
-                "collider": {
-                    "blocksLight": true,
-                    "collisionCategory": 1,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 1.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
                 }
             },
             "name": "concrete l wall"
@@ -30097,7 +30097,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -30121,7 +30121,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -30143,7 +30143,7 @@
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
-                        "y": 1.0
+                        "y": 1.2200000286102295
                     },
                     "snapToGrid": true
                 }
@@ -30159,7 +30159,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -30183,7 +30183,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -30205,7 +30205,7 @@
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
-                        "y": 1.0
+                        "y": 1.5799999237060547
                     },
                     "snapToGrid": true
                 }
@@ -30221,7 +30221,7 @@
                     "collisionMask": 4294967295,
                     "height": 100.0,
                     "isHazard": false,
-                    "isSolid": true,
+                    "isSolid": false,
                     "isTrigger": false,
                     "mass": 1.0,
                     "moveable": false,
@@ -30245,7 +30245,7 @@
                         "y": 100.0
                     },
                     "sortOrder": 1,
-                    "textureId": "corridor wall4",
+                    "textureId": "blockage",
                     "unlit": false,
                     "uv": [
                         0.0,
@@ -30267,7 +30267,7 @@
                     "rotation": 0.0,
                     "scale": {
                         "x": 1.0,
-                        "y": 1.0
+                        "y": 1.7000000476837158
                     },
                     "snapToGrid": true
                 }
@@ -30444,10 +30444,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 1600.0
-                },
-                "layer": {
-                    "index": 1
+                    "width": 4800.0
                 },
                 "transform": {
                     "pivot": {
@@ -30455,7 +30452,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -800.0,
+                        "x": -1300.0,
                         "y": -3050.0
                     },
                     "rotation": 0.0,
@@ -30475,7 +30472,7 @@
                     "blocksLight": false,
                     "collisionCategory": 4,
                     "collisionMask": 4294967295,
-                    "height": 400.0,
+                    "height": 500.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -30488,9 +30485,6 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                },
-                "layer": {
-                    "index": 1
                 },
                 "transform": {
                     "pivot": {
@@ -30499,566 +30493,7 @@
                     },
                     "position": {
                         "x": -3650.0,
-                        "y": -2800.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1650.0,
-                        "y": -2550.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -50.0,
-                        "y": -2550.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -2250.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -1950.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 400.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -1400.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 50.0,
-                        "y": -1150.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 900.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -350.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 500.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1450.0,
-                        "y": 50.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 200.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1150.0,
-                        "y": 200.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 200.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -550.0,
-                        "y": 200.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 2150.0,
-                        "y": 7650.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 2100.0
-                },
-                "layer": {
-                    "index": 0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -2650.0,
-                        "y": -3050.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 1100.0
-                },
-                "layer": {
-                    "index": 0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 550.0,
-                        "y": -3050.0
+                        "y": -2750.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31090,9 +30525,6 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                },
-                "layer": {
-                    "index": 0
                 },
                 "transform": {
                     "pivot": {
@@ -31132,10 +30564,7 @@
                     },
                     "radius": 50.0,
                     "shape": 0,
-                    "width": 1900.0
-                },
-                "layer": {
-                    "index": 0
+                    "width": 3900.0
                 },
                 "transform": {
                     "pivot": {
@@ -31143,7 +30572,7 @@
                         "y": 0.0
                     },
                     "position": {
-                        "x": -2650.0,
+                        "x": -1650.0,
                         "y": -2550.0
                     },
                     "rotation": 0.0,
@@ -31163,50 +30592,7 @@
                     "blocksLight": false,
                     "collisionCategory": 4,
                     "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 1900.0
-                },
-                "layer": {
-                    "index": 0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -650.0,
-                        "y": -2550.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 200.0,
+                    "height": 2600.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -31219,9 +30605,6 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                },
-                "layer": {
-                    "index": 0
                 },
                 "transform": {
                     "pivot": {
@@ -31230,7 +30613,7 @@
                     },
                     "position": {
                         "x": -1750.0,
-                        "y": -2400.0
+                        "y": -1200.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31249,7 +30632,7 @@
                     "blocksLight": false,
                     "collisionCategory": 4,
                     "collisionMask": 4294967295,
-                    "height": 1300.0,
+                    "height": 2600.0,
                     "isHazard": false,
                     "isSolid": true,
                     "isTrigger": false,
@@ -31263,9 +30646,6 @@
                     "shape": 0,
                     "width": 100.0
                 },
-                "layer": {
-                    "index": 0
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
@@ -31273,7 +30653,7 @@
                     },
                     "position": {
                         "x": 50.0,
-                        "y": -1850.0
+                        "y": -1200.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31306,9 +30686,6 @@
                     "shape": 0,
                     "width": 100.0
                 },
-                "layer": {
-                    "index": 0
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
@@ -31317,92 +30694,6 @@
                     "position": {
                         "x": 250.0,
                         "y": -1950.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 200.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -2100.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 1800.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -1750.0,
-                        "y": -1000.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31435,9 +30726,6 @@
                     "shape": 0,
                     "width": 800.0
                 },
-                "layer": {
-                    "index": 0
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
@@ -31446,49 +30734,6 @@
                     "position": {
                         "x": 700.0,
                         "y": -1450.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 1200.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": 0
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 50.0,
-                        "y": -500.0
                     },
                     "rotation": 0.0,
                     "scale": {
@@ -31520,9 +30765,6 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 600.0
-                },
-                "layer": {
-                    "index": 0
                 },
                 "transform": {
                     "pivot": {
@@ -31564,9 +30806,6 @@
                     "shape": 0,
                     "width": 600.0
                 },
-                "layer": {
-                    "index": 0
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
@@ -31606,9 +30845,6 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 100.0
-                },
-                "layer": {
-                    "index": 0
                 },
                 "transform": {
                     "pivot": {
@@ -31650,9 +30886,6 @@
                     "shape": 0,
                     "width": 100.0
                 },
-                "layer": {
-                    "index": 0
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
@@ -31692,9 +30925,6 @@
                     "radius": 50.0,
                     "shape": 0,
                     "width": 500.0
-                },
-                "layer": {
-                    "index": 0
                 },
                 "transform": {
                     "pivot": {
@@ -31736,103 +30966,14 @@
                     "shape": 0,
                     "width": 100.0
                 },
-                "layer": {
-                    "index": -1
-                },
                 "transform": {
                     "pivot": {
                         "x": 0.0,
                         "y": 0.0
                     },
                     "position": {
-                        "x": -3650.0,
-                        "y": -3050.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 200.0
-                },
-                "layer": {
-                    "index": -1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": -3600.0,
-                        "y": -2550.0
-                    },
-                    "rotation": 0.0,
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0
-                    },
-                    "snapToGrid": true
-                }
-            },
-            "name": "TilemapMergedCollider"
-        },
-        {
-            "active": true,
-            "components": {
-                "collider": {
-                    "blocksLight": false,
-                    "collisionCategory": 4,
-                    "collisionMask": 4294967295,
-                    "height": 100.0,
-                    "isHazard": false,
-                    "isSolid": true,
-                    "isTrigger": false,
-                    "mass": 0.0,
-                    "moveable": false,
-                    "offset": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "radius": 50.0,
-                    "shape": 0,
-                    "width": 100.0
-                },
-                "layer": {
-                    "index": -1
-                },
-                "transform": {
-                    "pivot": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "position": {
-                        "x": 50.0,
-                        "y": -1150.0
+                        "x": 2150.0,
+                        "y": 7650.0
                     },
                     "rotation": 0.0,
                     "scale": {
