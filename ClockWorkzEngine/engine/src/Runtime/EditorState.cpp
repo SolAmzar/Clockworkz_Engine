@@ -3443,7 +3443,9 @@ void EditorState::renderInspector() {
 
         if (ImGui::Button("Select Group Members", ImVec2(-1, 0))) {
             m_selectedEntities.clear();
-            std::unordered_set<uint32_t> groupIds(grp.entityIds.begin(), grp.entityIds.end());
+            std::vector<uint32_t> recursiveGroupIds =
+                collectGroupEntityIdsRecursive(m_selectedGroupIdx);
+            std::unordered_set<uint32_t> groupIds(recursiveGroupIds.begin(), recursiveGroupIds.end());
             std::unordered_set<uint32_t> seen;
             world.each<Components::Transform>([&](ECS::Entity e, Components::Transform&) {
                 if (!groupIds.count(e.id) || !seen.insert(e.id).second) return;
@@ -3456,7 +3458,9 @@ void EditorState::renderInspector() {
             m_selectedEntity = m_selectedEntities.empty() ? ECS::Entity{0, 0} : m_selectedEntities.front();
             m_selectedGroupIdx = -1;
         }
-        ImGui::TextDisabled("(%d entities in group)", (int)grp.entityIds.size());
+        const int recursiveEntityCount = static_cast<int>(
+            collectGroupEntityIdsRecursive(m_selectedGroupIdx).size());
+        ImGui::TextDisabled("(%d entities in group)", recursiveEntityCount);
         ImGui::End();
         return;
 
@@ -8993,6 +8997,36 @@ void EditorState::pushInspectorChange() {
     executeCommand(std::make_unique<ModifyEntityCmd>(
         world, m_inspectorBeforeEntity,
         std::move(m_inspectorBefore), std::move(after)));
+}
+
+std::vector<uint32_t> EditorState::collectGroupEntityIdsRecursive(int rootGroupIdx) const {
+    std::vector<uint32_t> collectedIds;
+    if (rootGroupIdx < 0 || rootGroupIdx >= static_cast<int>(m_hierarchyGroups.size()))
+        return collectedIds;
+
+    std::unordered_set<int> visitedGroups;
+    std::unordered_set<uint32_t> seenEntityIds;
+
+    std::function<void(int)> collectGroup = [&](int groupIdx) {
+        if (groupIdx < 0 || groupIdx >= static_cast<int>(m_hierarchyGroups.size()))
+            return;
+        if (!visitedGroups.insert(groupIdx).second)
+            return;
+
+        const auto& group = m_hierarchyGroups[static_cast<size_t>(groupIdx)];
+        for (uint32_t entityId : group.entityIds) {
+            if (seenEntityIds.insert(entityId).second)
+                collectedIds.push_back(entityId);
+        }
+
+        for (int childIdx = 0; childIdx < static_cast<int>(m_hierarchyGroups.size()); ++childIdx) {
+            if (m_hierarchyGroups[static_cast<size_t>(childIdx)].parentGroupIdx == groupIdx)
+                collectGroup(childIdx);
+        }
+    };
+
+    collectGroup(rootGroupIdx);
+    return collectedIds;
 }
 
 EditorState::HierarchyUndoState EditorState::captureHierarchyUndoState() const {

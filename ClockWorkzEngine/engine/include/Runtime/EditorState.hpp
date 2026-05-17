@@ -159,6 +159,7 @@ private:
     void pushInspectorChange();      ///< diff against current state and push ModifyEntityCmd
     HierarchyUndoState captureHierarchyUndoState() const;
     void applyHierarchyUndoState(const HierarchyUndoState& state);
+    std::vector<uint32_t> collectGroupEntityIdsRecursive(int rootGroupIdx) const;
 
     // ----- References -----
     Platform::InputManager& m_input;

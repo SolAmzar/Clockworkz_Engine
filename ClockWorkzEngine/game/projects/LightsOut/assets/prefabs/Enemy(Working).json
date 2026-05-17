@@ -1,0 +1,141 @@
+{
+    "category": "Entity",
+    "components": {
+        "collider": {
+            "blocksLight": false,
+            "collisionCategory": 2,
+            "collisionMask": 4294967295,
+            "combinedGroupId": 0,
+            "height": 100.0,
+            "isCombined": false,
+            "isHazard": false,
+            "isSolid": true,
+            "isTrigger": false,
+            "mass": 1.0,
+            "moveable": true,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "radius": 50.0,
+            "shape": 0,
+            "width": 100.0
+        },
+        "footstepAudio": {
+            "concretePrefix": "fs_concrete_",
+            "interval": 0.6000000238418579,
+            "minSpeed": 0.10000000149011612,
+            "resetDelay": 0.05000000074505806,
+            "soundPrefix": "fs_monster_",
+            "sprintIntervalScale": 0.6000000238418579,
+            "sprintSpeedThreshold": 14.0,
+            "tilePrefix": "fs_tile_",
+            "useSurfaceSounds": false,
+            "variationCount": 2,
+            "volume": 0.2280000001192093,
+            "woodPrefix": "fs_wood_"
+        },
+        "luaScript": [
+            {
+                "enabled": true,
+                "properties": {
+                    "hp": 50.0,
+                    "invulnerable": false,
+                    "isDead": false,
+                    "maxHp": 50.0,
+                    "regenRate": 0.0
+                },
+                "scriptPath": "components/health.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "_stateTimer": 0.0,
+                    "_wanderTimer": 0.0,
+                    "alertDuration": 3.0,
+                    "alertStateSfxPrefix": "",
+                    "alertStateSfxVariations": 1,
+                    "attackStateSfxPrefix": "",
+                    "attackStateSfxVariations": 1,
+                    "chaseSpeed": 150.0,
+                    "chaseStateSfxPrefix": "",
+                    "chaseStateSfxVariations": 1,
+                    "deathStateSfxPrefix": "",
+                    "deathStateSfxVariations": 1,
+                    "detectionRadius": 400.0,
+                    "lightSensitivity": 0.30000001192092896,
+                    "maxHp": 100.0,
+                    "patrolSpeed": 50.0,
+                    "patrolStateSfxPrefix": "",
+                    "patrolStateSfxVariations": 1,
+                    "state": "Patrol",
+                    "stateSfxVolume": 1.0,
+                    "usePositionalStateSfx": true,
+                    "wanderInterval": 2.0
+                },
+                "scriptPath": "components/enemy_ai.lua"
+            },
+            {
+                "enabled": true,
+                "properties": {
+                    "exposureTime": 0.0,
+                    "inLight": false,
+                    "isDangerous": false,
+                    "maxExposureTime": 10.0
+                },
+                "scriptPath": "components/light_exposure.lua"
+            }
+        ],
+        "spriteAnimator": {
+            "currentClip": "attack",
+            "filename": "enemy.json"
+        },
+        "spriteRenderer": {
+            "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+            },
+            "size": {
+                "x": 150.0,
+                "y": 150.0
+            },
+            "sortOrder": 2,
+            "textureId": "monster_texture",
+            "unlit": false,
+            "uv": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+            ],
+            "visible": true
+        },
+        "tag": {
+            "tag": "Enemy (Clone) (Clone)"
+        },
+        "transform": {
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "position": {
+                "x": 2202.988525390625,
+                "y": 649.2027587890625
+            },
+            "rotation": 0.0,
+            "scale": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "snapToGrid": false
+        },
+        "velocity": {
+            "moveSpeed": 50.0,
+            "x": 0.4177655279636383,
+            "y": 0.9085548520088196
+        }
+    },
+    "name": "Enemy(Working)"
+}

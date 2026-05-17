@@ -378,7 +378,9 @@ function PlayerController:onUpdate(entity, dt)
 end
 
 function PlayerController:onCollisionEnter(entity, other)
-if other:getTagValue() == "Enemy" then
+local otherTag = other:getTagValue() or ""
+local isEnemyTag = (otherTag == "Enemy") or (string.sub(otherTag, 1, 5) == "Enemy")
+if isEnemyTag then
         if not self._isDead and not self._invincible then
             self._isDead = true
             if entity:hasSpriteAnimator() and entity:getCurrentClip() ~= "death" then

@@ -82,7 +82,8 @@
                 "Entity 492",
                 "Entity 491",
                 "Entity 498",
-                "Cabinet"
+                "Cabinet",
+                "door"
             ],
             "entityIndices": [
                 489,
@@ -98,7 +99,8 @@
                 492,
                 491,
                 498,
-                508
+                508,
+                423
             ],
             "name": "Flat Items",
             "parentGroupIdx": 14,
@@ -1224,11 +1226,13 @@
             "collapsed": true,
             "entities": [
                 "HUD_Battery",
-                "fragment Counter"
+                "fragment Counter",
+                "Cheat Manager"
             ],
             "entityIndices": [
                 364,
-                365
+                365,
+                884
             ],
             "name": "UI",
             "parentGroupIdx": -1,
@@ -1260,11 +1264,13 @@
             "collapsed": true,
             "entities": [
                 "Entity 482 (Clone)",
-                "Enemy"
+                "Enemy",
+                "Enemy (Clone) (Clone)"
             ],
             "entityIndices": [
                 514,
-                354
+                354,
+                883
             ],
             "name": "Enemies",
             "parentGroupIdx": -1,
@@ -1935,12 +1941,30 @@
         {
             "collapsed": true,
             "entities": [
-                "Wall Text Trigger"
+                "Wall Text Trigger",
+                "Fragment Reset",
+                "Next Stage"
             ],
             "entityIndices": [
-                287
+                287,
+                310,
+                487
             ],
             "name": "Activation",
+            "parentGroupIdx": -1,
+            "sortOrderBase": 0
+        },
+        {
+            "collapsed": true,
+            "entities": [
+                "staircase",
+                "Entity"
+            ],
+            "entityIndices": [
+                192,
+                882
+            ],
+            "name": "Staircase + Collision",
             "parentGroupIdx": -1,
             "sortOrderBase": 0
         }
@@ -2576,7 +2600,6 @@
         "staircase",
         "concrete -",
         "concrete -",
-        "Next Stage",
         "concrete floor",
         "concrete floor",
         "Syrofoam box",
@@ -2663,7 +2686,6 @@
         "hse w4",
         "Wood top_right",
         "Wood top_right",
-        "door",
         "hse wfloor2",
         "hse wfloor3",
         "hse wfloor3",
@@ -2826,15 +2848,17 @@
         "blockage",
         "TilemapMergedCollider",
         "TilemapMergedCollider",
-        "Entity",
         "Wall Text Trigger",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
+        "TilemapMergedCollider",
         "Entity",
+        "Cheat Manager",
         "Enemy (Clone) (Clone)",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "TilemapMergedCollider",
-        "Entity"
+        "Fragment Reset",
+        "Next Stage",
+        "door"
     ],
     "hierarchyOrderIndices": [
         196,
@@ -3467,7 +3491,6 @@
         192,
         298,
         367,
-        487,
         241,
         193,
         517,
@@ -3554,7 +3577,6 @@
         301,
         611,
         374,
-        423,
         778,
         779,
         810,
@@ -3717,15 +3739,17 @@
         880,
         454,
         881,
-        310,
         287,
-        882,
-        883,
         888,
         885,
         886,
         887,
-        884
+        882,
+        884,
+        883,
+        310,
+        487,
+        423
     ],
     "musicContext": "level_default",
     "objects": [
@@ -18912,7 +18936,7 @@
                             "active": true,
                             "fontSizeValue": 1.0,
                             "oneShot": true,
-                            "payload": "",
+                            "payload": "0",
                             "restoreVisibilityAfterDelay": false,
                             "setFontSize": false,
                             "setText": false,
@@ -18944,7 +18968,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity"
+            "name": "Fragment Reset"
         },
         {
             "active": true,
@@ -52142,7 +52166,7 @@
                     "snapToGrid": false
                 }
             },
-            "name": "Entity"
+            "name": "Cheat Manager"
         },
         {
             "active": true,

@@ -65,6 +65,26 @@ if(NOT MSVC)
   target_compile_options(CWZEngine PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# --- Treat bundled ImGui source as third-party (suppress warnings) ---
+# Keep strict warnings for our own code while silencing vendor noise from
+# engine/src/IMGUI/*.cpp (including MSVC static analysis diagnostics).
+set(_IMGUI_ENGINE_SOURCES "")
+foreach(_src IN LISTS ENGINE_SOURCES)
+  if(_src MATCHES "([/\\\\])IMGUI([/\\\\]).*\\.(c|cc|cpp|cxx)$")
+    list(APPEND _IMGUI_ENGINE_SOURCES "${_src}")
+  endif()
+endforeach()
+
+if(_IMGUI_ENGINE_SOURCES)
+  if(MSVC)
+    set_source_files_properties(${_IMGUI_ENGINE_SOURCES}
+      PROPERTIES COMPILE_OPTIONS "/W0;/analyze-")
+  else()
+    set_source_files_properties(${_IMGUI_ENGINE_SOURCES}
+      PROPERTIES COMPILE_OPTIONS "-w")
+  endif()
+endif()
+
 # --- Include directories ---
 # SYSTEM PUBLIC: game inherits these; SYSTEM suppresses 3rd-party warnings
 # LightsOut include is currently needed because some engine/runtime files and
