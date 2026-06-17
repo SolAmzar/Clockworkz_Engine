@@ -19,6 +19,7 @@ reserved.
 #include "Scripting/LuaManager.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Components/Light.hpp"
+#include "Components/Collider.hpp"
 #include <filesystem>
 #include <iostream>
 
@@ -152,6 +153,14 @@ void ScriptSystem::update(ECS::World& world, double dt,
     });
     worldTable.set_function("getCurrentLevel", [this]() {
         return m_currentLevelFn ? m_currentLevelFn() : std::string{};
+    });
+    worldTable.set_function("eachWall", [&world](sol::function fn) {
+        world.each<Components::Collider>([&](ECS::Entity e, Components::Collider& col) {
+            if (col.isSolid && col.blocksLight && !col.moveable) {
+                Scripting::EntityRef ref(e, &world);
+                fn(ref);
+            }
+        });
     });
 
     lua["World"] = worldTable;
