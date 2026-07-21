@@ -155,8 +155,15 @@ void ScriptSystem::update(ECS::World& world, double dt,
         return m_currentLevelFn ? m_currentLevelFn() : std::string{};
     });
     worldTable.set_function("eachWall", [&world](sol::function fn) {
+        // A "wall" for pathfinding is any static solid obstacle the enemy must
+        // route around: walls, boxes, pots, etc. These are colliders that block
+        // movement (isSolid) and can't be pushed (!moveable). We exclude entities
+        // driven by a LuaScript — the player and the enemies themselves are also
+        // solid & immovable, but treating them as permanent grid obstacles would
+        // block the goal cell and make A* fail. Note: blocksLight is NOT usable
+        // here because level data never serialises it (it defaults to false).
         world.each<Components::Collider>([&](ECS::Entity e, Components::Collider& col) {
-            if (col.isSolid && col.blocksLight && !col.moveable) {
+            if (col.isSolid && !col.moveable && !world.hasComponent<Components::LuaScript>(e)) {
                 Scripting::EntityRef ref(e, &world);
                 fn(ref);
             }
