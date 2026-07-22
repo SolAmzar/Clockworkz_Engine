@@ -61,6 +61,13 @@ local _pathIdx   = 1       -- index of next waypoint to head toward
 local _pathTimer = 0.0     -- seconds until next recalculation
 local _navVersion = -1     -- World.navVersion() the grid was last built at
 
+-- Pathfinding debug logging. Leave true while verifying the feature; set to
+-- FALSE for the Release / final build so no debug text prints by default
+-- (satisfies the "No Debugging Information in Release mode" rubric). This is the
+-- single on/off switch for all [EnemyAI] pathfinding output.
+local DEBUG = true
+local function dbg(msg) if DEBUG then print(msg) end end
+
 -- Walls sit at centres 50, 150, 250 … 650 (every 100 units, offset +50).
 -- Floor-dividing maps each 100-unit band [n*100, n*100+100) to cell n,
 -- so a wall centred at 650 → cell 6, occupying world [600, 700). No rounding.
@@ -328,7 +335,7 @@ function Enemy:onStart(entity)
     for _, col in pairs(_grid) do
         for _ in pairs(col) do _dbgCells = _dbgCells + 1 end
     end
-    print("[EnemyAI] Grid built — blocked cells: " .. _dbgCells)
+    dbg("[EnemyAI] Grid built — blocked cells: " .. _dbgCells)
 end
 
 function Enemy:onUpdate(entity, dt)
@@ -458,7 +465,7 @@ function Enemy:onUpdate(entity, dt)
             end
             _path      = findPath(_grid, ex, ey, px, py)
             _pathIdx   = 2  -- index 1 is the start cell; begin from 2
-            print("[EnemyAI] Path recalc — waypoints: " .. (_path and #_path or "nil") .. " | enemy(" .. math.floor(ex) .. "," .. math.floor(ey) .. ") player(" .. math.floor(px) .. "," .. math.floor(py) .. ")")
+            dbg("[EnemyAI] Path recalc — waypoints: " .. (_path and #_path or "nil") .. " | enemy(" .. math.floor(ex) .. "," .. math.floor(ey) .. ") player(" .. math.floor(px) .. "," .. math.floor(py) .. ")")
         end
 
         -- Steer toward current waypoint; fall back to direct line when no path
