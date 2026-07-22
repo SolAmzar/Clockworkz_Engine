@@ -59,6 +59,7 @@ local _grid      = nil     -- sparse blocked-cell table built at onStart
 local _path      = nil     -- array of {x,y} waypoints, nil = no path
 local _pathIdx   = 1       -- index of next waypoint to head toward
 local _pathTimer = 0.0     -- seconds until next recalculation
+local _navVersion = -1     -- World.navVersion() the grid was last built at
 
 -- Walls sit at centres 50, 150, 250 … 650 (every 100 units, offset +50).
 -- Floor-dividing maps each 100-unit band [n*100, n*100+100) to cell n,
@@ -71,16 +72,61 @@ local function isBlocked(grid, cx, cy)
     return grid[cx] ~= nil and grid[cx][cy] == true
 end
 
+-- If (cx,cy) is blocked, spiral outward (up to `maxRing` cells) for the nearest
+-- free cell. Used to relax the goal when the player hugs a wall, so A* still
+-- routes to an adjacent walkable cell instead of giving up and phasing.
+local function nearestFreeCell(grid, cx, cy, maxRing)
+    if not isBlocked(grid, cx, cy) then return cx, cy end
+    for r = 1, maxRing do
+        for dx = -r, r do
+            for dy = -r, r do
+                -- Only the ring's outer border each pass.
+                if math.abs(dx) == r or math.abs(dy) == r then
+                    if not isBlocked(grid, cx + dx, cy + dy) then
+                        return cx + dx, cy + dy
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
 -- Build a sparse set of blocked cells from wall entities.
--- Relies on World.eachWall added in ScriptSystem.cpp.
+-- Relies on World.eachWall added in ScriptSystem.cpp, which passes each wall's
+-- world-space AABB (minX, minY, maxX, maxY). We mark EVERY cell that AABB
+-- overlaps — runtime tilemap merging collapses long wall strips into single
+-- colliders spanning many tiles, so marking only the centre cell would leave
+-- most of a merged wall walkable and enemies would path straight through it.
+local EPS = 0.001
+local function markCell(grid, cx, cy)
+    if not grid[cx] then grid[cx] = {} end
+    grid[cx][cy] = true
+end
+
 local function buildGrid()
     local grid = {}
-    World.eachWall(function(e)
-        if not e:isValid() then return end
-        local pos = e.position
-        local cx, cy = worldToCell(pos.x, pos.y)
-        if not grid[cx] then grid[cx] = {} end
-        grid[cx][cy] = true
+    World.eachWall(function(e, minX, minY, maxX, maxY)
+        if minX == nil then
+            -- Fallback for an engine build without AABB bounds: mark the
+            -- entity's own cell so the grid is at least partially populated.
+            if e and e:isValid() then
+                local pos = e.position
+                markCell(grid, worldToCell(pos.x, pos.y))
+            end
+            return
+        end
+        -- Subtract EPS from the max edge so a wall whose edge lands exactly on a
+        -- cell boundary does not spuriously block the neighbouring cell.
+        local c0 = math.floor(minX / CELL_SIZE)
+        local c1 = math.floor((maxX - EPS) / CELL_SIZE)
+        local r0 = math.floor(minY / CELL_SIZE)
+        local r1 = math.floor((maxY - EPS) / CELL_SIZE)
+        for cx = c0, c1 do
+            for cy = r0, r1 do
+                markCell(grid, cx, cy)
+            end
+        end
     end)
     return grid
 end
@@ -99,7 +145,13 @@ local function findPath(grid, startX, startY, goalX, goalY)
     local gx, gy = worldToCell(goalX, goalY)
 
     if sx == gx and sy == gy then return {} end
-    if isBlocked(grid, gx, gy) then return nil end
+    -- Player may stand in a cell overlapped by a wall collider; retarget to the
+    -- nearest walkable cell so A* still produces a route to reach them.
+    if isBlocked(grid, gx, gy) then
+        gx, gy = nearestFreeCell(grid, gx, gy, 3)
+        if gx == nil then return nil end
+        if sx == gx and sy == gy then return {} end
+    end
 
     local function cellKey(cx, cy) return cx .. "," .. cy end
 
@@ -267,6 +319,7 @@ function Enemy:onStart(entity)
     end
     -- Build navigation grid from wall geometry
     _grid      = buildGrid()
+    _navVersion = (World.navVersion and World.navVersion()) or 0
     _path      = nil
     _pathIdx   = 1
     _pathTimer = 0.0
@@ -396,6 +449,13 @@ function Enemy:onUpdate(entity, dt)
         _pathTimer = _pathTimer - dt
         if _pathTimer <= 0.0 or _path == nil then
             _pathTimer = self.pathInterval
+            -- Rebuild the grid if a door opened / an obstacle changed since we
+            -- last built it (cheap version check; rebuild only on real change).
+            local nv = (World.navVersion and World.navVersion()) or 0
+            if nv ~= _navVersion then
+                _grid = buildGrid()
+                _navVersion = nv
+            end
             _path      = findPath(_grid, ex, ey, px, py)
             _pathIdx   = 2  -- index 1 is the start cell; begin from 2
             print("[EnemyAI] Path recalc — waypoints: " .. (_path and #_path or "nil") .. " | enemy(" .. math.floor(ex) .. "," .. math.floor(ey) .. ") player(" .. math.floor(px) .. "," .. math.floor(py) .. ")")

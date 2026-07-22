@@ -17,11 +17,14 @@ reserved.
 #include "Core/Engine.hpp"
 #include "Scripting/EntityRef.hpp"
 #include "Scripting/LuaManager.hpp"
+#include "Scripting/NavVersion.hpp"
 #include "Scripting/ScriptPropertyReader.hpp"
 #include "Components/Light.hpp"
 #include "Components/Collider.hpp"
+#include "Components/Transform.hpp"
 #include <filesystem>
 #include <iostream>
+#include <cmath>
 
 // Helper: push C++ ScriptPropValue into a sol table key
 static void pushPropToLua(sol::table& tbl, const std::string& key,
@@ -118,6 +121,30 @@ namespace Systems {
       });
   }
 
+// Entities that are solid but must NOT be treated as static pathfinding walls:
+// the player and the enemies themselves. They are solid & immovable but they
+// move around, and marking their cell blocked (especially the player's, which is
+// the A* goal) would break routing. Doors and other scripted obstacles are
+// deliberately NOT excluded here — a closed door should block the grid, and when
+// it opens it clears itself by going non-solid / moveable (see eachWall filter).
+static bool isNavExcludedEntity(ECS::World& world, ECS::Entity e) {
+    if (auto* tag = world.getComponent<Components::Tag>(e)) {
+        if (tag->tag == "Player" || tag->tag == "Enemy"
+            || tag->tag == "Enemy (Clone)")
+            return true;
+    }
+    if (auto* ls = world.getComponent<Components::LuaScript>(e)) {
+        for (const auto& s : ls->scripts) {
+            if (s.scriptPath == "player_controller.lua"
+                || s.scriptPath == "components/enemy_ai.lua"
+                || s.scriptPath == "components/moth_ai.lua") {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void ScriptSystem::setWorldTableExtension(WorldTableExtensionFn fn) {
   m_worldTableExtensionFn = std::move(fn);
 }
@@ -154,18 +181,42 @@ void ScriptSystem::update(ECS::World& world, double dt,
     worldTable.set_function("getCurrentLevel", [this]() {
         return m_currentLevelFn ? m_currentLevelFn() : std::string{};
     });
+    worldTable.set_function("navVersion", []() { return Scripting::navVersion(); });
     worldTable.set_function("eachWall", [&world](sol::function fn) {
         // A "wall" for pathfinding is any static solid obstacle the enemy must
-        // route around: walls, boxes, pots, etc. These are colliders that block
-        // movement (isSolid) and can't be pushed (!moveable). We exclude entities
-        // driven by a LuaScript — the player and the enemies themselves are also
-        // solid & immovable, but treating them as permanent grid obstacles would
-        // block the goal cell and make A* fail. Note: blocksLight is NOT usable
-        // here because level data never serialises it (it defaults to false).
+        // route around: walls, boxes, pots, closed doors, etc. These are
+        // colliders that block movement (isSolid), can't be pushed (!moveable),
+        // and aren't triggers (!isTrigger, so pickup/detection zones are skipped).
+        // Only the player and the enemies themselves are excluded (see
+        // isNavExcludedEntity) — they are solid & immovable but move, and blocking
+        // the player's cell (the A* goal) would make routing fail. A closed door
+        // IS included so enemies route around it; when it opens it goes non-solid
+        // or moveable and drops out of this set (with a navVersion bump so grids
+        // rebuild). Note: blocksLight is NOT usable here — level data never
+        // serialises it (defaults false).
+        //
+        // We pass each wall's world-space AABB (minX, minY, maxX, maxY) to Lua,
+        // NOT just its centre. Runtime tilemap merging (TilemapCollisionBuilder)
+        // collapses long wall strips into single colliders spanning many tiles
+        // (e.g. width 4000 = 40 tiles). Marking only the centre cell would leave
+        // the rest of a merged wall walkable, so the grid builder needs the full
+        // extent to mark every overlapped cell.
         world.each<Components::Collider>([&](ECS::Entity e, Components::Collider& col) {
-            if (col.isSolid && !col.moveable && !world.hasComponent<Components::LuaScript>(e)) {
+            if (col.isSolid && !col.moveable && !col.isTrigger
+                && !isNavExcludedEntity(world, e)) {
+                auto* tf = world.getComponent<Components::Transform>(e);
                 Scripting::EntityRef ref(e, &world);
-                fn(ref);
+                if (tf) {
+                    const float cx = tf->position.x + col.offset.x;
+                    const float cy = tf->position.y + col.offset.y;
+                    const float hx = std::abs(col.size.x * tf->scale.x) * 0.5f;
+                    const float hy = std::abs(col.size.y * tf->scale.y) * 0.5f;
+                    fn(ref, cx - hx, cy - hy, cx + hx, cy + hy);
+                } else {
+                    // No transform: fall back to passing just the ref; Lua guards
+                    // against nil bounds by marking the entity's own cell.
+                    fn(ref);
+                }
             }
         });
     });

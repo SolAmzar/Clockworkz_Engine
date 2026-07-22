@@ -11,6 +11,7 @@ reserved.
 /******************************************************************************/
 
 #include "Scripting/EntityRef.hpp"
+#include "Scripting/NavVersion.hpp"
 #include "Components/Collider.hpp"
 #include "Components/Health.hpp"
 #include "Components/Light.hpp"
@@ -25,6 +26,17 @@ reserved.
 
 
 namespace Scripting {
+
+// --- Navigation version -----------------------------------------------------
+// Translation-unit counter behind NavVersion.hpp. Bumped by the collider
+// setters below when solidity/movability actually changes, so pathfinding
+// scripts can detect when a door opens (or any obstacle appears/clears) and
+// rebuild their grid instead of relying on the one built at onStart.
+namespace {
+    uint32_t g_navVersion = 0;
+}
+uint32_t navVersion() { return g_navVersion; }
+void bumpNavVersion() { ++g_navVersion; }
 
 // Identity
 
@@ -334,8 +346,11 @@ bool EntityRef::isColliderSolid() const {
 void EntityRef::setColliderSolid(bool v) {
   auto *c =
       m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr;
-  if (c)
+  if (c && c->isSolid != v) {
     c->isSolid = v;
+    // A wall/door became passable (or a new one appeared): invalidate nav grids.
+    bumpNavVersion();
+  }
 }
 bool EntityRef::isColliderMoveable() const {
   auto *c =
@@ -345,8 +360,14 @@ bool EntityRef::isColliderMoveable() const {
 void EntityRef::setColliderMoveable(bool v) {
   auto *c =
       m_world ? m_world->getComponent<Components::Collider>(m_entity) : nullptr;
-  if (c)
+  if (c && c->moveable != v) {
     c->moveable = v;
+    // Movability gates whether a collider counts as a wall (see eachWall):
+    // a door made moveable on open must clear its grid cells. Only bump on an
+    // actual change so door_system.lua re-asserting "moveable=false" every
+    // frame on closed doors does not force a rebuild each frame.
+    bumpNavVersion();
+  }
 }
 
 // --- Tag ---
