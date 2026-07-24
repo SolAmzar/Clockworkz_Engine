@@ -65,7 +65,7 @@ local _navVersion = -1     -- World.navVersion() the grid was last built at
 -- FALSE for the Release / final build so no debug text prints by default
 -- (satisfies the "No Debugging Information in Release mode" rubric). This is the
 -- single on/off switch for all [EnemyAI] pathfinding output.
-local DEBUG = true
+local DEBUG = false
 local function dbg(msg) if DEBUG then print(msg) end end
 
 -- Walls sit at centres 50, 150, 250 … 650 (every 100 units, offset +50).
