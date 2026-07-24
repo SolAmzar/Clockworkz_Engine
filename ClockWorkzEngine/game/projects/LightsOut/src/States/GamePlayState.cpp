@@ -21,6 +21,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include "Assets/ResourceManager.hpp"
 #include "Assets/TextureManager.hpp"
 #include "Core/Engine.hpp"
+#include "Core/Time.hpp"
 #include "GlobalAudioSettings.hpp"
 #include "Runtime/LevelMusicManager.hpp"
 #include "Graphics/Camera2D.hpp"
@@ -35,6 +36,7 @@ All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reser
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <memory>
 
@@ -80,6 +82,16 @@ void GamePlayState::onEnter() {
 }
 
 void GamePlayState::update(double dt) {
+  // Toggle the on-screen FPS counter with F3. Handled before any early-return
+  // path (death countdown, menu transition) so the shortcut always responds.
+  // Hidden by default and works in Release too, satisfying the "show/hide FPS
+  // via a shortcut key" requirement without leaving debug info on by default.
+  if (m_input.wasKeyPressed(GLFW_KEY_F3)) {
+    m_showFps = !m_showFps;
+    std::cout << "[GamePlayState] FPS display " << (m_showFps ? "ON" : "OFF")
+              << "\n";
+  }
+
   // Intercept the "MAIN_MENU" sentinel set by a portal's levelName BEFORE
   // Scene::Update() can try to load it as a file next frame.
   // The portal's onUpdate callback (wired in main_game.cpp's setSceneSetup)
@@ -116,7 +128,7 @@ void GamePlayState::update(double dt) {
     m_gsm.push(std::make_shared<PauseState>(m_gsm, m_input));
 }
 
-void GamePlayState::render(Core::Time* /*timer*/) {
+void GamePlayState::render(Core::Time* timer) {
   int w = m_window.width(), h = m_window.height();
   glViewport(0, 0, w, h);
   glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -134,6 +146,26 @@ void GamePlayState::render(Core::Time* /*timer*/) {
   }
 
   m_scene.RenderAll(*m_renderer, vp, sceneTint);
+
+  // On-screen FPS counter (toggle with F3). Drawn through the engine's custom
+  // font system in a screen-space orthographic pass so it stays pinned to the
+  // top-left of the viewport regardless of camera movement. Hidden by default,
+  // so no debug info shows in Release until the player enables it. Uses the
+  // smoothed frame rate from Core::Time::fps().
+  if (m_showFps && timer) {
+    glm::mat4 uiProj = glm::ortho(0.f, static_cast<float>(w),
+                                  0.f, static_cast<float>(h));
+    m_renderer->beginFontPass(uiProj);
+    auto shader = Assets::ResourceManager<Graphics::Shader>::Get("text");
+    auto font   = Assets::ResourceManager<Assets::FontManager>::Get("Subtitle");
+    if (shader && font) {
+      std::string label =
+          "FPS: " + std::to_string(static_cast<int>(timer->fps() + 0.5));
+      font->RenderText(label, 12.f, static_cast<float>(h) - 28.f, 0.4f,
+                       glm::vec3{1.f, 1.f, 0.f}, *shader);
+    }
+    m_renderer->endFontPass();
+  }
 
   // Particle emitter + light pass are handled by the onRender callback
   // registered in main_game.cpp's setSceneSetup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no extra code needed here.

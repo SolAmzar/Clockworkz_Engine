@@ -60,6 +60,11 @@ private:
   float m_deathTimer{0.0f}; // counts up after Engine.triggerGameOver()
   std::string m_fragmentIconTexture{"fragment_texture"};
 
+  // On-screen FPS counter. Toggled with F3 in update() and drawn via the engine
+  // font system in render(). Hidden by default so the Release build shows no
+  // debug info until the player explicitly enables it with the shortcut key.
+  bool m_showFps{false};
+
   // First level loaded on enter
   static constexpr const char *k_firstLevel = "assets/scenes/Level_Save.json";
   // Sentinel value used in a Portal's levelName to signal "return to main menu"
