@@ -2,7 +2,8 @@
 /*!
 \file           EntityRef.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 87% [Amzar] 4% [Lebon] 9%
+\author(s)      [Syafiq] 87% [Amzar] 4% [Lebon] 9%; Wei An — navVersion
+                counter and collider-setter bumps (setColliderSolid/Moveable)
 \brief          EntityRef implementation — nil-safe ECS component access.
 
 All content (c) 2025 DigiPen Institute of Technology Singapore. All rights
@@ -364,8 +365,7 @@ void EntityRef::setColliderMoveable(bool v) {
     c->moveable = v;
     // Movability gates whether a collider counts as a wall (see eachWall):
     // a door made moveable on open must clear its grid cells. Only bump on an
-    // actual change so door_system.lua re-asserting "moveable=false" every
-    // frame on closed doors does not force a rebuild each frame.
+    // actual change so door_system.
     bumpNavVersion();
   }
 }

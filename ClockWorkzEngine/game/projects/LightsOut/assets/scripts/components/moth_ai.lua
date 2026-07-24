@@ -4,6 +4,8 @@
 --  - Uses normalized movement + moveSpeed
 --  - Cancels dash when hitting walls
 --  - Stops pushing through obstacles
+-- Contribution: Wei An -- A* pathfinding ported into the Chase state (buildGrid,
+--   findPath, navVersion grid rebuild).
 -------------------------------------------------------------------------------
 
 Properties = {
@@ -86,8 +88,8 @@ local function nearestFreeCell(grid, cx, cy, maxRing)
     return nil, nil
 end
 
--- Build blocked-cell set from wall AABBs (marks every overlapped cell so merged
--- multi-tile wall colliders are fully represented).
+-- Build blocked-cell set from wall AABBs. marks every overlapped cell so merged
+-- multi-tile wall colliders are fully represented.
 local function buildGrid()
     local grid = {}
     World.eachWall(function(e, minX, minY, maxX, maxY)
@@ -281,7 +283,7 @@ function Moth:onStart(entity)
         self._dashDirX = 0.0
         self._dashDirY = 0.0
     end
-    -- Build navigation grid from wall geometry (see enemy_ai.lua).
+    -- Build navigation grid from wall geometry.
     _grid      = buildGrid()
     _navVersion = (World.navVersion and World.navVersion()) or 0
     _path      = nil
@@ -429,12 +431,12 @@ function Moth:onUpdate(entity, dt)
 
         -- Follow an A* path around walls instead of steering straight at the
         -- player; recalc periodically and fall back to direct steering when no
-        -- path is found (e.g. player unreachable within the iteration budget).
+        -- path is found 
         _pathTimer = _pathTimer - dt
         if _pathTimer <= 0.0 or _path == nil then
             _pathTimer = self.pathInterval
             -- Rebuild the grid if a door opened / an obstacle changed since we
-            -- last built it (cheap version check; rebuild only on real change).
+            -- last built it
             local nv = (World.navVersion and World.navVersion()) or 0
             if nv ~= _navVersion then
                 _grid = buildGrid()

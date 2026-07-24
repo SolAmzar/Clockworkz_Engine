@@ -2,7 +2,8 @@
 /*!
 \file           ScriptSystem.cpp
 \project        ClockWorkz Engine
-\author(s)      [Syafiq] 97% [Amzar] 3%
+\author(s)      [Syafiq] 97% [Amzar] 3%; Wei An — World.eachWall and
+                World.navVersion Lua bindings and isNavExcludedEntity helper
 \brief          ScriptSystem implementation — loads and runs per-entity Lua
                 scripts with sandboxed environments.
 
@@ -121,12 +122,11 @@ namespace Systems {
       });
   }
 
-// Entities that are solid but must NOT be treated as static pathfinding walls:
+// Entities that are solid but must not be treated as static pathfinding walls are
 // the player and the enemies themselves. They are solid & immovable but they
-// move around, and marking their cell blocked (especially the player's, which is
-// the A* goal) would break routing. Doors and other scripted obstacles are
-// deliberately NOT excluded here — a closed door should block the grid, and when
-// it opens it clears itself by going non-solid / moveable (see eachWall filter).
+// move around, and marking their cell blocked would break routing. Doors and other scripted obstacles are
+// deliberately NOT excluded here. A closed door should block the grid, and when
+// it opens it clears itself by going moveable.
 static bool isNavExcludedEntity(ECS::World& world, ECS::Entity e) {
     if (auto* tag = world.getComponent<Components::Tag>(e)) {
         if (tag->tag == "Player" || tag->tag == "Enemy"
@@ -184,21 +184,16 @@ void ScriptSystem::update(ECS::World& world, double dt,
     worldTable.set_function("navVersion", []() { return Scripting::navVersion(); });
     worldTable.set_function("eachWall", [&world](sol::function fn) {
         // A "wall" for pathfinding is any static solid obstacle the enemy must
-        // route around: walls, boxes, pots, closed doors, etc. These are
-        // colliders that block movement (isSolid), can't be pushed (!moveable),
-        // and aren't triggers (!isTrigger, so pickup/detection zones are skipped).
-        // Only the player and the enemies themselves are excluded (see
-        // isNavExcludedEntity) — they are solid & immovable but move, and blocking
-        // the player's cell (the A* goal) would make routing fail. A closed door
-        // IS included so enemies route around it; when it opens it goes non-solid
-        // or moveable and drops out of this set (with a navVersion bump so grids
-        // rebuild). Note: blocksLight is NOT usable here — level data never
-        // serialises it (defaults false).
+        // route around such as walls, boxes, pots, closed doors, etc. These are
+        // colliders that block movement.
+        // They are solid & immovable but move, and blocking
+        // the player's cell would make routing fail. A closed door
+        // is included so enemies route around it.
         //
-        // We pass each wall's world-space AABB (minX, minY, maxX, maxY) to Lua,
-        // NOT just its centre. Runtime tilemap merging (TilemapCollisionBuilder)
-        // collapses long wall strips into single colliders spanning many tiles
-        // (e.g. width 4000 = 40 tiles). Marking only the centre cell would leave
+        // Pass each wall's world-space AABB (minX, minY, maxX, maxY) to Lua
+        // and not just its centre. Runtime tilemap merging (TilemapCollisionBuilder)
+        // collapses long wall strips into single colliders spanning many tiles.
+        // Marking only the centre cell would leave
         // the rest of a merged wall walkable, so the grid builder needs the full
         // extent to mark every overlapped cell.
         world.each<Components::Collider>([&](ECS::Entity e, Components::Collider& col) {
@@ -213,8 +208,6 @@ void ScriptSystem::update(ECS::World& world, double dt,
                     const float hy = std::abs(col.size.y * tf->scale.y) * 0.5f;
                     fn(ref, cx - hx, cy - hy, cx + hx, cy + hy);
                 } else {
-                    // No transform: fall back to passing just the ref; Lua guards
-                    // against nil bounds by marking the entity's own cell.
                     fn(ref);
                 }
             }

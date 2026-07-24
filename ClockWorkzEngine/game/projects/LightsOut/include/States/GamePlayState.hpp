@@ -2,7 +2,7 @@
 /*!
 \file           GamePlayState.hpp
 \project        Lights Out
-\author(s)      [Lebon] 54%, [wei an] 46%
+\author(s)      [Lebon] 54%, [wei an] 46% (incl. FPS counter member m_showFps)
 \brief          ECS-based gameplay state. Loads level_save.json via the engine's
                 ECS Scene system, wires all game callbacks via
 invokeSceneSetup(), handles ESC→PauseState and portal-based level transitions.
@@ -62,7 +62,7 @@ private:
 
   // On-screen FPS counter. Toggled with F3 in update() and drawn via the engine
   // font system in render(). Hidden by default so the Release build shows no
-  // debug info until the player explicitly enables it with the shortcut key.
+  // debug info until the player enables it with the shortcut key.
   bool m_showFps{false};
 
   // First level loaded on enter

@@ -1,6 +1,8 @@
 -------------------------------------------------------------------------------
 -- enemy_ai.lua
 -- Normal enemy: patrols, chases player using A* pathfinding, dies in light.
+-- Contribution: Wei An -- A* pathfinding (buildGrid, findPath, nearestFreeCell,
+--   octile heuristic, navVersion grid rebuild).
 -------------------------------------------------------------------------------
 
 Properties = {
@@ -52,7 +54,7 @@ Properties = {
 local Enemy = {}
 
 -------------------------------------------------------------------------------
--- A* pathfinding state (per enemy instance via Lua closure)
+-- A* pathfinding state 
 -------------------------------------------------------------------------------
 local CELL_SIZE  = 100.0   -- matches wall tile world size
 local _grid      = nil     -- sparse blocked-cell table built at onStart
@@ -61,16 +63,14 @@ local _pathIdx   = 1       -- index of next waypoint to head toward
 local _pathTimer = 0.0     -- seconds until next recalculation
 local _navVersion = -1     -- World.navVersion() the grid was last built at
 
--- Pathfinding debug logging. Leave true while verifying the feature; set to
+-- Pathfinding debug logging. Leave true while verifying the feature. Set to
 -- FALSE for the Release / final build so no debug text prints by default
--- (satisfies the "No Debugging Information in Release mode" rubric). This is the
--- single on/off switch for all [EnemyAI] pathfinding output.
+-- (satisfies the "No Debugging Information in Release mode" rubric).
 local DEBUG = false
 local function dbg(msg) if DEBUG then print(msg) end end
 
--- Walls sit at centres 50, 150, 250 … 650 (every 100 units, offset +50).
--- Floor-dividing maps each 100-unit band [n*100, n*100+100) to cell n,
--- so a wall centred at 650 → cell 6, occupying world [600, 700). No rounding.
+-- Walls sit at centres 50, 150, 250 to 650 
+-- Floor-dividing maps each 100-unit band [n*100, n*100+100) to cell n
 local function worldToCell(x, y)
     return math.floor(x / CELL_SIZE), math.floor(y / CELL_SIZE)
 end
@@ -79,7 +79,7 @@ local function isBlocked(grid, cx, cy)
     return grid[cx] ~= nil and grid[cx][cy] == true
 end
 
--- If (cx,cy) is blocked, spiral outward (up to `maxRing` cells) for the nearest
+-- If (cx,cy) is blocked, spiral outward for the nearest
 -- free cell. Used to relax the goal when the player hugs a wall, so A* still
 -- routes to an adjacent walkable cell instead of giving up and phasing.
 local function nearestFreeCell(grid, cx, cy, maxRing)
@@ -101,10 +101,9 @@ end
 
 -- Build a sparse set of blocked cells from wall entities.
 -- Relies on World.eachWall added in ScriptSystem.cpp, which passes each wall's
--- world-space AABB (minX, minY, maxX, maxY). We mark EVERY cell that AABB
+-- world-space AABB (minX, minY, maxX, maxY). I mark EVERY cell that AABB
 -- overlaps — runtime tilemap merging collapses long wall strips into single
--- colliders spanning many tiles, so marking only the centre cell would leave
--- most of a merged wall walkable and enemies would path straight through it.
+-- colliders spanning many tiles.
 local EPS = 0.001
 local function markCell(grid, cx, cy)
     if not grid[cx] then grid[cx] = {} end
@@ -138,7 +137,7 @@ local function buildGrid()
     return grid
 end
 
--- Octile distance heuristic (admissible for 8-direction movement).
+-- Octile distance heuristic 
 local function heuristic(ax, ay, bx, by)
     local dx = math.abs(ax - bx)
     local dy = math.abs(ay - by)
@@ -152,7 +151,7 @@ local function findPath(grid, startX, startY, goalX, goalY)
     local gx, gy = worldToCell(goalX, goalY)
 
     if sx == gx and sy == gy then return {} end
-    -- Player may stand in a cell overlapped by a wall collider; retarget to the
+    -- Player may stand in a cell overlapped by a wall collider. Will be retargeted to the
     -- nearest walkable cell so A* still produces a route to reach them.
     if isBlocked(grid, gx, gy) then
         gx, gy = nearestFreeCell(grid, gx, gy, 3)
@@ -456,8 +455,7 @@ function Enemy:onUpdate(entity, dt)
         _pathTimer = _pathTimer - dt
         if _pathTimer <= 0.0 or _path == nil then
             _pathTimer = self.pathInterval
-            -- Rebuild the grid if a door opened / an obstacle changed since we
-            -- last built it (cheap version check; rebuild only on real change).
+            -- Rebuild the grid if a door opened / an obstacle changed 
             local nv = (World.navVersion and World.navVersion()) or 0
             if nv ~= _navVersion then
                 _grid = buildGrid()

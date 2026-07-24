@@ -2,7 +2,8 @@
 /*!
 \file           GamePlayState.cpp
 \project        Lights Out
-\author(s)      [Syafiq] 82% [Amzar] 8% [Lebon] 10%
+\author(s)      [Syafiq] 82% [Amzar] 8% [Lebon] 10%; Wei An — on-screen FPS
+                counter (F3 toggle, screen-space font-system render)
 \brief          ECS-based gameplay state implementation.
 
 All content (c) 2026 DigiPen Institute of Technology Singapore. All rights reserved.
@@ -82,8 +83,7 @@ void GamePlayState::onEnter() {
 }
 
 void GamePlayState::update(double dt) {
-  // Toggle the on-screen FPS counter with F3. Handled before any early-return
-  // path (death countdown, menu transition) so the shortcut always responds.
+  // Toggle the on-screen FPS counter with F3.
   // Hidden by default and works in Release too, satisfying the "show/hide FPS
   // via a shortcut key" requirement without leaving debug info on by default.
   if (m_input.wasKeyPressed(GLFW_KEY_F3)) {
@@ -148,8 +148,7 @@ void GamePlayState::render(Core::Time* timer) {
   m_scene.RenderAll(*m_renderer, vp, sceneTint);
 
   // On-screen FPS counter (toggle with F3). Drawn through the engine's custom
-  // font system in a screen-space orthographic pass so it stays pinned to the
-  // top-left of the viewport regardless of camera movement. Hidden by default,
+  // font system. Hidden by default,
   // so no debug info shows in Release until the player enables it. Uses the
   // smoothed frame rate from Core::Time::fps().
   if (m_showFps && timer) {
